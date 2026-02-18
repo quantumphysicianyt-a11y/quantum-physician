@@ -1388,19 +1388,35 @@
       .topBar{padding:4px 16px;gap:12px}
       .topBar a{font-size:12px}
 
-      /* Hero */
-      .hero{min-height:60vh}
+      /* Hero - position text over video properly */
+      .hero{min-height:70vh}
       .hero .content{
-        padding:60px 0 50px;
+        padding:40px 0 40px;
         margin-left:20px;
         max-width:calc(100% - 40px);
+        display:flex;
+        flex-direction:column;
+        justify-content:flex-end;
+        min-height:50vh;
       }
-      .hero .tagline .rotating-word{width:180px}
+      .hero h1{
+        font-size:clamp(24px,6vw,36px);
+        text-shadow:0 2px 30px rgba(0,0,0,.6);
+      }
+      .hero .tagline{
+        font-size:clamp(18px,5vw,28px);
+        text-shadow:0 2px 20px rgba(0,0,0,.7);
+      }
+      .hero .tagline .rotating-word{width:160px}
+      .hero video{
+        object-position:center center;
+      }
 
       /* Obstacle */
       .obstacle{grid-template-columns:1fr}
       .obstacle .imgSide{min-height:250px}
-      .obstacle .textSide{padding:30px 20px}
+      .obstacle .textSide{padding:30px 20px;text-align:center}
+      .obstacle .btn{margin:0 auto}
 
       /* Cards */
       .cardsGrid{grid-template-columns:1fr}
@@ -1414,24 +1430,29 @@
       }
       .scarfPanel .hopeLogo{width:120px}
 
-      /* HOPE circles */
+      /* HOPE circles - 2 column */
       .hopeGrid{grid-template-columns:repeat(2,1fr);gap:20px}
       .hopeSection{padding:40px 0}
-      .flip{width:140px;height:140px}
-      .flipFace.back .letter{font-size:70px}
+      .flip{width:120px;height:120px}
+      .flipFace.back .letter{font-size:60px}
 
       /* Meet Dr Clark */
       .meetGrid{grid-template-columns:1fr}
-      .meet .imgWrap{order:-1;justify-content:center;height:350px}
-      .meet .imgWrap img{width:350px;max-width:100%}
-      .meet .textContent{padding:0 10px 30px}
+      .meet .imgWrap{order:-1;justify-content:center;height:300px}
+      .meet .imgWrap img{width:300px;max-width:90%}
+      .meet .textContent{padding:0 16px 30px;text-align:center}
       .meet .topBar{margin:0 auto 20px}
+      .meet .btn{margin:0 auto}
 
-      /* Testimonials */
-      .testimonials{padding:40px 0}
-      .testimonials .quoteIcon{font-size:50px}
-      .testimonialSlider{min-height:220px}
-      .testimonialArrow{width:36px;height:36px;font-size:22px}
+      /* Testimonials - compact */
+      .testimonials{padding:30px 0}
+      .testimonials .quoteIcon{font-size:40px;margin-bottom:6px}
+      .testimonialSlider{min-height:150px}
+      .testimonialSlide blockquote{font-size:15px;line-height:1.6;margin-bottom:12px}
+      .testimonialSlide .author{font-size:12px}
+      .testimonialArrow{width:32px;height:32px;font-size:20px}
+      .testimonials .dots{margin-top:14px;gap:8px}
+      .testimonials .dot{width:10px;height:10px}
 
       /* Quote bar */
       .quoteSlide{font-size:14px}
@@ -1439,48 +1460,72 @@
       /* Journey */
       .journey{min-height:auto}
       .journey .signupBox{
-        margin:40px auto;
+        margin:30px auto;
         max-width:calc(100% - 32px);
         margin-right:auto;
         padding:28px 24px;
       }
+      .journey h3{font-size:22px}
 
-      /* Floating CTA */
-      .floatingCta{width:90px;height:90px;right:12px;bottom:12px}
-      .floatingCta span{font-size:10px}
+      /* Floating CTA - smaller */
+      .floatingCta{width:70px;height:70px;right:10px;bottom:10px}
+      .floatingCta span{font-size:8px;letter-spacing:.05em}
 
-      /* Quiz modal */
-      .quizModal{max-width:100%;margin:10px;border-radius:12px}
-      .quizHeader{padding:28px 20px 22px}
-      .quizHeader h2{font-size:22px}
-      .quizBody{padding:20px 20px 28px}
+      /* Quiz modal - proper mobile sizing with close button */
+      .quizOverlay{padding:10px;align-items:flex-start;padding-top:40px}
+      .quizModal{
+        max-width:100%;
+        margin:0;
+        border-radius:12px;
+        max-height:calc(100vh - 80px);
+      }
+      .quizClose{
+        top:12px;right:12px;
+        width:40px;height:40px;
+        font-size:24px;
+        background:rgba(255,255,255,.3);
+        z-index:10;
+      }
+      .quizHeader{padding:24px 16px 18px}
+      .quizHeader h2{font-size:20px}
+      .quizHeader p{font-size:13px}
+      .quizHeader .lotus{width:36px}
+      .quizBody{padding:16px 16px 24px}
+      .quizStep h3{font-size:18px}
       .quizOption{padding:12px 14px;gap:10px}
-      .quizOption .icon{width:34px;height:34px;font-size:16px}
-      .quizOption .text strong{font-size:14px}
-      .quizOption .text span{font-size:12px}
+      .quizOption .icon{width:32px;height:32px;font-size:15px}
+      .quizOption .text strong{font-size:13px}
+      .quizOption .text span{font-size:11px}
+      .quizNav .btn{padding:12px 16px;font-size:11px}
+      .quizResults .profile{width:70px;height:70px;font-size:28px}
+      .quizResults h3{font-size:20px}
+      .recommendations{padding:16px}
+      .recItem .recIcon{width:38px;height:38px;font-size:16px}
     }
 
     @media(max-width:500px){
       /* Single column HOPE circles */
       .hopeGrid{grid-template-columns:1fr}
+      .flip{width:130px;height:130px}
 
       /* Smaller hero text */
-      .hero h1{font-size:28px}
-      .hero .tagline{font-size:20px}
-      .hero .tagline .rotating-word{width:150px}
+      .hero h1{font-size:24px}
+      .hero .tagline{font-size:18px}
+      .hero .tagline .rotating-word{width:130px}
 
       /* Stack obstacle text tighter */
       .obstacle .textSide{padding:24px 16px}
-      .obstacle h2{font-size:28px}
+      .obstacle h2{font-size:26px}
 
       /* Meet section */
-      .meet h2{font-size:28px}
-      .meet .imgWrap{height:280px}
-      .meet .imgWrap img{width:280px}
+      .meet h2{font-size:26px}
+      .meet .imgWrap{height:260px}
+      .meet .imgWrap img{width:260px}
 
-      /* Testimonials */
-      .testimonialSlider{min-height:280px}
-      .testimonialSlide blockquote{font-size:15px}
+      /* Testimonials even tighter */
+      .testimonialSlider{min-height:180px}
+      .testimonialSlide blockquote{font-size:14px}
+      .testimonialArrow{width:28px;height:28px;font-size:18px}
     }
   </style>
 </head>
