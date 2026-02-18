@@ -1,0 +1,26 @@
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+# Redirect everything to index for now (SPA-style catch for future pages)
+# Uncomment when you add auth pages:
+# [[redirects]]
+#   from = "/dashboard/*"
+#   to = "/pages/dashboard.html"
+#   status = 200
+
+# Headers for performance
+[[headers]]
+  for = "/assets/images/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/assets/videos/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"

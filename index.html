@@ -1,0 +1,2082 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Quantum Physician — Empowering Health</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      /* Brand palette from spec */
+      --teal:#5ba8b2;
+      --navy:#131e3d;
+      --taupe:#ad9b84;
+      --taupe-light:#cec3b5;
+      --paper:#f4f1ec;
+      --sage:#d7d7c3;
+
+      --ink:#111;
+      --max:1200px;
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{
+      font-family:Inter,system-ui,-apple-system,sans-serif;
+      color:var(--ink);
+      background:#fff;
+      line-height:1.6;
+      font-size:16px;
+    }
+    a{color:inherit;text-decoration:none}
+    img{max-width:100%;display:block}
+
+    .wrap{width:min(var(--max), calc(100% - 40px)); margin:0 auto;}
+
+    /* ========== NAV ========== */
+    .topBar{
+      background:#000;
+      padding:6px 20px;
+      display:flex;
+      align-items:center;
+      gap:16px;
+    }
+    .topBar a{
+      color:#fff;
+      font-size:14px;
+      opacity:.9;
+    }
+    .topBar a:hover{opacity:1}
+
+    .nav{
+      position:sticky;top:0;z-index:100;
+      background:#000;
+      border-bottom:1px solid rgba(255,255,255,.1);
+    }
+    .nav .row{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:14px 0;
+    }
+    .brand{display:flex;align-items:center}
+    .brand img{height:70px;width:auto}
+
+    .menu{
+      display:flex;align-items:center;gap:28px;
+      font-size:12px;
+      letter-spacing:.15em;
+      text-transform:uppercase;
+      color:var(--teal);
+    }
+    .menu a{padding:6px 0;transition:opacity .15s}
+    .menu a:hover{opacity:.7}
+    .menu .cart{font-size:16px}
+    @media(max-width:900px){.menu{display:none}}
+
+    /* ========== HERO ========== */
+    .hero{
+      position:relative;
+      min-height:min(85vh,720px);
+      background:#000;
+      overflow:hidden;
+    }
+    .hero video{
+      position:absolute;inset:0;
+      width:100%;height:100%;
+      object-fit:cover;
+      object-position:72% 30%;
+    }
+    .hero .content{
+      position:relative;z-index:2;
+      padding:100px 0 80px;
+      max-width:600px;
+      margin-left:clamp(20px,8vw,100px);
+    }
+    .hero h1{
+      font-family:"Playfair Display",serif;
+      font-size:clamp(32px,4.5vw,52px);
+      font-weight:400;
+      line-height:1.1;
+      color:#fff;
+      margin-bottom:24px;
+      text-shadow:0 2px 20px rgba(0,0,0,.3);
+    }
+    .hero .tagline{
+      color:#fff;
+      font-weight:800;
+      font-size:clamp(24px,3.5vw,36px);
+      text-shadow:0 3px 20px rgba(0,0,0,.6);
+      letter-spacing:.02em;
+      line-height:1;
+    }
+    .hero .tagline .rotating-word{
+      display:inline-block;
+      position:relative;
+      width:220px;
+      height:1em;
+      vertical-align:top;
+      color:#fff;
+      font-style:italic;
+    }
+    .hero .tagline .word{
+      position:absolute;
+      left:0;
+      top:0;
+      opacity:0;
+      transition:opacity 0.4s ease;
+      white-space:nowrap;
+    }
+    .hero .tagline .word.active{
+      opacity:1;
+    }
+
+    /* ========== BUTTONS ========== */
+    .btn{
+      display:inline-flex;align-items:center;justify-content:center;gap:8px;
+      padding:14px 28px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:700;
+      letter-spacing:.15em;
+      text-transform:uppercase;
+      cursor:pointer;
+      transition:all .15s ease;
+      border:none;
+    }
+    .btn.taupe{
+      background:linear-gradient(180deg,var(--taupe),#9a8a75);
+      color:#fff;
+      box-shadow:0 8px 20px rgba(0,0,0,.2);
+    }
+    .btn.taupe:hover{filter:brightness(1.08);transform:translateY(-1px)}
+
+    .btn.dark{
+      background:#0b0b0b;
+      color:var(--taupe);
+      border:1px solid rgba(255,255,255,.1);
+    }
+    .btn.dark:hover{background:#1a1a1a}
+
+    .btn.outline{
+      background:transparent;
+      border:1px solid rgba(255,255,255,.3);
+      color:#fff;
+    }
+    .btn.outline:hover{background:rgba(255,255,255,.1)}
+
+    /* ========== OBSTACLE/OPPORTUNITY ========== */
+    .obstacle{
+      display:grid;
+      grid-template-columns:1.1fr .9fr;
+      min-height:480px;
+    }
+    .obstacle .imgSide{
+      position:relative;
+      overflow:hidden;
+    }
+    .obstacle .imgSide img{
+      width:100%;height:100%;
+      object-fit:cover;
+      opacity:0;
+      transform:translateX(-60px) scale(1.05);
+      transition:opacity .8s ease, transform 1s ease;
+    }
+    .obstacle.visible .imgSide img{
+      opacity:1;
+      transform:translateX(0) scale(1);
+    }
+    .obstacle .imgSide::after{
+      content:"";
+      position:absolute;inset:0;
+      background:linear-gradient(90deg,transparent 50%,rgba(255,255,255,.7) 80%,#fff 100%);
+    }
+    .obstacle .textSide{
+      padding:50px 40px;
+      display:flex;align-items:center;
+      background:#fff;
+    }
+    .obstacle h2{
+      font-family:"Playfair Display",serif;
+      font-size:clamp(28px,3.5vw,48px);
+      font-weight:400;
+      line-height:1.05;
+      margin-bottom:20px;
+      opacity:0;
+      transform:translateX(40px);
+      transition:opacity .6s ease .2s, transform .6s ease .2s;
+    }
+    .obstacle.visible h2{
+      opacity:1;
+      transform:translateX(0);
+    }
+    .obstacle .lead{
+      font-weight:700;
+      margin-bottom:12px;
+      opacity:0;
+      transform:translateX(40px);
+      transition:opacity .6s ease .35s, transform .6s ease .35s;
+    }
+    .obstacle.visible .lead{
+      opacity:1;
+      transform:translateX(0);
+    }
+    .obstacle p{
+      color:#333;
+      margin-bottom:14px;
+      font-size:15px;
+      line-height:1.7;
+      opacity:0;
+      transform:translateX(40px);
+      transition:opacity .6s ease .45s, transform .6s ease .45s;
+    }
+    .obstacle.visible p{
+      opacity:1;
+      transform:translateX(0);
+    }
+    .obstacle .tagline{
+      font-weight:800;
+      margin:20px 0;
+      opacity:0;
+      transform:translateX(40px);
+      transition:opacity .6s ease .55s, transform .6s ease .55s;
+    }
+    .obstacle.visible .tagline{
+      opacity:1;
+      transform:translateX(0);
+    }
+    .obstacle .btn{
+      opacity:0;
+      transform:translateY(20px);
+      transition:opacity .6s ease .65s, transform .6s ease .65s, filter .15s ease, background .15s ease;
+    }
+    .obstacle.visible .btn{
+      opacity:1;
+      transform:translateY(0);
+    }
+    @media(max-width:900px){
+      .obstacle{grid-template-columns:1fr}
+      .obstacle .imgSide{min-height:300px}
+    }
+
+    /* Quote bar marquee */
+    .quoteBar{
+      background:var(--navy);
+      color:#fff;
+      padding:24px 0;
+      overflow:hidden;
+      position:relative;
+    }
+    .quoteBar::before,
+    .quoteBar::after{
+      content:'';
+      position:absolute;
+      top:0;bottom:0;
+      width:80px;
+      z-index:2;
+      pointer-events:none;
+    }
+    .quoteBar::before{
+      left:0;
+      background:linear-gradient(90deg,var(--navy),transparent);
+    }
+    .quoteBar::after{
+      right:0;
+      background:linear-gradient(-90deg,var(--navy),transparent);
+    }
+    .quoteTrack{
+      display:flex;
+      width:max-content;
+      animation:marquee 40s linear infinite;
+    }
+    .quoteTrack:hover{
+      animation-play-state:paused;
+    }
+    .quoteSlide{
+      display:flex;
+      align-items:center;
+      gap:20px;
+      padding:0 10px;
+      font-family:"Playfair Display",serif;
+      font-size:clamp(14px,1.5vw,18px);
+      font-style:italic;
+      line-height:1.6;
+      white-space:nowrap;
+    }
+    .quoteAuthor{
+      font-family:Inter,sans-serif;
+      font-style:normal;
+      font-weight:600;
+      font-size:13px;
+      letter-spacing:.05em;
+      opacity:.7;
+    }
+    .quoteSep{
+      color:var(--taupe);
+      font-style:normal;
+      font-size:12px;
+      opacity:.6;
+    }
+    @keyframes marquee{
+      0%{transform:translateX(0)}
+      100%{transform:translateX(-50%)}
+    }
+
+    /* ========== 3 CARDS ========== */
+    .cardsSection{
+      background:var(--sage);
+      padding:50px 0 60px;
+    }
+    .cardsGrid{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:24px;
+    }
+    .card{
+      background:rgba(255,255,255,.15);
+      border:2px solid rgba(0,0,0,.08);
+      padding:20px;
+      opacity:0;
+      transform:translateY(40px);
+      transition:transform .4s cubic-bezier(.175,.885,.32,1.275), box-shadow .4s ease, opacity .6s ease;
+    }
+    .cardsSection.visible .card{
+      opacity:1;
+      transform:translateY(0);
+    }
+    .cardsSection.visible .card:nth-child(1){transition-delay:.1s}
+    .cardsSection.visible .card:nth-child(2){transition-delay:.25s}
+    .cardsSection.visible .card:nth-child(3){transition-delay:.4s}
+    .card:hover{
+      transform:translateY(-8px);
+      box-shadow:0 20px 40px rgba(0,0,0,.12);
+    }
+    .card .imgFrame{
+      border:2px solid rgba(0,0,0,.08);
+      padding:10px;
+      margin-bottom:16px;
+      overflow:hidden;
+    }
+    .card .imgFrame img{
+      width:100%;
+      aspect-ratio:4/3;
+      object-fit:cover;
+      transition:transform .5s ease;
+    }
+    .card:hover .imgFrame img{
+      transform:scale(1.05);
+    }
+    .card h3{
+      font-size:18px;
+      font-weight:800;
+      text-align:center;
+      margin-bottom:12px;
+      line-height:1.2;
+    }
+    .card p{
+      text-align:center;
+      font-size:14px;
+      color:#222;
+      line-height:1.7;
+      margin-bottom:18px;
+    }
+    .card .btn{
+      width:100%;
+      padding:14px 20px;
+      transition:transform .3s ease, box-shadow .3s ease, filter .15s ease;
+    }
+    .card:hover .btn{
+      transform:translateY(-2px);
+      box-shadow:0 8px 25px rgba(173,155,132,.4);
+    }
+    @media(max-width:900px){
+      .cardsGrid{grid-template-columns:1fr}
+    }
+
+    /* ========== SCARF / HOPE PANEL ========== */
+    .scarfPanel{
+      position:relative;
+      min-height:500px;
+      overflow:hidden;
+    }
+    .scarfPanel .bgImg{
+      position:absolute;inset:0;
+      width:100%;height:100%;
+      object-fit:cover;
+    }
+    .scarfPanel .bgVid{
+      position:absolute;inset:0;
+      width:100%;height:100%;
+      object-fit:cover;
+    }
+    .scarfPanel .box{
+      position:relative;z-index:2;
+      max-width:700px;
+      margin:60px auto;
+      background:rgba(19,30,61,.85);
+      padding:40px 50px;
+      text-align:center;
+      color:#fff;
+      border-radius:4px;
+    }
+    .scarfPanel .lotus{
+      width:60px;
+      margin:0 auto 12px;
+      filter:brightness(1.2);
+    }
+    .scarfPanel .hopeLogo{
+      width:160px;
+      max-width:60%;
+      height:auto;
+      margin:0 auto 20px;
+      display:block;
+    }
+    .scarfPanel .hopeTitle{
+      font-size:36px;
+      font-weight:900;
+      letter-spacing:.12em;
+      color:var(--taupe);
+      margin-bottom:4px;
+    }
+    .scarfPanel .hopeSub{
+      font-size:9px;
+      letter-spacing:.2em;
+      text-transform:uppercase;
+      opacity:.8;
+      margin-bottom:20px;
+    }
+    .scarfPanel .box p{
+      font-size:15px;
+      line-height:1.8;
+      margin-bottom:14px;
+    }
+    .scarfPanel .box p strong{
+      display:block;
+      margin-bottom:8px;
+    }
+
+    /* ========== HOPE CIRCLES WITH FLIP ========== */
+    .hopeSection{
+      background:#fff;
+      padding:60px 0;
+    }
+    .hopeGrid{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:30px;
+      text-align:center;
+      align-items:stretch;
+    }
+    .hopeItem{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      height:100%;
+    }
+    .hopeItem .btn{
+      margin-top:auto;
+    }
+    
+    /* Flip container */
+    .flip{
+      width:180px;
+      height:180px;
+      perspective:1000px;
+      margin-bottom:18px;
+      cursor:pointer;
+    }
+    .flipInner{
+      width:100%;
+      height:100%;
+      position:relative;
+      transform-style:preserve-3d;
+      transition:transform .6s cubic-bezier(.175,.885,.32,1.275);
+    }
+    .flip:hover .flipInner{
+      transform:rotateY(180deg);
+    }
+    .flipFace{
+      position:absolute;
+      inset:0;
+      border-radius:50%;
+      backface-visibility:hidden;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:linear-gradient(145deg,#e8f6f8,#d0eef2);
+      border:2px solid rgba(91,168,178,.15);
+      box-shadow:0 12px 30px rgba(0,0,0,.08);
+      transition:box-shadow .3s, border-color .3s;
+    }
+    .flip:hover .flipFace{
+      box-shadow:0 20px 40px rgba(91,168,178,.25);
+      border-color:rgba(91,168,178,.4);
+    }
+    .flipFace img{
+      width:65%;
+      height:auto;
+      filter:drop-shadow(0 4px 8px rgba(0,0,0,.08));
+      transition:transform .3s ease;
+    }
+    .flip:hover .flipFace.front img{
+      animation:lotusBreath 1s ease-in-out infinite;
+    }
+    @keyframes lotusBreath{
+      0%,100%{transform:scale(1)}
+      50%{transform:scale(1.08)}
+    }
+    .flipFace.back{
+      transform:rotateY(180deg);
+      background:linear-gradient(145deg,#f5f0e8,#ebe4d8);
+    }
+    .flipFace.back .letter{
+      font-family:"Playfair Display",serif;
+      font-size:100px;
+      font-weight:600;
+      color:var(--taupe);
+      line-height:1;
+      animation:letterPop .4s ease;
+    }
+    @keyframes letterPop{
+      0%{transform:scale(0);opacity:0}
+      100%{transform:scale(1);opacity:1}
+    }
+
+    .hopeItem .label{
+      font-size:14px;
+      font-weight:900;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      margin-bottom:14px;
+      transition:color .3s, transform .3s;
+    }
+    .hopeItem:hover .label{
+      color:var(--teal);
+      transform:translateY(-2px);
+    }
+    .hopeItem .btn{
+      padding:12px 28px;
+      font-size:11px;
+      transition:all .3s cubic-bezier(.175,.885,.32,1.275);
+    }
+    .hopeItem:hover .btn{
+      transform:translateY(-3px);
+      box-shadow:0 10px 25px rgba(173,155,132,.35);
+    }
+    
+    /* Staggered entrance animation */
+    .hopeItem{
+      opacity:0;
+      animation:hopeEntrance .6s ease forwards;
+    }
+    .hopeItem:nth-child(1){animation-delay:.1s}
+    .hopeItem:nth-child(2){animation-delay:.2s}
+    .hopeItem:nth-child(3){animation-delay:.3s}
+    .hopeItem:nth-child(4){animation-delay:.4s}
+    @keyframes hopeEntrance{
+      from{opacity:0;transform:translateY(30px)}
+      to{opacity:1;transform:translateY(0)}
+    }
+    
+    @media(max-width:900px){
+      .hopeGrid{grid-template-columns:repeat(2,1fr)}
+      .flip{width:150px;height:150px}
+      .flipFace.back .letter{font-size:80px}
+    }
+    @media(max-width:500px){
+      .hopeGrid{grid-template-columns:1fr}
+    }
+
+    /* ========== MEET DR CLARK ========== */
+    .meet{
+      background:#fff;
+      padding:0 0 0 0;
+      position:relative;
+      overflow:hidden;
+    }
+    .meet .topBar{
+      height:8px;
+      background:var(--taupe);
+      margin:0 auto 40px;
+      max-width:1200px;
+    }
+    .meetGrid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:20px;
+      align-items:start;
+    }
+    .meet h2{
+      font-family:"Playfair Display",serif;
+      font-size:clamp(32px,4vw,48px);
+      font-weight:400;
+      margin-bottom:24px;
+      opacity:0;
+    }
+    .meet.visible h2{
+      animation:fadeSlideUp 1.2s ease forwards;
+    }
+    .meet p{
+      font-size:15px;
+      line-height:1.8;
+      color:#444;
+      margin-bottom:18px;
+      opacity:0;
+    }
+    .meet.visible p{
+      animation:fadeSlideUp 1s ease forwards;
+    }
+    .meet.visible p:nth-of-type(1){animation-delay:.3s}
+    .meet.visible p:nth-of-type(2){animation-delay:.5s}
+    .meet.visible p:nth-of-type(3){animation-delay:.7s}
+    .meet .btn{
+      opacity:0;
+    }
+    .meet.visible .btn{
+      animation:fadeSlideUp 1s ease .9s forwards;
+    }
+    @keyframes fadeSlideUp{
+      from{opacity:0;transform:translateY(25px)}
+      to{opacity:1;transform:translateY(0)}
+    }
+    .meet .textContent{
+      padding-top:20px;
+      padding-bottom:40px;
+    }
+    .meet .imgWrap{
+      height:580px;
+      overflow:hidden;
+      display:flex;
+      justify-content:center;
+      align-items:flex-start;
+    }
+    .meet .imgWrap img{
+      width:520px;
+      max-width:none;
+      display:block;
+      opacity:0;
+    }
+    .meet.visible .imgWrap img{
+      animation:fadeSlideIn 1.4s ease .3s forwards;
+    }
+    @keyframes fadeSlideIn{
+      from{opacity:0;transform:translateX(30px)}
+      to{opacity:1;transform:translateX(0)}
+    }
+    @media(max-width:900px){
+      .meetGrid{grid-template-columns:1fr}
+      .meet .imgWrap{order:-1;justify-content:center;height:400px}
+      .meet .imgWrap img{width:400px;max-width:100%}
+      .meet .textContent{padding-bottom:40px}
+    }
+
+    /* ========== TESTIMONIAL SLIDER ========== */
+    .testimonials{
+      background:var(--navy);
+      padding:60px 0;
+      text-align:center;
+      color:#fff;
+    }
+    .testimonials .quoteIcon{
+      font-size:80px;
+      font-family:Georgia,serif;
+      line-height:1;
+      opacity:.4;
+      margin-bottom:10px;
+    }
+    .testimonialSlider{
+      position:relative;
+      min-height:180px;
+      max-width:900px;
+      margin:0 auto 20px;
+    }
+    .testimonialSlide{
+      position:absolute;
+      inset:0;
+      opacity:0;
+      transform:translateY(15px);
+      transition:opacity .6s ease, transform .6s ease;
+      pointer-events:none;
+    }
+    .testimonialSlide.active{
+      opacity:1;
+      transform:translateY(0);
+      pointer-events:auto;
+      position:relative;
+    }
+    .testimonialSlide blockquote{
+      font-family:"Playfair Display",serif;
+      font-size:clamp(16px,2vw,20px);
+      font-style:italic;
+      line-height:1.7;
+      margin-bottom:20px;
+    }
+    .testimonialSlide .author{
+      font-weight:600;
+      letter-spacing:.1em;
+      font-size:14px;
+    }
+    .testimonialWrap{
+      position:relative;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .testimonialArrow{
+      background:none;
+      border:1px solid rgba(255,255,255,.2);
+      color:rgba(255,255,255,.4);
+      font-size:32px;
+      width:48px;
+      height:48px;
+      border-radius:50%;
+      cursor:pointer;
+      flex-shrink:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      transition:all .3s ease;
+      animation:arrowBreathe 3s ease-in-out infinite;
+      font-family:system-ui,sans-serif;
+      line-height:1;
+      padding:0 0 2px 0;
+    }
+    .testimonialArrow.left{
+      animation-delay:0s;
+    }
+    .testimonialArrow.right{
+      animation-delay:1.5s;
+    }
+    @keyframes arrowBreathe{
+      0%,100%{opacity:.4;transform:scale(1)}
+      50%{opacity:.7;transform:scale(1.08)}
+    }
+    .testimonialArrow:hover{
+      border-color:rgba(255,255,255,.6);
+      color:#fff;
+      background:rgba(255,255,255,.1);
+      animation:none;
+      opacity:1;
+      transform:scale(1.1);
+    }
+    @media(max-width:600px){
+      .testimonialArrow{
+        width:36px;height:36px;
+        font-size:24px;
+      }
+    }
+    .testimonials .dots{
+      display:flex;
+      justify-content:center;
+      gap:10px;
+      margin-top:24px;
+    }
+    .testimonials .dot{
+      width:12px;height:12px;
+      border-radius:50%;
+      border:1px solid rgba(255,255,255,.5);
+      background:transparent;
+      cursor:pointer;
+      transition:all .3s ease;
+    }
+    .testimonials .dot:hover{
+      border-color:#fff;
+      background:rgba(255,255,255,.3);
+    }
+    .testimonials .dot.active{
+      background:#fff;
+      transform:scale(1.2);
+    }
+
+    /* ========== JOURNEY / NEWSLETTER ========== */
+    .journey{
+      position:relative;
+      min-height:500px;
+      overflow:hidden;
+      margin-top:0;
+    }
+    .journey .bgVid{
+      width:100%;height:100%;
+      position:absolute;inset:0;
+      object-fit:cover;
+    }
+    .journey .signupBox{
+      position:relative;z-index:2;
+      max-width:500px;
+      margin:0;
+      margin-left:auto;
+      margin-right:10%;
+      margin-top:80px;
+      margin-bottom:80px;
+      background:rgba(255,255,255,.92);
+      backdrop-filter:blur(10px);
+      -webkit-backdrop-filter:blur(10px);
+      padding:40px;
+      border-radius:8px;
+      box-shadow:0 20px 50px rgba(0,0,0,.15);
+      opacity:0;
+      transform:translateX(60px);
+      transition:opacity .8s ease, transform .8s cubic-bezier(.175,.885,.32,1.275);
+    }
+    .journey.visible .signupBox{
+      opacity:1;
+      transform:translateX(0);
+    }
+    .journey h3{
+      font-family:"Playfair Display",serif;
+      font-size:28px;
+      font-weight:500;
+      margin-bottom:16px;
+    }
+    .journey p{
+      font-size:14px;
+      color:#333;
+      line-height:1.7;
+      margin-bottom:20px;
+    }
+    .journey form{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+    .journey input{
+      padding:14px 16px;
+      border:1px solid #ccc;
+      border-radius:4px;
+      font-size:14px;
+      transition:border-color .3s ease, box-shadow .3s ease;
+    }
+    .journey input:focus{
+      outline:none;
+      border-color:var(--teal);
+      box-shadow:0 0 0 3px rgba(91,168,178,.15);
+    }
+    .journey .btn{
+      margin-top:8px;
+      transition:all .3s ease;
+    }
+    .journey .btn:hover{
+      background:var(--navy);
+      transform:translateY(-2px);
+      box-shadow:0 8px 25px rgba(0,0,0,.3);
+    }
+    @media(max-width:700px){
+      .journey .signupBox{
+        margin:40px auto;
+        max-width:calc(100% - 40px);
+      }
+    }
+
+    /* ========== FLOATING CTA ========== */
+    .floatingCta{
+      position:fixed;
+      right:20px;bottom:20px;
+      width:120px;height:120px;
+      border-radius:50%;
+      background:linear-gradient(135deg,#0b0b0b,#1a1a1a);
+      color:var(--taupe);
+      display:flex;align-items:center;justify-content:center;
+      text-align:center;
+      z-index:999;
+      box-shadow:0 10px 30px rgba(0,0,0,.3);
+      border:1px solid rgba(255,255,255,.1);
+      transition:all .3s cubic-bezier(.175,.885,.32,1.275);
+      cursor:pointer;
+      animation:floatBounce 3s ease-in-out infinite;
+      user-select:none;
+      -webkit-user-select:none;
+    }
+    @keyframes floatBounce{
+      0%,100%{transform:translateY(0)}
+      50%{transform:translateY(-8px)}
+    }
+    .floatingCta:hover{
+      transform:scale(1.1) translateY(-4px);
+      box-shadow:0 20px 50px rgba(91,168,178,.4), 0 0 30px rgba(91,168,178,.3);
+      background:linear-gradient(135deg,var(--navy),#1e3a5f);
+      border-color:var(--teal);
+      color:#fff;
+      animation:none;
+    }
+    .floatingCta::after{
+      content:'';
+      position:absolute;
+      inset:0;
+      border-radius:50%;
+      background:radial-gradient(circle at 30% 30%, rgba(255,255,255,.15), transparent);
+    }
+    .floatingCta span{
+      font-size:13px;
+      font-weight:900;
+      letter-spacing:.1em;
+      line-height:1.2;
+      position:relative;
+      z-index:1;
+      transition:transform .3s;
+    }
+    .floatingCta:hover span{
+      transform:scale(1.05);
+    }
+    /* Pulse ring effect */
+    .floatingCta .pulse{
+      position:absolute;
+      inset:0;
+      border-radius:50%;
+      border:2px solid var(--teal);
+      animation:pulseRing 2s ease-out infinite;
+    }
+    @keyframes pulseRing{
+      0%{transform:scale(1);opacity:.6}
+      100%{transform:scale(1.5);opacity:0}
+    }
+    @media(max-width:600px){
+      .floatingCta{width:100px;height:100px;right:14px;bottom:14px}
+      .floatingCta span{font-size:11px}
+    }
+
+    /* ========== GUIDED QUIZ MODAL ========== */
+    .quizOverlay{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.85);
+      z-index:10000;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      opacity:0;
+      transition:opacity .3s ease;
+    }
+    .quizOverlay.active{
+      display:flex;
+      opacity:1;
+    }
+    .quizModal{
+      background:#fff;
+      border-radius:16px;
+      max-width:600px;
+      width:100%;
+      max-height:90vh;
+      overflow-y:auto;
+      position:relative;
+      box-shadow:0 25px 80px rgba(0,0,0,.5);
+      animation:modalPop .4s cubic-bezier(.175,.885,.32,1.275);
+    }
+    @keyframes modalPop{
+      from{opacity:0;transform:scale(.9) translateY(20px)}
+      to{opacity:1;transform:scale(1) translateY(0)}
+    }
+    .quizClose{
+      position:absolute;
+      top:16px;right:16px;
+      width:36px;height:36px;
+      border:none;
+      background:rgba(255,255,255,.15);
+      border-radius:50%;
+      font-size:20px;
+      cursor:pointer;
+      display:flex;align-items:center;justify-content:center;
+      transition:all .2s;
+      color:#fff;
+    }
+    .quizClose:hover{background:rgba(255,255,255,.25);transform:rotate(90deg)}
+    .quizHeader{
+      background:var(--navy);
+      color:#fff;
+      padding:40px 40px 30px;
+      text-align:center;
+      border-radius:16px 16px 0 0;
+      position:relative;
+      overflow:hidden;
+    }
+    .quizHeader::before{
+      content:'';
+      position:absolute;
+      top:-50%;left:-50%;
+      width:200%;height:200%;
+      background:radial-gradient(circle,rgba(91,168,178,.15) 0%,transparent 60%);
+      animation:pulse 4s ease-in-out infinite;
+    }
+    @keyframes pulse{
+      0%,100%{transform:scale(1);opacity:.5}
+      50%{transform:scale(1.1);opacity:.8}
+    }
+    .quizHeader .lotus{
+      width:50px;
+      margin:0 auto 12px;
+      filter:brightness(1.2);
+      position:relative;
+      animation:float 3s ease-in-out infinite;
+    }
+    @keyframes float{
+      0%,100%{transform:translateY(0)}
+      50%{transform:translateY(-8px)}
+    }
+    .quizHeader h2{
+      font-family:"Playfair Display",serif;
+      font-size:28px;
+      font-weight:500;
+      margin-bottom:8px;
+      position:relative;
+    }
+    .quizHeader p{
+      opacity:.8;
+      font-size:14px;
+      position:relative;
+    }
+    .quizProgress{
+      display:flex;
+      gap:6px;
+      justify-content:center;
+      padding:20px;
+      background:#f8f7f5;
+    }
+    .quizProgress .dot{
+      width:10px;height:10px;
+      border-radius:50%;
+      background:#ddd;
+      transition:all .3s cubic-bezier(.175,.885,.32,1.275);
+    }
+    .quizProgress .dot.active{
+      background:var(--teal);
+      transform:scale(1.3);
+      box-shadow:0 0 0 4px rgba(91,168,178,.2);
+    }
+    .quizProgress .dot.done{
+      background:var(--taupe);
+      animation:dotPop .3s ease;
+    }
+    @keyframes dotPop{
+      0%{transform:scale(1)}
+      50%{transform:scale(1.5)}
+      100%{transform:scale(1)}
+    }
+    .quizBody{
+      padding:30px 40px 40px;
+    }
+    .quizStep{
+      display:none;
+    }
+    .quizStep.active{
+      display:block;
+      animation:stepSlide .4s ease;
+    }
+    @keyframes stepSlide{
+      from{opacity:0;transform:translateX(30px)}
+      to{opacity:1;transform:translateX(0)}
+    }
+    @keyframes fadeIn{
+      from{opacity:0;transform:translateY(10px)}
+      to{opacity:1;transform:translateY(0)}
+    }
+    .quizStep h3{
+      font-size:20px;
+      font-weight:700;
+      margin-bottom:8px;
+      color:var(--navy);
+    }
+    .quizStep .subtitle{
+      color:#666;
+      font-size:14px;
+      margin-bottom:24px;
+    }
+    .quizOptions{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+    .quizOption{
+      padding:16px 20px;
+      border:2px solid #e5e5e5;
+      border-radius:12px;
+      cursor:pointer;
+      transition:all .25s cubic-bezier(.175,.885,.32,1.275);
+      display:flex;
+      align-items:center;
+      gap:14px;
+      position:relative;
+      overflow:hidden;
+    }
+    .quizOption::before{
+      content:'';
+      position:absolute;
+      inset:0;
+      background:linear-gradient(135deg,rgba(91,168,178,.1),rgba(91,168,178,0));
+      opacity:0;
+      transition:opacity .3s;
+    }
+    .quizOption:hover{
+      border-color:var(--teal);
+      transform:translateX(8px);
+    }
+    .quizOption:hover::before{opacity:1}
+    .quizOption:hover .icon{
+      transform:scale(1.15) rotate(5deg);
+    }
+    .quizOption.selected{
+      border-color:var(--teal);
+      background:rgba(91,168,178,.08);
+      transform:translateX(8px);
+      box-shadow:0 4px 20px rgba(91,168,178,.2);
+    }
+    .quizOption.selected::after{
+      content:'✓';
+      position:absolute;
+      right:16px;
+      width:24px;height:24px;
+      background:var(--teal);
+      color:#fff;
+      border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      font-size:12px;
+      font-weight:bold;
+      animation:checkPop .3s cubic-bezier(.175,.885,.32,1.275);
+    }
+    @keyframes checkPop{
+      from{transform:scale(0) rotate(-180deg)}
+      to{transform:scale(1) rotate(0)}
+    }
+    .quizOption .icon{
+      width:40px;height:40px;
+      background:linear-gradient(135deg,#e8f6f8,#d0eef2);
+      border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      font-size:18px;
+      flex-shrink:0;
+      transition:transform .3s cubic-bezier(.175,.885,.32,1.275);
+    }
+    .quizOption .text{
+      flex:1;
+    }
+    .quizOption .text strong{
+      display:block;
+      font-size:15px;
+      margin-bottom:2px;
+    }
+    .quizOption .text span{
+      font-size:13px;
+      color:#777;
+    }
+    .quizNav{
+      display:flex;
+      gap:12px;
+      margin-top:30px;
+    }
+    .quizNav .btn{
+      flex:1;
+      justify-content:center;
+      position:relative;
+      overflow:hidden;
+    }
+    .quizNav .btn::after{
+      content:'';
+      position:absolute;
+      inset:0;
+      background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);
+      transform:translateX(-100%);
+    }
+    .quizNav .btn:hover::after{
+      animation:shimmer .6s ease;
+    }
+    @keyframes shimmer{
+      to{transform:translateX(100%)}
+    }
+    .quizNav .btn.secondary{
+      background:#f0f0f0;
+      color:#333;
+      border-color:#ddd;
+    }
+    @keyframes shake{
+      0%,100%{transform:translateX(0)}
+      25%{transform:translateX(-8px)}
+      75%{transform:translateX(8px)}
+    }
+    /* Results */
+    .quizResults{
+      text-align:center;
+    }
+    .quizResults .profile{
+      width:100px;height:100px;
+      border-radius:50%;
+      background:linear-gradient(135deg,var(--teal),#3d8a94);
+      color:#fff;
+      display:flex;align-items:center;justify-content:center;
+      margin:0 auto 20px;
+      font-size:36px;
+      animation:profilePop .6s cubic-bezier(.175,.885,.32,1.275);
+      box-shadow:0 10px 40px rgba(91,168,178,.3);
+      position:relative;
+    }
+    .quizResults .profile::before{
+      content:'';
+      position:absolute;
+      inset:-4px;
+      border-radius:50%;
+      background:linear-gradient(135deg,var(--teal),var(--taupe));
+      z-index:-1;
+      animation:spin 8s linear infinite;
+    }
+    @keyframes profilePop{
+      from{transform:scale(0) rotate(-180deg);opacity:0}
+      to{transform:scale(1) rotate(0);opacity:1}
+    }
+    @keyframes spin{
+      to{transform:rotate(360deg)}
+    }
+    .quizResults h3{
+      font-family:"Playfair Display",serif;
+      font-size:26px;
+      color:var(--navy);
+      margin-bottom:8px;
+      animation:fadeUp .5s ease .2s both;
+    }
+    .quizResults .type{
+      color:var(--teal);
+      font-weight:700;
+      font-size:14px;
+      letter-spacing:.1em;
+      text-transform:uppercase;
+      margin-bottom:16px;
+      animation:fadeUp .5s ease .3s both;
+    }
+    .quizResults p{
+      color:#555;
+      line-height:1.7;
+      margin-bottom:24px;
+      animation:fadeUp .5s ease .4s both;
+    }
+    @keyframes fadeUp{
+      from{opacity:0;transform:translateY(15px)}
+      to{opacity:1;transform:translateY(0)}
+    }
+    .recommendations{
+      text-align:left;
+      background:#f8f7f5;
+      border-radius:12px;
+      padding:24px;
+      margin-bottom:24px;
+      animation:fadeUp .5s ease .5s both;
+    }
+    .recommendations h4{
+      font-size:14px;
+      font-weight:700;
+      color:var(--navy);
+      margin-bottom:16px;
+      text-transform:uppercase;
+      letter-spacing:.05em;
+    }
+    .recItem{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      padding:12px 0;
+      border-bottom:1px solid #e5e5e5;
+      animation:recSlide .4s ease both;
+      transition:transform .2s;
+    }
+    .recItem:nth-child(1){animation-delay:.6s}
+    .recItem:nth-child(2){animation-delay:.7s}
+    .recItem:nth-child(3){animation-delay:.8s}
+    @keyframes recSlide{
+      from{opacity:0;transform:translateX(-20px)}
+      to{opacity:1;transform:translateX(0)}
+    }
+    .recItem:hover{transform:translateX(5px)}
+    .recItem:last-child{border:none}
+    .recItem .recIcon{
+      width:48px;height:48px;
+      border-radius:10px;
+      background:var(--navy);
+      color:var(--taupe);
+      display:flex;align-items:center;justify-content:center;
+      font-size:20px;
+      flex-shrink:0;
+      transition:transform .3s;
+    }
+    .recItem:hover .recIcon{transform:scale(1.1) rotate(5deg)}
+    .recItem .recText{
+      flex:1;
+    }
+    .recItem .recText strong{
+      display:block;
+      font-size:14px;
+      margin-bottom:2px;
+    }
+    .recItem .recText span{
+      font-size:12px;
+      color:#888;
+    }
+    .recItem .recTag{
+      background:var(--teal);
+      color:#fff;
+      font-size:10px;
+      padding:4px 10px;
+      border-radius:20px;
+      font-weight:700;
+      animation:tagPulse 2s ease-in-out infinite;
+    }
+    .recItem:first-child .recTag{
+      background:linear-gradient(135deg,#e8b923,#d4a520);
+    }
+    @keyframes tagPulse{
+      0%,100%{transform:scale(1)}
+      50%{transform:scale(1.05)}
+    }
+
+    /* ========== FOOTER ========== */
+    footer{
+      background:#111;
+      color:#fff;
+      padding:40px 20px;
+      text-align:center;
+      font-size:13px;
+    }
+    footer a{color:var(--teal)}
+  </style>
+</head>
+
+<body>
+
+  <!-- Social bar -->
+  <div class="topBar">
+    <a href="#" aria-label="Facebook">f</a>
+    <a href="#" aria-label="X/Twitter">𝕏</a>
+    <a href="#" aria-label="Instagram">◎</a>
+    <a href="#" aria-label="LinkedIn">in</a>
+  </div>
+
+  <!-- NAV -->
+  <header class="nav">
+    <div class="wrap">
+      <div class="row">
+        <a class="brand" href="#">
+          <img src="assets/images/qp-logo.png" alt="Quantum Physician - Empowering Health">
+        </a>
+
+        <nav class="menu">
+          <a href="#">Home</a>
+          <a href="#explore">Explore</a>
+          <a href="#sessions">1 on 1 Sessions</a>
+          <a href="#academy">Academy</a>
+          <a href="#contact">Contact</a>
+          <a href="#signup">Sign Up</a>
+          <a href="#login">Login</a>
+          <a href="#cart" class="cart">🛒</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero">
+    <video autoplay muted loop playsinline>
+      <source src="assets/videos/Tracey-Scarf-Flow-1.mp4" type="video/mp4">
+    </video>
+    <div class="content">
+      <h1>A New Approach to Healthcare — Where Science Meets Possibility</h1>
+      <div class="tagline">
+        Change your <span class="rotating-word">
+          <span class="word active">perspective.</span>
+          <span class="word">health.</span>
+          <span class="word">life.</span>
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- OBSTACLE OR OPPORTUNITY -->
+  <section class="obstacle" id="explore">
+    <div class="imgSide">
+      <img src="assets/images/Tracey-Treament-Table.png" alt="Dr. Tracey Clark providing treatment">
+    </div>
+    <div class="textSide">
+      <div>
+        <h2>Obstacle or Opportunity?</h2>
+        <p class="lead">At Quantum Physician, we help you see health challenges differently.</p>
+        <p>By understanding how your thoughts, beliefs, and biology interact, you can turn setbacks into opportunities for healing and growth.</p>
+        <p class="tagline">Let Us Be Your First Support, Not Your Last Resort</p>
+        <a class="btn dark" href="#sessions">GET STARTED</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- QUOTE BAR -->
+  <div class="quoteBar">
+    <div class="quoteTrack">
+      <div class="quoteSlide">
+        <span class="quoteSep">✦</span>
+        <span>"Your skills are unprecedented and necessary!!! The world NEEDS what you offer. Thank you, thank you, thank you!!"</span>
+        <span class="quoteAuthor">— A.S.</span>
+        <span class="quoteSep">✦</span>
+        <span>"A most extraordinary experience, beyond the comprehensive and wonderful information."</span>
+        <span class="quoteAuthor">— T.A.</span>
+        <span class="quoteSep">✦</span>
+        <span>"You bring such clarity and integrity to this work."</span>
+        <span class="quoteAuthor">— T.A.</span>
+        <span class="quoteSep">✦</span>
+        <span>"This has truly changed the way I see my health and my life."</span>
+        <span class="quoteAuthor">— K.M.</span>
+      </div>
+      <div class="quoteSlide" aria-hidden="true">
+        <span class="quoteSep">✦</span>
+        <span>"Your skills are unprecedented and necessary!!! The world NEEDS what you offer. Thank you, thank you, thank you!!"</span>
+        <span class="quoteAuthor">— A.S.</span>
+        <span class="quoteSep">✦</span>
+        <span>"A most extraordinary experience, beyond the comprehensive and wonderful information."</span>
+        <span class="quoteAuthor">— T.A.</span>
+        <span class="quoteSep">✦</span>
+        <span>"You bring such clarity and integrity to this work."</span>
+        <span class="quoteAuthor">— T.A.</span>
+        <span class="quoteSep">✦</span>
+        <span>"This has truly changed the way I see my health and my life."</span>
+        <span class="quoteAuthor">— K.M.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3 CARDS -->
+  <section class="cardsSection" id="sessions">
+    <div class="wrap">
+      <div class="cardsGrid">
+
+        <article class="card">
+          <div class="imgFrame">
+            <img src="assets/images/Self-Hope.png" alt="Self-H.O.P.E Courses">
+          </div>
+          <h3>Self-H.O.P.E Courses</h3>
+          <p>Five self-paced courses. One goal — a healthier, more balanced you. Change your mind, your health, and your life one module at a time</p>
+          <a class="btn taupe" href="#">GET STARTED</a>
+        </article>
+
+        <article class="card">
+          <div class="imgFrame">
+            <img src="assets/images/1-on-1.png" alt="One-on-one Sessions">
+          </div>
+          <h3>One-on-one Sessions</h3>
+          <p>Personalized one-on-one sessions designed to help you address unresolved symptoms, promote natural healing, and achieve lasting well-being.</p>
+          <a class="btn taupe" href="#">BOOK NOW</a>
+        </article>
+
+        <article class="card">
+          <div class="imgFrame">
+            <img src="assets/images/Advanced-Training.png" alt="Advanced Training">
+          </div>
+          <h3>Advanced Training &amp; Certification</h3>
+          <p>Dive into The BodyTalk System to build a thriving healthcare practice with our comprehensive training and student development program.</p>
+          <a class="btn taupe" href="#">EXPLORE</a>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- SCARF / HOPE PANEL -->
+  <section class="scarfPanel" id="academy">
+    <img class="bgImg" src="assets/images/Scarf.jpg" alt="" style="display:none">
+    <video class="bgVid" muted loop playsinline preload="none" poster="Scarf.jpg">
+      <source src="assets/videos/Scarf-slow-flow.mp4" type="video/mp4">
+    </video>
+    <div class="box">
+      <img class="hopeLogo" src="assets/images/Quantum_Hope_Logo_Full_Colour.png" alt="H.O.P.E - Health Observation Potential Empowerment">
+      <p><strong>The Quantum Physician path is a journey of self-development grounded in the 4 pillars of H.O.P.E.—Health, Observation, Potential, and Empowerment.</strong></p>
+      <p>This unique approach blends practical strategies with quantum insights to help you recognize your inner potential and make empowered choices that support real, lasting transformation. By integrating quantum concepts into everyday life, you can activate the healing power of the mind and experience significant breakthroughs—quantum leaps—in your physical, mental, and emotional well-being.</p>
+      <a class="btn outline" href="#">LEARN MORE</a>
+    </div>
+  </section>
+
+  <!-- HOPE CIRCLES -->
+  <section class="hopeSection">
+    <div class="wrap">
+      <div class="hopeGrid">
+
+        <div class="hopeItem">
+          <div class="flip">
+            <div class="flipInner">
+              <div class="flipFace front">
+                <img src="assets/images/lotus-hand.png" alt="">
+              </div>
+              <div class="flipFace back">
+                <span class="letter">H</span>
+              </div>
+            </div>
+          </div>
+          <div class="label">Health</div>
+          <a class="btn taupe" href="#">Learn More</a>
+        </div>
+
+        <div class="hopeItem">
+          <div class="flip">
+            <div class="flipInner">
+              <div class="flipFace front">
+                <img src="assets/images/lotus-hand.png" alt="">
+              </div>
+              <div class="flipFace back">
+                <span class="letter">O</span>
+              </div>
+            </div>
+          </div>
+          <div class="label">Observation</div>
+          <a class="btn taupe" href="#">Learn More</a>
+        </div>
+
+        <div class="hopeItem">
+          <div class="flip">
+            <div class="flipInner">
+              <div class="flipFace front">
+                <img src="assets/images/lotus-hand.png" alt="">
+              </div>
+              <div class="flipFace back">
+                <span class="letter">P</span>
+              </div>
+            </div>
+          </div>
+          <div class="label">Potential</div>
+          <a class="btn taupe" href="#">Learn More</a>
+        </div>
+
+        <div class="hopeItem">
+          <div class="flip">
+            <div class="flipInner">
+              <div class="flipFace front">
+                <img src="assets/images/lotus-hand.png" alt="">
+              </div>
+              <div class="flipFace back">
+                <span class="letter">E</span>
+              </div>
+            </div>
+          </div>
+          <div class="label">Empowerment</div>
+          <a class="btn taupe" href="#">Learn More</a>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- MEET DR CLARK -->
+  <section class="meet" id="contact">
+    <div class="wrap">
+      <div class="topBar"></div>
+      <div class="meetGrid">
+        <div class="textContent">
+          <h2>Meet Dr. Clark</h2>
+          <p>With a Doctorate &amp; PhD in Integrative Medicine, a diploma in manual osteopathy, and numerous advanced certifications in holistic healthcare, I blend ancient wisdom with modern science to help to transform lives. I've helped thousands of people discover health and healing within, and with decades of experience in the healthcare industry, I've had the opportunity to work with a wide range of dis-ease.</p>
+          <p>As a Senior BodyTalk Instructor, I travel globally, sharing my knowledge to train practitioners and instructors. My mission is to empower you to unlock your full potential, enhancing physical, mental, emotional, and even financial well-being.</p>
+          <p>If you're ready to activate your inner physician and live a balanced, vibrant life, you're in the right place!</p>
+          <a class="btn taupe" href="#">ABOUT TRACEY</a>
+        </div>
+        <div class="imgWrap">
+          <img src="assets/images/tracey-about-me.png" alt="Dr. Tracey Clark">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TESTIMONIALS -->
+  <section class="testimonials">
+    <div class="wrap">
+      <div class="quoteIcon">"</div>
+      <div class="testimonialWrap">
+        <button class="testimonialArrow left" onclick="testimonialPrev()" aria-label="Previous testimonial">‹</button>
+        <div class="testimonialSlider">
+        <div class="testimonialSlide active">
+          <blockquote>
+            Your skills are unprecedented and necessary!!! The world NEEDS what you offer. Thank you, thank you, thank you!!
+          </blockquote>
+          <div class="author">A. S.</div>
+        </div>
+        <div class="testimonialSlide">
+          <blockquote>
+            Thank you for class, your work ethic and understanding of the energetic dynamics. It was a most extraordinary experience, beyond the comprehensive and wonderful information. You bring such clarity and integrity to this work, which are the values that attracted me to BodyTalk to begin with.
+          </blockquote>
+          <div class="author">T. A.</div>
+        </div>
+        <div class="testimonialSlide">
+          <blockquote>
+            Dr. Clark has a rare gift — she makes complex concepts feel accessible and empowering. After just one session, I felt a shift I hadn't experienced in years of traditional treatment.
+          </blockquote>
+          <div class="author">K. M.</div>
+        </div>
+        <div class="testimonialSlide">
+          <blockquote>
+            This has truly changed the way I see my health and my life. I now understand that healing isn't just physical — it's a whole-person experience.
+          </blockquote>
+          <div class="author">R. J.</div>
+        </div>
+      </div>
+        <button class="testimonialArrow right" onclick="testimonialNext()" aria-label="Next testimonial">›</button>
+      </div>
+      <div class="dots" id="testimonialDots">
+        <span class="dot active" data-index="0"></span>
+        <span class="dot" data-index="1"></span>
+        <span class="dot" data-index="2"></span>
+        <span class="dot" data-index="3"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- JOURNEY / NEWSLETTER -->
+  <section class="journey">
+    <video class="bgVid" muted loop playsinline preload="none" poster="journey.jpg">
+      <source src="assets/videos/Field-Walking.mp4" type="video/mp4">
+    </video>
+    <div class="signupBox">
+      <h3>Journey with Dr Tracey Clark</h3>
+      <p>Join our Quantum Community for free to watch our 'Quantum Pause' Course and to receive uplifting content, health tips, exclusive insights, and early access to new launches and special offers—all delivered straight to your inbox.</p>
+      <form>
+        <input type="text" placeholder="First name">
+        <input type="text" placeholder="Last name">
+        <input type="email" placeholder="Email address">
+        <button class="btn dark" type="submit">SIGN UP NOW ›</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- FLOATING CTA -->
+  <div class="floatingCta" onclick="openQuiz()">
+    <div class="pulse"></div>
+    <span>DISCOVER<br>YOUR<br>PATH</span>
+  </div>
+
+  <!-- GUIDED QUIZ MODAL -->
+  <div class="quizOverlay" id="quizOverlay" onclick="if(event.target===this)closeQuiz()">
+    <div class="quizModal">
+      <button class="quizClose" onclick="closeQuiz()">✕</button>
+      
+      <div class="quizHeader">
+        <img class="lotus" src="assets/images/lotus-hand.png" alt="">
+        <h2>Discover Your Path</h2>
+        <p>Answer a few questions to get personalized recommendations</p>
+      </div>
+      
+      <div class="quizProgress">
+        <div class="dot active" data-step="1"></div>
+        <div class="dot" data-step="2"></div>
+        <div class="dot" data-step="3"></div>
+        <div class="dot" data-step="4"></div>
+      </div>
+      
+      <div class="quizBody">
+        <!-- Step 1: Primary Goal -->
+        <div class="quizStep active" data-step="1">
+          <h3>What brings you here today?</h3>
+          <p class="subtitle">Select the option that resonates most with you</p>
+          <div class="quizOptions">
+            <div class="quizOption" data-value="healing" onclick="selectOption(this)">
+              <div class="icon">🌱</div>
+              <div class="text">
+                <strong>I'm seeking healing</strong>
+                <span>Dealing with chronic issues, pain, or health challenges</span>
+              </div>
+            </div>
+            <div class="quizOption" data-value="growth" onclick="selectOption(this)">
+              <div class="icon">✨</div>
+              <div class="text">
+                <strong>I want personal growth</strong>
+                <span>Looking to unlock potential and transform my life</span>
+              </div>
+            </div>
+            <div class="quizOption" data-value="professional" onclick="selectOption(this)">
+              <div class="icon">🎓</div>
+              <div class="text">
+                <strong>I'm a healthcare professional</strong>
+                <span>Want to expand my practice with new modalities</span>
+              </div>
+            </div>
+            <div class="quizOption" data-value="curious" onclick="selectOption(this)">
+              <div class="icon">🔍</div>
+              <div class="text">
+                <strong>I'm just exploring</strong>
+                <span>Curious about quantum health and want to learn more</span>
+              </div>
+            </div>
+          </div>
+          <div class="quizNav">
+            <button class="btn dark" onclick="nextStep()">Continue →</button>
+          </div>
+        </div>
+
+        <!-- Step 2: Current State -->
+        <div class="quizStep" data-step="2">
+          <h3>How would you describe your current state?</h3>
+          <p class="subtitle">Be honest — this helps us personalize your journey</p>
+          <div class="quizOptions">
+            <div class="quizOption" data-value="overwhelmed" onclick="selectOption(this)">
+              <div class="icon">😓</div>
+              <div class="text">
+                <strong>Overwhelmed & stuck</strong>
+                <span>Feeling like nothing is working, need a breakthrough</span>
+              </div>
+            </div>
+            <div class="quizOption" data-value="ready" onclick="selectOption(this)">
+              <div class="icon">💪</div>
+              <div class="text">
+                <strong>Ready for change</strong>
+                <span>Motivated and looking for the right approach</span>
+              </div>
+            </div>
+            <div class="quizOption" data-value="maintaining" onclick="selectOption(this)">
+              <div class="icon">⚖️</div>
+              <div class="text">
+                <strong>Good, but want better</strong>
+                <span>Life is okay, but I know there's more potential</span>
+              </div>
+            </div>
+            <div class="quizOption" data-value="thriving" onclick="selectOption(this)">
+              <div class="icon">🚀</div>
+              <div class="text">
+                <strong>Thriving & expanding</strong>
+                <span>Doing well, seeking deeper transformation</span>
+              </div>
+            </div>
+          </div>
+          <div class="quizNav">
+            <button class="btn secondary" onclick="prevStep()">← Back</button>
+            <button class="btn dark" onclick="nextStep()">Continue →</button>
+          </div>
+        </div>
+
+        <!-- Step 3: Learning Style -->
+        <div class="quizStep" data-step="3">
+          <h3>How do you prefer to learn?</h3>
+          <p class="subtitle">This helps us recommend the right format for you</p>
+          <div class="quizOptions">
+            <div class="quizOption" data-value="self-paced" onclick="selectOption(this)">
+              <div class="icon">📚</div>
+              <div class="text">
+                <strong>Self-paced courses</strong>
+                <span>Learn on my own schedule, at my own pace</span>
+              </div>
+            </div>
+            <div class="quizOption" data-value="guided" onclick="selectOption(this)">
+              <div class="icon">👤</div>
+              <div class="text">
+                <strong>One-on-one guidance</strong>
+                <span>Personalized sessions with direct support</span>
+              </div>
+            </div>
+            <div class="quizOption" data-value="group" onclick="selectOption(this)">
+              <div class="icon">👥</div>
+              <div class="text">
+                <strong>Group experiences</strong>
+                <span>Learning alongside others in community</span>
+              </div>
+            </div>
+            <div class="quizOption" data-value="hybrid" onclick="selectOption(this)">
+              <div class="icon">🔄</div>
+              <div class="text">
+                <strong>Mix of everything</strong>
+                <span>Combination of self-study and live support</span>
+              </div>
+            </div>
+          </div>
+          <div class="quizNav">
+            <button class="btn secondary" onclick="prevStep()">← Back</button>
+            <button class="btn dark" onclick="nextStep()">Continue →</button>
+          </div>
+        </div>
+
+        <!-- Step 4: Results -->
+        <div class="quizStep" data-step="4">
+          <div class="quizResults">
+            <div class="profile" id="resultIcon">🌟</div>
+            <h3 id="resultTitle">Your Personalized Path</h3>
+            <div class="type" id="resultType">THE TRANSFORMATION SEEKER</div>
+            <p id="resultDesc">Based on your answers, you're ready for deep, meaningful change. You have the motivation and openness to transform your health and life at a fundamental level.</p>
+            
+            <div class="recommendations">
+              <h4>✨ Recommended for You</h4>
+              <div id="recList">
+                <!-- Populated by JS -->
+              </div>
+            </div>
+            
+            <button class="btn dark" onclick="closeQuiz()" style="width:100%">Start Your Journey</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>&copy; 2024 Quantum Physician. All rights reserved.</p>
+  </footer>
+
+  <script>
+    // Rotating words animation
+    const words = document.querySelectorAll('.rotating-word .word');
+    let currentIndex = 0;
+    
+    function rotateWords() {
+      // Remove active class from current word
+      words[currentIndex].classList.remove('active');
+      words[currentIndex].classList.add('exit');
+      
+      // Move to next word
+      currentIndex = (currentIndex + 1) % words.length;
+      
+      // Add active class to new word
+      setTimeout(() => {
+        document.querySelectorAll('.rotating-word .word').forEach(w => w.classList.remove('exit'));
+        words[currentIndex].classList.add('active');
+      }, 300);
+    }
+    
+    // Rotate every 2.5 seconds
+    setInterval(rotateWords, 2500);
+
+    // ========== SCROLL ANIMATIONS ==========
+    const scrollObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          scrollObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.35 });
+
+    // Observe the Meet Dr. Clark section
+    const meetSection = document.querySelector('.meet');
+    if (meetSection) scrollObserver.observe(meetSection);
+
+    // Observe the Cards section
+    const cardsSection = document.querySelector('.cardsSection');
+    if (cardsSection) scrollObserver.observe(cardsSection);
+
+    // Observe the Obstacle section
+    const obstacleSection = document.querySelector('.obstacle');
+    if (obstacleSection) scrollObserver.observe(obstacleSection);
+
+    // Play scarf video when scrolled into view
+    const scarfVid = document.querySelector('.scarfPanel .bgVid');
+    if (scarfVid) {
+      const vidObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            scarfVid.play();
+          } else {
+            scarfVid.pause();
+          }
+        });
+      }, { threshold: 0.1 });
+      vidObserver.observe(document.querySelector('.scarfPanel'));
+    }
+
+    // Observe journey section for signup box animation + video
+    const journeySection = document.querySelector('.journey');
+    if (journeySection) {
+      scrollObserver.observe(journeySection);
+      const journeyVid = journeySection.querySelector('.bgVid');
+      if (journeyVid) {
+        const journeyVidObserver = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              journeyVid.play();
+            } else {
+              journeyVid.pause();
+            }
+          });
+        }, { threshold: 0.1 });
+        journeyVidObserver.observe(journeySection);
+      }
+    }
+
+    // ========== TESTIMONIAL SLIDER ==========
+    const slides = document.querySelectorAll('.testimonialSlide');
+    const dots = document.querySelectorAll('#testimonialDots .dot');
+    let currentSlide = 0;
+    let slideInterval;
+
+    function goToSlide(index) {
+      slides[currentSlide].classList.remove('active');
+      dots[currentSlide].classList.remove('active');
+      currentSlide = index;
+      slides[currentSlide].classList.add('active');
+      dots[currentSlide].classList.add('active');
+    }
+
+    function nextSlide() {
+      goToSlide((currentSlide + 1) % slides.length);
+    }
+
+    // Click dots
+    dots.forEach(dot => {
+      dot.addEventListener('click', () => {
+        clearInterval(slideInterval);
+        goToSlide(parseInt(dot.dataset.index));
+        slideInterval = setInterval(nextSlide, 5000);
+      });
+    });
+
+    // Auto-rotate every 5 seconds
+    slideInterval = setInterval(nextSlide, 5000);
+
+    function testimonialNext() {
+      clearInterval(slideInterval);
+      nextSlide();
+      slideInterval = setInterval(nextSlide, 5000);
+    }
+
+    function testimonialPrev() {
+      clearInterval(slideInterval);
+      goToSlide((currentSlide - 1 + slides.length) % slides.length);
+      slideInterval = setInterval(nextSlide, 5000);
+    }
+
+    // ========== GUIDED QUIZ ==========
+    let quizStep = 1;
+    let quizAnswers = {};
+    
+    function openQuiz() {
+      document.getElementById('quizOverlay').classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+    
+    function closeQuiz() {
+      document.getElementById('quizOverlay').classList.remove('active');
+      document.body.style.overflow = '';
+      // Reset quiz
+      setTimeout(() => {
+        quizStep = 1;
+        quizAnswers = {};
+        updateQuizUI();
+        document.querySelectorAll('.quizOption').forEach(o => o.classList.remove('selected'));
+      }, 300);
+    }
+    
+    function selectOption(el) {
+      // Remove selected from siblings
+      el.parentElement.querySelectorAll('.quizOption').forEach(o => o.classList.remove('selected'));
+      el.classList.add('selected');
+      quizAnswers[quizStep] = el.dataset.value;
+    }
+    
+    function nextStep() {
+      if (!quizAnswers[quizStep]) {
+        // Shake the options to indicate selection needed
+        document.querySelector('.quizStep.active .quizOptions').style.animation = 'shake 0.3s';
+        setTimeout(() => {
+          document.querySelector('.quizStep.active .quizOptions').style.animation = '';
+        }, 300);
+        return;
+      }
+      
+      if (quizStep < 4) {
+        quizStep++;
+        if (quizStep === 4) {
+          generateResults();
+        }
+        updateQuizUI();
+      }
+    }
+    
+    function prevStep() {
+      if (quizStep > 1) {
+        quizStep--;
+        updateQuizUI();
+      }
+    }
+    
+    function updateQuizUI() {
+      // Update steps
+      document.querySelectorAll('.quizStep').forEach(s => {
+        s.classList.remove('active');
+        if (parseInt(s.dataset.step) === quizStep) {
+          s.classList.add('active');
+        }
+      });
+      
+      // Update progress dots
+      document.querySelectorAll('.quizProgress .dot').forEach(d => {
+        const step = parseInt(d.dataset.step);
+        d.classList.remove('active', 'done');
+        if (step === quizStep) d.classList.add('active');
+        if (step < quizStep) d.classList.add('done');
+      });
+    }
+    
+    function generateResults() {
+      const goal = quizAnswers[1];
+      const state = quizAnswers[2];
+      const style = quizAnswers[3];
+      
+      let resultIcon, resultTitle, resultType, resultDesc, recs;
+      
+      // Personalized results based on answers
+      if (goal === 'healing') {
+        resultIcon = '💚';
+        resultType = 'THE HEALING JOURNEY';
+        if (state === 'overwhelmed') {
+          resultTitle = 'Your Breakthrough Awaits';
+          resultDesc = "You've been through a lot, and you're ready for real change. The combination of one-on-one support and foundational courses will help you address root causes and find lasting relief.";
+          recs = [
+            { icon: '👤', title: '1-on-1 BodyTalk Session', desc: 'Start with personalized healing', tag: 'RECOMMENDED' },
+            { icon: '📚', title: 'Breaking Up With Your Beliefs', desc: 'Release what\'s holding you back', tag: 'COURSE' },
+            { icon: '🧘', title: 'Becoming Present', desc: 'Build your foundation of calm', tag: 'COURSE' }
+          ];
+        } else {
+          resultTitle = 'Deepen Your Healing';
+          resultDesc = "You're on the right track and ready to go deeper. A structured approach combining self-paced learning with targeted support will accelerate your progress.";
+          recs = [
+            { icon: '🎁', title: 'Self-H.O.P.E. Bundle', desc: 'Complete transformation program', tag: 'BEST VALUE' },
+            { icon: '👤', title: 'Monthly Session Package', desc: 'Ongoing personalized support', tag: 'POPULAR' },
+            { icon: '🧠', title: 'Creative Mind Mapping', desc: 'Unlock new perspectives', tag: 'COURSE' }
+          ];
+        }
+      } else if (goal === 'growth') {
+        resultIcon = '✨';
+        resultType = 'THE TRANSFORMATION SEEKER';
+        resultTitle = 'Unlock Your Potential';
+        resultDesc = "You're not just looking to fix problems—you want to thrive. Your openness to growth makes you perfect for our transformational courses that blend science with possibility.";
+        recs = [
+          { icon: '🎯', title: 'Quantum Vision Boards', desc: 'Manifest your ideal future', tag: 'START HERE' },
+          { icon: '❓', title: 'Power of the Question', desc: 'Transform through inquiry', tag: 'COURSE' },
+          { icon: '🎁', title: 'Self-H.O.P.E. Bundle', desc: 'Complete journey at 40% off', tag: 'BEST VALUE' }
+        ];
+      } else if (goal === 'professional') {
+        resultIcon = '🎓';
+        resultType = 'THE PRACTITIONER PATH';
+        resultTitle = 'Expand Your Practice';
+        resultDesc = "As a healthcare professional, you understand the power of holistic approaches. Our certification programs will add powerful new modalities to your toolkit.";
+        recs = [
+          { icon: '📜', title: 'BodyTalk Fundamentals', desc: 'Core certification training', tag: 'CERTIFICATION' },
+          { icon: '🔬', title: 'Advanced Practitioner Course', desc: 'Deepen your expertise', tag: 'ADVANCED' },
+          { icon: '👥', title: 'Practitioner Community', desc: 'Network & grow together', tag: 'MEMBERSHIP' }
+        ];
+      } else {
+        resultIcon = '🔮';
+        resultType = 'THE CURIOUS EXPLORER';
+        resultTitle = 'Begin Your Discovery';
+        resultDesc = "Curiosity is the first step to transformation! Start with our foundational content to understand how quantum health works, then decide your path forward.";
+        recs = [
+          { icon: '🆓', title: 'Quantum Pause Course', desc: 'Free intro to our approach', tag: 'FREE' },
+          { icon: '📧', title: 'Join Our Community', desc: 'Weekly insights & tips', tag: 'FREE' },
+          { icon: '📚', title: 'Breaking Up With Your Beliefs', desc: 'Perfect first course', tag: 'POPULAR' }
+        ];
+      }
+      
+      // Update the results UI
+      document.getElementById('resultIcon').textContent = resultIcon;
+      document.getElementById('resultTitle').textContent = resultTitle;
+      document.getElementById('resultType').textContent = resultType;
+      document.getElementById('resultDesc').textContent = resultDesc;
+      
+      // Build recommendations
+      const recList = document.getElementById('recList');
+      recList.innerHTML = recs.map(r => `
+        <div class="recItem">
+          <div class="recIcon">${r.icon}</div>
+          <div class="recText">
+            <strong>${r.title}</strong>
+            <span>${r.desc}</span>
+          </div>
+          <div class="recTag">${r.tag}</div>
+        </div>
+      `).join('');
+    }
+  </script>
+
+</body>
+</html>
