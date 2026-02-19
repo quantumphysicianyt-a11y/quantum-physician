@@ -78,6 +78,46 @@
       .hero-features { gap: 16px; }
       .instructor-card { flex-direction: column; text-align: center; padding: 28px; gap: 20px; }
     }
+    .bundle-layout {
+      display: flex;
+      gap: 32px;
+      align-items: flex-start;
+    }
+    .bundle-img {
+      flex-shrink: 0;
+      width: 320px;
+    }
+    .bundle-img img {
+      width: 100%;
+      border-radius: 12px;
+    }
+    .bundle-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .bundle-pricing {
+      text-align: left;
+    }
+    @media (max-width: 900px) {
+      .bundle-layout {
+        flex-direction: column;
+      }
+      .bundle-img {
+        width: 100%;
+        max-width: 400px;
+        margin: 0 auto;
+      }
+      .bundle-info {
+        text-align: center;
+      }
+      .bundle-info > div:has(a[style*="border-radius:999px"]),
+      .bundle-info > div[style*="flex-wrap"] {
+        justify-content: center;
+      }
+      .bundle-pricing {
+        text-align: center;
+      }
+    }
   </style>
 </head>
 <body class="qa-page">
@@ -223,7 +263,7 @@
               <p class="desc">${c.short_description || c.subtitle || ''}</p>
               <div class="meta">
                 <div class="stats">
-                  ${c.total_lessons ? `<span>📺 ${c.total_lessons} lessons</span>` : ''}
+                  ${c.total_lessons ? `<span>📺 ${c.total_lessons} ${c.total_lessons === 1 ? 'lesson' : 'lessons'}</span>` : ''}
                   ${c.total_duration_minutes ? `<span>⏱ ${formatDuration(c.total_duration_minutes)}</span>` : ''}
                 </div>
                 <div class="price">${formatPrice(c.price_cents)}</div>
@@ -242,22 +282,26 @@
             const individualTotal = all.reduce((sum, c) => sum + (c.price_cents || 0), 0);
             const savings = individualTotal - b.price_cents;
             document.getElementById('bundleContent').innerHTML = `
-              <img src="/assets/images/bundle.jpg" alt="Self-H.O.P.E. Series Bundle" loading="lazy" style="width:100%;border-radius:12px;margin-bottom:28px">
-              <div style="display:flex;align-items:center;gap:40px;flex-wrap:wrap">
-                <div style="flex:1;min-width:280px">
+              <div class="bundle-layout">
+                <div class="bundle-img">
+                  <img src="/assets/images/bundle.jpg" alt="Self-H.O.P.E. Series Bundle" loading="lazy">
+                </div>
+                <div class="bundle-info">
                   <div style="font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#ff6b6b;font-weight:600;margin-bottom:8px">Best Value — Save ${formatPrice(savings)}</div>
                   <h3 style="font-family:'Playfair Display',serif;font-size:28px;margin-bottom:8px">${b.title}</h3>
                   <p style="color:var(--qa-text-muted);font-size:15px;line-height:1.7;margin-bottom:16px">${b.description}</p>
-                  <div style="display:flex;gap:8px;flex-wrap:wrap">
-                    ${all.map(c => `<span style="background:rgba(91,168,178,.1);border:1px solid rgba(91,168,178,.2);padding:4px 12px;border-radius:999px;font-size:12px;color:var(--qa-text-muted)">${c.title.split(':')[0]}</span>`).join('')}
+                  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px">
+                    ${all.map(c => `<a href="/academy/course.html?slug=${c.slug}" style="background:rgba(91,168,178,.1);border:1px solid rgba(91,168,178,.2);padding:6px 14px;border-radius:999px;font-size:12px;color:rgba(255,255,255,.7);text-decoration:none;transition:all .2s" onmouseover="this.style.background='rgba(91,168,178,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(91,168,178,.1)';this.style.color='rgba(255,255,255,.7)'">${c.title.split(':')[0]}</a>`).join('')}
+                  </div>
+                  <div class="bundle-pricing">
+                    <div style="font-size:14px;color:rgba(255,255,255,.4);text-decoration:line-through">$${(individualTotal/100).toFixed(0)} if purchased separately</div>
+                    <div style="font-family:'Playfair Display',serif;font-size:48px;font-weight:700;color:var(--teal,#5ba8b2)">${formatPrice(b.price_cents)}</div>
+                    <div style="font-size:13px;color:var(--qa-text-muted);margin-bottom:16px">for all 5 courses</div>
+                    <a href="/academy/course.html?bundle=${b.slug}" class="qa-btn qa-btn-primary">Get the Bundle</a>
                   </div>
                 </div>
-                <div style="text-align:center;min-width:200px">
-                  <div style="font-size:14px;color:rgba(255,255,255,.4);text-decoration:line-through">$${(individualTotal/100).toFixed(0)} if purchased separately</div>
-                  <div style="font-family:'Playfair Display',serif;font-size:48px;font-weight:700;color:var(--teal,#5ba8b2)">${formatPrice(b.price_cents)}</div>
-                  <div style="font-size:13px;color:var(--qa-text-muted);margin-bottom:16px">for all 5 courses</div>
-                  <a href="/academy/course.html?bundle=${b.slug}" class="qa-btn qa-btn-primary">Get the Bundle</a>
-                </div>
+              </div>
+            `;
               </div>
             `;
           }
