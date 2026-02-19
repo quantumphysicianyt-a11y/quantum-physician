@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Self-H.O.P.E. Series | Quantum Physician</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Shared styles (nav, footer, buttons, colors) -->
+  <link rel="stylesheet" href="/css/shared.css">
+
+  <style>
+    /* ========== PAGE-SPECIFIC STYLES ========== */
+
+    /* ===== HERO ===== */
+    .hero{
+      position:relative;
+      width:100%;
+      min-height:550px;
+      background:#000;
+      overflow:hidden;
+    }
+    .hero video{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      object-position:center 30%;
+    }
+    .hero .bannerWrap{
+      position:absolute;
+      bottom:0;
+      left:0;
+      right:0;
+    }
+    .hero .bannerWrap img{
+      width:100%;
+      height:auto;
+      display:block;
+    }
+
+    /* ===== SECTIONS ===== */
+    .section{
+      padding:46px 18px;
+    }
+    .container{
+      max-width:1220px;
+      margin:0 auto;
+    }
+
+    /* ===== CARD GRID ===== */
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:26px;
+    }
+    .card{
+      background:var(--sage);
+      padding:18px;
+      display:flex;
+      flex-direction:column;
+      border-radius:4px;
+    }
+    .photoFrame{
+      border:6px solid var(--teal);
+      margin-bottom:18px;
+    }
+    .card img.cardImg{
+      width:100%;
+      height:220px;
+      object-fit:cover;
+      display:block;
+    }
+    .card h3{
+      margin:10px 8px 10px;
+      font-family:Playfair Display,serif;
+      font-size:20px;
+      line-height:1.2;
+      font-weight:600;
+      text-align:center;
+      font-style:italic;
+    }
+    .card p{
+      margin:0 10px 16px;
+      text-align:center;
+      color:#222;
+      line-height:1.6;
+      font-size:15px;
+      flex:1;
+    }
+    .card .btnWide{
+      width:100%;
+      height:50px;
+      font-size:13px;
+      letter-spacing:.18em;
+      border-radius:999px;
+      background:var(--taupe);
+      border:none;
+      color:#fff;
+      font-weight:700;
+      text-transform:uppercase;
+      cursor:pointer;
+      transition:all .15s ease;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .card .btnWide:hover{
+      background:#9a8a75;
+      transform:translateY(-1px);
+      box-shadow:0 8px 18px rgba(0,0,0,.12);
+    }
+
+    /* ===== SCARF HOPE PANEL ===== */
+    .scarfPanel{
+      position:relative;
+      min-height:500px;
+      overflow:hidden;
+    }
+    .scarfPanel .bgVid{
+      position:absolute;inset:0;
+      width:100%;height:100%;
+      object-fit:cover;
+    }
+    .scarfPanel .bgImg{
+      position:absolute;inset:0;
+      width:100%;height:100%;
+      object-fit:cover;
+    }
+    .scarfPanel .box{
+      position:relative;z-index:2;
+      max-width:700px;
+      margin:60px auto;
+      background:rgba(19,30,61,.85);
+      padding:40px 50px;
+      text-align:center;
+      color:#fff;
+      border-radius:4px;
+    }
+    .scarfPanel .lotus{
+      width:60px;
+      margin:0 auto 12px;
+      filter:brightness(1.2);
+    }
+    .scarfPanel .hopeLogo{
+      max-width:60%;
+      margin:0 auto 20px;
+      display:block;
+    }
+    .scarfPanel .box p{
+      font-size:15px;
+      line-height:1.8;
+      margin-bottom:14px;
+    }
+    .scarfPanel .box p strong{
+      display:block;
+      margin-bottom:8px;
+    }
+
+    /* ===== HOPE CIRCLES WITH FLIP ===== */
+    .hopeSection{
+      background:#fff;
+      padding:60px 0;
+    }
+    .hopeGrid{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:30px;
+      text-align:center;
+    }
+    .hopeItem{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      height:100%;
+    }
+    .flip{
+      width:180px;
+      height:180px;
+      perspective:1000px;
+      margin-bottom:18px;
+    }
+    .flipInner{
+      width:100%;height:100%;
+      position:relative;
+      transition:transform .7s cubic-bezier(.4,.2,.2,1);
+      transform-style:preserve-3d;
+    }
+    .flip:hover .flipInner{
+      transform:rotateY(180deg);
+    }
+    .flipFace{
+      position:absolute;inset:0;
+      backface-visibility:hidden;
+      border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+    }
+    .flipFace.front{
+      background:linear-gradient(135deg,#e8f6f8,#d0eef2);
+    }
+    .flipFace.front img{
+      width:55%;
+      filter:drop-shadow(0 4px 8px rgba(91,168,178,.2));
+    }
+    .flipFace.back{
+      background:linear-gradient(135deg,var(--navy),#1a2d5a);
+      transform:rotateY(180deg);
+    }
+    .flipFace.back .letter{
+      font-family:Playfair Display,serif;
+      font-size:90px;
+      font-weight:700;
+      color:var(--taupe);
+    }
+    .hopeItem .label{
+      font-weight:700;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      margin-bottom:14px;
+      font-size:13px;
+    }
+
+    /* ===== TESTIMONIAL BAND ===== */
+    .quoteBand{
+      background:var(--navy);
+      color:#fff;
+      padding:50px 18px;
+    }
+    .quoteWrap{
+      max-width:780px;
+      margin:0 auto;
+      text-align:center;
+    }
+    .quoteWrap p{
+      font-family:Playfair Display,serif;
+      font-style:italic;
+      font-size:clamp(15px,2vw,18px);
+      line-height:1.8;
+      margin-bottom:16px;
+    }
+    .sig{
+      font-weight:600;
+      letter-spacing:.1em;
+      font-size:14px;
+      margin-bottom:20px;
+    }
+    .dots{
+      display:flex;justify-content:center;gap:10px;
+    }
+    .dot{
+      width:12px;height:12px;
+      border-radius:50%;
+      border:1px solid rgba(255,255,255,.3);
+      background:transparent;
+      cursor:pointer;
+    }
+    .dot.active{
+      background:rgba(255,255,255,.5);
+    }
+
+    /* ===== JOURNEY / NEWSLETTER ===== */
+    .journey{
+      position:relative;
+      min-height:500px;
+      overflow:hidden;
+    }
+    .journey img.bg{
+      width:100%;height:100%;
+      position:absolute;inset:0;
+      object-fit:cover;
+    }
+    .journey .signupBox{
+      position:absolute;
+      right:8%;
+      top:50%;
+      transform:translateY(-50%);
+      max-width:460px;
+      background:rgba(255,255,255,.92);
+      backdrop-filter:blur(10px);
+      -webkit-backdrop-filter:blur(10px);
+      padding:40px 45px;
+      border-radius:10px;
+      box-shadow:0 20px 50px rgba(0,0,0,.12);
+      text-align:center;
+    }
+    .journey h3{
+      font-family:Playfair Display,serif;
+      font-size:30px;
+      font-weight:500;
+      margin-bottom:18px;
+    }
+    .journey p{
+      font-size:14px;
+      color:#333;
+      line-height:1.7;
+      margin-bottom:24px;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media(max-width:1080px){
+      .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    }
+    @media(max-width:900px){
+      .hopeGrid{grid-template-columns:repeat(2,1fr);gap:20px}
+      .flip{width:140px;height:140px}
+      .flipFace.back .letter{font-size:70px}
+      .scarfPanel .box{margin:30px 16px;padding:30px 24px}
+    }
+    @media(max-width:760px){
+      .grid{grid-template-columns:1fr}
+      .hero{min-height:400px}
+      .journey{min-height:auto}
+      .journey img.bg{position:relative;height:300px}
+      .journey .signupBox{
+        position:relative;
+        right:auto;top:auto;transform:none;
+        max-width:100%;
+        margin:0 18px 40px;
+      }
+    }
+    @media(max-width:500px){
+      .hopeGrid{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Shared header loads here automatically -->
+  <div id="shared-header"></div>
+
+  <!-- HERO -->
+  <section class="hero" aria-label="Self-H.O.P.E. hero">
+    <video autoplay muted loop playsinline preload="metadata">
+      <source src="/assets/videos/Field-Walking.mp4" type="video/mp4">
+    </video>
+    <div class="bannerWrap">
+      <img src="/assets/images/self-hope-banner.png" alt="H.O.P.E - Transformational Self Development Workshop Series" />
+    </div>
+  </section>
+
+  <!-- WORKSHOPS / BUNDLE GRID -->
+  <section class="section" aria-label="Self-H.O.P.E. workshops">
+    <div class="container">
+      <div class="grid">
+
+        <!-- BUNDLE -->
+        <article class="card">
+          <div class="photoFrame">
+            <img class="cardImg" src="/assets/images/bundle.jpg" alt="Self-H.O.P.E. Series Bundle" loading="lazy" />
+          </div>
+          <h3>The Self-H.O.P.E. Transformational Mastery program</h3>
+          <p>The Self-H.O.P.E. Transformational Mastery program is a five-course journey to transform your health, relationships, and life—helping you release limiting beliefs, spark creativity, cultivate stillness, harness the subconscious, and expand possibility for lasting change.</p>
+          <a class="btnWide" href="#">BUY NOW</a>
+        </article>
+
+        <!-- BREAKING UP -->
+        <article class="card">
+          <div class="photoFrame">
+            <img class="cardImg" src="/assets/images/Breaking-Up.jpg" alt="Breaking Up With Your Beliefs" loading="lazy" />
+          </div>
+          <h3>Breaking Up with Your Beliefs</h3>
+          <p>"Breaking Up with Your Beliefs," This 90-minute workshop helps you uncover and shift your relationship to outdated beliefs.<br><br>Using practical tools and the HOPE model, you'll reframe perceptions and open new possibilities for growth.</p>
+          <a class="btnWide" href="#">BUY NOW</a>
+        </article>
+
+        <!-- QUESTION -->
+        <article class="card">
+          <div class="photoFrame">
+            <img class="cardImg" src="/assets/images/Question.jpg" alt="The Power of The Question" loading="lazy" />
+          </div>
+          <h3>The Power of The Question</h3>
+          <p>"The Power of the Question" Explore how intentional questioning can spark creativity and shift limiting habits. Learn simple techniques to challenge assumptions, awaken curiosity, and apply strategies that foster meaningful change in health, relationships, and personal growth.</p>
+          <a class="btnWide" href="#">BUY NOW</a>
+        </article>
+
+        <!-- MIND MAPPING -->
+        <article class="card">
+          <div class="photoFrame">
+            <img class="cardImg" src="/assets/images/Mind-Mapping.jpg" alt="Creative Mind Mapping" loading="lazy" />
+          </div>
+          <h3>Creative Mind Mapping</h3>
+          <p>"Creative Mind Mapping" This workshop introduces mind mapping as a powerful tool to spark creativity, engage whole-brain thinking, and help participants clarify goals, overcome obstacles, and transform perspectives to manifest meaningful change.</p>
+          <a class="btnWide" href="#">BUY NOW</a>
+        </article>
+
+        <!-- PERSONAL POTENTIAL -->
+        <article class="card">
+          <div class="photoFrame">
+            <img class="cardImg" src="/assets/images/Personal-Potential.jpg" alt="Quantum Vision Boards: Unlocking Personal Potential" loading="lazy" />
+          </div>
+          <h3>Quantum Vision Boards: Unlocking Personal Potential</h3>
+          <p>This workshop explores vision boards as a quantum tool to expand possibility, engage the subconscious, and align intention with creativity—helping participants manifest potential and create meaningful shifts in health and life.</p>
+          <a class="btnWide" href="#">BUY NOW</a>
+        </article>
+
+        <!-- BUSY MIND -->
+        <article class="card">
+          <div class="photoFrame">
+            <img class="cardImg" src="/assets/images/Busy-Mind.jpg" alt="Becoming Present: Meditation for the Busy Mind" loading="lazy" />
+          </div>
+          <h3>Becoming Present: Meditation for the Busy Mind</h3>
+          <p>"Becoming Present" This workshop introduces meditation as a practical tool to find stillness amid busyness, cultivating clarity, resilience, and the creative space needed to shift perspectives, reduce stress, and create meaningful change.</p>
+          <a class="btnWide" href="#">BUY NOW</a>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- SCARF / HOPE PANEL -->
+  <section class="scarfPanel" id="hope">
+    <img class="bgImg" src="/assets/images/Scarf.jpg" alt="" loading="lazy">
+    <div class="box">
+      <img class="hopeLogo" src="/assets/images/Quantum_Hope_Logo_Full_Colour.png" alt="H.O.P.E." loading="lazy">
+      <p><strong>The Quantum Physician path is a journey of self-development grounded in the 4 pillars of H.O.P.E.—Health, Observation, Potential, and Empowerment.</strong></p>
+      <p>This unique approach blends practical strategies with quantum insights to help you recognize your inner potential and make empowered choices that support real, lasting transformation. By integrating quantum concepts into everyday life, you can activate the healing power of the mind and experience significant breakthroughs—quantum leaps—in your physical, mental, and emotional well-being.</p>
+      <a class="btn outline" href="#">LEARN MORE</a>
+    </div>
+  </section>
+
+  <!-- HOPE CIRCLES -->
+  <section class="hopeSection">
+    <div class="wrap">
+      <div class="hopeGrid">
+
+        <div class="hopeItem">
+          <div class="flip">
+            <div class="flipInner">
+              <div class="flipFace front"><img src="/assets/images/lotus-hand.png" alt=""></div>
+              <div class="flipFace back"><span class="letter">H</span></div>
+            </div>
+          </div>
+          <div class="label">Health</div>
+          <a class="btn taupe" href="#">Learn More</a>
+        </div>
+
+        <div class="hopeItem">
+          <div class="flip">
+            <div class="flipInner">
+              <div class="flipFace front"><img src="/assets/images/lotus-hand.png" alt=""></div>
+              <div class="flipFace back"><span class="letter">O</span></div>
+            </div>
+          </div>
+          <div class="label">Observation</div>
+          <a class="btn taupe" href="#">Learn More</a>
+        </div>
+
+        <div class="hopeItem">
+          <div class="flip">
+            <div class="flipInner">
+              <div class="flipFace front"><img src="/assets/images/lotus-hand.png" alt=""></div>
+              <div class="flipFace back"><span class="letter">P</span></div>
+            </div>
+          </div>
+          <div class="label">Potential</div>
+          <a class="btn taupe" href="#">Learn More</a>
+        </div>
+
+        <div class="hopeItem">
+          <div class="flip">
+            <div class="flipInner">
+              <div class="flipFace front"><img src="/assets/images/lotus-hand.png" alt=""></div>
+              <div class="flipFace back"><span class="letter">E</span></div>
+            </div>
+          </div>
+          <div class="label">Empowerment</div>
+          <a class="btn taupe" href="#">Learn More</a>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- TESTIMONIAL BAND -->
+  <section class="quoteBand" aria-label="Testimonial">
+    <div class="quoteWrap">
+      <p>
+        I am so grateful to have had the opportunity to attend your Beyond Technique class a few weeks ago. Lively, detailed, and oh so relevant! You are a marvellous presenter with a hugely important message to share. These are life changing communication tools, and I am looking forward to taking more classes with you in the future.
+      </p>
+      <div class="sig">W.V.</div>
+      <div class="dots" aria-hidden="true">
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot active"></span>
+        <span class="dot"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- JOURNEY / NEWSLETTER -->
+  <section class="journey" aria-label="Newsletter signup">
+    <img class="bg" src="/assets/images/journey.jpg" alt="Woman walking through field" loading="lazy" />
+    <div class="signupBox">
+      <h3>Journey with Dr Tracey Clark</h3>
+      <p>Join our Quantum Community for free to watch our 'Quantum Pause' Course and to receive uplifting content, health tips, exclusive insights, and early access to new launches and special offers—all delivered straight to your inbox.</p>
+      <a class="btn dark" href="#">SIGN UP NOW ›</a>
+    </div>
+  </section>
+
+  <!-- Shared footer loads here automatically -->
+  <div id="shared-footer"></div>
+
+  <!-- Shared JS (menu toggle + component loader) -->
+  <script src="/js/shared.js"></script>
+
+</body>
+</html>
