@@ -42,10 +42,12 @@
 
     /* === BADGE + PARCHMENT === */
     .badgeSection{padding:40px 0 0;position:relative}
-    .badgeWrap{max-width:820px;margin:0 auto 0;text-align:center}
+    .badgeWrap{max-width:820px;margin:0 auto;text-align:center}
     .badge{width:100%;max-width:820px;height:auto;display:block;margin:0 auto;animation:bGlow 4s ease-in-out infinite;border-radius:8px 8px 0 0}
     @keyframes bGlow{0%,100%{filter:drop-shadow(0 0 20px rgba(91,168,178,.2))}50%{filter:drop-shadow(0 0 50px rgba(91,168,178,.45)) drop-shadow(0 0 100px rgba(91,168,178,.15))}}
-    .parchment{max-width:820px;margin:0 auto;background:linear-gradient(145deg,rgba(244,241,236,.96),rgba(215,207,195,.92));color:#222;padding:45px 55px;border-radius:0 0 8px 8px;box-shadow:0 30px 80px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.5);position:relative}
+    .parchmentWrap{max-width:820px;margin:0 auto;position:relative;padding:0}
+    .parchmentBg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;mix-blend-mode:multiply;opacity:.6;pointer-events:none;border-radius:0 0 8px 8px}
+    .parchment{max-width:820px;margin:0 auto;background:linear-gradient(145deg,rgba(244,241,236,.94),rgba(215,207,195,.9));color:#222;padding:45px 55px;border-radius:0 0 8px 8px;box-shadow:0 30px 80px rgba(0,0,0,.35);position:relative;overflow:hidden}
     .parchment::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--teal),var(--taupe),var(--teal));background-size:200% 100%;animation:shimB 4s ease-in-out infinite}
     @keyframes shimB{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
     .parchment p{font-size:17px;line-height:1.9;margin-bottom:18px;color:#333}
@@ -75,12 +77,12 @@
     .chains{padding:50px 0 40px;text-align:center;position:relative;overflow:hidden}
     .chains h2{font-family:"Playfair Display",serif;font-size:clamp(34px,4.5vw,60px);font-weight:700;margin-bottom:8px}
     .chains h2 em{display:block;color:var(--taupe);font-style:italic;font-weight:400;font-size:.45em;margin-top:8px}
-    .chainsWrap{position:relative;width:100vw;margin-left:calc(-50vw + 50%);padding:30px 0;overflow:hidden}
+    .chainsWrap{position:relative;width:100vw;margin-left:calc(-50vw + 50%);padding:16px 0;overflow:hidden}
     .chainsWrap::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(91,168,178,.1),transparent 70%);pointer-events:none}
     .chainsImg{width:100%;height:auto;display:block;filter:drop-shadow(0 0 40px rgba(91,168,178,.2));opacity:0;transform:scaleX(.8)}
     .chainsImg.vis{animation:chainE 1.8s cubic-bezier(.22,1,.36,1) forwards}
     @keyframes chainE{0%{transform:scaleX(.6) scaleY(.9);opacity:0;filter:blur(8px)}50%{transform:scaleX(1.02);filter:blur(0) drop-shadow(0 0 60px rgba(91,168,178,.4))}100%{transform:scaleX(1) scaleY(1);opacity:1;filter:drop-shadow(0 0 30px rgba(91,168,178,.15))}}
-    .chains .body{max-width:720px;margin:30px auto 0;font-size:clamp(17px,1.8vw,21px);line-height:1.9;color:rgba(255,255,255,.82);font-family:"Playfair Display",serif}
+    .chains .body{max-width:720px;margin:16px auto 0;font-size:clamp(17px,1.8vw,21px);line-height:1.9;color:rgba(255,255,255,.82);font-family:"Playfair Display",serif}
 
     /* === TRANSFORM === */
     .transform{position:relative;min-height:400px;overflow:hidden;display:flex;align-items:center;justify-content:center;margin-top:10px}
@@ -127,6 +129,7 @@
       .hero{text-align:center;padding:40px 0 20px}
       .hero .sig{padding-left:0}.hero .sig::before{display:none}
       .parchment{padding:30px 24px;margin:0 16px}
+      .parchmentWrap{margin:0 16px}
       .badgeWrap{margin:0 16px}
       .pillarGrid{grid-template-columns:repeat(2,1fr);gap:14px;margin:0 16px 30px}
       .treatPanel{min-height:350px;margin-top:30px}
@@ -172,9 +175,12 @@
   <section class="badgeSection">
     <div class="wrap">
       <div class="badgeWrap fadeScale"><img class="badge" src="/assets/images/health-badge.png" alt="Health — A Chinese Medicine Perspective" loading="lazy"></div>
-      <div class="parchment fadeUp d1">
-        <p><span class="dropcap">F</span>rom the standpoint of Chinese medicine, health is defined as the capacity of an organism to adapt to challenges. It isn't about the absence of hardship but rather how well we adjust to life's difficulties. Illness or stress can be viewed as a result of an inability to adapt.</p>
-        <p>What impacts this adaptability? The answer lies in rigidity — the rigidity of our minds. Over time, we accumulate beliefs, many of which we form early in life. These beliefs shape how we view ourselves and the world, and when we cling to them too tightly, they limit our capacity to see new possibilities.</p>
+      <div class="parchmentWrap">
+        <img class="parchmentBg" src="/assets/images/parchment-texture.png" alt="">
+        <div class="parchment fadeUp d1">
+          <p><span class="dropcap">F</span>rom the standpoint of Chinese medicine, health is defined as the capacity of an organism to adapt to challenges. It isn't about the absence of hardship but rather how well we adjust to life's difficulties. Illness or stress can be viewed as a result of an inability to adapt.</p>
+          <p>What impacts this adaptability? The answer lies in rigidity — the rigidity of our minds. Over time, we accumulate beliefs, many of which we form early in life. These beliefs shape how we view ourselves and the world, and when we cling to them too tightly, they limit our capacity to see new possibilities.</p>
+        </div>
       </div>
     </div>
   </section>
