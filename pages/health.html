@@ -158,12 +158,13 @@
 
     /* RESPONSIVE */
     @media(max-width:900px){
-      .hero .traceyFloat{float:none;display:block;width:35%;max-width:140px;margin:0 auto 16px;shape-outside:none;filter:drop-shadow(0 8px 20px rgba(0,0,0,.3))}
-      .hero{text-align:center;padding:20px 0 20px}
-      .hero .pill{margin-bottom:14px}
-      .hero .sig{padding-left:0}.hero .sig::before{display:none}
-      .hero h1{font-size:clamp(24px,5vw,34px)}
-      .hero .intro{font-size:15px;line-height:1.7}
+      .hero .traceyFloat{float:right;width:28%;max-width:130px;margin:0 0 8px 12px;shape-outside:polygon(10% 0,100% 0,100% 100%,20% 100%);filter:drop-shadow(0 8px 20px rgba(0,0,0,.3))}
+      .hero{text-align:left;padding:20px 0 20px}
+      .hero h1{font-size:clamp(22px,5vw,32px)}
+      .hero h1 em{display:inline;font-size:.6em}
+      .hero .pill{font-size:9px;padding:8px 16px;margin-bottom:14px}
+      .hero .intro{font-size:14px;line-height:1.7}
+      .hero .sig{padding-left:0;font-size:18px}.hero .sig::before{display:none}
       .parchment{padding:40px 24px;margin:0 16px}
       .badgeWrap{margin:0 16px}
       .pillarGrid{grid-template-columns:repeat(2,1fr);gap:14px;margin:0 16px 30px}
@@ -175,7 +176,7 @@
       .collageWrap{margin:30px auto;max-width:90%}
       .bridge{padding:36px 0}
       .beliefs{padding:36px 0}
-      .beliefs .rootsBg{width:120%;max-width:none;left:50%;transform:translate(-50%,-50%);opacity:.15}
+      .beliefs .rootsBg{display:none}
       .chains{padding:36px 0 30px}
       .ctaEnd{padding:40px 0 30px}
     }
