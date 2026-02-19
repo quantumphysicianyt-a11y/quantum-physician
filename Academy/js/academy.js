@@ -46,7 +46,7 @@ async function signOut() {
 
 async function resetPassword(email) {
   const { error } = await sb.auth.resetPasswordForEmail(email, {
-    redirectTo: window.location.origin + '/academy/reset-password.html'
+    redirectTo: 'https://qp-homepage.netlify.app/academy/reset-password.html'
   });
   if (error) throw error;
 }

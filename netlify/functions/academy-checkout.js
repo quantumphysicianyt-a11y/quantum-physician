@@ -44,6 +44,18 @@ const BUNDLE_COURSES = [
   "power-of-the-question",
 ];
 
+const SITE_URL = "https://qp-homepage.netlify.app";
+
+// Product images for Stripe checkout
+const PRODUCT_IMAGES = {
+  "quantum-vision-boards": `${SITE_URL}/assets/images/Personal-Potential.jpg`,
+  "becoming-present": `${SITE_URL}/assets/images/Busy-Mind.jpg`,
+  "breaking-up-with-your-beliefs": `${SITE_URL}/assets/images/Breaking-Up.jpg`,
+  "creative-mind-mapping": `${SITE_URL}/assets/images/Mind-Mapping.jpg`,
+  "power-of-the-question": `${SITE_URL}/assets/images/Question.jpg`,
+  "transformational-mastery": `${SITE_URL}/assets/images/Bundle-Full.png`,
+};
+
 exports.handler = async (event) => {
   const headers = {
     "Access-Control-Allow-Origin": "*",
@@ -196,6 +208,7 @@ exports.handler = async (event) => {
             product_data: {
               name: PRODUCT_NAMES[productId] || productId,
               description: buildDescription(productId, referralDiscount, creditsToUse, bundleUpgradeApplied, ownedCourseCount),
+              images: PRODUCT_IMAGES[productId] ? [PRODUCT_IMAGES[productId]] : [],
             },
             unit_amount: finalAmount,
           },
