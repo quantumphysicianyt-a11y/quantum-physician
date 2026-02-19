@@ -103,6 +103,10 @@ footer{
   flex-direction:column;
   gap:8px;
 }
+.footerCol:first-child{
+  align-items:center;
+  text-align:center;
+}
 .footerLogo{
   height:55px;
   width:auto;
