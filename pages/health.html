@@ -45,9 +45,7 @@
     .badgeWrap{max-width:820px;margin:0 auto;text-align:center;padding:30px 40px}
     .badge{width:100%;max-width:600px;height:auto;display:block;margin:0 auto;animation:bGlow 4s ease-in-out infinite}
     @keyframes bGlow{0%,100%{filter:drop-shadow(0 0 30px rgba(91,168,178,.3)) drop-shadow(0 0 60px rgba(91,168,178,.1))}50%{filter:drop-shadow(0 0 60px rgba(91,168,178,.6)) drop-shadow(0 0 120px rgba(91,168,178,.2)) drop-shadow(0 0 180px rgba(91,168,178,.1))}}
-    .parchment{max-width:820px;margin:0 auto;position:relative;padding:70px 65px;color:#222;background:rgba(244,241,236,.97);border-radius:6px;box-shadow:0 30px 80px rgba(0,0,0,.35);overflow:hidden}
-    .parchment::after{content:'';position:absolute;inset:0;background:url('/assets/images/parchment-texture.png') center/100% 100% no-repeat;opacity:.6;pointer-events:none}
-    .parchment .pContent{position:relative;z-index:1}
+    .parchment{max-width:820px;margin:0 auto;position:relative;padding:50px 55px;color:#222;background:rgba(244,241,236,.95);border-radius:8px;box-shadow:0 30px 80px rgba(0,0,0,.35);overflow:hidden}
     .parchment::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--teal),var(--taupe),var(--teal));background-size:200% 100%;animation:shimB 4s ease-in-out infinite}
     @keyframes shimB{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
     .parchment p{font-size:17px;line-height:1.9;margin-bottom:18px;color:#333}
@@ -247,10 +245,8 @@
     <div class="wrap">
       <div class="badgeWrap fadeScale"><img class="badge" src="/assets/images/health-badge.png" alt="Health — A Chinese Medicine Perspective" loading="lazy"></div>
       <div class="parchment fadeUp d1">
-        <div class="pContent">
         <p><span class="dropcap">F</span>rom the standpoint of Chinese medicine, health is defined as the capacity of an organism to adapt to challenges. It isn't about the absence of hardship but rather how well we adjust to life's difficulties. Illness or stress can be viewed as a result of an inability to adapt.</p>
         <p>What impacts this adaptability? The answer lies in rigidity — the rigidity of our minds. Over time, we accumulate beliefs, many of which we form early in life. These beliefs shape how we view ourselves and the world, and when we cling to them too tightly, they limit our capacity to see new possibilities.</p>
-        </div>
       </div>
     </div>
   </section>
