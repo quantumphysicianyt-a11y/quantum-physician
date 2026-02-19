@@ -45,8 +45,8 @@
     .badgeWrap{max-width:820px;margin:0 auto;text-align:center;padding:30px 40px}
     .badge{width:100%;max-width:600px;height:auto;display:block;margin:0 auto;animation:bGlow 4s ease-in-out infinite}
     @keyframes bGlow{0%,100%{filter:drop-shadow(0 0 30px rgba(91,168,178,.3)) drop-shadow(0 0 60px rgba(91,168,178,.1))}50%{filter:drop-shadow(0 0 60px rgba(91,168,178,.6)) drop-shadow(0 0 120px rgba(91,168,178,.2)) drop-shadow(0 0 180px rgba(91,168,178,.1))}}
-    .parchment{max-width:820px;margin:0 auto;position:relative;padding:60px 55px;color:#222}
-    .parchment .paperBg{position:absolute;inset:-20px -10px;width:calc(100% + 20px);height:calc(100% + 40px);object-fit:fill;z-index:0;pointer-events:none}
+    .parchment{max-width:820px;margin:0 auto;position:relative;padding:70px 65px;color:#222;background:rgba(244,241,236,.97);border-radius:6px;box-shadow:0 30px 80px rgba(0,0,0,.35);overflow:hidden}
+    .parchment::after{content:'';position:absolute;inset:0;background:url('/assets/images/parchment-texture.png') center/cover no-repeat;opacity:.5;pointer-events:none}
     .parchment .pContent{position:relative;z-index:1}
     .parchment::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--teal),var(--taupe),var(--teal));background-size:200% 100%;animation:shimB 4s ease-in-out infinite}
     @keyframes shimB{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
@@ -68,7 +68,7 @@
 
     /* === BELIEFS with roots bg === */
     .beliefs{padding:50px 0;text-align:center;position:relative}
-    .beliefs .rootsBg{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100%;max-width:900px;height:auto;opacity:.65;pointer-events:none;filter:invert(1);mix-blend-mode:screen}
+    .beliefs .rootsBg{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100%;max-width:900px;height:auto;opacity:.85;pointer-events:none;filter:invert(1) contrast(3) brightness(1.5);mix-blend-mode:screen}
     .beliefs h2{font-family:"Playfair Display",serif;font-size:clamp(15px,1.6vw,20px);font-weight:400;letter-spacing:.25em;text-transform:uppercase;color:var(--teal);margin-bottom:30px}
     .beliefs h2::after{content:'';display:block;width:60px;height:1px;background:var(--teal);margin:16px auto 0;opacity:.5}
     .beliefs .inner{max-width:800px;margin:0 auto;position:relative;z-index:1}
@@ -160,16 +160,17 @@
 
     /* RESPONSIVE */
     @media(max-width:900px){
-      .hero .traceyFloat{float:none;width:60%;max-width:300px;margin:0 auto 20px;display:block;shape-outside:none}
-      .hero{text-align:center;padding:40px 0 20px}
+      .hero .traceyFloat{float:right;width:40%;max-width:200px;margin:0 0 10px 16px;shape-outside:polygon(15% 0,100% 0,100% 100%,25% 100%)}
+      .hero{text-align:left;padding:40px 0 20px}
       .hero .sig{padding-left:0}.hero .sig::before{display:none}
-      .parchment{padding:30px 24px;margin:0 16px}
+      .parchment{padding:40px 24px;margin:0 16px}
       .badgeWrap{margin:0 16px}
       .pillarGrid{grid-template-columns:repeat(2,1fr);gap:14px;margin:0 16px 30px}
       .treatPanel{min-height:350px;margin-top:30px}
       .transform{min-height:300px}
-      .downward .arrowTrack{left:16px;width:40px}
-      .downward .arrowPulse{left:16px;width:40px}
+      .downward .arrowTrack{left:6px;width:30px}
+      .downward .arrowPulse{left:6px;width:30px}
+      .downward .arrowTrack::after{border-left-width:10px;border-right-width:10px;border-top-width:16px}
       .collageWrap{margin:30px auto;max-width:90%}
       .bridge{padding:36px 0}
       .beliefs{padding:36px 0}
@@ -246,7 +247,6 @@
     <div class="wrap">
       <div class="badgeWrap fadeScale"><img class="badge" src="/assets/images/health-badge.png" alt="Health — A Chinese Medicine Perspective" loading="lazy"></div>
       <div class="parchment fadeUp d1">
-        <img class="paperBg" src="/assets/images/parchment-texture.png" alt="" loading="lazy">
         <div class="pContent">
         <p><span class="dropcap">F</span>rom the standpoint of Chinese medicine, health is defined as the capacity of an organism to adapt to challenges. It isn't about the absence of hardship but rather how well we adjust to life's difficulties. Illness or stress can be viewed as a result of an inability to adapt.</p>
         <p>What impacts this adaptability? The answer lies in rigidity — the rigidity of our minds. Over time, we accumulate beliefs, many of which we form early in life. These beliefs shape how we view ourselves and the world, and when we cling to them too tightly, they limit our capacity to see new possibilities.</p>
