@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title id="pageTitle">Learning — Quantum Academy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/shared.css">
+  <link rel="stylesheet" href="/academy/css/academy.css">
+  <style>
+    /* Player-specific overrides */
+    body { overflow: hidden; }
+    #shared-header { position: sticky; top: 0; z-index: 50; }
+    .qa-player { height: calc(100vh - 72px); }
+    .qa-content { overflow-y: auto; }
+    .mobile-toggle {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 101;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: var(--teal, #5ba8b2);
+      color: #fff;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0,0,0,.4);
+    }
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.6);
+      z-index: 99;
+    }
+    @media (max-width: 1024px) {
+      .mobile-toggle { display: flex; align-items: center; justify-content: center; }
+      .qa-sidebar.open ~ .sidebar-overlay { display: block; }
+    }
+    .lesson-nav {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid var(--qa-border);
+    }
+    .lesson-nav a {
+      padding: 10px 20px;
+      border: 1px solid var(--qa-border);
+      border-radius: 8px;
+      color: var(--qa-text-muted);
+      text-decoration: none;
+      font-size: 13px;
+      transition: all .2s;
+    }
+    .lesson-nav a:hover { border-color: var(--qa-border-hover); color: var(--qa-text); }
+    .lesson-nav .next { margin-left: auto; background: rgba(91,168,178,.1); border-color: var(--qa-border-hover); color: var(--teal); }
+  </style>
+</head>
+<body class="qa-page">
+  <div id="shared-header"></div>
+
+  <div id="loading" class="qa-loading" style="padding:120px 0"><div class="qa-spinner"></div></div>
+
+  <div id="playerWrap" style="display:none">
+    <div class="qa-player">
+      <!-- Sidebar -->
+      <aside class="qa-sidebar" id="sidebar">
+        <div class="qa-sidebar-header">
+          <a href="#" id="courseLink" style="text-decoration:none;color:var(--qa-text-muted);font-size:12px;display:flex;align-items:center;gap:4px;margin-bottom:8px">← Back to course</a>
+          <h2 id="sidebarTitle"></h2>
+          <div class="qa-progress" style="margin:10px 0 4px"><div class="qa-progress-fill" id="sidebarProgress"></div></div>
+          <div class="progress-label" id="sidebarProgressLabel"></div>
+        </div>
+        <div id="sidebarModules"></div>
+      </aside>
+
+      <div class="sidebar-overlay" onclick="closeSidebar()"></div>
+
+      <!-- Content -->
+      <div class="qa-content" id="content">
+        <!-- Video area -->
+        <div class="qa-video-wrap" id="videoWrap" style="display:none"></div>
+
+        <!-- Lesson body -->
+        <div class="qa-lesson-body" id="lessonBody">
+          <h1 id="lessonTitle"></h1>
+          <div class="lesson-meta" id="lessonMeta"></div>
+          <div class="lesson-content" id="lessonContent"></div>
+          <div class="qa-attachments" id="attachments" style="display:none"></div>
+
+          <!-- Complete + Nav -->
+          <div style="margin-top:32px">
+            <button class="qa-btn qa-btn-primary" id="completeBtn" onclick="handleComplete()" style="display:none">✓ Mark as Complete</button>
+            <div class="lesson-nav" id="lessonNav"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="mobile-toggle" onclick="toggleSidebar()">☰</button>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/shared.js"></script>
+  <script src="/academy/js/academy.js"></script>
+  <script>
+    const slug = new URLSearchParams(window.location.search).get('slug');
+    const lessonSlug = new URLSearchParams(window.location.search).get('lesson');
+    if (!slug) window.location.href = '/academy/';
+
+    let currentCourse, currentEnrollment, currentLesson, allLessons = [], progressMap = {};
+
+    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+    function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); }
+
+    // Build flat lesson array from modules
+    function flattenLessons(modules) {
+      const flat = [];
+      modules.forEach(m => (m.qa_lessons || []).forEach(l => flat.push({ ...l, moduleName: m.title })));
+      return flat;
+    }
+
+    // Render sidebar
+    function renderSidebar(modules) {
+      document.getElementById('sidebarModules').innerHTML = modules.map((m, i) => `
+        <div class="qa-module-group">
+          <div class="qa-module-title open" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+            <span>Module ${i + 1}: ${m.title}</span>
+            <span class="chevron">▾</span>
+          </div>
+          <div class="qa-lesson-list open">
+            ${(m.qa_lessons || []).map(l => {
+              const isActive = currentLesson && currentLesson.id === l.id;
+              const isDone = progressMap[l.id]?.status === 'completed';
+              return `
+                <a class="qa-lesson-item ${isActive ? 'active' : ''} ${isDone ? 'completed' : ''}" 
+                   href="/academy/learn.html?slug=${slug}&lesson=${l.slug}" 
+                   onclick="closeSidebar()">
+                  <div class="check">${isDone ? '✓' : ''}</div>
+                  <span>${l.title}</span>
+                  ${l.estimated_minutes ? `<span class="duration">${l.estimated_minutes}m</span>` : ''}
+                </a>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Render lesson content
+    function renderLesson(lesson) {
+      document.getElementById('pageTitle').textContent = lesson.title + ' — ' + currentCourse.title;
+      document.getElementById('lessonTitle').textContent = lesson.title;
+
+      // Meta
+      const meta = [];
+      if (lesson.content_type === 'video' && lesson.video_duration_seconds) meta.push(`⏱ ${Math.ceil(lesson.video_duration_seconds / 60)}m`);
+      else if (lesson.estimated_minutes) meta.push(`⏱ ${lesson.estimated_minutes}m`);
+      meta.push(lesson.content_type.charAt(0).toUpperCase() + lesson.content_type.slice(1));
+      document.getElementById('lessonMeta').innerHTML = meta.join(' · ');
+
+      // Video
+      const videoWrap = document.getElementById('videoWrap');
+      if (lesson.content_type === 'video' && lesson.video_url) {
+        videoWrap.style.display = '';
+        const resumePos = progressMap[lesson.id]?.video_position_seconds || 0;
+        
+        if (lesson.video_url.includes('vimeo.com') || lesson.video_url.includes('youtube.com') || lesson.video_url.includes('youtu.be')) {
+          let embedUrl = lesson.video_url;
+          if (lesson.video_url.includes('youtu.be')) {
+            embedUrl = 'https://www.youtube.com/embed/' + lesson.video_url.split('/').pop();
+          } else if (lesson.video_url.includes('youtube.com/watch')) {
+            embedUrl = 'https://www.youtube.com/embed/' + new URL(lesson.video_url).searchParams.get('v');
+          } else if (lesson.video_url.includes('vimeo.com')) {
+            embedUrl = 'https://player.vimeo.com/video/' + lesson.video_url.split('/').pop();
+          }
+          videoWrap.innerHTML = `<iframe src="${embedUrl}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+        } else {
+          videoWrap.innerHTML = `<video id="lessonVideo" controls preload="metadata" ${lesson.video_thumbnail_url ? `poster="${lesson.video_thumbnail_url}"` : ''}><source src="${lesson.video_url}" type="video/mp4"></video>`;
+          const vid = document.getElementById('lessonVideo');
+          if (vid && resumePos > 0) vid.addEventListener('loadedmetadata', () => { vid.currentTime = resumePos; }, { once: true });
+          
+          // Save position periodically
+          if (vid) {
+            let saveTimer;
+            vid.addEventListener('timeupdate', () => {
+              clearTimeout(saveTimer);
+              saveTimer = setTimeout(() => {
+                const pct = vid.duration ? (vid.currentTime / vid.duration * 100) : 0;
+                saveVideoPosition(lesson.id, currentCourse.id, currentEnrollment.id, Math.floor(vid.currentTime), Math.round(pct));
+              }, 3000);
+            });
+          }
+        }
+      } else {
+        videoWrap.style.display = 'none';
+      }
+
+      // Text content
+      const contentDiv = document.getElementById('lessonContent');
+      if (lesson.content_html) {
+        contentDiv.innerHTML = lesson.content_html;
+      } else if (lesson.content_markdown) {
+        // Simple markdown rendering (basic)
+        contentDiv.innerHTML = lesson.content_markdown
+          .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+          .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+          .replace(/^# (.*$)/gm, '<h1>$1</h1>')
+          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+          .replace(/\*(.*?)\*/g, '<em>$1</em>')
+          .replace(/\n\n/g, '</p><p>')
+          .replace(/^/, '<p>').replace(/$/, '</p>');
+      } else if (lesson.content_type === 'pdf' && lesson.file_url) {
+        contentDiv.innerHTML = `<p>Download the PDF below to continue this lesson.</p>`;
+      } else {
+        contentDiv.innerHTML = '';
+      }
+
+      // PDF / Download
+      if (lesson.file_url && (lesson.content_type === 'pdf' || lesson.content_type === 'download')) {
+        contentDiv.innerHTML += `
+          <a class="qa-attachment-item" href="${lesson.file_url}" target="_blank" rel="noopener" style="margin-top:16px;display:inline-flex">
+            <span class="icon">📄</span>
+            <span class="name">${lesson.file_name || 'Download file'}</span>
+          </a>
+        `;
+      }
+
+      // Attachments
+      // TODO: Load from qa_lesson_attachments
+
+      // Complete button
+      const completeBtn = document.getElementById('completeBtn');
+      const isDone = progressMap[lesson.id]?.status === 'completed';
+      if (isDone) {
+        completeBtn.style.display = '';
+        completeBtn.textContent = '✓ Completed';
+        completeBtn.disabled = true;
+        completeBtn.classList.remove('qa-btn-primary');
+        completeBtn.classList.add('qa-btn-outline');
+      } else {
+        completeBtn.style.display = '';
+        completeBtn.textContent = '✓ Mark as Complete';
+        completeBtn.disabled = false;
+        completeBtn.classList.add('qa-btn-primary');
+        completeBtn.classList.remove('qa-btn-outline');
+      }
+
+      // Prev/Next navigation
+      const idx = allLessons.findIndex(l => l.id === lesson.id);
+      const nav = document.getElementById('lessonNav');
+      let navHtml = '';
+      if (idx > 0) {
+        navHtml += `<a href="/academy/learn.html?slug=${slug}&lesson=${allLessons[idx - 1].slug}">← ${allLessons[idx - 1].title}</a>`;
+      }
+      if (idx < allLessons.length - 1) {
+        navHtml += `<a class="next" href="/academy/learn.html?slug=${slug}&lesson=${allLessons[idx + 1].slug}">${allLessons[idx + 1].title} →</a>`;
+      }
+      nav.innerHTML = navHtml;
+
+      // Scroll content to top
+      document.getElementById('content').scrollTop = 0;
+
+      trackEvent('lesson_view', currentCourse.id, lesson.id, { slug: lesson.slug });
+    }
+
+    async function handleComplete() {
+      if (!currentLesson || !currentEnrollment) return;
+      try {
+        await markLessonComplete(currentLesson.id, currentCourse.id, currentEnrollment.id);
+        progressMap[currentLesson.id] = { status: 'completed' };
+        
+        // Refresh enrollment for updated progress
+        currentEnrollment = await getEnrollment(currentCourse.id);
+        
+        // Update UI
+        const modules = await getCourseModules(currentCourse.id);
+        renderSidebar(modules);
+        updateProgressBar();
+        
+        // Update complete button
+        const btn = document.getElementById('completeBtn');
+        btn.textContent = '✓ Completed';
+        btn.disabled = true;
+        btn.classList.remove('qa-btn-primary');
+        btn.classList.add('qa-btn-outline');
+
+        // Auto-navigate to next lesson
+        const idx = allLessons.findIndex(l => l.id === currentLesson.id);
+        if (idx < allLessons.length - 1) {
+          setTimeout(() => {
+            if (confirm('Great job! Move to the next lesson?')) {
+              window.location.href = `/academy/learn.html?slug=${slug}&lesson=${allLessons[idx + 1].slug}`;
+            }
+          }, 500);
+        } else {
+          // Course complete!
+          setTimeout(() => alert('🎉 Congratulations! You completed the course!'), 500);
+        }
+      } catch (err) {
+        console.error('Failed to mark complete:', err);
+        alert('Failed to save progress. Please try again.');
+      }
+    }
+
+    function updateProgressBar() {
+      if (!currentEnrollment) return;
+      document.getElementById('sidebarProgress').style.width = (currentEnrollment.progress_percent || 0) + '%';
+      document.getElementById('sidebarProgressLabel').textContent = `${Math.round(currentEnrollment.progress_percent || 0)}% complete · ${currentEnrollment.lessons_completed || 0}/${currentCourse.total_lessons || 0} lessons`;
+    }
+
+    // INIT
+    (async () => {
+      const user = await getUser();
+      if (!user) { window.location.href = `/academy/login.html?redirect=/academy/learn.html?slug=${slug}`; return; }
+
+      try {
+        currentCourse = await getCourse(slug);
+        if (!currentCourse) { window.location.href = '/academy/'; return; }
+
+        currentEnrollment = await getEnrollment(currentCourse.id);
+        if (!currentEnrollment) { window.location.href = `/academy/course.html?slug=${slug}`; return; }
+
+        // Load modules & lessons
+        const modules = await getCourseModules(currentCourse.id);
+        allLessons = flattenLessons(modules);
+
+        // Load progress
+        const progress = await getLessonProgress(currentEnrollment.id, currentCourse.id);
+        progress.forEach(p => { progressMap[p.lesson_id] = p; });
+
+        // Set sidebar
+        document.getElementById('sidebarTitle').textContent = currentCourse.title;
+        document.getElementById('courseLink').href = `/academy/course.html?slug=${slug}`;
+        updateProgressBar();
+
+        // Determine which lesson to show
+        if (lessonSlug) {
+          currentLesson = allLessons.find(l => l.slug === lessonSlug);
+        }
+        if (!currentLesson) {
+          // Resume: find last accessed or first incomplete
+          if (currentEnrollment.last_lesson_id) {
+            currentLesson = allLessons.find(l => l.id === currentEnrollment.last_lesson_id);
+          }
+          if (!currentLesson) {
+            // First incomplete lesson
+            currentLesson = allLessons.find(l => progressMap[l.id]?.status !== 'completed') || allLessons[0];
+          }
+        }
+
+        // Render
+        renderSidebar(modules);
+        if (currentLesson) renderLesson(currentLesson);
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('playerWrap').style.display = '';
+
+      } catch (err) {
+        console.error(err);
+        document.getElementById('loading').innerHTML = '<p style="color:rgba(255,255,255,.5)">Failed to load course. <a href="/academy/" style="color:var(--teal)">Go back</a></p>';
+      }
+    })();
+  </script>
+</body>
+</html>

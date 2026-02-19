@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Quantum Academy — Online Courses</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/shared.css">
+  <link rel="stylesheet" href="/academy/css/academy.css">
+</head>
+<body class="qa-page">
+  <div id="shared-header"></div>
+
+  <main>
+    <!-- HERO -->
+    <section class="qa-hero">
+      <div class="qa-hero-orb a"></div>
+      <div class="qa-hero-orb b"></div>
+      <div class="qa-wrap">
+        <div class="qa-label">Quantum Academy</div>
+        <h1 class="qa-h1">Transform Your Understanding<br>of Health & Healing</h1>
+        <p class="qa-subtitle">Self-paced courses built on the Quantum Physician model. Learn to release limiting beliefs, unlock your potential, and create lasting wellness — on your schedule.</p>
+        <div style="margin-top:28px;display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+          <a href="#courses" class="qa-btn qa-btn-primary qa-btn-lg">Browse Courses</a>
+          <a href="/academy/login.html" class="qa-btn qa-btn-outline qa-btn-lg" id="authBtn">Sign In</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- COURSE GRID -->
+    <section id="courses" class="qa-wrap" style="padding:50px 24px 80px">
+      <div style="text-align:center;margin-bottom:10px">
+        <div class="qa-label">Courses</div>
+        <h2 class="qa-h2" style="margin-top:10px">Your Path to Wellness</h2>
+      </div>
+
+      <div id="courseGrid" class="qa-course-grid">
+        <div class="qa-loading"><div class="qa-spinner"></div></div>
+      </div>
+
+      <!-- Empty state -->
+      <div id="emptyState" class="qa-empty" style="display:none">
+        <div class="icon">📚</div>
+        <h3>Courses Coming Soon</h3>
+        <p>We're putting the finishing touches on our course library. Check back soon!</p>
+      </div>
+    </section>
+  </main>
+
+  <div id="shared-footer"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/shared.js"></script>
+  <script src="/academy/js/academy.js"></script>
+  <script>
+    // Update auth button if logged in
+    (async () => {
+      const user = await getUser();
+      const btn = document.getElementById('authBtn');
+      if (user) {
+        btn.textContent = 'My Dashboard';
+        btn.href = '/academy/dashboard.html';
+      }
+    })();
+
+    // Load courses
+    (async () => {
+      const grid = document.getElementById('courseGrid');
+      const empty = document.getElementById('emptyState');
+      
+      try {
+        const courses = await getCourses('published');
+        // Also get coming_soon courses
+        const { data: coming } = await sb.from('qa_courses')
+          .select('*')
+          .eq('status', 'coming_soon')
+          .order('sort_order');
+        
+        const all = [...courses, ...(coming || [])];
+        
+        if (all.length === 0) {
+          grid.innerHTML = '';
+          empty.style.display = 'block';
+          return;
+        }
+
+        grid.innerHTML = all.map(c => `
+          <a class="qa-course-card" href="/academy/course.html?slug=${c.slug}">
+            <div class="thumb">
+              ${c.thumbnail_url ? `<img src="${c.thumbnail_url}" alt="${c.title}" loading="lazy" decoding="async">` : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:48px;opacity:.3">📖</div>`}
+              ${c.price_cents === 0 ? '<div class="badge free">Free</div>' : ''}
+              ${c.status === 'coming_soon' ? '<div class="badge coming">Coming Soon</div>' : ''}
+              ${c.sale_price_cents && c.sale_ends_at && new Date(c.sale_ends_at) > new Date() ? '<div class="badge" style="color:#ff6b6b">Sale</div>' : ''}
+            </div>
+            <div class="body">
+              <h3>${c.title}</h3>
+              <p class="desc">${c.short_description || c.subtitle || ''}</p>
+              <div class="meta">
+                <div class="stats">
+                  ${c.total_lessons ? `<span>📺 ${c.total_lessons} lessons</span>` : ''}
+                  ${c.total_duration_minutes ? `<span>⏱ ${formatDuration(c.total_duration_minutes)}</span>` : ''}
+                  ${c.enrolled_count ? `<span>👥 ${c.enrolled_count}</span>` : ''}
+                </div>
+                <div class="price ${c.price_cents === 0 ? 'free' : ''}">
+                  ${c.sale_price_cents && c.sale_ends_at && new Date(c.sale_ends_at) > new Date() 
+                    ? `<span style="text-decoration:line-through;font-size:13px;color:rgba(255,255,255,.4);margin-right:6px">${formatPrice(c.price_cents)}</span>${formatPrice(c.sale_price_cents)}`
+                    : formatPrice(c.price_cents)}
+                </div>
+              </div>
+            </div>
+          </a>
+        `).join('');
+
+        trackEvent('page_view', null, null, { page: 'catalog' });
+      } catch (err) {
+        console.error('Failed to load courses:', err);
+        grid.innerHTML = '<p style="text-align:center;color:rgba(255,255,255,.5)">Unable to load courses. Please try again later.</p>';
+      }
+    })();
+  </script>
+</body>
+</html>

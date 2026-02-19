@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>My Dashboard — Quantum Academy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/shared.css">
+  <link rel="stylesheet" href="/academy/css/academy.css">
+</head>
+<body class="qa-page">
+  <div id="shared-header"></div>
+
+  <main style="padding:40px 0 80px">
+    <div class="qa-wrap">
+      <!-- Header -->
+      <div class="qa-dash-header">
+        <div>
+          <div class="qa-label">Dashboard</div>
+          <h1 class="qa-h2" style="margin-top:8px" id="greeting">Welcome back</h1>
+        </div>
+        <a href="/academy/" class="qa-btn qa-btn-outline qa-btn-sm">Browse Courses</a>
+      </div>
+
+      <!-- Stats -->
+      <div class="qa-dash-stats" id="stats">
+        <div class="qa-stat-card">
+          <div class="value" id="statCourses">0</div>
+          <div class="label">Enrolled Courses</div>
+        </div>
+        <div class="qa-stat-card">
+          <div class="value" id="statCompleted">0</div>
+          <div class="label">Completed</div>
+        </div>
+        <div class="qa-stat-card">
+          <div class="value" id="statStreak">0</div>
+          <div class="label">Day Streak 🔥</div>
+        </div>
+        <div class="qa-stat-card">
+          <div class="value" id="statXp">0</div>
+          <div class="label">XP Earned</div>
+        </div>
+      </div>
+
+      <!-- Continue Learning -->
+      <div id="continueSection" style="display:none;margin-bottom:40px">
+        <h3 class="qa-h3" style="margin-bottom:16px">Continue Learning</h3>
+        <div id="continueCard"></div>
+      </div>
+
+      <!-- My Courses -->
+      <h3 class="qa-h3" style="margin-bottom:16px">My Courses</h3>
+      <div id="enrolledCourses">
+        <div class="qa-loading"><div class="qa-spinner"></div></div>
+      </div>
+
+      <!-- Empty state -->
+      <div id="emptyState" class="qa-empty" style="display:none">
+        <div class="icon">🎓</div>
+        <h3>No courses yet</h3>
+        <p>Browse our course catalog and start your learning journey today.</p>
+        <a href="/academy/" class="qa-btn qa-btn-primary">Explore Courses</a>
+      </div>
+    </div>
+  </main>
+
+  <div id="shared-footer"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/shared.js"></script>
+  <script src="/academy/js/academy.js"></script>
+  <script>
+    (async () => {
+      // Auth check
+      const user = await getUser();
+      if (!user) { window.location.href = '/academy/login.html?redirect=/academy/dashboard.html'; return; }
+
+      // Load profile
+      const profile = await getProfile(user.id);
+      if (profile) {
+        const name = profile.full_name?.split(' ')[0] || 'there';
+        document.getElementById('greeting').textContent = `Welcome back, ${name}`;
+        document.getElementById('statStreak').textContent = profile.current_streak || 0;
+        document.getElementById('statXp').textContent = profile.xp_total || 0;
+      }
+
+      // Load enrollments
+      const enrollments = await getMyEnrollments();
+      const grid = document.getElementById('enrolledCourses');
+      const empty = document.getElementById('emptyState');
+
+      if (enrollments.length === 0) {
+        grid.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+      }
+
+      // Stats
+      document.getElementById('statCourses').textContent = enrollments.length;
+      document.getElementById('statCompleted').textContent = enrollments.filter(e => e.completed_at).length;
+
+      // Find most recent in-progress
+      const inProgress = enrollments
+        .filter(e => !e.completed_at && e.progress_percent > 0)
+        .sort((a, b) => new Date(b.last_accessed_at || 0) - new Date(a.last_accessed_at || 0));
+
+      if (inProgress.length > 0) {
+        const c = inProgress[0];
+        const course = c.qa_courses;
+        document.getElementById('continueSection').style.display = '';
+        document.getElementById('continueCard').innerHTML = `
+          <a class="qa-enrolled-card" href="/academy/learn.html?slug=${course.slug}">
+            <div class="thumb">
+              ${course.thumbnail_url ? `<img src="${course.thumbnail_url}" alt="${course.title}">` : '<div style="width:100%;height:100%;background:var(--qa-bg-light);display:flex;align-items:center;justify-content:center;font-size:32px;opacity:.3">📖</div>'}
+            </div>
+            <div class="info">
+              <h3>${course.title}</h3>
+              <div class="meta">${c.lessons_completed} of ${course.total_lessons} lessons completed</div>
+              <div class="qa-progress"><div class="qa-progress-fill" style="width:${c.progress_percent}%"></div></div>
+              <div class="progress-text">${Math.round(c.progress_percent)}% complete</div>
+            </div>
+          </a>
+        `;
+      }
+
+      // All enrolled courses
+      grid.innerHTML = enrollments.map(e => {
+        const c = e.qa_courses;
+        return `
+          <a class="qa-enrolled-card" href="/academy/learn.html?slug=${c.slug}" style="margin-bottom:16px">
+            <div class="thumb">
+              ${c.thumbnail_url ? `<img src="${c.thumbnail_url}" alt="${c.title}">` : '<div style="width:100%;height:100%;background:var(--qa-bg-light);display:flex;align-items:center;justify-content:center;font-size:32px;opacity:.3">📖</div>'}
+            </div>
+            <div class="info">
+              <h3>${c.title}</h3>
+              <div class="meta">
+                ${e.completed_at ? '✅ Completed' : `${e.lessons_completed || 0} of ${c.total_lessons || 0} lessons`}
+                ${c.total_duration_minutes ? ` · ${formatDuration(c.total_duration_minutes)}` : ''}
+              </div>
+              ${!e.completed_at ? `
+                <div class="qa-progress"><div class="qa-progress-fill" style="width:${e.progress_percent || 0}%"></div></div>
+                <div class="progress-text">${Math.round(e.progress_percent || 0)}% complete</div>
+              ` : ''}
+            </div>
+          </a>
+        `;
+      }).join('');
+
+      trackEvent('page_view', null, null, { page: 'dashboard' });
+    })();
+  </script>
+</body>
+</html>

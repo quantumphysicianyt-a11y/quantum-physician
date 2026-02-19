@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title id="pageTitle">Course — Quantum Academy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/shared.css">
+  <link rel="stylesheet" href="/academy/css/academy.css">
+</head>
+<body class="qa-page">
+  <div id="shared-header"></div>
+
+  <main>
+    <div id="loading" class="qa-loading" style="padding:120px 0"><div class="qa-spinner"></div></div>
+
+    <div id="courseContent" style="display:none">
+      <!-- Hero -->
+      <section class="qa-hero" style="text-align:left;padding:50px 0 60px">
+        <div class="qa-hero-orb a"></div>
+        <div class="qa-hero-orb b"></div>
+        <div class="qa-wrap">
+          <div class="qa-sales-hero">
+            <div>
+              <div class="qa-label" id="courseCategory"></div>
+              <h1 class="qa-h1" id="courseTitle" style="margin-top:12px"></h1>
+              <p id="courseSubtitle" style="font-family:'Playfair Display',serif;font-style:italic;font-size:20px;color:var(--taupe);margin-bottom:20px"></p>
+              <p class="qa-subtitle" id="courseDesc" style="max-width:none"></p>
+              <div style="display:flex;align-items:center;gap:20px;margin-top:24px;flex-wrap:wrap">
+                <div id="instructorInfo" style="display:flex;align-items:center;gap:10px;font-size:14px;color:var(--qa-text-muted)"></div>
+                <div id="courseMeta" style="display:flex;gap:16px;font-size:14px;color:var(--qa-text-muted)"></div>
+              </div>
+            </div>
+            <div>
+              <div class="qa-sales-sidebar" id="sidebar">
+                <div id="videoPreview" class="video-preview" style="margin-bottom:24px;border-radius:8px;overflow:hidden;display:none"></div>
+                <div id="priceDisplay"></div>
+                <div id="enrollBtn" style="margin-top:20px"></div>
+                <ul class="includes" id="includes" style="list-style:none;padding:0"></ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Curriculum -->
+      <section class="qa-wrap qa-curriculum">
+        <h2 class="qa-h2" style="text-align:center;margin-bottom:8px">Course Curriculum</h2>
+        <p style="text-align:center;color:var(--qa-text-muted);margin-bottom:30px" id="curriculumMeta"></p>
+        <div id="curriculum"></div>
+      </section>
+
+      <!-- Reviews -->
+      <section class="qa-wrap" style="padding:40px 24px 80px" id="reviewsSection" style="display:none">
+        <h2 class="qa-h2" style="text-align:center">What Students Say</h2>
+        <div id="reviews" style="max-width:700px;margin:24px auto 0"></div>
+      </section>
+    </div>
+  </main>
+
+  <div id="shared-footer"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/shared.js"></script>
+  <script src="/academy/js/academy.js"></script>
+  <script>
+    const slug = new URLSearchParams(window.location.search).get('slug');
+    if (!slug) window.location.href = '/academy/';
+
+    (async () => {
+      try {
+        const course = await getCourse(slug);
+        if (!course) { window.location.href = '/academy/'; return; }
+
+        document.getElementById('pageTitle').textContent = course.title + ' — Quantum Academy';
+        document.getElementById('courseTitle').textContent = course.title;
+        document.getElementById('courseSubtitle').textContent = course.subtitle || '';
+        document.getElementById('courseDesc').textContent = course.description || course.short_description || '';
+        document.getElementById('courseCategory').textContent = course.category || 'Course';
+
+        // Meta
+        const meta = [];
+        if (course.total_lessons) meta.push(`📺 ${course.total_lessons} lessons`);
+        if (course.total_duration_minutes) meta.push(`⏱ ${formatDuration(course.total_duration_minutes)}`);
+        if (course.difficulty) meta.push(`📊 ${course.difficulty.charAt(0).toUpperCase() + course.difficulty.slice(1)}`);
+        if (course.enrolled_count) meta.push(`👥 ${course.enrolled_count} students`);
+        document.getElementById('courseMeta').innerHTML = meta.map(m => `<span>${m}</span>`).join('');
+
+        // Instructor
+        if (course.instructor_name) {
+          document.getElementById('instructorInfo').innerHTML = `<span>By <strong style="color:var(--qa-text)">${course.instructor_name}</strong></span>`;
+        }
+
+        // Video preview
+        if (course.promo_video_url) {
+          const vp = document.getElementById('videoPreview');
+          vp.style.display = 'block';
+          vp.innerHTML = `<video controls poster="${course.thumbnail_url || ''}" style="width:100%;aspect-ratio:16/9;background:#000"><source src="${course.promo_video_url}" type="video/mp4"></video>`;
+        } else if (course.thumbnail_url) {
+          const vp = document.getElementById('videoPreview');
+          vp.style.display = 'block';
+          vp.innerHTML = `<img src="${course.thumbnail_url}" alt="${course.title}" style="width:100%;aspect-ratio:16/9;object-fit:cover">`;
+        }
+
+        // Price
+        const isOnSale = course.sale_price_cents && course.sale_ends_at && new Date(course.sale_ends_at) > new Date();
+        const displayPrice = isOnSale ? course.sale_price_cents : course.price_cents;
+        document.getElementById('priceDisplay').innerHTML = `
+          <div class="price-main">${formatPrice(displayPrice)}</div>
+          ${isOnSale ? `<div class="price-original">${formatPrice(course.price_cents)}</div>` : ''}
+        `;
+
+        // Includes
+        const includes = [];
+        if (course.total_lessons) includes.push({ icon: '📺', text: `${course.total_lessons} on-demand lessons` });
+        if (course.total_duration_minutes) includes.push({ icon: '⏱', text: `${formatDuration(course.total_duration_minutes)} of content` });
+        includes.push({ icon: '♾️', text: 'Lifetime access' });
+        includes.push({ icon: '📱', text: 'Access on mobile & desktop' });
+        if (course.certificate_enabled) includes.push({ icon: '📜', text: 'Certificate of completion' });
+        if (course.discussion_enabled) includes.push({ icon: '💬', text: 'Course community discussions' });
+        document.getElementById('includes').innerHTML = includes.map(i => 
+          `<li><span class="icon">${i.icon}</span> ${i.text}</li>`
+        ).join('');
+
+        // Enrollment button
+        const user = await getUser();
+        const enrollment = user ? await getEnrollment(course.id) : null;
+        const btnDiv = document.getElementById('enrollBtn');
+
+        if (enrollment) {
+          btnDiv.innerHTML = `<a href="/academy/learn.html?slug=${course.slug}" class="qa-btn qa-btn-primary" style="width:100%;justify-content:center">Continue Learning →</a>`;
+        } else if (course.status === 'coming_soon') {
+          btnDiv.innerHTML = `<button class="qa-btn qa-btn-taupe" disabled style="width:100%;justify-content:center">Coming Soon</button>`;
+        } else if (course.enrollment_type === 'free' || course.price_cents === 0) {
+          if (user) {
+            btnDiv.innerHTML = `<button class="qa-btn qa-btn-primary" style="width:100%;justify-content:center" onclick="handleFreeEnroll('${course.id}','${course.slug}')">Enroll Free →</button>`;
+          } else {
+            btnDiv.innerHTML = `<a href="/academy/login.html?redirect=/academy/course.html?slug=${course.slug}" class="qa-btn qa-btn-primary" style="width:100%;justify-content:center">Sign In to Enroll (Free)</a>`;
+          }
+        } else {
+          // Paid — Stripe checkout
+          if (course.stripe_price_id) {
+            btnDiv.innerHTML = `<button class="qa-btn qa-btn-primary" style="width:100%;justify-content:center" onclick="handlePurchase('${course.stripe_price_id}','${course.slug}')">Enroll Now</button>`;
+          } else {
+            btnDiv.innerHTML = `<button class="qa-btn qa-btn-taupe" disabled style="width:100%;justify-content:center">Enrollment Coming Soon</button>`;
+          }
+        }
+
+        // Curriculum
+        const modules = await getCourseModules(course.id);
+        const currMeta = document.getElementById('curriculumMeta');
+        currMeta.textContent = `${modules.length} modules · ${course.total_lessons || 0} lessons · ${formatDuration(course.total_duration_minutes || 0)} total`;
+
+        document.getElementById('curriculum').innerHTML = modules.map((m, i) => `
+          <div class="qa-module-accordion">
+            <div class="qa-module-header" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+              <h4>Module ${i + 1}: ${m.title}</h4>
+              <span class="info">${m.qa_lessons?.length || 0} lessons</span>
+            </div>
+            <div class="qa-module-lessons${i === 0 ? ' open' : ''}">
+              ${(m.qa_lessons || []).map(l => `
+                <div class="qa-module-lesson-row">
+                  <span class="type-icon">${l.content_type === 'video' ? '▶️' : l.content_type === 'quiz' ? '❓' : l.content_type === 'pdf' ? '📄' : l.content_type === 'assignment' ? '📝' : '📖'}</span>
+                  <span class="title">${l.title}</span>
+                  ${l.is_free_preview ? '<span class="preview-tag">Preview</span>' : ''}
+                  ${l.estimated_minutes ? `<span class="dur">${l.estimated_minutes}m</span>` : ''}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `).join('');
+
+        // First module open by default
+        const firstHeader = document.querySelector('.qa-module-header');
+        if (firstHeader) firstHeader.classList.add('open');
+
+        // Show content
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('courseContent').style.display = '';
+
+        trackEvent('page_view', course.id, null, { page: 'course_sales', slug });
+
+      } catch (err) {
+        console.error(err);
+        window.location.href = '/academy/';
+      }
+    })();
+
+    async function handleFreeEnroll(courseId, slug) {
+      try {
+        await enrollFree(courseId);
+        window.location.href = '/academy/learn.html?slug=' + slug;
+      } catch (err) {
+        alert('Failed to enroll: ' + err.message);
+      }
+    }
+
+    async function handlePurchase(priceId, slug) {
+      // TODO: Implement Stripe checkout redirect
+      alert('Stripe checkout integration coming soon! Price ID: ' + priceId);
+    }
+  </script>
+</body>
+</html>

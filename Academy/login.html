@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sign In — Quantum Academy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/shared.css">
+  <link rel="stylesheet" href="/academy/css/academy.css">
+</head>
+<body class="qa-page">
+  <div id="shared-header"></div>
+
+  <main>
+    <div class="qa-auth-card">
+      <!-- LOGIN FORM -->
+      <div id="loginForm">
+        <h2 class="qa-h3">Welcome Back</h2>
+        <p class="subtitle">Sign in to continue your learning journey</p>
+        
+        <div id="loginError" class="qa-error"></div>
+        
+        <div class="qa-input-group">
+          <label for="loginEmail">Email</label>
+          <input type="email" id="loginEmail" class="qa-input" placeholder="your@email.com" autocomplete="email">
+        </div>
+        <div class="qa-input-group">
+          <label for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" class="qa-input" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <div style="text-align:right;margin-bottom:16px">
+          <a href="#" onclick="showForgot();return false" style="font-size:13px;color:var(--teal)">Forgot password?</a>
+        </div>
+        <button class="qa-btn qa-btn-primary" onclick="handleLogin()">Sign In</button>
+        <p class="alt-link">Don't have an account? <a href="#" onclick="showSignup();return false">Create one</a></p>
+      </div>
+
+      <!-- SIGNUP FORM -->
+      <div id="signupForm" style="display:none">
+        <h2 class="qa-h3">Create Account</h2>
+        <p class="subtitle">Start your transformation today</p>
+        
+        <div id="signupError" class="qa-error"></div>
+        <div id="signupSuccess" class="qa-success"></div>
+        
+        <div class="qa-input-group">
+          <label for="signupName">Full Name</label>
+          <input type="text" id="signupName" class="qa-input" placeholder="Your full name" autocomplete="name">
+        </div>
+        <div class="qa-input-group">
+          <label for="signupEmail">Email</label>
+          <input type="email" id="signupEmail" class="qa-input" placeholder="your@email.com" autocomplete="email">
+        </div>
+        <div class="qa-input-group">
+          <label for="signupPassword">Password</label>
+          <input type="password" id="signupPassword" class="qa-input" placeholder="At least 8 characters" autocomplete="new-password">
+        </div>
+        <button class="qa-btn qa-btn-primary" onclick="handleSignup()">Create Account</button>
+        <p class="alt-link">Already have an account? <a href="#" onclick="showLogin();return false">Sign in</a></p>
+      </div>
+
+      <!-- FORGOT PASSWORD -->
+      <div id="forgotForm" style="display:none">
+        <h2 class="qa-h3">Reset Password</h2>
+        <p class="subtitle">Enter your email and we'll send you a reset link</p>
+        
+        <div id="forgotError" class="qa-error"></div>
+        <div id="forgotSuccess" class="qa-success"></div>
+        
+        <div class="qa-input-group">
+          <label for="forgotEmail">Email</label>
+          <input type="email" id="forgotEmail" class="qa-input" placeholder="your@email.com">
+        </div>
+        <button class="qa-btn qa-btn-primary" onclick="handleForgot()">Send Reset Link</button>
+        <p class="alt-link"><a href="#" onclick="showLogin();return false">Back to sign in</a></p>
+      </div>
+    </div>
+  </main>
+
+  <div id="shared-footer"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/shared.js"></script>
+  <script src="/academy/js/academy.js"></script>
+  <script>
+    // If already logged in, redirect to dashboard
+    (async () => {
+      const user = await getUser();
+      if (user) window.location.href = '/academy/dashboard.html';
+    })();
+
+    // Check for redirect param
+    const redirect = new URLSearchParams(window.location.search).get('redirect') || '/academy/dashboard.html';
+
+    function showLogin() {
+      document.getElementById('loginForm').style.display = '';
+      document.getElementById('signupForm').style.display = 'none';
+      document.getElementById('forgotForm').style.display = 'none';
+    }
+    function showSignup() {
+      document.getElementById('loginForm').style.display = 'none';
+      document.getElementById('signupForm').style.display = '';
+      document.getElementById('forgotForm').style.display = 'none';
+    }
+    function showForgot() {
+      document.getElementById('loginForm').style.display = 'none';
+      document.getElementById('signupForm').style.display = 'none';
+      document.getElementById('forgotForm').style.display = '';
+    }
+
+    function showError(id, msg) {
+      const el = document.getElementById(id);
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+    function hideErrors() {
+      document.querySelectorAll('.qa-error, .qa-success').forEach(e => e.style.display = 'none');
+    }
+
+    async function handleLogin() {
+      hideErrors();
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      if (!email || !password) return showError('loginError', 'Please fill in all fields');
+      
+      try {
+        await signIn(email, password);
+        window.location.href = redirect;
+      } catch (err) {
+        showError('loginError', err.message || 'Invalid email or password');
+      }
+    }
+
+    async function handleSignup() {
+      hideErrors();
+      const name = document.getElementById('signupName').value.trim();
+      const email = document.getElementById('signupEmail').value.trim();
+      const password = document.getElementById('signupPassword').value;
+      
+      if (!name || !email || !password) return showError('signupError', 'Please fill in all fields');
+      if (password.length < 8) return showError('signupError', 'Password must be at least 8 characters');
+      
+      try {
+        await signUp(email, password, name);
+        const success = document.getElementById('signupSuccess');
+        success.textContent = 'Account created! Check your email to verify, then sign in.';
+        success.style.display = 'block';
+      } catch (err) {
+        showError('signupError', err.message || 'Failed to create account');
+      }
+    }
+
+    async function handleForgot() {
+      hideErrors();
+      const email = document.getElementById('forgotEmail').value.trim();
+      if (!email) return showError('forgotError', 'Please enter your email');
+      
+      try {
+        await resetPassword(email);
+        const success = document.getElementById('forgotSuccess');
+        success.textContent = 'Reset link sent! Check your email.';
+        success.style.display = 'block';
+      } catch (err) {
+        showError('forgotError', err.message || 'Failed to send reset link');
+      }
+    }
+
+    // Enter key submits
+    document.getElementById('loginPassword').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+    document.getElementById('signupPassword').addEventListener('keydown', e => { if (e.key === 'Enter') handleSignup(); });
+    document.getElementById('forgotEmail').addEventListener('keydown', e => { if (e.key === 'Enter') handleForgot(); });
+
+    // Check URL hash for signup
+    if (window.location.hash === '#signup') showSignup();
+  </script>
+</body>
+</html>
