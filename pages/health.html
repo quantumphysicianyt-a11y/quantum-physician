@@ -158,9 +158,11 @@
 
     /* RESPONSIVE */
     @media(max-width:900px){
-      .hero .traceyFloat{float:right;width:30%;max-width:150px;margin:0 0 10px 12px;shape-outside:polygon(15% 0,100% 0,100% 100%,25% 100%)}
+      .hero .traceyFloat{float:right;width:28%;max-width:120px;margin:0 0 8px 12px;shape-outside:inset(0);filter:drop-shadow(0 10px 30px rgba(0,0,0,.4))}
       .hero{text-align:left;padding:30px 0 20px}
       .hero .sig{padding-left:0}.hero .sig::before{display:none}
+      .hero h1{font-size:clamp(26px,5vw,36px)}
+      .hero .intro{font-size:16px;line-height:1.7}
       .parchment{padding:40px 24px;margin:0 16px}
       .badgeWrap{margin:0 16px}
       .pillarGrid{grid-template-columns:repeat(2,1fr);gap:14px;margin:0 16px 30px}
@@ -172,16 +174,21 @@
       .collageWrap{margin:30px auto;max-width:90%}
       .bridge{padding:36px 0}
       .beliefs{padding:36px 0}
+      /* Roots on mobile: smaller, more contained */
+      .beliefs .rootsBg{width:80%;max-width:600px;opacity:.25}
       .chains{padding:36px 0 30px}
       .ctaEnd{padding:40px 0 30px}
     }
     @media(max-width:500px){
-      .hero h1{font-size:30px}
-      .hero .intro{font-size:15px}
+      .hero .traceyFloat{width:25%;max-width:100px;margin:0 0 6px 10px}
+      .hero h1{font-size:24px}
+      .hero h1 em{font-size:.55em}
+      .hero .intro{font-size:14px}
       .parchment p{font-size:15px}
       .parchment .dropcap{font-size:48px}
       .pillarCard{padding:20px 10px}
       .pillarCard .letter{font-size:40px}
+      .beliefs .rootsBg{opacity:.2}
     }
 
     /* === MOBILE PERF: lighter GPU load, all animations still run === */
