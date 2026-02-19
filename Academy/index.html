@@ -14,41 +14,11 @@
     .qa-hero {
       padding: 80px 0 70px;
       background: linear-gradient(160deg, #061320 0%, #0a1e33 30%, #0f2942 60%, #0d2844 100%);
-      position: relative;
-      overflow: hidden;
-    }
-    .qa-hero::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      right: -20%;
-      width: 800px;
-      height: 800px;
-      background: radial-gradient(circle, rgba(91,168,178,.07) 0%, transparent 70%);
-      pointer-events: none;
-    }
-    .qa-hero::after {
-      content: '';
-      position: absolute;
-      bottom: -30%;
-      left: -10%;
-      width: 600px;
-      height: 600px;
-      background: radial-gradient(circle, rgba(173,155,132,.05) 0%, transparent 70%);
-      pointer-events: none;
     }
     .hero-logo {
       max-width: 400px;
       margin: 0 auto 32px;
       display: block;
-    }
-    .hero-globe {
-      position: absolute;
-      right: 40px;
-      bottom: 30px;
-      width: 200px;
-      opacity: .025;
-      pointer-events: none;
     }
     .hero-tagline {
       font-family: "Playfair Display", serif;
@@ -56,6 +26,7 @@
       font-style: italic;
       color: var(--taupe, #ad9b84);
       margin-bottom: 20px;
+      text-align: center;
     }
     .hero-features {
       display: flex;
@@ -98,17 +69,12 @@
       background: var(--qa-bg-card);
       border: 1px solid var(--qa-border);
       border-radius: var(--qa-radius);
-      transition: all var(--qa-transition);
-    }
-    .step-card:hover {
-      border-color: var(--qa-border-hover);
-      transform: translateY(-4px);
     }
     .step-number {
       width: 48px;
       height: 48px;
       border-radius: 50%;
-      background: linear-gradient(135deg, rgba(91,168,178,.15), rgba(91,168,178,.05));
+      background: rgba(91,168,178,.1);
       border: 1px solid rgba(91,168,178,.3);
       display: inline-flex;
       align-items: center;
@@ -124,7 +90,7 @@
     .qa-cta {
       padding: 60px 0;
       text-align: center;
-      background: linear-gradient(135deg, rgba(91,168,178,.08), rgba(173,155,132,.05));
+      background: rgba(91,168,178,.04);
       border-top: 1px solid var(--qa-border);
       border-bottom: 1px solid var(--qa-border);
     }
@@ -144,6 +110,7 @@
       height: 140px;
       border-radius: 50%;
       object-fit: cover;
+      object-position: top;
       border: 3px solid rgba(91,168,178,.3);
       flex-shrink: 0;
     }
@@ -152,7 +119,6 @@
     .instructor-card p { color: var(--qa-text-muted); font-size: 15px; line-height: 1.7; }
     @media (max-width: 768px) {
       .hero-logo { max-width: 280px; }
-      .hero-globe { display: none; }
       .hero-features { gap: 16px; }
       .instructor-card { flex-direction: column; text-align: center; padding: 28px; gap: 20px; }
     }
@@ -164,10 +130,9 @@
   <main>
     <!-- HERO -->
     <section class="qa-hero">
-      <img src="/assets/images/QPA_LOGO_WHITE_DIGITAL.png" alt="" class="hero-globe" aria-hidden="true">
-      <div class="qa-wrap" style="position:relative;z-index:1">
+      <div class="qa-wrap">
         <img src="/assets/images/QuantumPhysAcad_STACKED-RGB.png" alt="Quantum Physician Academy" class="hero-logo">
-        <p class="hero-tagline" style="text-align:center">Empowered Learning for Lasting Transformation</p>
+        <p class="hero-tagline">Empowered Learning for Lasting Transformation</p>
         <p class="qa-subtitle" style="text-align:center;margin:0 auto 28px">Self-paced courses built on the Quantum Physician model. Release limiting beliefs, unlock your potential, and create lasting wellness — on your schedule.</p>
         <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
           <a href="#courses" class="qa-btn qa-btn-primary qa-btn-lg">Browse Courses</a>
@@ -241,7 +206,7 @@
           <h2 class="qa-h2">Learn From the Source</h2>
         </div>
         <div class="instructor-card">
-          <img src="/assets/images/tracey-standing.png" alt="Dr. Tracey Clark" class="instructor-avatar">
+          <img src="/assets/images/tracey-about-me.png" alt="Dr. Tracey Clark" class="instructor-avatar">
           <div>
             <h3>Dr. Tracey Clark</h3>
             <div class="title">Founder, Quantum Physician</div>
@@ -267,13 +232,15 @@
   <script src="/academy/js/academy.js"></script>
   <script>
     (async () => {
-      const user = await getUser();
-      if (user) {
-        document.getElementById('authBtn').textContent = 'My Dashboard';
-        document.getElementById('authBtn').href = '/academy/dashboard.html';
-        document.getElementById('ctaBtn').textContent = 'Go to Dashboard';
-        document.getElementById('ctaBtn').href = '/academy/dashboard.html';
-      }
+      try {
+        const user = await getUser();
+        if (user) {
+          document.getElementById('authBtn').textContent = 'My Dashboard';
+          document.getElementById('authBtn').href = '/academy/dashboard.html';
+          document.getElementById('ctaBtn').textContent = 'Go to Dashboard';
+          document.getElementById('ctaBtn').href = '/academy/dashboard.html';
+        }
+      } catch(e) { console.error(e); }
     })();
 
     (async () => {
@@ -286,10 +253,10 @@
         if (all.length === 0) { grid.innerHTML = ''; empty.style.display = 'block'; return; }
         grid.innerHTML = all.map(c => `
           <a class="qa-course-card" href="/academy/course.html?slug=${c.slug}">
-            <div class="thumb">
-              ${c.thumbnail_url ? `<img src="${c.thumbnail_url}" alt="${c.title}" loading="lazy" decoding="async">` : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:48px;opacity:.3;background:linear-gradient(135deg,#0f2942,#1a3a5c)">📖</div>`}
-              ${c.price_cents === 0 ? '<div class="badge free">Free</div>' : ''}
+            <div class="thumb" style="background:linear-gradient(135deg,#0f2942,#1a3a5c);display:flex;align-items:center;justify-content:center">
+              <span style="font-size:48px;opacity:.3">📖</span>
               ${c.status === 'coming_soon' ? '<div class="badge coming">Coming Soon</div>' : ''}
+              ${c.price_cents === 0 && c.status !== 'coming_soon' ? '<div class="badge free">Free</div>' : ''}
             </div>
             <div class="body">
               <h3>${c.title}</h3>
@@ -304,7 +271,6 @@
             </div>
           </a>
         `).join('');
-        trackEvent('page_view', null, null, { page: 'catalog' });
       } catch (err) {
         console.error('Failed to load courses:', err);
         grid.innerHTML = '<p style="text-align:center;color:rgba(255,255,255,.5)">Unable to load courses. Please try again later.</p>';
