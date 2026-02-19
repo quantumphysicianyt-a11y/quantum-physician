@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>The Quantum Physician Model: Health | Quantum Physician</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/shared.css">
+  <style>
+    :root{--deep:#0f2942;--mid:#123554;--dark:#0c2236;--teal:#5ba8b2;--taupe:#ad9b84;--navy:#131e3d;--parchment:#e8e0d4}
+    body{background:var(--deep);color:#fff}
+    .scrollProgress{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--teal),var(--taupe));width:0%;z-index:200;transition:width .1s linear}
+    .fade{opacity:0;transform:translateY(30px);transition:opacity .8s ease,transform .8s ease}
+    .fade.visible{opacity:1;transform:translateY(0)}
+
+    /* S1: HERO */
+    .qpmHero{min-height:90vh;background:linear-gradient(135deg,var(--deep) 0%,var(--mid) 50%,var(--dark) 100%);position:relative;overflow:hidden}
+    .qpmHero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 30% 50%,rgba(91,168,178,.08) 0%,transparent 60%);pointer-events:none}
+    .qpmHero .wrap{display:grid;grid-template-columns:1fr 1fr;align-items:end;min-height:90vh}
+    .heroText{padding:100px 0 120px;z-index:2}
+    .heroText .label{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--teal);margin-bottom:20px;display:block}
+    .heroText h1{font-family:"Playfair Display",serif;font-size:clamp(32px,4vw,52px);font-weight:600;line-height:1.2;margin-bottom:28px}
+    .heroText h1 span{color:var(--taupe)}
+    .heroText p{font-size:17px;line-height:1.8;color:rgba(255,255,255,.8);max-width:520px;margin-bottom:24px}
+    .heroText .signature{font-family:"Playfair Display",serif;font-style:italic;font-size:20px;color:var(--taupe)}
+    .heroImg{display:flex;align-items:flex-end;justify-content:center;z-index:2}
+    .heroImg img{max-height:80vh;width:auto;max-width:100%;filter:drop-shadow(0 20px 60px rgba(0,0,0,.5))}
+
+    /* S2: SERIES INTRO */
+    .seriesIntro{padding:80px 0;text-align:center;background:linear-gradient(180deg,var(--dark),var(--deep));position:relative}
+    .seriesIntro::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(91,168,178,.06) 0%,transparent 70%)}
+    .seriesIntro p{font-family:"Playfair Display",serif;font-style:italic;font-size:clamp(20px,3vw,28px);line-height:1.7;max-width:700px;margin:0 auto;color:rgba(255,255,255,.85);position:relative}
+
+    /* S3: HEALTH */
+    .healthSection{padding:80px 0;background:linear-gradient(180deg,var(--deep),#0a1e30)}
+    .badgeWrap{text-align:center;margin-bottom:50px}
+    .badgeWrap img{max-width:420px;width:80%;margin:0 auto;filter:drop-shadow(0 10px 30px rgba(0,0,0,.3))}
+    .parchment{max-width:800px;margin:0 auto;background:linear-gradient(145deg,var(--parchment),#ddd5c8);padding:50px 60px;border-radius:4px;color:#222;box-shadow:0 20px 60px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.5)}
+    .parchment p{font-size:16px;line-height:1.85;margin-bottom:20px}
+    .parchment p:last-child{margin-bottom:0}
+
+    /* S4: TREATMENT */
+    .treatmentSection{position:relative;min-height:500px;overflow:hidden}
+    .treatmentSection img.bgFull{width:100%;height:100%;position:absolute;inset:0;object-fit:cover}
+    .treatmentSection .overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,41,66,.3) 0%,rgba(15,41,66,.7) 100%);display:flex;align-items:center;justify-content:center;text-align:center;padding:40px 20px}
+    .treatmentSection .overlay p{font-family:"Playfair Display",serif;font-size:clamp(22px,3.5vw,36px);line-height:1.6;max-width:600px;text-shadow:0 2px 20px rgba(0,0,0,.5)}
+
+    /* S5: BELIEFS */
+    .beliefsSection{padding:80px 0;background:linear-gradient(180deg,var(--deep),var(--mid))}
+    .beliefsSection .wrap{max-width:780px;margin:0 auto}
+    .beliefsSection h2{font-family:"Playfair Display",serif;font-size:clamp(28px,4vw,42px);text-align:center;margin-bottom:12px;font-weight:500}
+    .beliefsSection h2 span{display:block;font-size:clamp(36px,5vw,56px);font-weight:700;color:var(--taupe)}
+    .beliefsSection .textBlock{max-width:680px;margin:30px auto 0;text-align:center}
+    .beliefsSection .textBlock p{font-size:16px;line-height:1.85;color:rgba(255,255,255,.85);margin-bottom:20px}
+
+    /* S6: CHAINS */
+    .chainsSection{padding:60px 0 80px;background:#000;text-align:center}
+    .chainsSection .subLabel{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--teal);margin-bottom:8px}
+    .chainsSection h3{font-family:"Playfair Display",serif;font-size:clamp(32px,4.5vw,48px);font-weight:700;color:var(--taupe);margin-bottom:40px}
+    .chainsImg{max-width:800px;margin:0 auto 40px;overflow:hidden}
+    .chainsImg img{width:100%;display:block}
+    .chainsSection .afterText{max-width:680px;margin:0 auto;font-size:16px;line-height:1.85;color:rgba(255,255,255,.85);padding:0 20px}
+
+    /* S7: TRANSFORMATION */
+    .transformSection{position:relative;min-height:500px;overflow:hidden}
+    .transformSection img.bgFull{width:100%;height:100%;position:absolute;inset:0;object-fit:cover}
+    .transformSection .overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,41,66,.2) 0%,rgba(15,41,66,.6) 100%);display:flex;align-items:center;justify-content:center;text-align:center;padding:40px 20px}
+    .transformSection .overlay p{font-family:"Playfair Display",serif;font-style:italic;font-size:clamp(22px,3vw,34px);text-shadow:0 2px 20px rgba(0,0,0,.5)}
+
+    /* S8: CTA */
+    .ctaSection{padding:100px 0;background:linear-gradient(180deg,var(--dark),var(--navy));text-align:center}
+    .ctaSection h2{font-family:"Playfair Display",serif;font-size:clamp(28px,4vw,42px);font-weight:500;margin-bottom:30px}
+    .ctaSection .ctaBtn{display:inline-flex;align-items:center;justify-content:center;padding:16px 40px;border-radius:999px;font-size:12px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;background:linear-gradient(180deg,var(--taupe),#9a8a75);color:#fff;box-shadow:0 8px 30px rgba(0,0,0,.3);transition:all .2s ease;border:none;cursor:pointer}
+    .ctaSection .ctaBtn:hover{filter:brightness(1.1);transform:translateY(-2px);box-shadow:0 12px 40px rgba(0,0,0,.4)}
+
+    /* RESPONSIVE */
+    @media(max-width:900px){
+      .qpmHero .wrap{grid-template-columns:1fr;min-height:auto}
+      .heroText{padding:60px 0 30px;text-align:center}
+      .heroText p{max-width:100%;margin-left:auto;margin-right:auto}
+      .heroImg{order:-1;padding-top:30px}
+      .heroImg img{max-height:50vh}
+      .parchment{padding:30px 24px;margin:0 16px}
+      .treatmentSection,.transformSection{min-height:350px}
+    }
+    @media(max-width:500px){
+      .heroText h1{font-size:28px}
+      .heroImg img{max-height:40vh}
+      .badgeWrap img{width:90%}
+      .parchment{padding:24px 18px;margin:0 10px}
+    }
+  </style>
+</head>
+<body>
+  <div class="scrollProgress" id="scrollProgress"></div>
+  <div id="shared-header"></div>
+
+  <section class="qpmHero">
+    <div class="wrap">
+      <div class="heroText fade">
+        <span class="label">The Quantum Physician Model</span>
+        <h1>A Holistic Approach to <span>Health &amp; Healing</span></h1>
+        <p>The Quantum Physician model is built around four essential pillars—H.O.P.E., which stands for Health, Observation, Potential, and Empowerment. These pillars guide individuals toward health and healing by focusing on the observation of potential and empowered actions that align with this potential.</p>
+        <p>At its core, this model is about supporting personal transformation by helping people harness the potential for well-being across all areas of life—whether physical, mental, emotional, relational, or even in business.</p>
+        <p class="signature">Dr. Tracey Clark</p>
+      </div>
+      <div class="heroImg fade">
+        <img src="/assets/images/tracey-standing.png" alt="Dr. Tracey Clark">
+      </div>
+    </div>
+  </section>
+
+  <section class="seriesIntro">
+    <div class="wrap">
+      <p class="fade">In this series, we will delve into each of these pillars in depth, but for now, let's focus on the concept of health.</p>
+    </div>
+  </section>
+
+  <section class="healthSection">
+    <div class="wrap">
+      <div class="badgeWrap fade"><img src="/assets/images/health-badge.png" alt="Health — A Chinese Medicine Perspective" loading="lazy"></div>
+      <div class="parchment fade">
+        <p>From the standpoint of Chinese medicine, health is defined as the capacity of an organism to adapt to challenges. It isn't about the absence of hardship but rather how well we adjust to life's difficulties. Illness or stress can be viewed as a result of an inability to adapt.</p>
+        <p>What impacts this adaptability? The answer lies in rigidity—the rigidity of our minds. Over time, we accumulate beliefs, many of which we form early in life. These beliefs shape how we view ourselves and the world, and when we cling to them too tightly, they limit our capacity to see new possibilities. True adaptability, and thus health, is about opening our minds to different perspectives and experiences.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="treatmentSection">
+    <img class="bgFull" src="/assets/images/tracey-treatment.png" alt="" loading="lazy">
+    <div class="overlay">
+      <p class="fade">Health is not theoretical.<br>It is observable.<br>It is measurable through adaptability.</p>
+    </div>
+  </section>
+
+  <section class="beliefsSection">
+    <div class="wrap">
+      <h2 class="fade">The Roots of<span>Our Beliefs</span></h2>
+      <div class="textBlock fade">
+        <p>Interestingly, we form most of our core beliefs by the time we are just three years old. We inherit many of these beliefs from our ancestry but also form our own beliefs and conclusions through observing the behaviors of those around us. These beliefs serve as a safety mechanism, helping us navigate life's experiences by aiming for pleasure and avoiding pain.</p>
+        <p>However, as we age, these beliefs narrow our focus and limit our ability to see other possibilities. By middle age, this rigidity can lead to stress and a sense of being stuck. Conflicting beliefs create stress and hinder adaptability, thus affecting our overall health.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="chainsSection">
+    <p class="subLabel fade">Releasing Limiting</p>
+    <h3 class="fade">Beliefs</h3>
+    <div class="chainsImg fade"><img src="/assets/images/chains.png" alt="Breaking chains of limiting beliefs" loading="lazy"></div>
+    <p class="afterText fade">Achieving health begins in the mind. It starts by releasing expectations tied to old beliefs—beliefs that create stress, pain, or conflict. Imagine viewing the world through the lens of struggle versus one of opportunity. Quantum physics tells us that what we focus on, we tend to find. By shifting our expectations from pain to health, from conflict to opportunity, we can experience a completely different reality.</p>
+  </section>
+
+  <section class="transformSection">
+    <img class="bgFull" src="/assets/images/reflection.png" alt="Transformation and reflection" loading="lazy">
+    <div class="overlay">
+      <p class="fade">Transformation begins with awareness.</p>
+    </div>
+  </section>
+
+  <section class="ctaSection">
+    <div class="wrap">
+      <h2 class="fade">Explore the Quantum Physician Model</h2>
+      <a class="ctaBtn fade" href="/">Learn More</a>
+    </div>
+  </section>
+
+  <div id="shared-footer"></div>
+  <script src="/js/shared.js"></script>
+  <script>
+    window.addEventListener('scroll',()=>{const h=document.documentElement.scrollHeight-window.innerHeight;document.getElementById('scrollProgress').style.width=(window.scrollY/h)*100+'%'});
+    const obs=new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting){x.target.classList.add('visible');obs.unobserve(x.target)}}),{threshold:.15});
+    document.querySelectorAll('.fade').forEach(el=>obs.observe(el));
+  </script>
+</body>
+</html>
