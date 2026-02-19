@@ -3,41 +3,60 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Academy Test</title>
+  <title>Academy Test - Hero Only</title>
   <link rel="stylesheet" href="/css/shared.css">
   <link rel="stylesheet" href="/academy/css/academy.css">
   <style>
-    .test-section { padding: 60px 20px; max-width: 800px; margin: 0 auto; text-align: center; }
-    h1 { font-size: 32px; margin-bottom: 16px; }
-    p { font-size: 16px; opacity: .7; margin-bottom: 40px; }
-    .card { background: #112a42; border: 1px solid rgba(91,168,178,.15); border-radius: 12px; padding: 24px; margin-bottom: 16px; }
+    .qa-hero {
+      padding: 80px 0 70px;
+      background: linear-gradient(160deg, #061320 0%, #0a1e33 30%, #0f2942 60%, #0d2844 100%);
+    }
+    .hero-logo { max-width: 400px; margin: 0 auto 32px; display: block; }
+    .hero-tagline {
+      font-family: "Playfair Display", serif;
+      font-size: clamp(18px, 2.5vw, 24px);
+      font-style: italic;
+      color: var(--taupe, #ad9b84);
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .hero-features { display: flex; gap: 32px; justify-content: center; margin-top: 40px; flex-wrap: wrap; }
+    .hero-feature { display: flex; align-items: center; gap: 10px; font-size: 14px; color: rgba(255,255,255,.6); }
+    .hero-feature .icon {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: rgba(91,168,178,.1); border: 1px solid rgba(91,168,178,.2);
+      display: flex; align-items: center; justify-content: center; font-size: 16px;
+    }
   </style>
 </head>
 <body class="qa-page">
   <div id="shared-header"></div>
 
-  <div class="test-section">
-    <h1>Academy Test Page</h1>
-    <p>If you can see this and scroll without crashing, academy.js is fine too.</p>
-  </div>
+  <main>
+    <section class="qa-hero">
+      <div class="qa-wrap">
+        <img src="/assets/images/QuantumPhysAcad_STACKED-RGB.png" alt="Quantum Physician Academy" class="hero-logo">
+        <p class="hero-tagline">Empowered Learning for Lasting Transformation</p>
+        <p class="qa-subtitle" style="text-align:center;margin:0 auto 28px">Self-paced courses built on the Quantum Physician model. Release limiting beliefs, unlock your potential, and create lasting wellness — on your schedule.</p>
+        <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+          <a href="#courses" class="qa-btn qa-btn-primary qa-btn-lg">Browse Courses</a>
+          <a href="/academy/login.html" class="qa-btn qa-btn-outline qa-btn-lg">Sign In</a>
+        </div>
+        <div class="hero-features">
+          <div class="hero-feature"><div class="icon">📺</div> Self-Paced Video Lessons</div>
+          <div class="hero-feature"><div class="icon">📜</div> Certificates of Completion</div>
+          <div class="hero-feature"><div class="icon">💬</div> Community Discussions</div>
+          <div class="hero-feature"><div class="icon">♾️</div> Lifetime Access</div>
+        </div>
+      </div>
+    </section>
 
-  <div class="test-section">
-    <h2>Section 2 - Cards</h2>
-    <div class="card"><h3>Course 1</h3><p>Description here</p></div>
-    <div class="card"><h3>Course 2</h3><p>Description here</p></div>
-    <div class="card"><h3>Course 3</h3><p>Description here</p></div>
-    <div class="card"><h3>Course 4</h3><p>Description here</p></div>
-    <div class="card"><h3>Course 5</h3><p>Description here</p></div>
-  </div>
-
-  <div class="test-section">
-    <h2>Section 3 - Bottom</h2>
-    <p>If you reached here, problem is in the full page content/structure.</p>
-  </div>
+    <div style="padding:60px 20px;text-align:center">
+      <p>If you can scroll here without crashing, hero is fine.</p>
+    </div>
+  </main>
 
   <div id="shared-footer"></div>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/shared.js"></script>
-  <script src="/academy/js/academy.js"></script>
 </body>
 </html>
