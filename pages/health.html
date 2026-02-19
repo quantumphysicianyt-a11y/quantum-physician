@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/shared.css">
-  <link rel="preload" as="image" href="/assets/images/tracey-standing.png">
+  <link rel="preload" as="image" href="/assets/images/tracey-standing.webp" type="image/webp">
   <link rel="preload" as="image" href="/assets/images/health-badge.png">
   <style>
     body{background:#0a1e33;color:#fff;overflow-x:hidden}
@@ -29,6 +29,7 @@
     .hero .pill{display:inline-block;font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--teal);border:1px solid rgba(91,168,178,.35);padding:10px 24px;border-radius:999px;margin-bottom:20px;animation:pillP 4s ease-in-out infinite}
     @keyframes pillP{0%,100%{box-shadow:0 0 12px rgba(91,168,178,.1)}50%{box-shadow:0 0 30px rgba(91,168,178,.3)}}
     .hero .traceyFloat{float:right;width:26%;max-width:280px;margin:0 0 10px 30px;shape-outside:polygon(15% 0,100% 0,100% 100%,25% 100%);filter:drop-shadow(0 20px 60px rgba(0,0,0,.45))}
+    .hero .traceyFloat img{width:100%;height:auto;display:block}
     .hero h1{font-family:"Playfair Display",serif;font-size:clamp(40px,6vw,74px);font-weight:700;line-height:1.08;margin-bottom:20px}
     .hero h1 em{display:block;color:var(--teal);font-style:italic;font-weight:400;font-size:.5em;margin-top:10px}
     .hero .intro{font-size:20px;line-height:1.9;color:rgba(255,255,255,.75);margin-bottom:24px}
@@ -56,6 +57,7 @@
 
     /* === TREATMENT === */
     .treatPanel{position:relative;min-height:450px;overflow:hidden;display:flex;align-items:center;justify-content:center;margin-top:50px}
+    .treatPanel picture,.transform picture{position:absolute;inset:0;display:block}
     .treatPanel img.bg{position:absolute;inset:0;width:100%;height:120%;object-fit:cover;top:-10%;will-change:transform}
     .treatPanel .overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,30,51,.55),rgba(10,30,51,.85))}
     .treatPanel .content{position:relative;z-index:2;text-align:center;padding:50px 20px;max-width:800px}
@@ -236,7 +238,7 @@
   <section class="hero">
     <div class="orb a"></div><div class="orb b"></div>
     <div class="wrap">
-      <img class="traceyFloat slideRight" src="/assets/images/tracey-standing.png" alt="Dr. Tracey Clark" fetchpriority="high" decoding="async">
+      <picture class="traceyFloat slideRight"><source srcset="/assets/images/tracey-standing.webp" type="image/webp"><img src="/assets/images/tracey-standing.png" alt="Dr. Tracey Clark" fetchpriority="high" decoding="async"></picture>
       <span class="pill fadeUp">The Quantum Physician Model</span>
       <h1 class="fadeUp d1">The Quantum Physician Model:<em>A Holistic Approach to Health &amp; Healing</em></h1>
       <p class="intro fadeUp d2">The Quantum Physician model is built around four essential pillars — H.O.P.E., which stands for Health, Observation, Potential, and Empowerment. These pillars guide individuals toward health and healing by focusing on the observation of potential and empowered actions that align with this potential.</p>
@@ -262,7 +264,7 @@
   </section>
 
   <section class="treatPanel" id="treatPanel">
-    <img class="bg" src="/assets/images/tracey-treatment.png" alt="" loading="lazy" decoding="async">
+    <picture><source srcset="/assets/images/tracey-treatment.webp" type="image/webp"><img class="bg" src="/assets/images/tracey-treatment.png" alt="" loading="lazy" decoding="async"></picture>
     <div class="overlay"></div>
     <div class="content">
       <p><span class="line">Health is not theoretical.</span><span class="line">It is <em>observable.</em></span><span class="line">It is measurable through <em>adaptability.</em></span></p>
@@ -288,7 +290,7 @@
   </section>
 
   <section class="transform">
-    <img class="bg" src="/assets/images/reflection.png" alt="" loading="lazy" decoding="async">
+    <picture><source srcset="/assets/images/reflection.webp" type="image/webp"><img class="bg" src="/assets/images/reflection.png" alt="" loading="lazy" decoding="async"></picture>
     <div class="overlay"></div>
     <div class="content fadeScale"><p>This change in perception allows us to transform our relationship with the world, impacting not only our health but also our overall life experience.</p></div>
   </section>
@@ -311,7 +313,7 @@
       <h3 class="fadeUp">Moving Toward</h3>
       <h2 class="fadeUp d1">Health and Hope</h2>
       <p class="fadeUp d2">Whether it's through self-directed courses or one-on-one interactive sessions, the Quantum Physician model offers tools to help individuals break free from limiting beliefs. These practices help to align with new possibilities and manifest a whole new experience of health and wellness. From physical health to emotional well-being, professional success, and relationships, this model emphasizes the importance of adaptability in all areas of life.</p>
-      <div class="collageWrap fadeScale"><img src="/assets/images/treatment-collage.png" alt="Treatment sessions" loading="lazy" decoding="async"></div>
+      <div class="collageWrap fadeScale"><picture><source srcset="/assets/images/treatment-collage.webp" type="image/webp"><img src="/assets/images/treatment-collage.png" alt="Treatment sessions" loading="lazy" decoding="async"></picture></div>
       <p class="fadeUp d3">As we gather information from our environment, the expectations we hold create an energetic blueprint for what manifests in our physical reality. The body, in this model, becomes a reflection of our beliefs and expectations. By releasing rigidity and opening ourselves to new perspectives, we can transform both our mental and physical health.</p>
       <p class="fadeUp d3">If you're interested in exploring this path of health and healing, or even in helping others to do the same, the Quantum Physician model offers professional certification programs in the field of quantum wellness. Whether for personal growth or professional development, this model provides a powerful framework for achieving a whole new experience of well-being.</p>
     </div></div>
