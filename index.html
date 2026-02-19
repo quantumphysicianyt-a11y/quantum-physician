@@ -1325,15 +1325,68 @@
       50%{transform:scale(1.05)}
     }
 
-    /* ========== FOOTER ========== */
+    /* ========== FOOTER — loaded from shared.css ========== */
     footer{
       background:#111;
       color:#fff;
-      padding:40px 20px;
+      padding:50px 0 0;
+    }
+    .footerGrid{
+      display:grid;
+      grid-template-columns:1.5fr 1fr 1fr 1fr;
+      gap:40px;
+      padding-bottom:40px;
+      border-bottom:1px solid rgba(255,255,255,.1);
+    }
+    .footerCol{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+    .footerLogo{
+      height:60px;
+      width:auto;
+      margin-bottom:8px;
+    }
+    .footerTagline{
+      font-size:13px;
+      opacity:.6;
+      line-height:1.5;
+    }
+    .footerCol h4{
+      color:var(--teal);
+      font-size:11px;
+      letter-spacing:.15em;
+      text-transform:uppercase;
+      margin-bottom:8px;
+    }
+    .footerCol a{
+      color:rgba(255,255,255,.7);
+      font-size:14px;
+      transition:color .2s;
+    }
+    .footerCol a:hover{color:var(--teal)}
+    .footerSocial{
+      display:flex;
+      gap:14px;
+    }
+    .footerSocial a{font-size:16px;opacity:.7}
+    .footerSocial a:hover{opacity:1;color:var(--teal)}
+    .footerBottom{
+      padding:20px 0;
       text-align:center;
       font-size:13px;
+      opacity:.5;
     }
-    footer a{color:var(--teal)}
+    @media(max-width:900px){
+      .footerGrid{grid-template-columns:1fr 1fr;gap:30px 20px}
+      .footerLogo{height:50px}
+    }
+    @media(max-width:500px){
+      .footerGrid{grid-template-columns:1fr;gap:24px;text-align:center}
+      .footerCol{align-items:center}
+      .footerSocial{justify-content:center}
+    }
 
     /* ========== HAMBURGER (hidden on desktop) ========== */
     .hamburger{
@@ -2020,9 +2073,8 @@
     </div>
   </div>
 
-  <footer>
-    <p>&copy; 2024 Quantum Physician. All rights reserved.</p>
-  </footer>
+  <!-- Shared footer loads here -->
+  <div id="shared-footer"></div>
 
   <script>
     // ========== MOBILE MENU ==========
@@ -2311,6 +2363,15 @@
         </div>
       `).join('');
     }
+  </script>
+
+  <!-- Load shared footer -->
+  <script>
+    fetch('/components/footer.html')
+      .then(r => r.text())
+      .then(html => {
+        document.getElementById('shared-footer').innerHTML = html;
+      });
   </script>
 
 </body>
