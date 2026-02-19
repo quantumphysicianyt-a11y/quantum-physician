@@ -66,7 +66,7 @@
 
     /* === BELIEFS with roots bg === */
     .beliefs{padding:50px 0;text-align:center;position:relative;overflow:hidden}
-    .beliefs .rootsBg{position:absolute;top:50%;left:50%;transform:translate(-50%,-40%);width:80%;max-width:700px;height:auto;opacity:.07;pointer-events:none;filter:invert(1)}
+    .beliefs .rootsBg{position:absolute;top:50%;left:50%;transform:translate(-50%,-45%);width:90%;max-width:800px;height:auto;opacity:.15;pointer-events:none;mix-blend-mode:screen}
     .beliefs h2{font-family:"Playfair Display",serif;font-size:clamp(15px,1.6vw,20px);font-weight:400;letter-spacing:.25em;text-transform:uppercase;color:var(--teal);margin-bottom:30px}
     .beliefs h2::after{content:'';display:block;width:60px;height:1px;background:var(--teal);margin:16px auto 0;opacity:.5}
     .beliefs .inner{max-width:800px;margin:0 auto;position:relative;z-index:1}
@@ -91,9 +91,12 @@
 
     /* === DOWNWARD CAUSATION === */
     .downward{padding:60px 0;text-align:center;position:relative}
+    .downward .arrow{position:absolute;left:60px;top:0;bottom:0;width:40px;pointer-events:none;z-index:0}
+    .downward .arrow::before{content:'';position:absolute;left:50%;top:0;width:2px;height:calc(100% - 20px);background:linear-gradient(180deg,rgba(91,168,178,0),rgba(91,168,178,.35),rgba(91,168,178,.35));transform:translateX(-50%)}
+    .downward .arrow::after{content:'';position:absolute;left:50%;bottom:10px;transform:translateX(-50%);width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-top:16px solid rgba(91,168,178,.35)}
     .downward h3{font-size:clamp(13px,1.4vw,16px);letter-spacing:.25em;text-transform:uppercase;color:var(--teal);font-weight:400;margin-bottom:12px;font-family:"Playfair Display",serif}
     .downward h2{font-family:"Playfair Display",serif;font-size:clamp(34px,4vw,56px);font-weight:700;margin-bottom:30px;line-height:1.1}
-    .downward .inner{max-width:780px;margin:0 auto}
+    .downward .inner{max-width:780px;margin:0 auto;position:relative;z-index:1}
     .downward p{font-size:clamp(17px,1.6vw,19px);line-height:1.9;color:rgba(255,255,255,.75);margin-bottom:20px}
 
     /* === HEALTH AND HOPE === */
@@ -103,6 +106,9 @@
     .healthHope h2{font-family:"Playfair Display",serif;font-size:clamp(34px,4vw,56px);font-weight:700;margin-bottom:30px;line-height:1.1}
     .healthHope .inner{max-width:780px;margin:0 auto}
     .healthHope p{font-size:clamp(17px,1.6vw,19px);line-height:1.9;color:rgba(255,255,255,.75);margin-bottom:20px}
+    .collageWrap{margin:40px auto;max-width:600px;text-align:center}
+    .collageWrap img{width:100%;height:auto;filter:drop-shadow(0 20px 50px rgba(0,0,0,.4));animation:collageGlow 5s ease-in-out infinite}
+    @keyframes collageGlow{0%,100%{filter:drop-shadow(0 20px 50px rgba(0,0,0,.4))}50%{filter:drop-shadow(0 20px 60px rgba(91,168,178,.15)) drop-shadow(0 20px 50px rgba(0,0,0,.4))}}
 
     /* === CONCLUSION === */
     .conclusion{padding:60px 0;text-align:center;position:relative;background:linear-gradient(180deg,transparent,rgba(91,168,178,.04),transparent)}
@@ -151,6 +157,8 @@
       .pillarGrid{grid-template-columns:repeat(2,1fr);gap:14px;margin:0 16px 30px}
       .treatPanel{min-height:350px;margin-top:30px}
       .transform{min-height:300px}
+      .downward .arrow{left:20px;width:30px}
+      .collageWrap{margin:30px auto;max-width:90%}
       .bridge{padding:36px 0}
       .beliefs{padding:36px 0}
       .chains{padding:36px 0 30px}
@@ -232,6 +240,7 @@
   </section>
 
   <section class="downward">
+    <div class="arrow"></div>
     <div class="wrap"><div class="inner">
       <h3 class="fadeUp">The Role of</h3>
       <h2 class="fadeUp d1">Downward Causation</h2>
@@ -247,7 +256,7 @@
       <h3 class="fadeUp">Moving Toward</h3>
       <h2 class="fadeUp d1">Health and Hope</h2>
       <p class="fadeUp d2">Whether it's through self-directed courses or one-on-one interactive sessions, the Quantum Physician model offers tools to help individuals break free from limiting beliefs. These practices help to align with new possibilities and manifest a whole new experience of health and wellness. From physical health to emotional well-being, professional success, and relationships, this model emphasizes the importance of adaptability in all areas of life.</p>
-      <div class="divider fadeUp d3" style="margin:30px auto"></div>
+      <div class="collageWrap fadeScale"><img src="/assets/images/treatment-collage.png" alt="Treatment sessions" loading="lazy"></div>
       <p class="fadeUp d3">As we gather information from our environment, the expectations we hold create an energetic blueprint for what manifests in our physical reality. The body, in this model, becomes a reflection of our beliefs and expectations. By releasing rigidity and opening ourselves to new perspectives, we can transform both our mental and physical health.</p>
       <p class="fadeUp d3">If you're interested in exploring this path of health and healing, or even in helping others to do the same, the Quantum Physician model offers professional certification programs in the field of quantum wellness. Whether for personal growth or professional development, this model provides a powerful framework for achieving a whole new experience of well-being.</p>
     </div></div>
