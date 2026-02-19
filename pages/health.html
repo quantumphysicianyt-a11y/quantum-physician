@@ -72,15 +72,14 @@
     .beliefs p{font-family:"Playfair Display",serif;font-size:clamp(19px,2vw,24px);line-height:1.85;color:rgba(255,255,255,.82);margin-bottom:20px}
 
     /* === CHAINS === */
-    .chains{padding:50px 0 40px;text-align:center;position:relative;overflow:hidden}
+    .chains{padding:40px 0 40px;text-align:center;position:relative;overflow:hidden}
     .chains h2{font-family:"Playfair Display",serif;font-size:clamp(34px,4.5vw,60px);font-weight:700;margin-bottom:8px}
     .chains h2 em{display:block;color:var(--taupe);font-style:italic;font-weight:400;font-size:.45em;margin-top:8px}
-    .chainsWrap{position:relative;width:100vw;margin-left:calc(-50vw + 50%);padding:0;overflow:hidden;display:flex;align-items:center}
-    .chainsWrap::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(91,168,178,.1),transparent 70%);pointer-events:none}
-    .chainsImg{width:100%;height:auto;display:block;object-fit:contain;filter:drop-shadow(0 0 40px rgba(91,168,178,.2));opacity:0;transform:scaleX(.8)}
+    .chainsWrap{position:relative;max-width:900px;margin:20px auto;overflow:hidden}
+    .chainsImg{width:100%;height:auto;display:block;filter:drop-shadow(0 0 30px rgba(91,168,178,.2));opacity:0;transform:scaleX(.8)}
     .chainsImg.vis{animation:chainE 1.8s cubic-bezier(.22,1,.36,1) forwards}
-    @keyframes chainE{0%{transform:scaleX(.6) scaleY(.9);opacity:0;filter:blur(8px)}50%{transform:scaleX(1.02);filter:blur(0) drop-shadow(0 0 60px rgba(91,168,178,.4))}100%{transform:scaleX(1) scaleY(1);opacity:1;filter:drop-shadow(0 0 30px rgba(91,168,178,.15))}}
-    .chains .body{max-width:720px;margin:16px auto 0;font-size:clamp(17px,1.8vw,21px);line-height:1.9;color:rgba(255,255,255,.82);font-family:"Playfair Display",serif}
+    @keyframes chainE{0%{transform:scaleX(.6);opacity:0;filter:blur(8px)}50%{transform:scaleX(1.02);filter:blur(0) drop-shadow(0 0 60px rgba(91,168,178,.4))}100%{transform:scaleX(1);opacity:1;filter:drop-shadow(0 0 30px rgba(91,168,178,.15))}}
+    .chains .body{max-width:720px;margin:20px auto 0;font-size:clamp(17px,1.8vw,21px);line-height:1.9;color:rgba(255,255,255,.82);font-family:"Playfair Display",serif}
 
     /* === TRANSFORM === */
     .transform{position:relative;min-height:400px;overflow:hidden;display:flex;align-items:center;justify-content:center;margin-top:10px}
@@ -197,9 +196,11 @@
   </section>
 
   <section class="chains">
-    <div class="wrap"><h2 class="fadeUp">Releasing Limiting Beliefs<em>Freedom begins in the mind</em></h2></div>
-    <div class="chainsWrap"><img class="chainsImg" id="chainsImg" src="/assets/images/chains.png" alt="Breaking free" loading="lazy"></div>
-    <div class="wrap"><p class="body fadeUp">Achieving health begins in the mind. By shifting our expectations from pain to health, from conflict to opportunity, we can experience a completely different reality.</p></div>
+    <div class="wrap">
+      <h2 class="fadeUp">Releasing Limiting Beliefs<em>Freedom begins in the mind</em></h2>
+      <div class="chainsWrap"><img class="chainsImg" id="chainsImg" src="/assets/images/chains.png" alt="Breaking free" loading="lazy"></div>
+      <p class="body fadeUp">Achieving health begins in the mind. By shifting our expectations from pain to health, from conflict to opportunity, we can experience a completely different reality.</p>
+    </div>
   </section>
 
   <section class="transform">
