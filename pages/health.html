@@ -46,7 +46,7 @@
     .badge{width:100%;max-width:600px;height:auto;display:block;margin:0 auto;animation:bGlow 4s ease-in-out infinite}
     @keyframes bGlow{0%,100%{filter:drop-shadow(0 0 30px rgba(91,168,178,.3)) drop-shadow(0 0 60px rgba(91,168,178,.1))}50%{filter:drop-shadow(0 0 60px rgba(91,168,178,.6)) drop-shadow(0 0 120px rgba(91,168,178,.2)) drop-shadow(0 0 180px rgba(91,168,178,.1))}}
     .parchment{max-width:820px;margin:0 auto;position:relative;padding:70px 65px;color:#222;background:rgba(244,241,236,.97);border-radius:6px;box-shadow:0 30px 80px rgba(0,0,0,.35);overflow:hidden}
-    .parchment::after{content:'';position:absolute;inset:0;background:url('/assets/images/parchment-texture.png') center/cover no-repeat;opacity:.5;pointer-events:none}
+    .parchment::after{content:'';position:absolute;inset:0;background:url('/assets/images/parchment-texture.png') center/100% 100% no-repeat;opacity:.6;pointer-events:none}
     .parchment .pContent{position:relative;z-index:1}
     .parchment::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--teal),var(--taupe),var(--teal));background-size:200% 100%;animation:shimB 4s ease-in-out infinite}
     @keyframes shimB{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
@@ -160,8 +160,8 @@
 
     /* RESPONSIVE */
     @media(max-width:900px){
-      .hero .traceyFloat{float:right;width:40%;max-width:200px;margin:0 0 10px 16px;shape-outside:polygon(15% 0,100% 0,100% 100%,25% 100%)}
-      .hero{text-align:left;padding:40px 0 20px}
+      .hero .traceyFloat{float:right;width:30%;max-width:150px;margin:0 0 10px 12px;shape-outside:polygon(15% 0,100% 0,100% 100%,25% 100%)}
+      .hero{text-align:left;padding:30px 0 20px}
       .hero .sig{padding-left:0}.hero .sig::before{display:none}
       .parchment{padding:40px 24px;margin:0 16px}
       .badgeWrap{margin:0 16px}
