@@ -66,10 +66,109 @@
   <script src="/academy/js/academy.js"></script>
   <script>
     const slug = new URLSearchParams(window.location.search).get('slug');
-    if (!slug) window.location.href = '/academy/';
+    const bundleSlug = new URLSearchParams(window.location.search).get('bundle');
+    if (!slug && !bundleSlug) window.location.href = '/academy/';
 
     (async () => {
       try {
+        // --- BUNDLE MODE ---
+        if (bundleSlug) {
+          const { data: bundle, error: bErr } = await sb.from('qa_bundles')
+            .select('*')
+            .eq('slug', bundleSlug)
+            .single();
+          if (bErr || !bundle) { window.location.href = '/academy/'; return; }
+
+          // Get bundle courses
+          const { data: bundleCourses } = await sb.from('qa_bundle_courses')
+            .select('course_id, sort_order, qa_courses(*)')
+            .eq('bundle_id', bundle.id)
+            .order('sort_order');
+
+          const courses = (bundleCourses || []).map(bc => bc.qa_courses).filter(Boolean);
+
+          document.getElementById('pageTitle').textContent = bundle.title + ' — Quantum Academy';
+          document.getElementById('courseTitle').textContent = bundle.title;
+          document.getElementById('courseSubtitle').textContent = bundle.subtitle || 'All 5 Self-H.O.P.E. Academy Courses';
+          document.getElementById('courseDesc').textContent = bundle.description || '';
+          document.getElementById('courseCategory').textContent = 'Bundle';
+
+          // Meta
+          const totalLessons = courses.reduce((sum, c) => sum + (c.total_lessons || 1), 0);
+          const totalDuration = courses.reduce((sum, c) => sum + (c.total_duration_minutes || 0), 0);
+          const metaItems = [`📚 ${courses.length} courses`, `📺 ${totalLessons} lessons`];
+          if (totalDuration) metaItems.push(`⏱ ${formatDuration(totalDuration)}`);
+          document.getElementById('courseMeta').innerHTML = metaItems.map(m => `<span>${m}</span>`).join('');
+
+          // Instructor
+          document.getElementById('instructorInfo').innerHTML = `<span>By <strong style="color:var(--qa-text)">Dr. Tracey Clark</strong></span>`;
+
+          // Bundle image
+          const vp = document.getElementById('videoPreview');
+          vp.style.display = 'block';
+          vp.innerHTML = `<img src="/assets/images/self-hope-bundle.jpg" alt="${bundle.title}" style="width:100%;aspect-ratio:16/9;object-fit:cover">`;
+
+          // Price
+          const perCourse = courses.length > 0 ? Math.round(bundle.price_cents / courses.length) : 0;
+          const fullPrice = courses.reduce((sum, c) => sum + (c.price_cents || 0), 0);
+          document.getElementById('priceDisplay').innerHTML = `
+            <div class="price-main">${formatPrice(bundle.price_cents)}</div>
+            ${fullPrice > bundle.price_cents ? `<div class="price-original">${formatPrice(fullPrice)}</div><div style="color:var(--teal);font-size:14px;margin-top:4px">Save ${formatPrice(fullPrice - bundle.price_cents)}!</div>` : ''}
+          `;
+
+          // Includes
+          const includes = [
+            { icon: '📚', text: `${courses.length} complete courses` },
+            { icon: '📺', text: `${totalLessons} on-demand lessons` },
+            { icon: '♾️', text: 'Lifetime access' },
+            { icon: '📱', text: 'Access on mobile & desktop' },
+            { icon: '💰', text: `${formatPrice(perCourse)}/course (save ${formatPrice(fullPrice - bundle.price_cents)})` }
+          ];
+          document.getElementById('includes').innerHTML = includes.map(i =>
+            `<li><span class="icon">${i.icon}</span> ${i.text}</li>`
+          ).join('');
+
+          // Enroll button
+          const user = await getUser();
+          const btnDiv = document.getElementById('enrollBtn');
+          if (user) {
+            // Check if already owns all courses
+            const { data: existingEnrollments } = await sb.from('qa_enrollments')
+              .select('course_id')
+              .eq('user_id', user.id)
+              .eq('status', 'active');
+            const enrolledIds = (existingEnrollments || []).map(e => e.course_id);
+            const allEnrolled = courses.every(c => enrolledIds.includes(c.id));
+
+            if (allEnrolled) {
+              btnDiv.innerHTML = `<a href="/academy/dashboard.html" class="qa-btn qa-btn-primary" style="width:100%;justify-content:center">Go to Dashboard →</a>`;
+            } else {
+              btnDiv.innerHTML = `<button class="qa-btn qa-btn-primary" style="width:100%;justify-content:center" onclick="handlePurchase('transformational-mastery')">Get the Bundle — ${formatPrice(bundle.price_cents)}</button>`;
+            }
+          } else {
+            btnDiv.innerHTML = `<a href="/academy/login.html?redirect=/academy/course.html?bundle=${bundleSlug}" class="qa-btn qa-btn-primary" style="width:100%;justify-content:center">Sign In to Enroll — ${formatPrice(bundle.price_cents)}</a>`;
+          }
+
+          // Curriculum — show each course as a "module"
+          document.getElementById('curriculumMeta').textContent = `${courses.length} courses included in this bundle`;
+          document.getElementById('curriculum').innerHTML = courses.map((c, i) => `
+            <a href="/academy/course.html?slug=${c.slug}" class="qa-module-accordion" style="text-decoration:none;color:inherit;display:block">
+              <div class="qa-module-header">
+                <h4>${c.title}</h4>
+                <span class="info">${formatPrice(c.price_cents)} individually</span>
+              </div>
+              <div class="qa-module-lessons open" style="padding:14px 24px 14px 40px;font-size:14px;color:var(--qa-text-muted);line-height:1.6">
+                ${c.short_description || c.description || ''}
+              </div>
+            </a>
+          `).join('');
+
+          document.getElementById('loading').style.display = 'none';
+          document.getElementById('courseContent').style.display = '';
+          return;
+        }
+
+        // --- SINGLE COURSE MODE ---
         const course = await getCourse(slug);
         if (!course) { window.location.href = '/academy/'; return; }
 
@@ -140,10 +239,10 @@
           }
         } else {
           // Paid — Stripe checkout
-          if (course.stripe_price_id) {
-            btnDiv.innerHTML = `<button class="qa-btn qa-btn-primary" style="width:100%;justify-content:center" onclick="handlePurchase('${course.stripe_price_id}','${course.slug}')">Enroll Now</button>`;
+          if (user) {
+            btnDiv.innerHTML = `<button class="qa-btn qa-btn-primary" style="width:100%;justify-content:center" onclick="handlePurchase('${course.slug}')">Enroll Now — ${formatPrice(course.price_cents)}</button>`;
           } else {
-            btnDiv.innerHTML = `<button class="qa-btn qa-btn-taupe" disabled style="width:100%;justify-content:center">Enrollment Coming Soon</button>`;
+            btnDiv.innerHTML = `<a href="/academy/login.html?redirect=/academy/course.html?slug=${course.slug}" class="qa-btn qa-btn-primary" style="width:100%;justify-content:center">Sign In to Enroll — ${formatPrice(course.price_cents)}</a>`;
           }
         }
 
@@ -196,9 +295,46 @@
       }
     }
 
-    async function handlePurchase(priceId, slug) {
-      // TODO: Implement Stripe checkout redirect
-      alert('Stripe checkout integration coming soon! Price ID: ' + priceId);
+    async function handlePurchase(productId) {
+      const btn = document.querySelector('#enrollBtn button');
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Processing...';
+
+      try {
+        const user = await getUser();
+        if (!user) {
+          window.location.href = '/academy/login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+          return;
+        }
+
+        const res = await fetch('/.netlify/functions/academy-checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            productId: productId,
+            email: user.email,
+            applyCredits: false
+          })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Checkout failed');
+        }
+
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          throw new Error('No checkout URL returned');
+        }
+      } catch (err) {
+        console.error('Purchase error:', err);
+        alert('Something went wrong: ' + err.message);
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
     }
   </script>
 </body>
