@@ -429,7 +429,7 @@
             const individualTotal = all.reduce((sum, c) => sum + (c.price_cents || 0), 0);
             const savings = individualTotal - b.price_cents;
             document.getElementById('bundleContent').innerHTML = `
-              <img src="/assets/images/bundle.jpg?v=2" alt="Self-H.O.P.E. Series Bundle" loading="lazy" class="bundle-img-top">
+              <img src="/assets/images/self-hope-self-hope-bundle.jpg" alt="Self-H.O.P.E. Series Bundle" loading="lazy" class="bundle-img-top">
               <div style="font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#ff6b6b;font-weight:600;margin-bottom:8px">Best Value — Save ${formatPrice(savings)}</div>
               <h3 style="font-family:'Playfair Display',serif;font-size:28px;margin-bottom:8px">${b.title}</h3>
               <p style="color:var(--qa-text-muted);font-size:15px;line-height:1.7;margin-bottom:16px">${b.description}</p>
