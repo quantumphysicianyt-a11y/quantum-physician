@@ -3,15 +3,53 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Academy Test - Full Page</title>
+  <title>Quantum Physician Academy — Empowered Learning</title>
+  <meta name="description" content="Self-paced courses built on the Quantum Physician model. Learn to release limiting beliefs, unlock your potential, and create lasting wellness.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/shared.css">
   <link rel="stylesheet" href="/academy/css/academy.css">
   <style>
+    /* === ANIMATIONS === */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(91,168,178,.2); }
+      50% { box-shadow: 0 0 20px 4px rgba(91,168,178,.15); }
+    }
+    @keyframes countUp { from { opacity: 0; transform: scale(.8); } to { opacity: 1; transform: scale(1); } }
+
+    .reveal { opacity: 0; transform: translateY(30px); transition: opacity .7s ease, transform .7s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .reveal-delay-1 { transition-delay: .1s; }
+    .reveal-delay-2 { transition-delay: .2s; }
+    .reveal-delay-3 { transition-delay: .3s; }
+    .reveal-delay-4 { transition-delay: .4s; }
+
+    /* === HERO === */
     .qa-hero {
       padding: 80px 0 70px;
       background: linear-gradient(160deg, #061320 0%, #0a1e33 30%, #0f2942 60%, #0d2844 100%);
     }
-    .hero-logo { max-width: 400px; margin: 0 auto 32px; display: block; }
+    .hero-logo {
+      max-width: 400px; margin: 0 auto 32px; display: block;
+      animation: fadeIn 1.2s ease;
+    }
     .hero-tagline {
       font-family: "Playfair Display", serif;
       font-size: clamp(18px, 2.5vw, 24px);
@@ -19,30 +57,57 @@
       color: var(--taupe, #ad9b84);
       margin-bottom: 20px;
       text-align: center;
+      animation: fadeUp .8s ease .3s both;
     }
-    .hero-features { display: flex; gap: 32px; justify-content: center; margin-top: 40px; flex-wrap: wrap; }
-    .hero-feature { display: flex; align-items: center; gap: 10px; font-size: 14px; color: rgba(255,255,255,.6); }
+    .hero-subtitle {
+      text-align: center; margin: 0 auto 28px;
+      animation: fadeUp .8s ease .5s both;
+    }
+    .hero-btns { animation: fadeUp .8s ease .7s both; }
+    .hero-features {
+      display: flex; gap: 32px; justify-content: center; margin-top: 40px; flex-wrap: wrap;
+      animation: fadeUp .8s ease .9s both;
+    }
+    .hero-feature {
+      display: flex; align-items: center; gap: 10px; font-size: 14px;
+      color: rgba(255,255,255,.6);
+      transition: color .3s, transform .3s;
+      cursor: default;
+    }
+    .hero-feature:hover { color: rgba(255,255,255,.9); transform: translateY(-2px); }
     .hero-feature .icon {
       width: 36px; height: 36px; border-radius: 50%;
       background: rgba(91,168,178,.1); border: 1px solid rgba(91,168,178,.2);
       display: flex; align-items: center; justify-content: center; font-size: 16px;
+      transition: background .3s, border-color .3s, transform .3s;
     }
+    .hero-feature:hover .icon {
+      background: rgba(91,168,178,.2); border-color: rgba(91,168,178,.4);
+      transform: scale(1.1);
+    }
+
+    /* === SECTIONS === */
     .qa-section { padding: 70px 0; }
     .qa-section-alt { background: rgba(255,255,255,.015); }
     .qa-section-header { text-align: center; margin-bottom: 40px; }
     .qa-section-header .qa-label { margin-bottom: 12px; display: inline-block; }
+
+    /* === STEP CARDS === */
     .steps-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 28px;
-      margin-top: 40px;
+      gap: 28px; margin-top: 40px;
     }
     .step-card {
-      text-align: center;
-      padding: 32px 20px;
-      background: var(--qa-bg-card);
-      border: 1px solid var(--qa-border);
+      text-align: center; padding: 32px 20px;
+      background: var(--qa-bg-card); border: 1px solid var(--qa-border);
       border-radius: var(--qa-radius);
+      transition: transform .4s ease, border-color .4s ease, box-shadow .4s ease;
+    }
+    .step-card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(91,168,178,.4);
+      box-shadow: 0 12px 40px rgba(0,0,0,.3);
     }
     .step-number {
       width: 48px; height: 48px; border-radius: 50%;
@@ -50,73 +115,141 @@
       display: inline-flex; align-items: center; justify-content: center;
       font-family: "Playfair Display", serif; font-size: 20px; font-weight: 700;
       color: var(--teal, #5ba8b2); margin-bottom: 16px;
+      transition: transform .4s ease, background .4s ease;
+    }
+    .step-card:hover .step-number {
+      transform: scale(1.15) rotate(5deg);
+      background: rgba(91,168,178,.2);
     }
     .step-card h4 { font-family: "Playfair Display", serif; font-size: 18px; margin-bottom: 8px; }
     .step-card p { font-size: 14px; color: var(--qa-text-muted); line-height: 1.6; }
-    .qa-cta {
-      padding: 60px 0;
-      text-align: center;
-      background: rgba(91,168,178,.04);
-      border-top: 1px solid var(--qa-border);
-      border-bottom: 1px solid var(--qa-border);
+
+    /* === BUNDLE === */
+    .bundle-box {
+      background: linear-gradient(135deg, rgba(91,168,178,.08), rgba(173,155,132,.06));
+      border: 2px solid rgba(91,168,178,.25);
+      border-radius: 16px; padding: 40px; overflow: hidden;
+      transition: border-color .4s ease, box-shadow .4s ease;
     }
+    .bundle-box:hover {
+      border-color: rgba(91,168,178,.45);
+      box-shadow: 0 8px 40px rgba(91,168,178,.1);
+    }
+    .bundle-layout { display: flex; gap: 32px; align-items: flex-start; }
+    .bundle-img-top {
+      width: 100%; border-radius: 12px; margin-bottom: 28px;
+      transition: transform .5s ease;
+    }
+    .bundle-box:hover .bundle-img-top { transform: scale(1.01); }
+    .bundle-info { flex: 1; min-width: 0; }
+    .bundle-pricing { text-align: left; }
+    .bundle-price-num {
+      font-family: 'Playfair Display', serif; font-size: 48px;
+      font-weight: 700; color: var(--teal, #5ba8b2);
+      animation: countUp .5s ease;
+    }
+    .bundle-tag {
+      background: rgba(91,168,178,.1); border: 1px solid rgba(91,168,178,.2);
+      padding: 6px 14px; border-radius: 999px; font-size: 12px;
+      color: rgba(255,255,255,.7); text-decoration: none;
+      transition: all .25s ease; display: inline-block;
+    }
+    .bundle-tag:hover {
+      background: rgba(91,168,178,.3); color: #fff;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(91,168,178,.2);
+    }
+
+    /* === COURSE CARDS (enhance academy.css) === */
+    .qa-course-card {
+      transition: transform .4s ease, box-shadow .4s ease, border-color .4s ease !important;
+    }
+    .qa-course-card:hover {
+      transform: translateY(-8px) !important;
+      box-shadow: 0 16px 48px rgba(0,0,0,.4) !important;
+      border-color: rgba(91,168,178,.4) !important;
+    }
+    .qa-course-card .thumb img {
+      transition: transform .6s ease;
+    }
+    .qa-course-card:hover .thumb img {
+      transform: scale(1.08);
+    }
+    .qa-course-card .body h3 {
+      transition: color .3s ease;
+    }
+    .qa-course-card:hover .body h3 {
+      color: var(--teal, #5ba8b2);
+    }
+
+    /* === INSTRUCTOR === */
     .instructor-card {
       display: flex; align-items: center; gap: 40px; padding: 40px;
       background: var(--qa-bg-card); border: 1px solid var(--qa-border);
       border-radius: var(--qa-radius); max-width: 800px; margin: 0 auto;
+      transition: transform .4s ease, box-shadow .4s ease, border-color .4s ease;
+    }
+    .instructor-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0,0,0,.3);
+      border-color: rgba(91,168,178,.35);
     }
     .instructor-avatar {
       width: 140px; height: 140px; border-radius: 50%;
       object-fit: cover; object-position: top;
       border: 3px solid rgba(91,168,178,.3); flex-shrink: 0;
+      transition: border-color .4s ease, transform .4s ease;
+    }
+    .instructor-card:hover .instructor-avatar {
+      border-color: rgba(91,168,178,.6);
+      transform: scale(1.05);
     }
     .instructor-card h3 { font-family: "Playfair Display", serif; font-size: 22px; margin-bottom: 4px; }
     .instructor-card .title { color: var(--teal, #5ba8b2); font-size: 14px; margin-bottom: 12px; }
     .instructor-card p { color: var(--qa-text-muted); font-size: 15px; line-height: 1.7; }
+
+    /* === CTA === */
+    .qa-cta {
+      padding: 60px 0; text-align: center;
+      background: rgba(91,168,178,.04);
+      border-top: 1px solid var(--qa-border);
+      border-bottom: 1px solid var(--qa-border);
+    }
+    .qa-cta .qa-btn-primary {
+      animation: pulseGlow 3s ease-in-out infinite;
+    }
+
+    /* === CTA BUTTON SHIMMER === */
+    .qa-btn-primary {
+      position: relative; overflow: hidden;
+    }
+    .qa-btn-primary::after {
+      content: '';
+      position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.15), transparent);
+      transition: left .6s ease;
+    }
+    .qa-btn-primary:hover::after { left: 100%; }
+
+    /* === RESPONSIVE === */
+    @media (max-width: 900px) {
+      .bundle-img-top { max-width: 500px; margin-left: auto; margin-right: auto; display: block; }
+      .bundle-info { text-align: center; }
+      .bundle-pricing { text-align: center; }
+    }
     @media (max-width: 768px) {
       .hero-logo { max-width: 280px; }
       .hero-features { gap: 16px; }
       .instructor-card { flex-direction: column; text-align: center; padding: 28px; gap: 20px; }
     }
-    .bundle-layout {
-      display: flex;
-      gap: 32px;
-      align-items: flex-start;
-    }
-    .bundle-img {
-      flex-shrink: 0;
-      width: 320px;
-    }
-    .bundle-img img {
-      width: 100%;
-      border-radius: 12px;
-    }
-    .bundle-info {
-      flex: 1;
-      min-width: 0;
-    }
-    .bundle-pricing {
-      text-align: left;
-    }
-    @media (max-width: 900px) {
-      .bundle-layout {
-        flex-direction: column;
+
+    /* === REDUCED MOTION === */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0s !important;
+        transition-duration: 0s !important;
       }
-      .bundle-img {
-        width: 100%;
-        max-width: 400px;
-        margin: 0 auto;
-      }
-      .bundle-info {
-        text-align: center;
-      }
-      .bundle-info > div:has(a[style*="border-radius:999px"]),
-      .bundle-info > div[style*="flex-wrap"] {
-        justify-content: center;
-      }
-      .bundle-pricing {
-        text-align: center;
-      }
+      .reveal { opacity: 1; transform: none; }
     }
   </style>
 </head>
@@ -129,9 +262,9 @@
       <div class="qa-wrap">
         <img src="/assets/images/QuantumPhysAcad_STACKED-RGB.png" alt="Quantum Physician Academy" class="hero-logo">
         <p class="hero-tagline">Empowered Learning for Lasting Transformation</p>
-        <p class="qa-subtitle" style="text-align:center;margin:0 auto 28px">Self-paced courses built on the Quantum Physician model. Release limiting beliefs, unlock your potential, and create lasting wellness — on your schedule.</p>
-        <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
-          <a href="#courses" class="qa-btn qa-btn-primary qa-btn-lg">Browse Courses</a>
+        <p class="qa-subtitle hero-subtitle">Self-paced courses built on the Quantum Physician model. Release limiting beliefs, unlock your potential, and create lasting wellness — on your schedule.</p>
+        <div class="hero-btns" style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+          <a href="#bundleSection" class="qa-btn qa-btn-primary qa-btn-lg">Browse Courses</a>
           <a href="/academy/login.html" class="qa-btn qa-btn-outline qa-btn-lg" id="authBtn">Sign In</a>
         </div>
         <div class="hero-features">
@@ -146,27 +279,27 @@
     <!-- HOW IT WORKS -->
     <section class="qa-section qa-section-alt">
       <div class="qa-wrap">
-        <div class="qa-section-header">
+        <div class="qa-section-header reveal">
           <div class="qa-label">How It Works</div>
           <h2 class="qa-h2">Your Learning Journey</h2>
         </div>
         <div class="steps-grid">
-          <div class="step-card">
+          <div class="step-card reveal reveal-delay-1">
             <div class="step-number">1</div>
             <h4>Choose Your Course</h4>
             <p>Browse our catalog and find the program that resonates with where you are in your journey.</p>
           </div>
-          <div class="step-card">
+          <div class="step-card reveal reveal-delay-2">
             <div class="step-number">2</div>
             <h4>Learn at Your Pace</h4>
             <p>Watch video lessons, read articles, complete exercises, and take quizzes — all on your schedule.</p>
           </div>
-          <div class="step-card">
+          <div class="step-card reveal reveal-delay-3">
             <div class="step-number">3</div>
             <h4>Track Your Growth</h4>
             <p>Monitor your progress, earn XP, maintain streaks, and celebrate milestones along the way.</p>
           </div>
-          <div class="step-card">
+          <div class="step-card reveal reveal-delay-4">
             <div class="step-number">4</div>
             <h4>Transform Your Life</h4>
             <p>Apply what you learn daily and experience real, lasting shifts in your health and wellbeing.</p>
@@ -178,18 +311,20 @@
     <!-- BUNDLE -->
     <section id="bundleSection" class="qa-section" style="display:none">
       <div class="qa-wrap">
-        <div class="qa-section-header">
+        <div class="qa-section-header reveal">
           <div class="qa-label">Best Value</div>
           <h2 class="qa-h2">Get All 5 Courses</h2>
         </div>
-        <div id="bundleContent" style="background:linear-gradient(135deg,rgba(91,168,178,.08),rgba(173,155,132,.06));border:2px solid rgba(91,168,178,.25);border-radius:16px;padding:40px;overflow:hidden"></div>
+        <div class="bundle-box reveal">
+          <div id="bundleContent"></div>
+        </div>
       </div>
     </section>
 
     <!-- COURSES -->
     <section id="courses" class="qa-section">
       <div class="qa-wrap">
-        <div class="qa-section-header">
+        <div class="qa-section-header reveal">
           <div class="qa-label">Individual Courses</div>
           <h2 class="qa-h2">Or Choose Your Path</h2>
           <p style="color:var(--qa-text-muted);max-width:550px;margin:0 auto">Each course is designed to guide you through a specific aspect of the Self-H.O.P.E. framework.</p>
@@ -203,11 +338,11 @@
     <!-- INSTRUCTOR -->
     <section class="qa-section qa-section-alt">
       <div class="qa-wrap">
-        <div class="qa-section-header">
+        <div class="qa-section-header reveal">
           <div class="qa-label">Your Instructor</div>
           <h2 class="qa-h2">Learn From the Source</h2>
         </div>
-        <div class="instructor-card">
+        <div class="instructor-card reveal">
           <img src="/assets/images/tracey-about-me.png" alt="Dr. Tracey Clark" class="instructor-avatar">
           <div>
             <h3>Dr. Tracey Clark</h3>
@@ -220,7 +355,7 @@
 
     <!-- CTA -->
     <section class="qa-cta">
-      <div class="qa-wrap">
+      <div class="qa-wrap reveal">
         <h2 class="qa-h2">Ready to Begin?</h2>
         <p style="color:var(--qa-text-muted);margin-bottom:28px;max-width:500px;margin-left:auto;margin-right:auto">Create your free account and start exploring courses today.</p>
         <a href="/academy/login.html#signup" class="qa-btn qa-btn-primary qa-btn-lg" id="ctaBtn">Create Free Account</a>
@@ -233,6 +368,13 @@
   <script src="/js/shared.js"></script>
   <script src="/academy/js/academy.js"></script>
   <script>
+    // Scroll reveal observer
+    const revealObs = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); revealObs.unobserve(e.target); } });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+    document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
+
+    // Auth check
     (async () => {
       try {
         const user = await getUser();
@@ -245,6 +387,7 @@
       } catch(e) {}
     })();
 
+    // Load courses + bundle
     (async () => {
       const grid = document.getElementById('courseGrid');
       try {
@@ -252,9 +395,10 @@
         const { data: coming } = await sb.from('qa_courses').select('*').eq('status', 'coming_soon').order('sort_order');
         const all = [...courses, ...(coming || [])];
         if (all.length === 0) { grid.innerHTML = '<p style="text-align:center;opacity:.5">Courses coming soon!</p>'; return; }
-        grid.innerHTML = all.map(c => `
-          <a class="qa-course-card" href="/academy/course.html?slug=${c.slug}">
-            <div class="thumb" style="background:linear-gradient(135deg,#0f2942,#1a3a5c);display:flex;align-items:center;justify-content:center;position:relative">
+
+        grid.innerHTML = all.map((c, i) => `
+          <a class="qa-course-card reveal reveal-delay-${(i % 4) + 1}" href="/academy/course.html?slug=${c.slug}">
+            <div class="thumb" style="background:linear-gradient(135deg,#0f2942,#1a3a5c);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden">
               ${c.thumbnail_url ? `<img src="${c.thumbnail_url}" alt="${c.title}" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover">` : `<span style="font-size:48px;opacity:.3">📖</span>`}
               ${c.status === 'coming_soon' ? '<div class="badge coming">Coming Soon</div>' : ''}
             </div>
@@ -272,6 +416,9 @@
           </a>
         `).join('');
 
+        // Re-observe new cards
+        document.querySelectorAll('.qa-course-card.reveal').forEach(el => revealObs.observe(el));
+
         // Load bundle
         const { data: bundles } = await sb.from('qa_bundles').select('*').eq('status', 'published');
         if (bundles && bundles.length > 0) {
@@ -282,24 +429,18 @@
             const individualTotal = all.reduce((sum, c) => sum + (c.price_cents || 0), 0);
             const savings = individualTotal - b.price_cents;
             document.getElementById('bundleContent').innerHTML = `
-              <div class="bundle-layout">
-                <div class="bundle-img">
-                  <img src="/assets/images/bundle.jpg" alt="Self-H.O.P.E. Series Bundle" loading="lazy">
-                </div>
-                <div class="bundle-info">
-                  <div style="font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#ff6b6b;font-weight:600;margin-bottom:8px">Best Value — Save ${formatPrice(savings)}</div>
-                  <h3 style="font-family:'Playfair Display',serif;font-size:28px;margin-bottom:8px">${b.title}</h3>
-                  <p style="color:var(--qa-text-muted);font-size:15px;line-height:1.7;margin-bottom:16px">${b.description}</p>
-                  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px">
-                    ${all.map(c => `<a href="/academy/course.html?slug=${c.slug}" style="background:rgba(91,168,178,.1);border:1px solid rgba(91,168,178,.2);padding:6px 14px;border-radius:999px;font-size:12px;color:rgba(255,255,255,.7);text-decoration:none;transition:all .2s" onmouseover="this.style.background='rgba(91,168,178,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(91,168,178,.1)';this.style.color='rgba(255,255,255,.7)'">${c.title.split(':')[0]}</a>`).join('')}
-                  </div>
-                  <div class="bundle-pricing">
-                    <div style="font-size:14px;color:rgba(255,255,255,.4);text-decoration:line-through">$${(individualTotal/100).toFixed(0)} if purchased separately</div>
-                    <div style="font-family:'Playfair Display',serif;font-size:48px;font-weight:700;color:var(--teal,#5ba8b2)">${formatPrice(b.price_cents)}</div>
-                    <div style="font-size:13px;color:var(--qa-text-muted);margin-bottom:16px">for all 5 courses</div>
-                    <a href="/academy/course.html?bundle=${b.slug}" class="qa-btn qa-btn-primary">Get the Bundle</a>
-                  </div>
-                </div>
+              <img src="/assets/images/bundle.jpg" alt="Self-H.O.P.E. Series Bundle" loading="lazy" class="bundle-img-top">
+              <div style="font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#ff6b6b;font-weight:600;margin-bottom:8px">Best Value — Save ${formatPrice(savings)}</div>
+              <h3 style="font-family:'Playfair Display',serif;font-size:28px;margin-bottom:8px">${b.title}</h3>
+              <p style="color:var(--qa-text-muted);font-size:15px;line-height:1.7;margin-bottom:16px">${b.description}</p>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px">
+                ${all.map(c => `<a href="/academy/course.html?slug=${c.slug}" class="bundle-tag">${c.title.split(':')[0]}</a>`).join('')}
+              </div>
+              <div class="bundle-pricing">
+                <div style="font-size:14px;color:rgba(255,255,255,.4);text-decoration:line-through">$${(individualTotal/100).toFixed(0)} if purchased separately</div>
+                <div class="bundle-price-num">${formatPrice(b.price_cents)}</div>
+                <div style="font-size:13px;color:var(--qa-text-muted);margin-bottom:16px">for all 5 courses</div>
+                <a href="/academy/course.html?bundle=${b.slug}" class="qa-btn qa-btn-primary qa-btn-lg">Get the Bundle</a>
               </div>
             `;
           }
