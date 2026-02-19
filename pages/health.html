@@ -1,156 +1,243 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Health — The Quantum Physician Model | Quantum Physician</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/shared.css">
   <style>
-    body{background:#0f2942;color:#fff}
-    .scrollProgress{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--teal),var(--taupe));z-index:200;width:0%;transition:width .1s linear}
-    .qpHero{min-height:85vh;display:flex;align-items:center;background:linear-gradient(135deg,#0f2942 0%,#123554 50%,#0c2236 100%);overflow:hidden;position:relative}
-    .qpHero .wrap{display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:40px}
-    .qpHero .textSide{padding:60px 0}
-    .qpHero .label{font-size:11px;letter-spacing:.25em;text-transform:uppercase;color:var(--teal);margin-bottom:16px;display:block}
-    .qpHero h1{font-family:"Playfair Display",serif;font-size:clamp(32px,4vw,52px);font-weight:600;line-height:1.15;margin-bottom:28px;color:#fff}
-    .qpHero h1 span{display:block;color:var(--teal);font-style:italic;font-weight:400;font-size:.7em;margin-top:8px}
-    .qpHero .introText{font-size:17px;line-height:1.8;color:rgba(255,255,255,.8);margin-bottom:28px;max-width:540px}
-    .qpHero .signature{font-family:"Playfair Display",serif;font-style:italic;font-size:20px;color:var(--taupe)}
-    .qpHero .imgSide{display:flex;justify-content:center;align-items:flex-end;position:relative}
-    .qpHero .imgSide img{max-height:75vh;width:auto;max-width:100%;filter:drop-shadow(0 20px 60px rgba(0,0,0,.4));position:relative;z-index:2}
-    .qpHero .imgSide::before{content:'';position:absolute;width:350px;height:350px;border-radius:50%;background:radial-gradient(circle,rgba(91,168,178,.15),transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%)}
-    .introSection{padding:80px 0;text-align:center;background:linear-gradient(180deg,#0c2236,#0f2942);position:relative}
-    .introSection::before{content:'';position:absolute;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(91,168,178,.08),transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%)}
-    .introSection p{font-family:"Playfair Display",serif;font-style:italic;font-size:clamp(20px,2.5vw,28px);line-height:1.7;max-width:800px;margin:0 auto;color:rgba(255,255,255,.9);position:relative}
-    .introSection p em{color:var(--teal);font-style:normal;font-weight:600}
-    .healthSection{padding:80px 0;background:linear-gradient(180deg,#0f2942,#123554)}
-    .healthBadge{display:block;width:180px;height:auto;margin:0 auto 50px;filter:drop-shadow(0 10px 30px rgba(91,168,178,.3))}
-    .parchment{max-width:800px;margin:0 auto;background:linear-gradient(145deg,rgba(244,241,236,.95),rgba(206,195,181,.9));color:var(--ink);padding:50px 60px;border-radius:4px;box-shadow:0 20px 60px rgba(0,0,0,.3);position:relative}
-    .parchment::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--teal),var(--taupe),var(--teal))}
-    .parchment p{font-size:16px;line-height:1.9;margin-bottom:20px;color:#333}
+    body{background:#0a1e33;color:#fff;overflow-x:hidden}
+
+    /* === SCROLL PROGRESS === */
+    .scrollProg{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--teal),var(--taupe),var(--teal));z-index:200;width:0;box-shadow:0 0 14px rgba(91,168,178,.5)}
+
+    /* === FLOATING PARTICLES === */
+    .particles{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+    .pt{position:absolute;border-radius:50%;background:rgba(91,168,178,.25);animation:ptFloat linear infinite}
+    @keyframes ptFloat{0%{transform:translateY(100vh) scale(0);opacity:0}10%{opacity:.8}90%{opacity:.6}100%{transform:translateY(-10vh) scale(1.2);opacity:0}}
+
+    /* === GLOW ORBS === */
+    .orb{position:absolute;border-radius:50%;filter:blur(100px);pointer-events:none;z-index:0}
+
+    /* === DIVIDERS === */
+    .divider{height:1px;max-width:200px;margin:0 auto;background:linear-gradient(90deg,transparent,var(--teal),transparent);opacity:.4}
+
+    /* === SECTION BASE === */
+    section{position:relative;z-index:1}
+
+    /* ===================== HERO ===================== */
+    .hero{min-height:100vh;display:flex;align-items:center;background:linear-gradient(135deg,#081a2e,#0f2942 50%,#123554);overflow:hidden;position:relative}
+    .hero .orb.a{width:600px;height:600px;background:rgba(91,168,178,.06);top:-15%;right:-10%;animation:orbDrift 20s ease-in-out infinite}
+    .hero .orb.b{width:350px;height:350px;background:rgba(173,155,132,.05);bottom:5%;left:-8%;animation:orbDrift 25s ease-in-out infinite reverse}
+    @keyframes orbDrift{0%,100%{transform:translate(0,0)}50%{transform:translate(30px,-20px)}}
+    .hero .wrap{display:grid;grid-template-columns:1.1fr 1fr;align-items:center;gap:60px;position:relative;z-index:2}
+    .hero .text{padding:80px 0}
+    .hero .pill{display:inline-block;font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--teal);border:1px solid rgba(91,168,178,.35);padding:10px 24px;border-radius:999px;margin-bottom:24px;animation:pillPulse 4s ease-in-out infinite}
+    @keyframes pillPulse{0%,100%{box-shadow:0 0 12px rgba(91,168,178,.1),0 0 0 rgba(91,168,178,0)}50%{box-shadow:0 0 24px rgba(91,168,178,.25),0 0 60px rgba(91,168,178,.08)}}
+    .hero h1{font-family:"Playfair Display",serif;font-size:clamp(40px,5.5vw,72px);font-weight:700;line-height:1.08;margin-bottom:32px}
+    .hero h1 em{display:block;color:var(--teal);font-style:italic;font-weight:400;font-size:.5em;margin-top:14px;letter-spacing:.02em}
+    .hero .intro{font-size:19px;line-height:2;color:rgba(255,255,255,.72);margin-bottom:36px;max-width:520px}
+    .hero .sig{font-family:"Playfair Display",serif;font-style:italic;font-size:24px;color:var(--taupe);padding-left:44px;position:relative}
+    .hero .sig::before{content:'';position:absolute;left:0;top:50%;width:30px;height:1px;background:var(--taupe)}
+    .hero .imgSide{display:flex;justify-content:center;align-items:flex-end;position:relative}
+    .hero .imgSide img{max-height:80vh;width:auto;max-width:100%;filter:drop-shadow(0 30px 80px rgba(0,0,0,.5));position:relative;z-index:2;animation:heroFloat 6s ease-in-out infinite}
+    @keyframes heroFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+    .hero .imgSide::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:80%;height:20px;background:radial-gradient(ellipse,rgba(0,0,0,.4),transparent 70%);filter:blur(8px)}
+
+    /* ===================== BRIDGE TEXT ===================== */
+    .bridge{padding:120px 0;text-align:center;position:relative;overflow:hidden}
+    .bridge .orb{width:500px;height:500px;background:rgba(91,168,178,.06);top:50%;left:50%;transform:translate(-50%,-50%);animation:orbBreathe 8s ease-in-out infinite}
+    @keyframes orbBreathe{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.5}50%{transform:translate(-50%,-50%) scale(1.15);opacity:.8}}
+    .bridge p{font-family:"Playfair Display",serif;font-style:italic;font-size:clamp(26px,3.5vw,44px);line-height:1.6;max-width:850px;margin:0 auto;position:relative}
+    .bridge p em{color:var(--teal);font-style:normal;font-weight:600;text-shadow:0 0 30px rgba(91,168,178,.3)}
+
+    /* ===================== HEALTH BADGE ===================== */
+    .badgeSection{padding:100px 0;position:relative}
+    .badge{display:block;width:220px;height:auto;margin:0 auto 60px;animation:badgeSpin 20s linear infinite}
+    @keyframes badgeSpin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+    .parchment{max-width:820px;margin:0 auto;background:linear-gradient(145deg,rgba(244,241,236,.96),rgba(215,207,195,.92));color:#222;padding:60px 70px;border-radius:8px;box-shadow:0 30px 80px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.5);position:relative;overflow:hidden}
+    .parchment::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--teal),var(--taupe),var(--teal));animation:shimmer 3s ease-in-out infinite}
+    @keyframes shimmer{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+    .parchment p{font-size:18px;line-height:2;margin-bottom:24px;color:#333}
     .parchment p:last-child{margin-bottom:0}
-    .treatmentSection{position:relative;min-height:500px;overflow:hidden;display:flex;align-items:center;justify-content:center}
-    .treatmentSection img.bgImg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-    .treatmentSection .overlay{position:absolute;inset:0;background:rgba(15,41,66,.7)}
-    .treatmentSection .content{position:relative;z-index:2;text-align:center;padding:40px 20px;max-width:700px}
-    .treatmentSection .content p{font-family:"Playfair Display",serif;font-size:clamp(22px,3vw,36px);line-height:1.6;color:#fff}
-    .treatmentSection .content p em{color:var(--teal);font-style:normal}
-    .beliefsSection{padding:80px 0;text-align:center;background:linear-gradient(180deg,#123554,#0f2942)}
-    .beliefsSection .inner{max-width:780px;margin:0 auto}
-    .beliefsSection h2{font-family:"Playfair Display",serif;font-size:clamp(14px,1.5vw,18px);font-weight:400;letter-spacing:.2em;text-transform:uppercase;color:var(--teal);margin-bottom:30px}
-    .beliefsSection p{font-size:17px;line-height:1.9;color:rgba(255,255,255,.85);margin-bottom:24px}
-    .chainsSection{padding:80px 0;text-align:center;background:linear-gradient(180deg,#0f2942,#0c2236)}
-    .chainsSection h2{font-family:"Playfair Display",serif;font-size:clamp(28px,3vw,42px);font-weight:600;margin-bottom:40px;color:#fff}
-    .chainsSection h2 span{display:block;color:var(--taupe);font-style:italic;font-weight:400;font-size:.65em;margin-top:6px}
-    .chainsImg{max-width:500px;width:100%;margin:0 auto 40px;display:block;filter:drop-shadow(0 10px 30px rgba(0,0,0,.3))}
-    .chainsImg.visible{animation:chainBreak 1.2s ease forwards}
-    @keyframes chainBreak{0%{transform:scale(.95);opacity:.7}50%{transform:scale(1.02)}100%{transform:scale(1);opacity:1}}
-    .chainsSection .bodyText{max-width:700px;margin:0 auto;font-size:17px;line-height:1.9;color:rgba(255,255,255,.85)}
-    .transformSection{position:relative;min-height:450px;overflow:hidden;display:flex;align-items:center;justify-content:center}
-    .transformSection img.bgImg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-    .transformSection .overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,41,66,.5),rgba(15,41,66,.8))}
-    .transformSection .content{position:relative;z-index:2;text-align:center;padding:40px 20px}
-    .transformSection .content p{font-family:"Playfair Display",serif;font-style:italic;font-size:clamp(24px,3vw,38px);color:var(--teal)}
-    .ctaSection{padding:100px 0;text-align:center;background:linear-gradient(180deg,#0c2236,#0f2942)}
-    .ctaSection h2{font-family:"Playfair Display",serif;font-size:clamp(28px,3vw,42px);font-weight:500;margin-bottom:12px}
-    .ctaSection .sub{font-size:15px;color:rgba(255,255,255,.6);margin-bottom:36px}
-    .ctaSection .btn{padding:18px 48px;font-size:13px}
-    .fadeUp{opacity:0;transform:translateY(30px);transition:opacity .8s ease,transform .8s ease}
-    .fadeUp.visible{opacity:1;transform:translateY(0)}
-    .fadeUp.d1{transition-delay:.1s}.fadeUp.d2{transition-delay:.2s}.fadeUp.d3{transition-delay:.3s}.fadeUp.d4{transition-delay:.4s}
+    .parchment .dropcap{font-family:"Playfair Display",serif;float:left;font-size:72px;line-height:.8;padding:4px 14px 0 0;color:var(--teal);font-weight:600}
+
+    /* ===================== TREATMENT PARALLAX ===================== */
+    .treatPanel{position:relative;min-height:600px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+    .treatPanel img.bg{position:absolute;inset:0;width:100%;height:120%;object-fit:cover;top:-10%;transition:transform .1s}
+    .treatPanel .overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,30,51,.6),rgba(10,30,51,.85))}
+    .treatPanel .content{position:relative;z-index:2;text-align:center;padding:60px 20px;max-width:800px}
+    .treatPanel .content p{font-family:"Playfair Display",serif;font-size:clamp(30px,4vw,54px);line-height:1.5;font-weight:400}
+    .treatPanel .content em{color:var(--teal);font-style:normal;text-shadow:0 0 40px rgba(91,168,178,.4)}
+    .treatPanel .content .line{display:block;opacity:0;transform:translateY(40px)}
+    .treatPanel .content .line.vis{opacity:1;transform:translateY(0);transition:all .8s cubic-bezier(.22,1,.36,1)}
+    .treatPanel .content .line:nth-child(2){transition-delay:.2s}
+    .treatPanel .content .line:nth-child(3){transition-delay:.4s}
+
+    /* ===================== BELIEFS ===================== */
+    .beliefs{padding:120px 0;text-align:center;position:relative}
+    .beliefs .orb{width:400px;height:400px;background:rgba(91,168,178,.04);top:20%;right:-10%;animation:orbDrift 18s ease-in-out infinite}
+    .beliefs h2{font-family:"Playfair Display",serif;font-size:clamp(16px,1.8vw,22px);font-weight:400;letter-spacing:.25em;text-transform:uppercase;color:var(--teal);margin-bottom:50px;position:relative}
+    .beliefs h2::after{content:'';display:block;width:60px;height:1px;background:var(--teal);margin:20px auto 0;opacity:.5}
+    .beliefs .inner{max-width:800px;margin:0 auto}
+    .beliefs p{font-family:"Playfair Display",serif;font-size:clamp(20px,2.2vw,26px);line-height:1.9;color:rgba(255,255,255,.82);margin-bottom:32px;font-weight:400}
+
+    /* ===================== CHAINS ===================== */
+    .chains{padding:120px 0;text-align:center;position:relative;overflow:hidden}
+    .chains h2{font-family:"Playfair Display",serif;font-size:clamp(36px,4.5vw,64px);font-weight:700;margin-bottom:12px}
+    .chains h2 em{display:block;color:var(--taupe);font-style:italic;font-weight:400;font-size:.45em;margin-top:10px;letter-spacing:.05em}
+    .chainsImg{max-width:550px;width:90%;margin:50px auto;display:block;filter:drop-shadow(0 20px 50px rgba(91,168,178,.2));transition:transform 1.5s cubic-bezier(.22,1,.36,1)}
+    .chainsImg.vis{animation:chainSnap 1.5s cubic-bezier(.22,1,.36,1) forwards}
+    @keyframes chainSnap{0%{transform:scale(.85) rotate(-2deg);opacity:.5;filter:blur(4px)}40%{transform:scale(1.05) rotate(1deg);filter:blur(0)}100%{transform:scale(1) rotate(0);opacity:1}}
+    .chains .body{max-width:720px;margin:0 auto;font-size:clamp(18px,2vw,22px);line-height:2;color:rgba(255,255,255,.82);font-family:"Playfair Display",serif}
+
+    /* ===================== TRANSFORM IMAGE ===================== */
+    .transform{position:relative;min-height:550px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+    .transform img.bg{position:absolute;inset:0;width:100%;height:120%;object-fit:cover;top:-10%}
+    .transform .overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,30,51,.4),rgba(10,30,51,.8))}
+    .transform .content{position:relative;z-index:2;text-align:center;padding:60px 20px}
+    .transform .content p{font-family:"Playfair Display",serif;font-style:italic;font-size:clamp(32px,4vw,56px);color:var(--teal);text-shadow:0 0 60px rgba(91,168,178,.3);animation:textBreathe 5s ease-in-out infinite}
+    @keyframes textBreathe{0%,100%{opacity:.85;text-shadow:0 0 40px rgba(91,168,178,.2)}50%{opacity:1;text-shadow:0 0 80px rgba(91,168,178,.4)}}
+
+    /* ===================== CTA ===================== */
+    .cta{padding:140px 0;text-align:center;position:relative}
+    .cta .orb{width:500px;height:500px;background:rgba(173,155,132,.04);top:50%;left:50%;transform:translate(-50%,-50%)}
+    .cta h2{font-family:"Playfair Display",serif;font-size:clamp(34px,4vw,58px);font-weight:500;margin-bottom:16px;position:relative}
+    .cta .sub{font-size:17px;color:rgba(255,255,255,.55);margin-bottom:44px;letter-spacing:.03em}
+    .cta .btn{padding:20px 56px;font-size:14px;position:relative;overflow:hidden}
+    .cta .btn::after{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:linear-gradient(45deg,transparent 40%,rgba(255,255,255,.1) 50%,transparent 60%);animation:btnShine 4s ease-in-out infinite}
+    @keyframes btnShine{0%{transform:translateX(-100%) rotate(45deg)}100%{transform:translateX(100%) rotate(45deg)}}
+
+    /* === FADE ANIMATIONS === */
+    .fadeUp{opacity:0;transform:translateY(50px);transition:opacity 1s cubic-bezier(.22,1,.36,1),transform 1s cubic-bezier(.22,1,.36,1)}
+    .fadeUp.vis{opacity:1;transform:translateY(0)}
+    .fadeUp.d1{transition-delay:.15s}.fadeUp.d2{transition-delay:.3s}.fadeUp.d3{transition-delay:.45s}.fadeUp.d4{transition-delay:.6s}
+    .fadeScale{opacity:0;transform:scale(.9);transition:opacity 1s ease,transform 1s ease}
+    .fadeScale.vis{opacity:1;transform:scale(1)}
+    .slideLeft{opacity:0;transform:translateX(-60px);transition:opacity 1s ease,transform 1s cubic-bezier(.22,1,.36,1)}
+    .slideLeft.vis{opacity:1;transform:translateX(0)}
+    .slideRight{opacity:0;transform:translateX(60px);transition:opacity 1s ease,transform 1s cubic-bezier(.22,1,.36,1)}
+    .slideRight.vis{opacity:1;transform:translateX(0)}
+
+    /* === RESPONSIVE === */
     @media(max-width:900px){
-      .qpHero .wrap{grid-template-columns:1fr;text-align:center}
-      .qpHero .imgSide{order:-1}
-      .qpHero .imgSide img{max-height:50vh}
-      .qpHero .textSide{padding:0 0 40px}
-      .qpHero .introText{max-width:100%;margin-left:auto;margin-right:auto}
-      .parchment{padding:30px 28px;margin:0 16px}
-      .healthBadge{width:140px}
-      .treatmentSection{min-height:400px}
-      .transformSection{min-height:350px}
+      .hero .wrap{grid-template-columns:1fr;text-align:center}
+      .hero .imgSide{order:-1}
+      .hero .imgSide img{max-height:55vh}
+      .hero .text{padding:0 0 50px}
+      .hero .intro{max-width:100%;margin:0 auto 36px}
+      .hero .sig{padding-left:0}.hero .sig::before{display:none}
+      .parchment{padding:40px 30px;margin:0 16px}
+      .bridge{padding:80px 0}
+      .beliefs{padding:80px 0}
+      .chains{padding:80px 0}
+      .treatPanel{min-height:450px}
+      .transform{min-height:400px}
+      .cta{padding:80px 0}
     }
     @media(max-width:500px){
-      .qpHero h1{font-size:28px}
-      .qpHero .introText{font-size:15px}
-      .parchment p{font-size:15px}
-      .chainsImg{max-width:300px}
+      .hero h1{font-size:34px}
+      .parchment p{font-size:16px}
+      .parchment .dropcap{font-size:52px}
+      .chainsImg{max-width:280px}
+      .badge{width:160px}
     }
   </style>
 </head>
 <body>
-  <div class="scrollProgress" id="scrollProgress"></div>
+  <div class="scrollProg" id="sp"></div>
+  <div class="particles" id="particles"></div>
   <div id="shared-header"></div>
 
-  <section class="qpHero">
+  <!-- HERO -->
+  <section class="hero">
+    <div class="orb a"></div><div class="orb b"></div>
     <div class="wrap">
-      <div class="textSide">
-        <span class="label fadeUp">The Quantum Physician Model</span>
-        <h1 class="fadeUp d1">The Quantum Physician Model:<span>A Holistic Approach to Health &amp; Healing</span></h1>
-        <p class="introText fadeUp d2">The Quantum Physician model is built around four essential pillars—H.O.P.E., which stands for Health, Observation, Potential, and Empowerment. These pillars guide individuals toward health and healing by focusing on the observation of potential and empowered actions that align with this potential.</p>
-        <div class="signature fadeUp d3">— Dr. Tracey Clark</div>
+      <div class="text">
+        <span class="pill fadeUp">The Quantum Physician Model</span>
+        <h1 class="fadeUp d1">The Quantum<br>Physician Model:<em>A Holistic Approach to Health &amp; Healing</em></h1>
+        <p class="intro fadeUp d2">The Quantum Physician model is built around four essential pillars — H.O.P.E., which stands for Health, Observation, Potential, and Empowerment. These pillars guide individuals toward health and healing by focusing on the observation of potential and empowered actions that align with this potential.</p>
+        <div class="sig fadeUp d3">— Dr. Tracey Clark</div>
       </div>
-      <div class="imgSide fadeUp">
-        <img src="/assets/images/tracey-standing.png" alt="Dr. Tracey Clark" loading="eager">
+      <div class="imgSide slideRight">
+        <img src="/assets/images/tracey-standing.png" alt="Dr. Tracey Clark">
       </div>
     </div>
   </section>
 
-  <section class="introSection">
+  <!-- BRIDGE -->
+  <section class="bridge">
+    <div class="orb"></div>
+    <div class="divider fadeUp" style="margin-bottom:60px"></div>
     <div class="wrap">
       <p class="fadeUp">In this series, we will delve into each of these pillars in depth, but for now, let's focus on the concept of <em>health.</em></p>
     </div>
+    <div class="divider fadeUp" style="margin-top:60px"></div>
   </section>
 
-  <section class="healthSection">
+  <!-- HEALTH BADGE + PARCHMENT -->
+  <section class="badgeSection">
     <div class="wrap">
-      <img class="healthBadge fadeUp" src="/assets/images/health-badge.png" alt="Health — H.O.P.E. Pillar" loading="lazy">
+      <img class="badge fadeScale" src="/assets/images/health-badge.png" alt="Health — H.O.P.E. Pillar" loading="lazy">
       <div class="parchment fadeUp d1">
-        <p>From the standpoint of Chinese medicine, health is defined as the capacity of an organism to adapt to challenges. It isn't about the absence of hardship but rather how well we adjust to life's difficulties. Illness or stress can be viewed as a result of an inability to adapt.</p>
-        <p>What impacts this adaptability? The answer lies in rigidity—the rigidity of our minds. Over time, we accumulate beliefs, many of which we form early in life. These beliefs shape how we view ourselves and the world, and when we cling to them too tightly, they limit our capacity to see new possibilities.</p>
+        <p><span class="dropcap">F</span>rom the standpoint of Chinese medicine, health is defined as the capacity of an organism to adapt to challenges. It isn't about the absence of hardship but rather how well we adjust to life's difficulties. Illness or stress can be viewed as a result of an inability to adapt.</p>
+        <p>What impacts this adaptability? The answer lies in rigidity — the rigidity of our minds. Over time, we accumulate beliefs, many of which we form early in life. These beliefs shape how we view ourselves and the world, and when we cling to them too tightly, they limit our capacity to see new possibilities.</p>
       </div>
     </div>
   </section>
 
-  <section class="treatmentSection">
-    <img class="bgImg" src="/assets/images/tracey-treatment.png" alt="" loading="lazy">
+  <!-- TREATMENT PARALLAX -->
+  <section class="treatPanel" id="treatPanel">
+    <img class="bg" src="/assets/images/tracey-treatment.png" alt="" loading="lazy">
     <div class="overlay"></div>
-    <div class="content fadeUp">
-      <p>Health is not theoretical.<br>It is <em>observable.</em><br>It is measurable through <em>adaptability.</em></p>
+    <div class="content">
+      <p>
+        <span class="line">Health is not theoretical.</span>
+        <span class="line">It is <em>observable.</em></span>
+        <span class="line">It is measurable through <em>adaptability.</em></span>
+      </p>
     </div>
   </section>
 
-  <section class="beliefsSection">
+  <!-- BELIEFS -->
+  <section class="beliefs">
+    <div class="orb"></div>
     <div class="wrap">
       <div class="inner">
         <h2 class="fadeUp">The Roots of Our Beliefs</h2>
         <p class="fadeUp d1">Interestingly, we form most of our core beliefs by the time we are just three years old. We inherit many of these beliefs from our ancestry but also form our own beliefs and conclusions through observing the behaviors of those around us.</p>
-        <p class="fadeUp d2">However, as we age, these beliefs narrow our focus and limit our ability to see other possibilities. Conflicting beliefs create stress and hinder adaptability, thus affecting our overall health.</p>
+        <div class="divider fadeUp d2" style="margin:40px auto"></div>
+        <p class="fadeUp d3">However, as we age, these beliefs narrow our focus and limit our ability to see other possibilities. Conflicting beliefs create stress and hinder adaptability, thus affecting our overall health.</p>
       </div>
     </div>
   </section>
 
-  <section class="chainsSection">
+  <!-- CHAINS -->
+  <section class="chains">
     <div class="wrap">
-      <h2 class="fadeUp">Releasing Limiting Beliefs<span>Freedom begins in the mind</span></h2>
-      <img class="chainsImg fadeUp d1" src="/assets/images/chains.png" alt="Breaking free from limiting beliefs" loading="lazy">
-      <p class="bodyText fadeUp d2">Achieving health begins in the mind. By shifting our expectations from pain to health, from conflict to opportunity, we can experience a completely different reality.</p>
+      <h2 class="fadeUp">Releasing Limiting Beliefs<em>Freedom begins in the mind</em></h2>
+      <img class="chainsImg" id="chainsImg" src="/assets/images/chains.png" alt="Breaking free" loading="lazy">
+      <p class="body fadeUp d2">Achieving health begins in the mind. By shifting our expectations from pain to health, from conflict to opportunity, we can experience a completely different reality.</p>
     </div>
   </section>
 
-  <section class="transformSection">
-    <img class="bgImg" src="/assets/images/reflection.png" alt="" loading="lazy">
+  <!-- TRANSFORM -->
+  <section class="transform">
+    <img class="bg" src="/assets/images/reflection.png" alt="" loading="lazy">
     <div class="overlay"></div>
-    <div class="content fadeUp">
-      <p>Transformation begins with awareness.</p>
+    <div class="content fadeScale">
+      <p>Transformation begins<br>with awareness.</p>
     </div>
   </section>
 
-  <section class="ctaSection">
+  <!-- CTA -->
+  <section class="cta">
+    <div class="orb"></div>
     <div class="wrap">
-      <h2 class="fadeUp">Explore the Quantum Physician Model</h2>
+      <h2 class="fadeUp">Explore the Quantum<br>Physician Model</h2>
       <p class="sub fadeUp d1">Continue your journey through the four pillars of H.O.P.E.</p>
       <a class="btn taupe fadeUp d2" href="/">LEARN MORE</a>
     </div>
@@ -159,9 +246,45 @@
   <div id="shared-footer"></div>
   <script src="/js/shared.js"></script>
   <script>
-    window.addEventListener('scroll',()=>{const h=document.documentElement;document.getElementById('scrollProgress').style.width=(h.scrollTop/(h.scrollHeight-h.clientHeight))*100+'%'});
-    const observer=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')})},{threshold:.15});
-    document.querySelectorAll('.fadeUp').forEach(el=>observer.observe(el));
+    // Scroll progress
+    window.addEventListener('scroll',()=>{
+      const h=document.documentElement;
+      document.getElementById('sp').style.width=(h.scrollTop/(h.scrollHeight-h.clientHeight))*100+'%';
+    });
+
+    // Particles
+    const pc=document.getElementById('particles');
+    for(let i=0;i<25;i++){
+      const p=document.createElement('div');
+      p.className='pt';
+      const s=Math.random()*4+2;
+      p.style.cssText=`width:${s}px;height:${s}px;left:${Math.random()*100}%;animation-duration:${Math.random()*15+10}s;animation-delay:${Math.random()*10}s;opacity:${Math.random()*.4+.1}`;
+      pc.appendChild(p);
+    }
+
+    // Intersection Observer
+    const obs=new IntersectionObserver(entries=>{
+      entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('vis')});
+    },{threshold:.12});
+    document.querySelectorAll('.fadeUp,.fadeScale,.slideLeft,.slideRight,.chainsImg').forEach(el=>obs.observe(el));
+
+    // Treatment panel text lines
+    const lineObs=new IntersectionObserver(entries=>{
+      entries.forEach(e=>{if(e.isIntersecting){
+        e.target.querySelectorAll('.line').forEach(l=>l.classList.add('vis'));
+      }});
+    },{threshold:.3});
+    const tp=document.getElementById('treatPanel');
+    if(tp)lineObs.observe(tp);
+
+    // Subtle parallax on treatment & transform
+    window.addEventListener('scroll',()=>{
+      document.querySelectorAll('.treatPanel .bg, .transform .bg').forEach(img=>{
+        const rect=img.parentElement.getBoundingClientRect();
+        const speed=.15;
+        img.style.transform=`translateY(${rect.top*speed}px)`;
+      });
+    },{passive:true});
   </script>
 </body>
 </html>
