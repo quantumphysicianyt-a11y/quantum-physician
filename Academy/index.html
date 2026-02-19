@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Academy Test - Hero Only</title>
+  <title>Academy Test - Hero + Courses</title>
   <link rel="stylesheet" href="/css/shared.css">
   <link rel="stylesheet" href="/academy/css/academy.css">
   <style>
@@ -27,6 +27,9 @@
       background: rgba(91,168,178,.1); border: 1px solid rgba(91,168,178,.2);
       display: flex; align-items: center; justify-content: center; font-size: 16px;
     }
+    .qa-section { padding: 70px 0; }
+    .qa-section-header { text-align: center; margin-bottom: 40px; }
+    .qa-section-header .qa-label { margin-bottom: 12px; display: inline-block; }
   </style>
 </head>
 <body class="qa-page">
@@ -37,7 +40,7 @@
       <div class="qa-wrap">
         <img src="/assets/images/QuantumPhysAcad_STACKED-RGB.png" alt="Quantum Physician Academy" class="hero-logo">
         <p class="hero-tagline">Empowered Learning for Lasting Transformation</p>
-        <p class="qa-subtitle" style="text-align:center;margin:0 auto 28px">Self-paced courses built on the Quantum Physician model. Release limiting beliefs, unlock your potential, and create lasting wellness — on your schedule.</p>
+        <p class="qa-subtitle" style="text-align:center;margin:0 auto 28px">Self-paced courses built on the Quantum Physician model.</p>
         <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
           <a href="#courses" class="qa-btn qa-btn-primary qa-btn-lg">Browse Courses</a>
           <a href="/academy/login.html" class="qa-btn qa-btn-outline qa-btn-lg">Sign In</a>
@@ -51,12 +54,56 @@
       </div>
     </section>
 
+    <section id="courses" class="qa-section">
+      <div class="qa-wrap">
+        <div class="qa-section-header">
+          <div class="qa-label">Courses</div>
+          <h2 class="qa-h2">Your Path to Wellness</h2>
+        </div>
+        <div id="courseGrid" class="qa-course-grid">
+          <div class="qa-loading"><div class="qa-spinner"></div></div>
+        </div>
+      </div>
+    </section>
+
     <div style="padding:60px 20px;text-align:center">
-      <p>If you can scroll here without crashing, hero is fine.</p>
+      <p>If you can scroll here without crashing, courses are fine.</p>
     </div>
   </main>
 
   <div id="shared-footer"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/shared.js"></script>
+  <script src="/academy/js/academy.js"></script>
+  <script>
+    (async () => {
+      const grid = document.getElementById('courseGrid');
+      try {
+        const courses = await getCourses('published');
+        const { data: coming } = await sb.from('qa_courses').select('*').eq('status', 'coming_soon').order('sort_order');
+        const all = [...courses, ...(coming || [])];
+        if (all.length === 0) { grid.innerHTML = '<p style="text-align:center;opacity:.5">No courses yet</p>'; return; }
+        grid.innerHTML = all.map(c => `
+          <a class="qa-course-card" href="/academy/course.html?slug=${c.slug}">
+            <div class="thumb" style="background:linear-gradient(135deg,#0f2942,#1a3a5c);display:flex;align-items:center;justify-content:center">
+              <span style="font-size:48px;opacity:.3">📖</span>
+              ${c.status === 'coming_soon' ? '<div class="badge coming">Coming Soon</div>' : ''}
+            </div>
+            <div class="body">
+              <h3>${c.title}</h3>
+              <p class="desc">${c.short_description || c.subtitle || ''}</p>
+              <div class="meta">
+                <div class="stats"></div>
+                <div class="price">${formatPrice(c.price_cents)}</div>
+              </div>
+            </div>
+          </a>
+        `).join('');
+      } catch (err) {
+        console.error(err);
+        grid.innerHTML = '<p style="text-align:center;opacity:.5">Error loading courses</p>';
+      }
+    })();
+  </script>
 </body>
 </html>
