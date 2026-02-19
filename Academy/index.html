@@ -3,279 +3,39 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Quantum Physician Academy — Empowered Learning</title>
-  <meta name="description" content="Self-paced courses built on the Quantum Physician model. Learn to release limiting beliefs, unlock your potential, and create lasting wellness.">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <title>Academy Test</title>
   <link rel="stylesheet" href="/css/shared.css">
-  <link rel="stylesheet" href="/academy/css/academy.css">
   <style>
-    .qa-hero {
-      padding: 80px 0 70px;
-      background: linear-gradient(160deg, #061320 0%, #0a1e33 30%, #0f2942 60%, #0d2844 100%);
-    }
-    .hero-logo {
-      max-width: 400px;
-      margin: 0 auto 32px;
-      display: block;
-    }
-    .hero-tagline {
-      font-family: "Playfair Display", serif;
-      font-size: clamp(18px, 2.5vw, 24px);
-      font-style: italic;
-      color: var(--taupe, #ad9b84);
-      margin-bottom: 20px;
-      text-align: center;
-    }
-    .hero-features {
-      display: flex;
-      gap: 32px;
-      justify-content: center;
-      margin-top: 40px;
-      flex-wrap: wrap;
-    }
-    .hero-feature {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 14px;
-      color: rgba(255,255,255,.6);
-    }
-    .hero-feature .icon {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: rgba(91,168,178,.1);
-      border: 1px solid rgba(91,168,178,.2);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 16px;
-    }
-    .qa-section { padding: 70px 0; }
-    .qa-section-alt { background: rgba(255,255,255,.015); }
-    .qa-section-header { text-align: center; margin-bottom: 40px; }
-    .qa-section-header .qa-label { margin-bottom: 12px; display: inline-block; }
-    .steps-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 28px;
-      margin-top: 40px;
-    }
-    .step-card {
-      text-align: center;
-      padding: 32px 20px;
-      background: var(--qa-bg-card);
-      border: 1px solid var(--qa-border);
-      border-radius: var(--qa-radius);
-    }
-    .step-number {
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      background: rgba(91,168,178,.1);
-      border: 1px solid rgba(91,168,178,.3);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-family: "Playfair Display", serif;
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--teal, #5ba8b2);
-      margin-bottom: 16px;
-    }
-    .step-card h4 { font-family: "Playfair Display", serif; font-size: 18px; margin-bottom: 8px; }
-    .step-card p { font-size: 14px; color: var(--qa-text-muted); line-height: 1.6; }
-    .qa-cta {
-      padding: 60px 0;
-      text-align: center;
-      background: rgba(91,168,178,.04);
-      border-top: 1px solid var(--qa-border);
-      border-bottom: 1px solid var(--qa-border);
-    }
-    .instructor-card {
-      display: flex;
-      align-items: center;
-      gap: 40px;
-      padding: 40px;
-      background: var(--qa-bg-card);
-      border: 1px solid var(--qa-border);
-      border-radius: var(--qa-radius);
-      max-width: 800px;
-      margin: 0 auto;
-    }
-    .instructor-avatar {
-      width: 140px;
-      height: 140px;
-      border-radius: 50%;
-      object-fit: cover;
-      object-position: top;
-      border: 3px solid rgba(91,168,178,.3);
-      flex-shrink: 0;
-    }
-    .instructor-card h3 { font-family: "Playfair Display", serif; font-size: 22px; margin-bottom: 4px; }
-    .instructor-card .title { color: var(--teal, #5ba8b2); font-size: 14px; margin-bottom: 12px; }
-    .instructor-card p { color: var(--qa-text-muted); font-size: 15px; line-height: 1.7; }
-    @media (max-width: 768px) {
-      .hero-logo { max-width: 280px; }
-      .hero-features { gap: 16px; }
-      .instructor-card { flex-direction: column; text-align: center; padding: 28px; gap: 20px; }
-    }
+    body { background: #0a1e33 !important; color: rgba(255,255,255,.85) !important; }
+    .test-section { padding: 60px 20px; max-width: 800px; margin: 0 auto; text-align: center; }
+    h1 { font-size: 32px; margin-bottom: 16px; }
+    p { font-size: 16px; opacity: .7; margin-bottom: 40px; }
+    .card { background: #112a42; border: 1px solid rgba(91,168,178,.15); border-radius: 12px; padding: 24px; margin-bottom: 16px; }
   </style>
 </head>
-<body class="qa-page">
+<body>
   <div id="shared-header"></div>
 
-  <main>
-    <!-- HERO -->
-    <section class="qa-hero">
-      <div class="qa-wrap">
-        <img src="/assets/images/QuantumPhysAcad_STACKED-RGB.png" alt="Quantum Physician Academy" class="hero-logo">
-        <p class="hero-tagline">Empowered Learning for Lasting Transformation</p>
-        <p class="qa-subtitle" style="text-align:center;margin:0 auto 28px">Self-paced courses built on the Quantum Physician model. Release limiting beliefs, unlock your potential, and create lasting wellness — on your schedule.</p>
-        <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
-          <a href="#courses" class="qa-btn qa-btn-primary qa-btn-lg">Browse Courses</a>
-          <a href="/academy/login.html" class="qa-btn qa-btn-outline qa-btn-lg" id="authBtn">Sign In</a>
-        </div>
-        <div class="hero-features">
-          <div class="hero-feature"><div class="icon">📺</div> Self-Paced Video Lessons</div>
-          <div class="hero-feature"><div class="icon">📜</div> Certificates of Completion</div>
-          <div class="hero-feature"><div class="icon">💬</div> Community Discussions</div>
-          <div class="hero-feature"><div class="icon">♾️</div> Lifetime Access</div>
-        </div>
-      </div>
-    </section>
+  <div class="test-section">
+    <h1>Academy Test Page</h1>
+    <p>If you can see this and scroll without crashing, the basic page works.</p>
+  </div>
 
-    <!-- HOW IT WORKS -->
-    <section class="qa-section qa-section-alt">
-      <div class="qa-wrap">
-        <div class="qa-section-header">
-          <div class="qa-label">How It Works</div>
-          <h2 class="qa-h2">Your Learning Journey</h2>
-        </div>
-        <div class="steps-grid">
-          <div class="step-card">
-            <div class="step-number">1</div>
-            <h4>Choose Your Course</h4>
-            <p>Browse our catalog and find the program that resonates with where you are in your journey.</p>
-          </div>
-          <div class="step-card">
-            <div class="step-number">2</div>
-            <h4>Learn at Your Pace</h4>
-            <p>Watch video lessons, read articles, complete exercises, and take quizzes — all on your schedule.</p>
-          </div>
-          <div class="step-card">
-            <div class="step-number">3</div>
-            <h4>Track Your Growth</h4>
-            <p>Monitor your progress, earn XP, maintain streaks, and celebrate milestones along the way.</p>
-          </div>
-          <div class="step-card">
-            <div class="step-number">4</div>
-            <h4>Transform Your Life</h4>
-            <p>Apply what you learn daily and experience real, lasting shifts in your health and wellbeing.</p>
-          </div>
-        </div>
-      </div>
-    </section>
+  <div class="test-section">
+    <h2>Section 2 - Cards</h2>
+    <div class="card"><h3>Course 1</h3><p>Description here</p></div>
+    <div class="card"><h3>Course 2</h3><p>Description here</p></div>
+    <div class="card"><h3>Course 3</h3><p>Description here</p></div>
+    <div class="card"><h3>Course 4</h3><p>Description here</p></div>
+    <div class="card"><h3>Course 5</h3><p>Description here</p></div>
+  </div>
 
-    <!-- COURSE GRID -->
-    <section id="courses" class="qa-section">
-      <div class="qa-wrap">
-        <div class="qa-section-header">
-          <div class="qa-label">Courses</div>
-          <h2 class="qa-h2">Your Path to Wellness</h2>
-          <p style="color:var(--qa-text-muted);max-width:550px;margin:0 auto">Each course is designed to guide you through a specific aspect of the Self-H.O.P.E. framework.</p>
-        </div>
-        <div id="courseGrid" class="qa-course-grid">
-          <div class="qa-loading"><div class="qa-spinner"></div></div>
-        </div>
-        <div id="emptyState" class="qa-empty" style="display:none">
-          <div class="icon">📚</div>
-          <h3>Courses Coming Soon</h3>
-          <p>We're putting the finishing touches on our course library. Check back soon!</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- INSTRUCTOR -->
-    <section class="qa-section qa-section-alt">
-      <div class="qa-wrap">
-        <div class="qa-section-header">
-          <div class="qa-label">Your Instructor</div>
-          <h2 class="qa-h2">Learn From the Source</h2>
-        </div>
-        <div class="instructor-card">
-          <img src="/assets/images/tracey-about-me.png" alt="Dr. Tracey Clark" class="instructor-avatar">
-          <div>
-            <h3>Dr. Tracey Clark</h3>
-            <div class="title">Founder, Quantum Physician</div>
-            <p>Dr. Tracey Clark is a holistic health practitioner, educator, and the creator of the Self-H.O.P.E. framework. With decades of experience in quantum health and transformational healing, she has helped thousands of people break free from limiting beliefs and reclaim their wellness. Every course in the Academy draws directly from her proven methods and personal guidance.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- CTA -->
-    <section class="qa-cta">
-      <div class="qa-wrap">
-        <h2 class="qa-h2">Ready to Begin?</h2>
-        <p style="color:var(--qa-text-muted);margin-bottom:28px;max-width:500px;margin-left:auto;margin-right:auto">Create your free account and start exploring courses today.</p>
-        <a href="/academy/login.html#signup" class="qa-btn qa-btn-primary qa-btn-lg" id="ctaBtn">Create Free Account</a>
-      </div>
-    </section>
-  </main>
+  <div class="test-section">
+    <h2>Section 3 - Bottom</h2>
+    <p>If you reached here without crashing, the problem is in academy.css or academy.js</p>
+  </div>
 
   <div id="shared-footer"></div>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/shared.js"></script>
-  <script src="/academy/js/academy.js"></script>
-  <script>
-    (async () => {
-      try {
-        const user = await getUser();
-        if (user) {
-          document.getElementById('authBtn').textContent = 'My Dashboard';
-          document.getElementById('authBtn').href = '/academy/dashboard.html';
-          document.getElementById('ctaBtn').textContent = 'Go to Dashboard';
-          document.getElementById('ctaBtn').href = '/academy/dashboard.html';
-        }
-      } catch(e) { console.error(e); }
-    })();
-
-    (async () => {
-      const grid = document.getElementById('courseGrid');
-      const empty = document.getElementById('emptyState');
-      try {
-        const courses = await getCourses('published');
-        const { data: coming } = await sb.from('qa_courses').select('*').eq('status', 'coming_soon').order('sort_order');
-        const all = [...courses, ...(coming || [])];
-        if (all.length === 0) { grid.innerHTML = ''; empty.style.display = 'block'; return; }
-        grid.innerHTML = all.map(c => `
-          <a class="qa-course-card" href="/academy/course.html?slug=${c.slug}">
-            <div class="thumb" style="background:linear-gradient(135deg,#0f2942,#1a3a5c);display:flex;align-items:center;justify-content:center">
-              <span style="font-size:48px;opacity:.3">📖</span>
-              ${c.status === 'coming_soon' ? '<div class="badge coming">Coming Soon</div>' : ''}
-              ${c.price_cents === 0 && c.status !== 'coming_soon' ? '<div class="badge free">Free</div>' : ''}
-            </div>
-            <div class="body">
-              <h3>${c.title}</h3>
-              <p class="desc">${c.short_description || c.subtitle || ''}</p>
-              <div class="meta">
-                <div class="stats">
-                  ${c.total_lessons ? `<span>📺 ${c.total_lessons} lessons</span>` : ''}
-                  ${c.total_duration_minutes ? `<span>⏱ ${formatDuration(c.total_duration_minutes)}</span>` : ''}
-                </div>
-                <div class="price ${c.price_cents === 0 ? 'free' : ''}">${formatPrice(c.price_cents)}</div>
-              </div>
-            </div>
-          </a>
-        `).join('');
-      } catch (err) {
-        console.error('Failed to load courses:', err);
-        grid.innerHTML = '<p style="text-align:center;color:rgba(255,255,255,.5)">Unable to load courses. Please try again later.</p>';
-      }
-    })();
-  </script>
 </body>
 </html>
