@@ -21,6 +21,10 @@
 }
 
 /* === BASE === */
+body.qa-page {
+  background: var(--qa-bg) !important;
+  color: var(--qa-text) !important;
+}
 .qa-page {
   background: var(--qa-bg);
   color: var(--qa-text);
