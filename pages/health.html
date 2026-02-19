@@ -158,8 +158,9 @@
 
     /* RESPONSIVE */
     @media(max-width:900px){
-      .hero .traceyFloat{float:right;width:22%;max-width:100px;margin:5px 0 8px 10px;shape-outside:inset(0);filter:drop-shadow(0 8px 20px rgba(0,0,0,.3))}
-      .hero{text-align:left;padding:30px 0 20px}
+      .hero .traceyFloat{float:none;display:block;width:35%;max-width:140px;margin:0 auto 16px;shape-outside:none;filter:drop-shadow(0 8px 20px rgba(0,0,0,.3))}
+      .hero{text-align:center;padding:20px 0 20px}
+      .hero .pill{margin-bottom:14px}
       .hero .sig{padding-left:0}.hero .sig::before{display:none}
       .hero h1{font-size:clamp(24px,5vw,34px)}
       .hero .intro{font-size:15px;line-height:1.7}
@@ -174,12 +175,12 @@
       .collageWrap{margin:30px auto;max-width:90%}
       .bridge{padding:36px 0}
       .beliefs{padding:36px 0}
-      .beliefs .rootsBg{display:none}
+      .beliefs .rootsBg{width:120%;max-width:none;left:50%;transform:translate(-50%,-50%);opacity:.15}
       .chains{padding:36px 0 30px}
       .ctaEnd{padding:40px 0 30px}
     }
     @media(max-width:500px){
-      .hero .traceyFloat{width:20%;max-width:80px}
+      .hero .traceyFloat{width:30%;max-width:110px}
       .hero h1{font-size:22px}
       .hero .intro{font-size:14px}
       .parchment p{font-size:15px}
