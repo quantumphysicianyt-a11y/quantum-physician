@@ -6,7 +6,7 @@
   <title>Self-H.O.P.E. Series | Quantum Physician</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/shared.css">
   <style>
     .hero{position:relative;width:100%;min-height:550px;background:#000;overflow:hidden}
@@ -81,6 +81,7 @@
     @media(max-width:760px){.grid{grid-template-columns:1fr}.hero{min-height:400px}.journey{min-height:auto}.journey .signupBox{margin:40px auto;max-width:calc(100% - 40px)}}
     @media(max-width:600px){.testimonialArrow{width:28px;height:28px;font-size:18px}}
     @media(max-width:500px){.hopeGrid{grid-template-columns:1fr}}
+    @media(prefers-reduced-motion:reduce){*{animation-duration:0s!important;animation-delay:0s!important;transition-duration:0s!important}}
   </style>
 </head>
 <body>
@@ -138,7 +139,7 @@
     <img class="bgImg" src="/assets/images/Scarf.jpg" alt="" style="display:none">
     <video class="bgVid" autoplay muted loop playsinline preload="metadata" poster="/assets/images/Scarf.jpg"><source src="/assets/videos/Scarf-slow-flow.mp4" type="video/mp4"></video>
     <div class="box">
-      <img class="hopeLogo" src="/assets/images/Quantum_Hope_Logo_Full_Colour.png" alt="H.O.P.E" loading="lazy">
+      <img class="hopeLogo" src="/assets/images/Quantum_Hope_Logo_Full_Colour.png" alt="H.O.P.E" loading="lazy" decoding="async">
       <p><strong>The Quantum Physician path is a journey of self-development grounded in the 4 pillars of H.O.P.E.—Health, Observation, Potential, and Empowerment.</strong></p>
       <p>This unique approach blends practical strategies with quantum insights to help you recognize your inner potential and make empowered choices that support real, lasting transformation. By integrating quantum concepts into everyday life, you can activate the healing power of the mind and experience significant breakthroughs—quantum leaps—in your physical, mental, and emotional well-being.</p>
       <a class="btn outline" href="#">LEARN MORE</a>
@@ -147,10 +148,10 @@
 
   <section class="hopeSection">
     <div class="wrap"><div class="hopeGrid">
-      <div class="hopeItem"><a href="/pages/health.html" class="flip"><div class="flipInner"><div class="flipFace front"><img src="/assets/images/lotus-hand.png" alt="" loading="lazy"></div><div class="flipFace back"><span class="letter">H</span></div></div></a><div class="label">Health</div><a class="btn taupe" href="/pages/health.html">Learn More</a></div>
-      <div class="hopeItem"><div class="flip"><div class="flipInner"><div class="flipFace front"><img src="/assets/images/lotus-hand.png" alt="" loading="lazy"></div><div class="flipFace back"><span class="letter">O</span></div></div></div><div class="label">Observation</div><a class="btn taupe" href="#">Learn More</a></div>
-      <div class="hopeItem"><div class="flip"><div class="flipInner"><div class="flipFace front"><img src="/assets/images/lotus-hand.png" alt="" loading="lazy"></div><div class="flipFace back"><span class="letter">P</span></div></div></div><div class="label">Potential</div><a class="btn taupe" href="#">Learn More</a></div>
-      <div class="hopeItem"><div class="flip"><div class="flipInner"><div class="flipFace front"><img src="/assets/images/lotus-hand.png" alt="" loading="lazy"></div><div class="flipFace back"><span class="letter">E</span></div></div></div><div class="label">Empowerment</div><a class="btn taupe" href="#">Learn More</a></div>
+      <div class="hopeItem"><a href="/pages/health.html" class="flip"><div class="flipInner"><div class="flipFace front"><img src="/assets/images/lotus-hand.png" alt="" loading="lazy" decoding="async"></div><div class="flipFace back"><span class="letter">H</span></div></div></a><div class="label">Health</div><a class="btn taupe" href="/pages/health.html">Learn More</a></div>
+      <div class="hopeItem"><div class="flip"><div class="flipInner"><div class="flipFace front"><img src="/assets/images/lotus-hand.png" alt="" loading="lazy" decoding="async"></div><div class="flipFace back"><span class="letter">O</span></div></div></div><div class="label">Observation</div><a class="btn taupe" href="#">Learn More</a></div>
+      <div class="hopeItem"><div class="flip"><div class="flipInner"><div class="flipFace front"><img src="/assets/images/lotus-hand.png" alt="" loading="lazy" decoding="async"></div><div class="flipFace back"><span class="letter">P</span></div></div></div><div class="label">Potential</div><a class="btn taupe" href="#">Learn More</a></div>
+      <div class="hopeItem"><div class="flip"><div class="flipInner"><div class="flipFace front"><img src="/assets/images/lotus-hand.png" alt="" loading="lazy" decoding="async"></div><div class="flipFace back"><span class="letter">E</span></div></div></div><div class="label">Empowerment</div><a class="btn taupe" href="#">Learn More</a></div>
     </div></div>
   </section>
 
@@ -185,6 +186,14 @@
   <div id="shared-footer"></div>
   <script src="/js/shared.js"></script>
   <script>
+    /* Connection-aware video loading */
+    const conn=navigator.connection||{};
+    if(conn.saveData||conn.effectiveType==='2g'||conn.effectiveType==='slow-2g'){document.querySelectorAll('video[autoplay]').forEach(v=>{v.removeAttribute('autoplay');v.preload='none'})}
+
+    /* Pause off-screen videos */
+    document.querySelectorAll('video').forEach(v=>{const vo=new IntersectionObserver(e=>{e.forEach(en=>{if(en.isIntersecting){v.play().catch(()=>{})}else{v.pause()}})},{threshold:0.1});vo.observe(v.parentElement)});
+
+    /* Testimonial slider */
     const slides=document.querySelectorAll('.testimonialSlide'),dots=document.querySelectorAll('.testimonials .dot');let currentSlide=0,slideInterval;
     function goToSlide(i){slides[currentSlide].classList.remove('active');dots[currentSlide].classList.remove('active');currentSlide=i;slides[currentSlide].classList.add('active');dots[currentSlide].classList.add('active')}
     function nextSlide(){goToSlide((currentSlide+1)%slides.length)}

@@ -7,7 +7,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
     :root{
@@ -1611,6 +1611,16 @@
       .testimonialSlide blockquote{font-size:14px}
       .testimonialArrow{width:28px;height:28px;font-size:18px}
     }
+
+    /* === MOBILE PERFORMANCE === */
+    @media(max-width:768px){
+      .bgVid{will-change:auto}
+    }
+
+    /* Respect OS-level reduced motion */
+    @media(prefers-reduced-motion:reduce){
+      *{animation-duration:0s!important;animation-delay:0s!important;transition-duration:0s!important}
+    }
   </style>
 </head>
 
@@ -1775,7 +1785,7 @@
           <a href="/pages/health.html" class="flip">
             <div class="flipInner">
               <div class="flipFace front">
-                <img src="assets/images/lotus-hand.png" alt="" loading="lazy">
+                <img src="assets/images/lotus-hand.png" alt="" loading="lazy" decoding="async">
               </div>
               <div class="flipFace back">
                 <span class="letter">H</span>
@@ -1790,7 +1800,7 @@
           <div class="flip">
             <div class="flipInner">
               <div class="flipFace front">
-                <img src="assets/images/lotus-hand.png" alt="" loading="lazy">
+                <img src="assets/images/lotus-hand.png" alt="" loading="lazy" decoding="async">
               </div>
               <div class="flipFace back">
                 <span class="letter">O</span>
@@ -1805,7 +1815,7 @@
           <div class="flip">
             <div class="flipInner">
               <div class="flipFace front">
-                <img src="assets/images/lotus-hand.png" alt="" loading="lazy">
+                <img src="assets/images/lotus-hand.png" alt="" loading="lazy" decoding="async">
               </div>
               <div class="flipFace back">
                 <span class="letter">P</span>
@@ -1820,7 +1830,7 @@
           <div class="flip">
             <div class="flipInner">
               <div class="flipFace front">
-                <img src="assets/images/lotus-hand.png" alt="" loading="lazy">
+                <img src="assets/images/lotus-hand.png" alt="" loading="lazy" decoding="async">
               </div>
               <div class="flipFace back">
                 <span class="letter">E</span>
@@ -1926,7 +1936,7 @@
       <button class="quizClose" onclick="closeQuiz()">✕</button>
       
       <div class="quizHeader">
-        <img class="lotus" src="assets/images/lotus-hand.png" alt="" loading="lazy">
+        <img class="lotus" src="assets/images/lotus-hand.png" alt="" loading="lazy" decoding="async">
         <h2>Discover Your Path</h2>
         <p>Answer a few questions to get personalized recommendations</p>
       </div>
@@ -2084,6 +2094,12 @@
   <div id="shared-footer"></div>
 
   <script>
+    // ========== CONNECTION AWARENESS ==========
+    const conn=navigator.connection||{};
+    const slowNet=conn.saveData||conn.effectiveType==='2g'||conn.effectiveType==='slow-2g';
+    // On slow connections, prevent autoplay videos from loading full stream
+    if(slowNet){document.querySelectorAll('video[autoplay]').forEach(v=>{v.removeAttribute('autoplay');v.preload='none'})}
+
     // ========== MOBILE MENU ==========
     function toggleMenu() {
       document.getElementById('mainMenu').classList.toggle('open');

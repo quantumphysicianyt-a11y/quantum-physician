@@ -6,8 +6,10 @@
   <title>Health — The Quantum Physician Model | Quantum Physician</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/shared.css">
+  <link rel="preload" as="image" href="/assets/images/tracey-standing.png">
+  <link rel="preload" as="image" href="/assets/images/health-badge.png">
   <style>
     body{background:#0a1e33;color:#fff;overflow-x:hidden}
     .scrollProg{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--teal),var(--taupe),var(--teal));z-index:200;width:0;box-shadow:0 0 14px rgba(91,168,178,.5)}
@@ -193,9 +195,9 @@
     /* === MOBILE PERF: lighter GPU load, all animations still run === */
     @media(max-width:768px){
       /* Reduce blur radius — biggest perf killer on mobile GPUs */
-      .orb{filter:blur(50px)}
+      .orb{filter:blur(50px);contain:strict}
       .scrollProg{box-shadow:none}
-      /* Simplify multi-layer drop-shadow keyframes */
+      /* Simplify multi-layer drop-shadow keyframes to single layer */
       @keyframes bGlow{
         0%,100%{filter:drop-shadow(0 0 20px rgba(91,168,178,.25))}
         50%{filter:drop-shadow(0 0 40px rgba(91,168,178,.45))}
@@ -208,10 +210,12 @@
         0%,100%{filter:drop-shadow(0 15px 35px rgba(0,0,0,.35))}
         50%{filter:drop-shadow(0 15px 40px rgba(91,168,178,.12))}
       }
-      /* Fewer particles + smaller */
-      .pt{box-shadow:none}
+      /* Particles: remove box-shadow, use simpler rendering */
+      .pt{box-shadow:none;contain:strict}
       /* Parallax BG images: no oversize on mobile */
       .treatPanel img.bg,.transform img.bg{height:100%;top:0}
+      /* Layout containment on heavy sections */
+      .bridge,.beliefs,.chains,.downward,.healthHope,.conclusion{contain:content}
     }
 
     /* Respect OS-level reduced motion */
@@ -232,7 +236,7 @@
   <section class="hero">
     <div class="orb a"></div><div class="orb b"></div>
     <div class="wrap">
-      <img class="traceyFloat slideRight" src="/assets/images/tracey-standing.png" alt="Dr. Tracey Clark">
+      <img class="traceyFloat slideRight" src="/assets/images/tracey-standing.png" alt="Dr. Tracey Clark" fetchpriority="high" decoding="async">
       <span class="pill fadeUp">The Quantum Physician Model</span>
       <h1 class="fadeUp d1">The Quantum Physician Model:<em>A Holistic Approach to Health &amp; Healing</em></h1>
       <p class="intro fadeUp d2">The Quantum Physician model is built around four essential pillars — H.O.P.E., which stands for Health, Observation, Potential, and Empowerment. These pillars guide individuals toward health and healing by focusing on the observation of potential and empowered actions that align with this potential.</p>
@@ -249,7 +253,7 @@
 
   <section class="badgeSection">
     <div class="wrap">
-      <div class="badgeWrap fadeScale"><img class="badge" src="/assets/images/health-badge.png" alt="Health — A Chinese Medicine Perspective" loading="lazy"></div>
+      <div class="badgeWrap fadeScale"><img class="badge" src="/assets/images/health-badge.png" alt="Health — A Chinese Medicine Perspective" loading="lazy" decoding="async"></div>
       <div class="parchment fadeUp d1">
         <p><span class="dropcap">F</span>rom the standpoint of Chinese medicine, health is defined as the capacity of an organism to adapt to challenges. It isn't about the absence of hardship but rather how well we adjust to life's difficulties. Illness or stress can be viewed as a result of an inability to adapt.</p>
         <p>What impacts this adaptability? The answer lies in rigidity — the rigidity of our minds. Over time, we accumulate beliefs, many of which we form early in life. These beliefs shape how we view ourselves and the world, and when we cling to them too tightly, they limit our capacity to see new possibilities.</p>
@@ -258,7 +262,7 @@
   </section>
 
   <section class="treatPanel" id="treatPanel">
-    <img class="bg" src="/assets/images/tracey-treatment.png" alt="" loading="lazy">
+    <img class="bg" src="/assets/images/tracey-treatment.png" alt="" loading="lazy" decoding="async">
     <div class="overlay"></div>
     <div class="content">
       <p><span class="line">Health is not theoretical.</span><span class="line">It is <em>observable.</em></span><span class="line">It is measurable through <em>adaptability.</em></span></p>
@@ -266,7 +270,7 @@
   </section>
 
   <section class="beliefs">
-    <img class="rootsBg" src="/assets/images/roots.png" alt="" loading="lazy">
+    <img class="rootsBg" src="/assets/images/roots.png" alt="" loading="lazy" decoding="async">
     <div class="wrap"><div class="inner">
       <h2 class="fadeUp">The Roots of Our Beliefs</h2>
       <p class="fadeUp d1">Interestingly, we form most of our core beliefs by the time we are just three years old. We inherit many of these beliefs from our ancestry but also form our own beliefs and conclusions through observing the behaviors of those around us.</p>
@@ -278,13 +282,13 @@
   <section class="chains">
     <div class="wrap">
       <h2 class="fadeUp">Releasing Limiting Beliefs<em>Freedom begins in the mind</em></h2>
-      <div class="chainsWrap"><img class="chainsImg" id="chainsImg" src="/assets/images/chains.png" alt="Breaking free" loading="lazy"></div>
+      <div class="chainsWrap"><img class="chainsImg" id="chainsImg" src="/assets/images/chains.png" alt="Breaking free" loading="lazy" decoding="async"></div>
       <p class="body fadeUp">Achieving health begins in the mind. It starts by releasing expectations tied to old beliefs — beliefs that create stress, pain, or conflict. Imagine viewing the world through the lens of struggle versus one of opportunity. Quantum physics tells us that what we focus on, we tend to find. By shifting our expectations from pain to health, from conflict to opportunity, we can experience a completely different reality.</p>
     </div>
   </section>
 
   <section class="transform">
-    <img class="bg" src="/assets/images/reflection.png" alt="" loading="lazy">
+    <img class="bg" src="/assets/images/reflection.png" alt="" loading="lazy" decoding="async">
     <div class="overlay"></div>
     <div class="content fadeScale"><p>This change in perception allows us to transform our relationship with the world, impacting not only our health but also our overall life experience.</p></div>
   </section>
@@ -307,7 +311,7 @@
       <h3 class="fadeUp">Moving Toward</h3>
       <h2 class="fadeUp d1">Health and Hope</h2>
       <p class="fadeUp d2">Whether it's through self-directed courses or one-on-one interactive sessions, the Quantum Physician model offers tools to help individuals break free from limiting beliefs. These practices help to align with new possibilities and manifest a whole new experience of health and wellness. From physical health to emotional well-being, professional success, and relationships, this model emphasizes the importance of adaptability in all areas of life.</p>
-      <div class="collageWrap fadeScale"><img src="/assets/images/treatment-collage.png" alt="Treatment sessions" loading="lazy"></div>
+      <div class="collageWrap fadeScale"><img src="/assets/images/treatment-collage.png" alt="Treatment sessions" loading="lazy" decoding="async"></div>
       <p class="fadeUp d3">As we gather information from our environment, the expectations we hold create an energetic blueprint for what manifests in our physical reality. The body, in this model, becomes a reflection of our beliefs and expectations. By releasing rigidity and opening ourselves to new perspectives, we can transform both our mental and physical health.</p>
       <p class="fadeUp d3">If you're interested in exploring this path of health and healing, or even in helping others to do the same, the Quantum Physician model offers professional certification programs in the field of quantum wellness. Whether for personal growth or professional development, this model provides a powerful framework for achieving a whole new experience of well-being.</p>
     </div></div>
@@ -338,14 +342,19 @@
   <div id="shared-footer"></div>
   <script src="/js/shared.js"></script>
   <script>
-    /* Scroll progress bar */
+    /* Detect capabilities */
+    const isMobile=window.innerWidth<769;
+    const conn=navigator.connection||{};
+    const slowNet=conn.saveData||conn.effectiveType==='2g'||conn.effectiveType==='slow-2g';
+    const midNet=conn.effectiveType==='3g';
+
+    /* Scroll progress bar — rAF throttled */
     let ticking=false;
     window.addEventListener('scroll',()=>{if(!ticking){ticking=true;requestAnimationFrame(()=>{const h=document.documentElement;document.getElementById('sp').style.width=(h.scrollTop/(h.scrollHeight-h.clientHeight))*100+'%';ticking=false})}},{passive:true});
 
-    /* Particles — fewer on mobile */
+    /* Particles — scale to device + connection */
     const pc=document.getElementById('particles');
-    const isMobile=window.innerWidth<769;
-    const particleCount=isMobile?15:40;
+    const particleCount=slowNet?5:midNet?10:isMobile?15:40;
     for(let i=0;i<particleCount;i++){
       const p=document.createElement('div');p.className='pt';
       const s=isMobile?Math.random()*4+2:Math.random()*6+3;
@@ -353,22 +362,23 @@
       pc.appendChild(p);
     }
 
-    /* Fade-in observer */
-    const obs=new IntersectionObserver(e=>{e.forEach(el=>{if(el.isIntersecting)el.target.classList.add('vis')})},{threshold:0.02,rootMargin:'0px 0px 80px 0px'});
+    /* Fade-in observer — unobserve after trigger to free memory */
+    const obs=new IntersectionObserver(e=>{e.forEach(el=>{if(el.isIntersecting){el.target.classList.add('vis');obs.unobserve(el.target)}})},{threshold:0.02,rootMargin:'0px 0px 80px 0px'});
     document.querySelectorAll('.fadeUp,.fadeScale,.slideRight,.chainsImg').forEach(el=>obs.observe(el));
 
     /* Treatment panel line-by-line */
-    const lineObs=new IntersectionObserver(e=>{e.forEach(el=>{if(el.isIntersecting)el.target.querySelectorAll('.line').forEach(l=>l.classList.add('vis'))})},{threshold:.15});
+    const lineObs=new IntersectionObserver(e=>{e.forEach(el=>{if(el.isIntersecting){el.target.querySelectorAll('.line').forEach(l=>l.classList.add('vis'));lineObs.unobserve(el.target)}})},{threshold:.15});
     const tp=document.getElementById('treatPanel');if(tp)lineObs.observe(tp);
 
     /* Downward arrow trigger */
     const dwObs=new IntersectionObserver(e=>{e.forEach(el=>{if(el.isIntersecting){el.target.classList.add('vis');dwObs.unobserve(el.target)}})},{threshold:0.1});
     const dw=document.getElementById('downwardSection');if(dw)dwObs.observe(dw);
 
-    /* Parallax — rAF throttled, skip on mobile for perf */
-    if(!isMobile){
+    /* Parallax — rAF throttled, skip on mobile + slow connections */
+    if(!isMobile&&!slowNet){
       let pTick=false;
-      window.addEventListener('scroll',()=>{if(!pTick){pTick=true;requestAnimationFrame(()=>{document.querySelectorAll('.treatPanel .bg,.transform .bg').forEach(img=>{const r=img.parentElement.getBoundingClientRect();img.style.transform=`translateY(${r.top*.12}px)`});pTick=false})}},{passive:true});
+      const pEls=document.querySelectorAll('.treatPanel .bg,.transform .bg');
+      window.addEventListener('scroll',()=>{if(!pTick){pTick=true;requestAnimationFrame(()=>{pEls.forEach(img=>{const r=img.parentElement.getBoundingClientRect();img.style.transform=`translateY(${r.top*.12}px)`});pTick=false})}},{passive:true});
     }
   </script>
 </body>
