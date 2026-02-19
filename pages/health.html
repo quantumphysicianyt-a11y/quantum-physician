@@ -64,11 +64,12 @@
     .treatPanel .content .line:nth-child(2){transition-delay:.2s}
     .treatPanel .content .line:nth-child(3){transition-delay:.4s}
 
-    /* === BELIEFS === */
-    .beliefs{padding:50px 0;text-align:center;position:relative}
+    /* === BELIEFS with roots bg === */
+    .beliefs{padding:50px 0;text-align:center;position:relative;overflow:hidden}
+    .beliefs .rootsBg{position:absolute;top:50%;left:50%;transform:translate(-50%,-40%);width:80%;max-width:700px;height:auto;opacity:.07;pointer-events:none;filter:invert(1)}
     .beliefs h2{font-family:"Playfair Display",serif;font-size:clamp(15px,1.6vw,20px);font-weight:400;letter-spacing:.25em;text-transform:uppercase;color:var(--teal);margin-bottom:30px}
     .beliefs h2::after{content:'';display:block;width:60px;height:1px;background:var(--teal);margin:16px auto 0;opacity:.5}
-    .beliefs .inner{max-width:800px;margin:0 auto}
+    .beliefs .inner{max-width:800px;margin:0 auto;position:relative;z-index:1}
     .beliefs p{font-family:"Playfair Display",serif;font-size:clamp(19px,2vw,24px);line-height:1.85;color:rgba(255,255,255,.82);margin-bottom:20px}
 
     /* === CHAINS === */
@@ -81,13 +82,33 @@
     @keyframes chainE{0%{transform:scaleX(.6);opacity:0;filter:blur(8px)}50%{transform:scaleX(1.02);filter:blur(0) drop-shadow(0 0 60px rgba(91,168,178,.4))}100%{transform:scaleX(1);opacity:1;filter:drop-shadow(0 0 30px rgba(91,168,178,.15))}}
     .chains .body{max-width:720px;margin:20px auto 0;font-size:clamp(17px,1.8vw,21px);line-height:1.9;color:rgba(255,255,255,.82);font-family:"Playfair Display",serif}
 
-    /* === TRANSFORM === */
+    /* === PERCEPTION (reflection image) === */
     .transform{position:relative;min-height:400px;overflow:hidden;display:flex;align-items:center;justify-content:center;margin-top:10px}
     .transform img.bg{position:absolute;inset:0;width:100%;height:120%;object-fit:cover;top:-10%}
-    .transform .overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,30,51,.4),rgba(10,30,51,.8))}
-    .transform .content{position:relative;z-index:2;text-align:center;padding:50px 20px}
-    .transform .content p{font-family:"Playfair Display",serif;font-style:italic;font-size:clamp(30px,4vw,52px);color:var(--teal);text-shadow:0 0 60px rgba(91,168,178,.3);animation:tB 5s ease-in-out infinite}
-    @keyframes tB{0%,100%{opacity:.85;text-shadow:0 0 40px rgba(91,168,178,.2)}50%{opacity:1;text-shadow:0 0 80px rgba(91,168,178,.5)}}
+    .transform .overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,30,51,.4),rgba(10,30,51,.75))}
+    .transform .content{position:relative;z-index:2;text-align:center;padding:50px 20px;max-width:750px}
+    .transform .content p{font-family:"Playfair Display",serif;font-style:italic;font-size:clamp(22px,2.5vw,32px);color:rgba(255,255,255,.9);line-height:1.8;text-shadow:0 2px 20px rgba(0,0,0,.4)}
+
+    /* === DOWNWARD CAUSATION === */
+    .downward{padding:60px 0;text-align:center;position:relative}
+    .downward h3{font-size:clamp(13px,1.4vw,16px);letter-spacing:.25em;text-transform:uppercase;color:var(--teal);font-weight:400;margin-bottom:12px;font-family:"Playfair Display",serif}
+    .downward h2{font-family:"Playfair Display",serif;font-size:clamp(34px,4vw,56px);font-weight:700;margin-bottom:30px;line-height:1.1}
+    .downward .inner{max-width:780px;margin:0 auto}
+    .downward p{font-size:clamp(17px,1.6vw,19px);line-height:1.9;color:rgba(255,255,255,.75);margin-bottom:20px}
+
+    /* === HEALTH AND HOPE === */
+    .healthHope{padding:60px 0;text-align:center;position:relative;overflow:hidden}
+    .healthHope .orb{width:500px;height:500px;background:rgba(91,168,178,.04);top:50%;left:50%;transform:translate(-50%,-50%)}
+    .healthHope h3{font-size:clamp(13px,1.4vw,16px);letter-spacing:.25em;text-transform:uppercase;color:var(--teal);font-weight:400;margin-bottom:12px;font-family:"Playfair Display",serif}
+    .healthHope h2{font-family:"Playfair Display",serif;font-size:clamp(34px,4vw,56px);font-weight:700;margin-bottom:30px;line-height:1.1}
+    .healthHope .inner{max-width:780px;margin:0 auto}
+    .healthHope p{font-size:clamp(17px,1.6vw,19px);line-height:1.9;color:rgba(255,255,255,.75);margin-bottom:20px}
+
+    /* === CONCLUSION === */
+    .conclusion{padding:60px 0;text-align:center;position:relative;background:linear-gradient(180deg,transparent,rgba(91,168,178,.04),transparent)}
+    .conclusion h2{font-family:"Playfair Display",serif;font-size:clamp(30px,3.5vw,48px);font-weight:700;margin-bottom:30px;text-transform:uppercase;letter-spacing:.05em}
+    .conclusion .inner{max-width:780px;margin:0 auto}
+    .conclusion p{font-size:clamp(17px,1.6vw,19px);line-height:1.9;color:rgba(255,255,255,.75);margin-bottom:20px}
 
     /* === CTA END === */
     .ctaEnd{padding:60px 0 40px;text-align:center;position:relative;overflow:hidden}
@@ -187,6 +208,7 @@
   </section>
 
   <section class="beliefs">
+    <img class="rootsBg" src="/assets/images/roots.png" alt="" loading="lazy">
     <div class="wrap"><div class="inner">
       <h2 class="fadeUp">The Roots of Our Beliefs</h2>
       <p class="fadeUp d1">Interestingly, we form most of our core beliefs by the time we are just three years old. We inherit many of these beliefs from our ancestry but also form our own beliefs and conclusions through observing the behaviors of those around us.</p>
@@ -199,14 +221,43 @@
     <div class="wrap">
       <h2 class="fadeUp">Releasing Limiting Beliefs<em>Freedom begins in the mind</em></h2>
       <div class="chainsWrap"><img class="chainsImg" id="chainsImg" src="/assets/images/chains.png" alt="Breaking free" loading="lazy"></div>
-      <p class="body fadeUp">Achieving health begins in the mind. By shifting our expectations from pain to health, from conflict to opportunity, we can experience a completely different reality.</p>
+      <p class="body fadeUp">Achieving health begins in the mind. It starts by releasing expectations tied to old beliefs — beliefs that create stress, pain, or conflict. Imagine viewing the world through the lens of struggle versus one of opportunity. Quantum physics tells us that what we focus on, we tend to find. By shifting our expectations from pain to health, from conflict to opportunity, we can experience a completely different reality.</p>
     </div>
   </section>
 
   <section class="transform">
     <img class="bg" src="/assets/images/reflection.png" alt="" loading="lazy">
     <div class="overlay"></div>
-    <div class="content fadeScale"><p>Transformation begins<br>with awareness.</p></div>
+    <div class="content fadeScale"><p>This change in perception allows us to transform our relationship with the world, impacting not only our health but also our overall life experience.</p></div>
+  </section>
+
+  <section class="downward">
+    <div class="wrap"><div class="inner">
+      <h3 class="fadeUp">The Role of</h3>
+      <h2 class="fadeUp d1">Downward Causation</h2>
+      <p class="fadeUp d2">A key concept in the Quantum Physician model is downward causation, which illustrates a hierarchy of influence that begins in the mind and affects the physical body. Our beliefs and perceptions directly impact the flow of energy in our lives. Where attention goes, energy flows, meaning the beliefs we hold influence everything from our emotions to our physical health.</p>
+      <div class="divider fadeUp d3" style="margin:30px auto"></div>
+      <p class="fadeUp d3">Over the coming months, we will continue to explore the concept of hope — how to cultivate it in our lives and health. Through educational materials and interactions, we'll uncover ways to achieve health by releasing limiting belief systems and opening our minds to new possibilities.</p>
+    </div></div>
+  </section>
+
+  <section class="healthHope">
+    <div class="orb"></div>
+    <div class="wrap"><div class="inner">
+      <h3 class="fadeUp">Moving Toward</h3>
+      <h2 class="fadeUp d1">Health and Hope</h2>
+      <p class="fadeUp d2">Whether it's through self-directed courses or one-on-one interactive sessions, the Quantum Physician model offers tools to help individuals break free from limiting beliefs. These practices help to align with new possibilities and manifest a whole new experience of health and wellness. From physical health to emotional well-being, professional success, and relationships, this model emphasizes the importance of adaptability in all areas of life.</p>
+      <div class="divider fadeUp d3" style="margin:30px auto"></div>
+      <p class="fadeUp d3">As we gather information from our environment, the expectations we hold create an energetic blueprint for what manifests in our physical reality. The body, in this model, becomes a reflection of our beliefs and expectations. By releasing rigidity and opening ourselves to new perspectives, we can transform both our mental and physical health.</p>
+      <p class="fadeUp d3">If you're interested in exploring this path of health and healing, or even in helping others to do the same, the Quantum Physician model offers professional certification programs in the field of quantum wellness. Whether for personal growth or professional development, this model provides a powerful framework for achieving a whole new experience of well-being.</p>
+    </div></div>
+  </section>
+
+  <section class="conclusion">
+    <div class="wrap"><div class="inner">
+      <h2 class="fadeUp">Conclusion</h2>
+      <p class="fadeUp d1">Health is not just about the absence of disease, but a direction reflection of the capacity to adapt to life's challenges. The Quantum Physician model helps individuals to tap into their potential for health and growth by breaking free from limiting beliefs and embracing a new way of seeing the world. By aligning our thoughts and perceptions with the possibility of wellness, we can create a life of abundance, opportunity, and vibrant health.</p>
+    </div></div>
   </section>
 
   <section class="ctaEnd">
