@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Schedule — Quantum Academy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/academy/css/academy.css">
+  <style>
+    :root {
+      --s-teal:#5ba8b2;--s-cyan:#4acfd9;--s-taupe:#ad9b84;
+      --s-navy:#0a1e33;--s-deep:#071825;--s-mid:#0f2942;--s-card:#112a42;
+      --s-bdr:rgba(91,168,178,.15);--s-bdr2:rgba(91,168,178,.35);
+      --s-text:rgba(255,255,255,.88);--s-muted:rgba(255,255,255,.5);
+      --s-sidebar:260px;
+    }
+    [data-theme="light"]{
+      --s-navy:#f5f3ef;--s-deep:#ebe8e2;--s-mid:#fff;--s-card:#fff;
+      --s-bdr:rgba(173,155,132,.2);--s-bdr2:rgba(173,155,132,.4);
+      --s-text:#1a1a2e;--s-muted:rgba(26,26,46,.5);
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Inter',sans-serif;background:var(--s-navy);color:var(--s-text);min-height:100vh}
+
+    /* LAYOUT */
+    .s-app{display:flex;min-height:100vh}
+
+    /* SIDEBAR */
+    .s-side{width:var(--s-sidebar);background:var(--s-deep);border-right:1px solid var(--s-bdr);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:50}
+    .s-logo{padding:20px;text-align:center;border-bottom:1px solid var(--s-bdr)}
+    .s-logo img{max-width:150px;height:auto}
+    .s-nav{flex:1;padding:16px 12px;display:flex;flex-direction:column;gap:4px}
+    .s-nav a{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;color:var(--s-muted);text-decoration:none;font-size:13px;font-weight:500;transition:all .15s}
+    .s-nav a:hover{background:rgba(255,255,255,.03);color:var(--s-text)}
+    .s-nav a.act{background:rgba(91,168,178,.08);color:var(--s-teal);border:1px solid var(--s-bdr2)}
+    .s-nav a svg{width:16px;height:16px;stroke:currentColor}
+    .s-foot{padding:12px 16px;border-top:1px solid var(--s-bdr)}
+    .s-foot button{display:flex;align-items:center;gap:5px;background:none;border:none;color:var(--s-muted);font-size:11px;cursor:pointer;padding:6px 8px;border-radius:6px;transition:all .15s;width:100%}
+    .s-foot button:hover{background:rgba(255,255,255,.03);color:var(--s-text)}
+    .s-foot button svg{width:14px;height:14px;stroke:currentColor}
+
+    /* MAIN */
+    .s-main{margin-left:var(--s-sidebar);flex:1;padding:32px 40px}
+    .s-head{margin-bottom:28px}
+    .s-head h1{font-family:"Playfair Display",serif;font-size:28px;margin-bottom:4px}
+    .s-head p{color:var(--s-muted);font-size:14px}
+
+    /* LAYOUT: 2 col */
+    .s-grid{display:grid;grid-template-columns:1fr 340px;gap:28px}
+
+    /* CALENDAR */
+    .s-cal{background:var(--s-card);border:1px solid var(--s-bdr);border-radius:12px;padding:20px}
+    .s-cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+    .s-cal-head h2{font-family:"Playfair Display",serif;font-size:18px}
+    .s-cal-head .s-nav-btns{display:flex;gap:6px}
+    .s-cal-head .s-nav-btns button{width:32px;height:32px;border-radius:6px;background:none;border:1px solid var(--s-bdr);color:var(--s-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+    .s-cal-head .s-nav-btns button:hover{border-color:var(--s-bdr2);color:var(--s-text)}
+    .s-cal-head .s-nav-btns button svg{width:14px;height:14px;stroke:currentColor}
+    .s-cal-head .s-today{padding:6px 12px;background:rgba(91,168,178,.08);border:1px solid var(--s-bdr2);color:var(--s-teal);border-radius:6px;font-size:11px;font-weight:600;cursor:pointer}
+
+    /* Day grid */
+    .s-dow{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:10px;font-weight:700;color:var(--s-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+    .s-days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+    .s-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:6px 2px;border-radius:6px;font-size:12px;color:var(--s-muted);cursor:default;transition:background .15s;position:relative}
+    .s-day.cur-month{color:var(--s-text)}
+    .s-day.today{background:rgba(91,168,178,.1);color:var(--s-teal);font-weight:700}
+    .s-day.today::after{content:'';width:4px;height:4px;border-radius:50%;background:var(--s-teal);position:absolute;bottom:3px}
+    .s-day.has-event{cursor:pointer}
+    .s-day.has-event:hover{background:rgba(91,168,178,.08)}
+    .s-day .s-dots{display:flex;gap:2px;margin-top:2px}
+    .s-day .s-dot{width:5px;height:5px;border-radius:50%;background:var(--s-teal)}
+    .s-day .s-dot.taupe{background:var(--s-taupe)}
+
+    /* UPCOMING EVENTS */
+    .s-upcoming{display:flex;flex-direction:column;gap:12px}
+    .s-upcoming h2{font-family:"Playfair Display",serif;font-size:18px;margin-bottom:4px}
+    .s-ev{background:var(--s-card);border:1px solid var(--s-bdr);border-radius:10px;padding:16px;transition:border-color .15s;position:relative;overflow:hidden}
+    .s-ev::before{content:'';position:absolute;top:0;left:0;bottom:0;width:3px;background:var(--s-teal)}
+    .s-ev:hover{border-color:var(--s-bdr2)}
+    .s-ev.past{opacity:.5}
+    .s-ev.past::before{background:var(--s-muted)}
+    .s-ev .s-ev-date{font-size:11px;font-weight:700;color:var(--s-teal);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;padding-left:10px}
+    .s-ev .s-ev-title{font-size:14px;font-weight:600;margin-bottom:4px;padding-left:10px}
+    .s-ev .s-ev-time{font-size:12px;color:var(--s-muted);display:flex;align-items:center;gap:5px;padding-left:10px}
+    .s-ev .s-ev-time svg{width:12px;height:12px;stroke:currentColor}
+    .s-ev .s-ev-desc{font-size:12px;color:var(--s-muted);margin-top:6px;padding-left:10px;line-height:1.5}
+    .s-ev .s-ev-loc{font-size:11px;color:var(--s-taupe);margin-top:4px;padding-left:10px;display:flex;align-items:center;gap:4px}
+    .s-ev .s-ev-loc svg{width:11px;height:11px;stroke:currentColor}
+
+    .s-empty{text-align:center;padding:40px 20px;color:var(--s-muted);font-size:13px}
+    .s-empty svg{width:28px;height:28px;stroke:var(--s-bdr2);display:block;margin:0 auto 10px}
+
+    /* Loading */
+    .s-loading{display:flex;align-items:center;justify-content:center;padding:40px}
+    .s-spin{width:24px;height:24px;border:2px solid var(--s-bdr);border-top-color:var(--s-teal);border-radius:50%;animation:sp .7s linear infinite}
+    @keyframes sp{to{transform:rotate(360deg)}}
+
+    /* Mobile */
+    @media(max-width:900px){
+      .s-side{display:none}
+      .s-main{margin-left:0;padding:20px}
+      .s-grid{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <svg style="display:none" xmlns="http://www.w3.org/2000/svg"><defs>
+    <symbol id="i-grid" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></symbol>
+    <symbol id="i-cal" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/></symbol>
+    <symbol id="i-al" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></symbol>
+    <symbol id="i-ar" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></symbol>
+    <symbol id="i-clk" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></symbol>
+    <symbol id="i-out" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
+  </defs></svg>
+
+  <div class="s-app">
+    <!-- SIDEBAR -->
+    <aside class="s-side">
+      <div class="s-logo"><a href="/academy/"><img src="/assets/images/QuantumPhysAcad_STACKED-RGB.png" alt="Academy"></a></div>
+      <nav class="s-nav">
+        <a href="/academy/dashboard.html"><svg><use href="#i-grid"/></svg> Dashboard</a>
+        <a href="/academy/catalog.html"><svg><use href="#i-book"/></svg> Browse Courses</a>
+        <a href="/academy/schedule.html" class="act"><svg><use href="#i-cal"/></svg> Schedule</a>
+        <a href="/"><svg><use href="#i-home"/></svg> Main Site</a>
+      </nav>
+      <div class="s-foot">
+        <button onclick="toggleTheme()"><svg><use href="#i-sun"/></svg> Toggle Theme</button>
+        <button onclick="signOut()"><svg><use href="#i-out"/></svg> Sign Out</button>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="s-main">
+      <div class="s-head">
+        <h1>Schedule</h1>
+        <p>Upcoming workshops, live sessions, and events</p>
+      </div>
+
+      <div class="s-grid">
+        <!-- CALENDAR -->
+        <div class="s-cal">
+          <div class="s-cal-head">
+            <h2 id="calMonth"></h2>
+            <div style="display:flex;align-items:center;gap:8px">
+              <button class="s-today" onclick="goToday()">Today</button>
+              <div class="s-nav-btns">
+                <button onclick="navMonth(-1)"><svg><use href="#i-al"/></svg></button>
+                <button onclick="navMonth(1)"><svg><use href="#i-ar"/></svg></button>
+              </div>
+            </div>
+          </div>
+          <div class="s-dow"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
+          <div class="s-days" id="calGrid"></div>
+        </div>
+
+        <!-- UPCOMING -->
+        <div>
+          <div class="s-upcoming" id="upcoming">
+            <h2>Upcoming</h2>
+            <div class="s-loading"><div class="s-spin"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/shared.js"></script>
+  <script src="/academy/js/academy.js"></script>
+  <script>
+    const GCAL_KEY = 'AIzaSyAXEk-v7dDukS3S6_I1QLnt7uLDx9ZPHPE';
+    const GCAL_ID = 'tracey@quantumphysician.com';
+
+    let currentMonth = new Date();
+    let allEvents = [];
+
+    // Theme
+    function toggleTheme(){
+      const t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
+      document.documentElement.setAttribute('data-theme',t);
+      localStorage.setItem('qa-theme',t);
+    }
+    const sv=localStorage.getItem('qa-theme');
+    if(sv) document.documentElement.setAttribute('data-theme',sv);
+
+    // Months
+    const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const DAYS_SHORT=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+    // Fetch events from Google Calendar
+    async function fetchEvents(start, end){
+      const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(GCAL_ID)}/events?key=${GCAL_KEY}&timeMin=${start.toISOString()}&timeMax=${end.toISOString()}&singleEvents=true&orderBy=startTime&maxResults=50`;
+      try{
+        const res = await fetch(url);
+        if(!res.ok) throw new Error('Calendar API error: '+res.status);
+        const data = await res.json();
+        return (data.items||[]).map(ev=>({
+          id: ev.id,
+          title: ev.summary||'Untitled',
+          description: ev.description||'',
+          location: ev.location||'',
+          start: ev.start.dateTime ? new Date(ev.start.dateTime) : new Date(ev.start.date),
+          end: ev.end.dateTime ? new Date(ev.end.dateTime) : new Date(ev.end.date),
+          allDay: !ev.start.dateTime,
+          color: ev.colorId
+        }));
+      }catch(e){
+        console.error('Failed to load calendar:', e);
+        return [];
+      }
+    }
+
+    // Format helpers
+    function fmtDate(d){return MONTHS[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear()}
+    function fmtDay(d){return DAYS_SHORT[d.getDay()]+', '+MONTHS[d.getMonth()]+' '+d.getDate()}
+    function fmtTime(d){
+      let h=d.getHours(),m=d.getMinutes(),ap=h>=12?'PM':'AM';
+      h=h%12||12;
+      return h+':'+(m<10?'0':'')+m+' '+ap;
+    }
+    function sameDay(a,b){return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate()}
+
+    // Render calendar grid
+    function renderCal(){
+      const y=currentMonth.getFullYear(), m=currentMonth.getMonth();
+      document.getElementById('calMonth').textContent=MONTHS[m]+' '+y;
+
+      const first=new Date(y,m,1);
+      const last=new Date(y,m+1,0);
+      const startDay=first.getDay();
+      const daysInMonth=last.getDate();
+      const today=new Date();
+
+      // Prev month days
+      const prevLast=new Date(y,m,0).getDate();
+      let html='';
+
+      for(let i=startDay-1;i>=0;i--){
+        html+=`<div class="s-day">${prevLast-i}</div>`;
+      }
+
+      // Current month
+      for(let d=1;d<=daysInMonth;d++){
+        const date=new Date(y,m,d);
+        const isToday=sameDay(date,today);
+        const dayEvents=allEvents.filter(e=>sameDay(e.start,date));
+        const hasEv=dayEvents.length>0;
+        html+=`<div class="s-day cur-month ${isToday?'today':''} ${hasEv?'has-event':''}" ${hasEv?`onclick="showDayEvents(${y},${m},${d})"`:''}>${d}${hasEv?`<div class="s-dots">${dayEvents.slice(0,3).map(()=>'<div class="s-dot"></div>').join('')}</div>`:''}</div>`;
+      }
+
+      // Next month
+      const totalCells=startDay+daysInMonth;
+      const remaining=totalCells%7===0?0:7-totalCells%7;
+      for(let i=1;i<=remaining;i++){
+        html+=`<div class="s-day">${i}</div>`;
+      }
+
+      document.getElementById('calGrid').innerHTML=html;
+    }
+
+    // Render upcoming events
+    function renderUpcoming(events){
+      const container=document.getElementById('upcoming');
+      const now=new Date();
+      const upcoming=events.filter(e=>e.end>=now).slice(0,8);
+      const past=events.filter(e=>e.end<now).slice(-3).reverse();
+
+      let html='<h2>Upcoming</h2>';
+      if(!upcoming.length&&!past.length){
+        html+='<div class="s-empty"><svg><use href="#i-cal"/></svg>No upcoming events scheduled.</div>';
+        container.innerHTML=html;
+        return;
+      }
+
+      upcoming.forEach(ev=>{
+        html+=renderEventCard(ev, false);
+      });
+
+      if(past.length){
+        html+='<div style="font-size:11px;color:var(--s-muted);text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-top:12px;padding-bottom:6px;border-bottom:1px solid var(--s-bdr)">Recent</div>';
+        past.forEach(ev=>{html+=renderEventCard(ev, true)});
+      }
+
+      container.innerHTML=html;
+    }
+
+    function renderEventCard(ev, isPast){
+      const timeStr=ev.allDay?'All Day':`${fmtTime(ev.start)} – ${fmtTime(ev.end)}`;
+      return`<div class="s-ev ${isPast?'past':''}">
+        <div class="s-ev-date">${fmtDay(ev.start)}</div>
+        <div class="s-ev-title">${ev.title}</div>
+        <div class="s-ev-time"><svg><use href="#i-clk"/></svg>${timeStr}</div>
+        ${ev.location?`<div class="s-ev-loc"><svg><use href="#i-pin"/></svg>${ev.location}</div>`:''}
+        ${ev.description&&!isPast?`<div class="s-ev-desc">${ev.description.substring(0,120)}${ev.description.length>120?'...':''}</div>`:''}
+      </div>`;
+    }
+
+    function showDayEvents(y,m,d){
+      const date=new Date(y,m,d);
+      const dayEv=allEvents.filter(e=>sameDay(e.start,date));
+      if(!dayEv.length)return;
+      const container=document.getElementById('upcoming');
+      let html=`<h2>${fmtDay(date)}</h2>`;
+      dayEv.forEach(ev=>{html+=renderEventCard(ev,false)});
+      html+=`<button onclick="loadAll()" style="margin-top:12px;padding:8px 16px;background:none;border:1px solid var(--s-bdr);color:var(--s-muted);border-radius:6px;font-size:11px;cursor:pointer">← Back to Upcoming</button>`;
+      container.innerHTML=html;
+    }
+
+    // Navigation
+    function navMonth(dir){
+      currentMonth=new Date(currentMonth.getFullYear(),currentMonth.getMonth()+dir,1);
+      loadMonth();
+    }
+    function goToday(){
+      currentMonth=new Date();
+      loadMonth();
+    }
+
+    async function loadMonth(){
+      const y=currentMonth.getFullYear(), m=currentMonth.getMonth();
+      const start=new Date(y,m,1);
+      const end=new Date(y,m+1,0,23,59,59);
+      allEvents=await fetchEvents(start,end);
+      renderCal();
+      renderUpcoming(allEvents);
+    }
+
+    async function loadAll(){
+      // Load 3 months of events for upcoming
+      const now=new Date();
+      const start=new Date(now.getFullYear(),now.getMonth()-1,1);
+      const end=new Date(now.getFullYear(),now.getMonth()+3,0);
+      allEvents=await fetchEvents(start,end);
+      renderCal();
+      renderUpcoming(allEvents);
+    }
+
+    // Init
+    loadAll();
+  </script>
+</body>
+</html>
