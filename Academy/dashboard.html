@@ -56,8 +56,6 @@
 
     /* === LAYOUT === */
     .d-layout {
-      display: grid;
-      grid-template-columns: var(--d-sidebar-w) 1fr;
       min-height: 100vh;
     }
 
@@ -522,7 +520,6 @@
     .d-overlay.open { display:block; }
 
     @media (max-width:960px) {
-      .d-layout { grid-template-columns:1fr; }
       .d-sidebar { display:none; width:270px; }
       .d-sidebar.open { display:flex; z-index:300; }
       .d-mob-btn { display:flex; }
