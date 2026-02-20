@@ -111,11 +111,12 @@
     .n-add button{padding:10px 16px;background:var(--l-teal);color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;transition:opacity .15s}
     .n-add button:hover{opacity:.85}
     .n-list{display:flex;flex-direction:column;gap:8px}
-    .n-item{background:rgba(0,0,0,.12);border:1px solid var(--l-bdr);border-radius:8px;padding:10px 12px;position:relative;transition:border-color .15s}
-    .n-item:hover{border-color:var(--l-bdr2)}
+    .n-item{background:rgba(0,0,0,.12);border:1px solid var(--l-bdr);border-radius:8px;padding:10px 12px;position:relative;transition:border-color .15s;cursor:pointer}
+    .n-item:hover{border-color:var(--l-bdr2);background:rgba(91,168,178,.04)}
     .n-item .n-top{display:flex;align-items:center;gap:8px;margin-bottom:4px}
-    .n-item .n-ts{font-family:monospace;font-size:12px;font-weight:700;color:var(--l-teal);cursor:pointer;background:rgba(91,168,178,.1);padding:2px 8px;border-radius:4px;transition:background .15s;text-decoration:none}
-    .n-item .n-ts:hover{background:rgba(91,168,178,.25)}
+    .n-item .n-ts{display:flex;align-items:center;gap:5px;font-family:monospace;font-size:12px;font-weight:700;color:var(--l-teal);background:rgba(91,168,178,.15);padding:3px 10px;border-radius:4px;text-decoration:none}
+    .n-item .n-ts svg{width:12px;height:12px;stroke:var(--l-teal);fill:var(--l-teal)}
+    .n-item .n-ts:hover{background:rgba(91,168,178,.3)}
     .n-item .n-time{font-size:10px;color:var(--l-muted);margin-left:auto}
     .n-item .n-del{background:none;border:none;color:var(--l-muted);cursor:pointer;font-size:12px;padding:2px 4px;opacity:0;transition:opacity .15s}
     .n-item:hover .n-del{opacity:1}
@@ -404,11 +405,11 @@
         const{data}=await sb.from('qa_bookmarks').select('*').eq('user_id',usr.id).eq('lesson_id',lid).order('video_timestamp_seconds',{ascending:true,nullsFirst:false}).order('created_at',{ascending:true});
         if(!data||!data.length){list.innerHTML='<div class="n-empty"><svg><use href="#i-bookmark"/></svg>No notes yet. Play the video and add timestamped notes.</div>';return}
         list.innerHTML=data.map(n=>`
-          <div class="n-item" data-id="${n.id}">
+          <div class="n-item" data-id="${n.id}" ${n.video_timestamp_seconds!=null?`onclick="seekTo(${n.video_timestamp_seconds})"`:''}> 
             <div class="n-top">
-              ${n.video_timestamp_seconds!=null?`<a class="n-ts" onclick="seekTo(${n.video_timestamp_seconds});return false" href="#">${fmtTs(n.video_timestamp_seconds)}</a>`:''}
+              ${n.video_timestamp_seconds!=null?`<span class="n-ts"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>${fmtTs(n.video_timestamp_seconds)}</span>`:''}
               <span class="n-time">${timeAgo(n.created_at)}</span>
-              <button class="n-del" onclick="delNote('${n.id}','${lid}')" title="Delete">✕</button>
+              <button class="n-del" onclick="event.stopPropagation();delNote('${n.id}','${lid}')" title="Delete">✕</button>
             </div>
             <div class="n-text">${n.note}</div>
           </div>`).join('');
@@ -519,9 +520,9 @@
     async function postDisc(){
       const inp=document.getElementById('dInp'),body=inp.value.trim();if(!body||!cur)return;
       try{
-        await sb.from('qa_discussions').insert({course_id:crs.id,lesson_id:cur.id,user_id:usr.id,body:body,timestamp_seconds:discTimestamp});
+        await sb.from('qa_discussions').insert({course_id:crs.id,lesson_id:cur.id,user_id:usr.id,title:'',body:body,timestamp_seconds:discTimestamp});
         inp.value='';discTimestamp=null;updateTsBtn();loadDisc(cur.id);
-      }catch(e){alert('Failed to post')}
+      }catch(e){console.error(e);alert('Failed to post')}
     }
 
     async function postReply(pid){
