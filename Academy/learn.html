@@ -63,6 +63,10 @@
     .ll-f button{display:flex;align-items:center;gap:4px;background:none;border:none;color:var(--l-muted);font-size:11px;cursor:pointer;padding:6px 8px;border-radius:6px;transition:all .15s}
     .ll-f button:hover{background:rgba(255,255,255,.03);color:var(--l-text)}
     .ll-f button svg{width:14px;height:14px;stroke:currentColor}
+    .ll-sw{width:30px;height:16px;background:var(--l-bdr);border-radius:8px;position:relative;transition:background .3s;flex-shrink:0;margin-left:2px}
+    .ll-sw::after{content:'';position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:#5ba8b2;transition:transform .3s}
+    [data-theme="light"] .ll-sw{background:#ad9b84}
+    [data-theme="light"] .ll-sw::after{transform:translateX(14px);background:#fff}
 
     /* CENTER */
     .lc{display:flex;flex-direction:column;overflow:hidden}
@@ -232,7 +236,7 @@
         <div class="pl" id="pLbl">0/0 lessons</div>
       </div>
       <div class="ll-m" id="modList"></div>
-      <div class="ll-f"><button onclick="toggleTheme()"><svg><use href="#i-sun"/></svg> Theme</button><button onclick="openEventsPanel()"><svg><use href="#i-cal"/></svg> Schedule</button></div>
+      <div class="ll-f"><button onclick="toggleTheme()"><svg><use href="#i-sun"/></svg> <span id="themeLabel">Light</span><div class="ll-sw"></div></button><button onclick="openEventsPanel()"><svg><use href="#i-cal"/></svg> Schedule</button></div>
     </aside>
 
     <!-- CENTER -->
@@ -306,8 +310,8 @@
     let cachedVimeoTime=0; // updated periodically
 
     // Theme
-    function toggleTheme(){const t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',t);localStorage.setItem('qa-theme',t)}
-    const sv=localStorage.getItem('qa-theme');if(sv) document.documentElement.setAttribute('data-theme',sv);
+    function toggleTheme(){const t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',t);localStorage.setItem('qa-theme',t);var l=document.getElementById('themeLabel');if(l)l.textContent=t==='dark'?'Light':'Dark'}
+    const sv=localStorage.getItem('qa-theme');if(sv){document.documentElement.setAttribute('data-theme',sv);var l=document.getElementById('themeLabel');if(l)l.textContent=sv==='dark'?'Light':'Dark';}
 
     // Panels
     function toggleRP(){document.getElementById('app').classList.toggle('rc');localStorage.setItem('qa-rp',document.getElementById('app').classList.contains('rc')?'c':'o')}

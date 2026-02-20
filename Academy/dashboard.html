@@ -617,7 +617,7 @@
         <a href="/"><svg><use href="#i-home"/></svg> Main Site</a>
         <div class="divider"></div>
         <button class="d-theme-toggle" onclick="toggleTheme()">
-          <svg><use href="#i-sun"/></svg> Appearance
+          <svg><use href="#i-sun"/></svg> <span id="themeLabel">Light</span>
           <div class="d-theme-switch"></div>
         </button>
       </nav>
@@ -703,10 +703,11 @@
       const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
       html.setAttribute('data-theme', next);
       localStorage.setItem('qa-theme', next);
+      var l=document.getElementById('themeLabel');if(l)l.textContent=next==='dark'?'Light':'Dark';
     }
     // Restore saved theme
     const saved = localStorage.getItem('qa-theme');
-    if (saved) document.documentElement.setAttribute('data-theme', saved);
+    if (saved) { document.documentElement.setAttribute('data-theme', saved); var l=document.getElementById('themeLabel');if(l)l.textContent=saved==='dark'?'Light':'Dark'; }
 
     /* --- Simple QR Code Generator --- */
     function drawQR(canvas, text) {
