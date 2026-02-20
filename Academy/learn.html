@@ -421,10 +421,8 @@
       const inp=document.getElementById('nInp'),text=inp.value.trim();if(!text)return;
       const ts=getVidTime();
       const hasVideo=document.getElementById('vidWrap').style.display!=='none';
-      try{
-        await sb.from('qa_bookmarks').insert({user_id:usr.id,lesson_id:cur.id,note:text,video_timestamp_seconds:hasVideo?ts:null}).select().single();
-        inp.value='';loadNotes(cur.id);
-      }catch(e){alert('Failed to save note')}
+      inp.value='';
+      sb.from('qa_bookmarks').insert({user_id:usr.id,lesson_id:cur.id,note:text,video_timestamp_seconds:hasVideo?ts:null}).then(()=>loadNotes(cur.id));
     }
 
     async function delNote(id,lid){
@@ -519,28 +517,25 @@
 
     async function postDisc(){
       const inp=document.getElementById('dInp');
-      if(!inp){console.error('dInp not found');return}
+      if(!inp)return;
       const body=inp.value.trim();
-      console.log('postDisc called, body:', JSON.stringify(body), 'cur:', !!cur);
-      if(!body){inp.focus();return}
-      if(!cur)return;
-      try{
-        const{error}=await sb.from('qa_discussions').insert({course_id:crs.id,lesson_id:cur.id,user_id:usr.id,title:'',body:body,timestamp_seconds:discTimestamp}).select().single();
-        if(error){console.error('disc insert error:',error);alert('Error: '+error.message);return}
-        inp.value='';discTimestamp=null;updateTsBtn();loadDisc(cur.id);
-      }catch(e){console.error('disc exception:',e);alert('Failed to post')}
+      if(!body||!cur)return;
+      inp.value='';
+      sb.from('qa_discussions').insert({course_id:crs.id,lesson_id:cur.id,user_id:usr.id,title:'',body:body,timestamp_seconds:discTimestamp}).then(r=>{
+        console.log('posted:',r);
+        discTimestamp=null;updateTsBtn();loadDisc(cur.id);
+      });
     }
 
     async function postReply(pid){
       const inp=document.getElementById('rinp-'+pid);if(!inp)return;
       const body=inp.value.trim();if(!body)return;
-      try{
-        await sb.from('qa_discussion_replies').insert({discussion_id:pid,user_id:usr.id,body:body}).select().single();
-        // Increment reply count
-        const{data:disc}=await sb.from('qa_discussions').select('reply_count').eq('id',pid).single();
-        await sb.from('qa_discussions').update({reply_count:(disc?.reply_count||0)+1}).eq('id',pid);
-        inp.value='';loadDisc(cur.id);
-      }catch(e){alert('Failed to reply')}
+      inp.value='';
+      sb.from('qa_discussion_replies').insert({discussion_id:pid,user_id:usr.id,body:body}).then(()=>{
+        sb.from('qa_discussions').select('reply_count').eq('id',pid).single().then(({data:disc})=>{
+          sb.from('qa_discussions').update({reply_count:(disc?.reply_count||0)+1}).eq('id',pid).then(()=>loadDisc(cur.id));
+        });
+      });
     }
 
     // ===== RESOURCES =====
