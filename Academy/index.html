@@ -29,7 +29,7 @@
     .a-hero .btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
     .a-btn { display: inline-block; padding: 16px 36px; border-radius: 999px; font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; text-decoration: none; transition: background .2s ease, border-color .2s ease; }
     .a-btn-p { background: var(--qa-teal); color: #fff; }
-    .a-btn-p:hover { background: #4a97a1; }
+    .a-btn-p:hover { background: #4a97a1; box-shadow: 0 4px 20px rgba(91,168,178,.3); }
     .a-btn-o { background: none; border: 1px solid rgba(91,168,178,.35); color: var(--qa-teal); }
     .a-btn-o:hover { background: rgba(91,168,178,.08); border-color: var(--qa-teal); }
     .features { display: flex; gap: 32px; justify-content: center; margin-top: 40px; flex-wrap: wrap; }
@@ -59,8 +59,8 @@
 
     /* COURSE GRID */
     .c-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 28px; margin: 40px 0; }
-    .c-card { background: var(--qa-card); border: 1px solid var(--qa-border); border-radius: 12px; overflow: hidden; text-decoration: none; color: inherit; display: flex; flex-direction: column; transition: border-color .2s ease; }
-    .c-card:hover { border-color: rgba(91,168,178,.35); }
+    .c-card { background: var(--qa-card); border: 1px solid var(--qa-border); border-radius: 12px; overflow: hidden; text-decoration: none; color: inherit; display: flex; flex-direction: column; transition: border-color .2s ease, box-shadow .2s ease; }
+    .c-card:hover { border-color: rgba(91,168,178,.35); box-shadow: 0 8px 40px rgba(0,0,0,.4); }
     .c-card .thumb { aspect-ratio: 16/9; background: #0f2942; overflow: hidden; }
     .c-card .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .c-card .body { padding: 24px; flex: 1; display: flex; flex-direction: column; }
