@@ -39,9 +39,9 @@
     .pf { font-family: "Playfair Display", serif; }
 
     /* THEME TOGGLE */
-    .theme-tog { position: fixed; top: 100px; right: 20px; z-index: 800; background: var(--qa-card); border: 1px solid var(--qa-border); border-radius: 999px; padding: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-    .theme-tog svg { width: 18px; height: 18px; stroke: var(--qa-teal); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-    .theme-tog:hover { border-color: var(--qa-border-h); }
+    .theme-tog { position: fixed; top: 100px; right: 20px; z-index: 800; background: var(--qa-card); border: 1px solid var(--qa-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--qa-muted); letter-spacing: .05em; }
+    .theme-tog svg { width: 16px; height: 16px; stroke: var(--qa-teal); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .theme-tog:hover { border-color: var(--qa-border-h); color: var(--qa-text); }
 
     /* HERO */
     .a-hero { padding: 80px 0 70px; text-align: center; background: var(--qa-hero-bg); }
@@ -114,16 +114,16 @@
     .float-ev {
       position: fixed; right: 20px; bottom: 20px;
       width: 110px; height: 110px; border-radius: 50%;
-      background: linear-gradient(135deg, var(--qa-bg), var(--qa-bg2));
-      color: var(--qa-teal);
+      background: linear-gradient(135deg, var(--qa-teal), #4a97a1);
+      color: #fff;
       display: flex; align-items: center; justify-content: center; text-align: center;
-      z-index: 900; border: 1px solid var(--qa-border-h);
+      z-index: 900; border: 2px solid rgba(255,255,255,.2);
       cursor: pointer; user-select: none; -webkit-user-select: none; text-decoration: none;
     }
-    .float-ev::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle at 30% 30%, rgba(91,168,178,.08), transparent); }
+    .float-ev::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.15), transparent); }
     .float-ev span { font-size: 11px; font-weight: 900; letter-spacing: .1em; line-height: 1.3; position: relative; z-index: 1; }
-    .float-ev:hover { background: linear-gradient(135deg, var(--qa-card), var(--qa-bg2)); border-color: var(--qa-teal); }
-    .float-ev .pulse-ring { position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--qa-teal); animation: evPulse 2s ease-out infinite; }
+    .float-ev:hover { background: linear-gradient(135deg, #4a97a1, #3d8a94); border-color: rgba(255,255,255,.4); }
+    .float-ev .pulse-ring { position: absolute; inset: 0; border-radius: 50%; border: 2px solid #fff; animation: evPulse 2s ease-out infinite; }
     @keyframes evPulse { 0% { opacity: .5; transform: scale(1); } 100% { opacity: 0; transform: scale(1.5); } }
 
     @media (max-width: 768px) {
@@ -142,6 +142,7 @@
 
   <div class="theme-tog" onclick="toggleTheme()" title="Toggle appearance">
     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    <span id="themeLabel">Light</span>
   </div>
 
   <main>
@@ -241,8 +242,8 @@
   <script src="/academy/js/academy.js"></script>
   <script src="/js/events-panel.js"></script>
   <script>
-    function toggleTheme(){var t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',t);localStorage.setItem('qa-theme',t)}
-    var sv=localStorage.getItem('qa-theme');if(sv)document.documentElement.setAttribute('data-theme',sv);
+    function toggleTheme(){var t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',t);localStorage.setItem('qa-theme',t);var l=document.getElementById('themeLabel');if(l)l.textContent=t==='dark'?'Light':'Dark'}
+    var sv=localStorage.getItem('qa-theme');if(sv){document.documentElement.setAttribute('data-theme',sv);var l=document.getElementById('themeLabel');if(l)l.textContent=sv==='dark'?'Light':'Dark'}
 
     (async()=>{try{var user=await getUser();if(user){document.getElementById('authBtn').textContent='My Dashboard';document.getElementById('authBtn').href='/academy/dashboard.html';document.getElementById('ctaBtn').textContent='Go to Dashboard';document.getElementById('ctaBtn').href='/academy/dashboard.html';var cb2=document.getElementById('ctaBtn2');if(cb2){cb2.textContent='Go to Dashboard';cb2.href='/academy/dashboard.html'}}}catch(e){}})();
 
