@@ -116,38 +116,51 @@
     /* Referral mini — under profile */
     .d-ref-mini {
       margin-top: 14px;
-      background: rgba(91,168,178,.06);
-      border: 1px dashed var(--d-border-hover);
-      border-radius: 8px;
-      padding: 12px;
+      background: rgba(91,168,178,.04);
+      border: 1px solid var(--d-border-hover);
+      border-radius: 10px;
+      padding: 14px 16px;
       animation: fadeIn .6s ease .3s both;
     }
     .d-ref-mini .ref-label {
       font-size: 10px; text-transform: uppercase; letter-spacing: .1em;
-      color: var(--d-text-muted); margin-bottom: 6px;
-      display: flex; align-items: center; gap: 4px;
+      color: var(--d-taupe); margin-bottom: 10px;
+      display: flex; align-items: center; gap: 5px;
+      justify-content: center;
     }
     .d-ref-mini .ref-label svg { width: 12px; height: 12px; stroke: var(--d-taupe); }
     .d-ref-mini .ref-code-row {
-      display: flex; align-items: center; gap: 6px;
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(0,0,0,.15);
+      border-radius: 6px;
+      padding: 8px 10px;
     }
     .d-ref-mini .ref-code {
-      font-family: monospace; font-size: 14px; font-weight: 700;
-      letter-spacing: .1em; color: var(--d-teal); flex: 1;
+      font-family: monospace; font-size: 15px; font-weight: 700;
+      letter-spacing: .12em; color: var(--d-teal); flex: 1;
+      text-align: center;
     }
     .d-ref-mini .ref-copy {
       background: var(--d-teal); color: #fff; border: none;
-      padding: 5px 10px; border-radius: 4px;
+      padding: 6px 12px; border-radius: 5px;
       font-size: 10px; font-weight: 600; cursor: pointer;
       text-transform: uppercase; letter-spacing: .04em;
-      transition: all .15s;
+      transition: all .15s; flex-shrink: 0;
     }
     .d-ref-mini .ref-copy:hover { opacity: .8; }
     .d-ref-mini .ref-stats {
-      display: flex; gap: 10px; margin-top: 8px;
+      display: flex; gap: 0; margin-top: 10px;
       font-size: 10px; color: var(--d-text-muted);
+      justify-content: center;
     }
-    .d-ref-mini .ref-stats strong { color: var(--d-teal); }
+    .d-ref-mini .ref-stats span {
+      flex: 1; text-align: center;
+      padding: 6px 0;
+    }
+    .d-ref-mini .ref-stats span + span {
+      border-left: 1px solid var(--d-border);
+    }
+    .d-ref-mini .ref-stats strong { color: var(--d-teal); display: block; font-size: 13px; margin-bottom: 1px; }
 
     /* QR Code */
     .d-ref-mini .qr-toggle {
@@ -586,8 +599,8 @@
             <button class="ref-copy" onclick="copyRef()">Copy</button>
           </div>
           <div class="ref-stats">
-            <span>Credit: <strong id="refBal">$0</strong></span>
-            <span>Earned: <strong id="refEarn">$0</strong></span>
+            <span><strong id="refBal">$0</strong>Credit</span>
+            <span><strong id="refEarn">$0</strong>Earned</span>
           </div>
           <button class="qr-toggle" onclick="toggleQR()">Show QR Code</button>
           <div class="qr-wrap" id="qrWrap">
