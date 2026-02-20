@@ -47,7 +47,7 @@
   var css = document.createElement('style');
   css.textContent = [
     /* Overlay */
-    '.ep-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9998;opacity:0;transition:opacity .3s;pointer-events:none;backdrop-filter:blur(3px)}',
+    '.ep-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9998;opacity:0;transition:opacity .3s;pointer-events:none;}',
     '.ep-overlay.open{opacity:1;pointer-events:auto}',
     /* Side panel */
     '.ep-panel{position:fixed;top:0;right:-420px;bottom:0;width:400px;max-width:90vw;z-index:9999;background:linear-gradient(180deg,#081d30 0%,#071825 100%);border-left:1px solid rgba(91,168,178,.2);display:flex;flex-direction:column;transition:right .35s cubic-bezier(.22,1,.36,1);box-shadow:-8px 0 40px rgba(0,0,0,.4)}',
@@ -91,7 +91,7 @@
     '.ep-today-badge{display:inline-block;font-size:9px;padding:2px 6px;background:rgba(91,168,178,.15);color:#5ba8b2;border-radius:3px;font-weight:700;margin-left:6px;vertical-align:middle}',
 
     /* ===== FULL CALENDAR MODAL ===== */
-    '.fc-modal{position:fixed;inset:0;z-index:10000;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7);backdrop-filter:blur(6px)}',
+    '.fc-modal{position:fixed;inset:0;z-index:10000;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7);}',
     '.fc-modal.open{display:flex}',
     /* Animate in */
     '.fc-box{background:linear-gradient(170deg,#0d2740 0%,#081d30 40%,#071825 100%);border:1px solid rgba(91,168,178,.25);border-radius:18px;width:960px;max-width:94vw;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 28px 90px rgba(0,0,0,.7),0 0 60px rgba(91,168,178,.06),0 0 0 1px rgba(91,168,178,.05);animation:fcSlideIn .4s cubic-bezier(.22,1,.36,1)}',
