@@ -194,10 +194,10 @@
       transform: translateY(-2px);
     }
     .qa-continue .c-thumb {
-      width: 260px; flex-shrink: 0; overflow: hidden; position: relative;
+      width: 300px; min-height: 200px; flex-shrink: 0; overflow: hidden; position: relative;
       background: var(--qa-bg-light);
     }
-    .qa-continue .c-thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s; }
+    .qa-continue .c-thumb img { width: 100%; height: 100%; object-fit: cover; object-position: center; transition: transform .5s; }
     .qa-continue:hover .c-thumb img { transform: scale(1.04); }
     .qa-continue .c-thumb .play {
       position: absolute; inset: 0;
@@ -244,7 +244,7 @@
     /* Course grid */
     .qa-enrolled-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      grid-template-columns: repeat(3, 1fr);
       gap: 16px;
     }
     .qa-enrolled-item {
@@ -381,12 +381,13 @@
       .qa-mini-stats { flex-wrap: wrap; }
       .qa-mini-stat { min-width: calc(50% - 6px); }
       .qa-continue { flex-direction: column; }
-      .qa-continue .c-thumb { width: 100%; height: 180px; }
+      .qa-continue .c-thumb { width: 100%; height: 200px; min-height: auto; }
       .qa-continue .c-body { padding: 20px; }
-      .qa-enrolled-grid { grid-template-columns: 1fr; }
+      .qa-enrolled-grid { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 480px) {
       .qa-mini-stat { min-width: 100%; }
+      .qa-enrolled-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -636,7 +637,7 @@
         // Stats
         document.getElementById('statCourses').textContent = enrollments.length;
         document.getElementById('statLessons').textContent = totalLessonsDone;
-        document.getElementById('statHours').textContent = totalMinutes >= 60 ? Math.round(totalMinutes / 60) + 'h' : Math.round(totalMinutes) + 'm';
+        document.getElementById('statHours').textContent = totalMinutes >= 60 ? Math.round(totalMinutes / 60) + 'h' : totalMinutes > 0 ? Math.round(totalMinutes) + 'm' : '0h';
         document.getElementById('statCompleted').textContent = completedCourses;
 
         // Continue learning
