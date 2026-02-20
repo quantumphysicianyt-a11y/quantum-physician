@@ -39,9 +39,13 @@
     .pf { font-family: "Playfair Display", serif; }
 
     /* THEME TOGGLE */
-    .theme-tog { position: fixed; top: 100px; right: 20px; z-index: 800; background: var(--qa-card); border: 1px solid var(--qa-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--qa-muted); letter-spacing: .05em; }
-    .theme-tog svg { width: 16px; height: 16px; stroke: var(--qa-teal); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .theme-tog { position: fixed; top: 130px; right: 20px; z-index: 90; background: var(--qa-card); border: 1px solid var(--qa-border); border-radius: 999px; padding: 7px 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--qa-muted); letter-spacing: .05em; }
+    .theme-tog svg { width: 15px; height: 15px; stroke: var(--qa-teal); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
     .theme-tog:hover { border-color: var(--qa-border-h); color: var(--qa-text); }
+    .theme-sw { margin-left: 2px; width: 34px; height: 18px; background: var(--qa-border); border-radius: 9px; position: relative; transition: background .3s; flex-shrink: 0; }
+    .theme-sw::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--qa-teal); transition: transform .3s; }
+    [data-theme="light"] .theme-sw { background: var(--qa-taupe); }
+    [data-theme="light"] .theme-sw::after { transform: translateX(16px); background: #fff; }
 
     /* HERO */
     .a-hero { padding: 80px 0 70px; text-align: center; background: var(--qa-hero-bg); }
@@ -143,6 +147,7 @@
   <div class="theme-tog" onclick="toggleTheme()" title="Toggle appearance">
     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
     <span id="themeLabel">Light</span>
+    <div class="theme-sw"></div>
   </div>
 
   <main>
