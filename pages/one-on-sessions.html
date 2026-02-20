@@ -1,0 +1,730 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>One-on-One Sessions — Quantum Physician</title>
+  <meta name="description" content="Book a personalized one-on-one session with Dr. Tracey Clark. Integrative, whole-person healing that addresses root causes, not just symptoms.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/shared.css">
+  <style>
+    :root {
+      --teal: #5ba8b2;
+      --navy: #131e3d;
+      --taupe: #ad9b84;
+      --taupe-light: #cec3b5;
+      --paper: #f4f1ec;
+      --sage: #d7d7c3;
+      --ink: #111;
+      --max: 1200px;
+    }
+
+    body {
+      font-family: Inter, system-ui, -apple-system, sans-serif;
+      color: var(--ink);
+      background: #fff;
+      line-height: 1.6;
+      font-size: 16px;
+      margin: 0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    a { color: inherit; text-decoration: none; }
+    img { max-width: 100%; display: block; }
+    .wrap { width: min(var(--max), calc(100% - 40px)); margin: 0 auto; }
+
+    /* ========== BUTTONS ========== */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 14px 28px; border-radius: 999px; font-size: 12px; font-weight: 700;
+      letter-spacing: .15em; text-transform: uppercase; cursor: pointer;
+      transition: filter .15s ease, transform .15s ease; border: none;
+    }
+    .btn.taupe {
+      background: linear-gradient(180deg, var(--taupe), #9a8a75);
+      color: #fff; box-shadow: 0 8px 20px rgba(0,0,0,.2);
+    }
+    .btn.taupe:hover { filter: brightness(1.08); transform: translateY(-1px); }
+    .btn.dark {
+      background: #0b0b0b; color: var(--taupe); border: 1px solid rgba(255,255,255,.1);
+    }
+    .btn.dark:hover { background: #1a1a1a; }
+    .btn.outline {
+      background: transparent; border: 1px solid rgba(255,255,255,.3); color: #fff;
+    }
+    .btn.outline:hover { background: rgba(255,255,255,.1); }
+    .btn.teal {
+      background: linear-gradient(180deg, var(--teal), #4a97a1);
+      color: #fff; box-shadow: 0 8px 20px rgba(91,168,178,.25);
+    }
+    .btn.teal:hover { filter: brightness(1.08); transform: translateY(-1px); }
+
+    /* ========== HERO ========== */
+    .sess-hero {
+      position: relative;
+      min-height: min(80vh, 650px);
+      background: #000;
+      overflow: hidden;
+      display: flex;
+      align-items: flex-end;
+    }
+    .sess-hero-bg {
+      position: absolute; inset: 0;
+      background: url('/assets/images/1-on-1.png') center/cover no-repeat;
+      filter: saturate(1.1) contrast(1.05);
+    }
+    .sess-hero-bg::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(180deg, rgba(0,0,0,.15) 0%, rgba(19,30,61,.5) 50%, rgba(19,30,61,.92) 100%);
+    }
+    .sess-hero-content {
+      position: relative; z-index: 2;
+      padding: 0 0 60px;
+      max-width: 680px;
+    }
+    .sess-hero-kicker {
+      display: inline-block;
+      font-size: 11px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase;
+      color: var(--teal);
+      margin-bottom: 16px;
+    }
+    .sess-hero h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(32px, 5vw, 56px);
+      font-weight: 400; line-height: 1.05;
+      color: #fff;
+      margin-bottom: 20px;
+      text-shadow: 0 2px 20px rgba(0,0,0,.3);
+    }
+    .sess-hero .lead {
+      color: rgba(255,255,255,.82);
+      font-size: clamp(15px, 1.5vw, 18px);
+      line-height: 1.7;
+      max-width: 56ch;
+      margin-bottom: 28px;
+    }
+    .sess-hero-actions {
+      display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+    }
+    .sess-hero-meta {
+      margin-top: 18px;
+      font-size: 13px;
+      color: rgba(255,255,255,.5);
+      display: flex; gap: 20px; flex-wrap: wrap;
+    }
+    .sess-hero-meta span {
+      display: flex; align-items: center; gap: 6px;
+    }
+
+    /* ========== SECTION SPACING ========== */
+    .sess-section {
+      padding: 70px 0;
+    }
+    .sess-section.alt {
+      background: var(--paper);
+    }
+    .sess-section.dark {
+      background: var(--navy);
+      color: #fff;
+    }
+    .sess-section.sage {
+      background: var(--sage);
+    }
+
+    /* ========== SECTION HEADERS ========== */
+    .sess-heading {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    .sess-heading h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(28px, 3.5vw, 44px);
+      font-weight: 400;
+      line-height: 1.1;
+      margin-bottom: 14px;
+    }
+    .sess-heading p {
+      color: #666;
+      font-size: 16px;
+      max-width: 60ch;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+    .sess-section.dark .sess-heading p {
+      color: rgba(255,255,255,.6);
+    }
+
+    /* ========== ABOUT SPLIT ========== */
+    .sess-split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      align-items: center;
+    }
+    .sess-split.reverse .sess-text { order: 2; }
+    .sess-split.reverse .sess-visual { order: 1; }
+    .sess-text h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(24px, 2.5vw, 34px);
+      font-weight: 400;
+      margin-bottom: 18px;
+      line-height: 1.15;
+    }
+    .sess-text p {
+      color: #555;
+      font-size: 15px;
+      line-height: 1.8;
+      margin-bottom: 16px;
+    }
+    .sess-text p:last-child { margin-bottom: 0; }
+
+    .sess-visual {
+      position: relative;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .sess-visual img {
+      width: 100%;
+      aspect-ratio: 4/3;
+      object-fit: cover;
+    }
+    .sess-visual::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border: 1px solid rgba(0,0,0,.06);
+      border-radius: 4px;
+      pointer-events: none;
+    }
+
+    /* ========== CHECK LIST ========== */
+    .sess-checks {
+      list-style: none;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-top: 20px;
+    }
+    .sess-checks li {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 15px;
+      color: #444;
+      line-height: 1.6;
+    }
+    .sess-checks li::before {
+      content: '';
+      flex-shrink: 0;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--teal), #4a97a1);
+      margin-top: 2px;
+      position: relative;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .sess-check-icon {
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--teal), #4a97a1);
+      flex-shrink: 0;
+      margin-top: 2px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .sess-check-icon svg {
+      width: 12px; height: 12px;
+      stroke: #fff;
+      stroke-width: 2.5;
+      fill: none;
+    }
+
+    /* ========== HOW IT WORKS STEPS ========== */
+    .sess-steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 30px;
+    }
+    .sess-step {
+      text-align: center;
+      padding: 36px 24px;
+    }
+    .sess-step-num {
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      background: var(--paper);
+      border: 2px solid var(--taupe-light);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+      font-family: 'Playfair Display', serif;
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--taupe);
+    }
+    .sess-step h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px;
+      font-weight: 500;
+      margin-bottom: 10px;
+    }
+    .sess-step p {
+      color: #666;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+    .sess-step-line {
+      display: none;
+    }
+
+    /* ========== INTEGRATIVE MEDICINE GRID ========== */
+    .sess-grid4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+    .sess-card {
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 4px;
+      padding: 28px 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .sess-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--teal), var(--taupe));
+    }
+    .sess-card h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px;
+      font-weight: 500;
+      margin-bottom: 14px;
+      color: #fff;
+    }
+    .sess-card ul {
+      list-style: none;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .sess-card li {
+      font-size: 14px;
+      color: rgba(255,255,255,.72);
+      line-height: 1.5;
+      padding-left: 16px;
+      position: relative;
+    }
+    .sess-card li::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 8px;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--teal);
+    }
+
+    /* ========== TESTIMONIALS ========== */
+    .sess-tgrid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+    .sess-quote {
+      background: #fff;
+      border: 1px solid rgba(0,0,0,.06);
+      border-radius: 4px;
+      padding: 32px 28px;
+      display: flex;
+      flex-direction: column;
+      min-height: 220px;
+    }
+    .sess-quote-icon {
+      font-family: Georgia, serif;
+      font-size: 56px;
+      line-height: 1;
+      color: var(--taupe-light);
+      margin-bottom: 8px;
+    }
+    .sess-quote blockquote {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 16px;
+      line-height: 1.7;
+      color: #444;
+      flex: 1;
+      margin-bottom: 16px;
+    }
+    .sess-quote-author {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--taupe);
+    }
+
+    /* ========== FINAL CTA ========== */
+    .sess-cta {
+      padding: 80px 0;
+      background:
+        linear-gradient(180deg, rgba(19,30,61,.92), rgba(19,30,61,.96)),
+        url('/assets/images/1-on-1.png') center/cover no-repeat;
+      text-align: center;
+      color: #fff;
+    }
+    .sess-cta h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(28px, 4vw, 44px);
+      font-weight: 400;
+      margin-bottom: 16px;
+    }
+    .sess-cta p {
+      color: rgba(255,255,255,.65);
+      font-size: 16px;
+      max-width: 54ch;
+      margin: 0 auto 32px;
+      line-height: 1.7;
+    }
+    .sess-cta .btn-wrap {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    /* ========== WHY CHOOSE ICONS ========== */
+    .sess-why-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+    .sess-why-item {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      padding: 24px;
+      background: #fff;
+      border: 1px solid rgba(0,0,0,.06);
+      border-radius: 4px;
+    }
+    .sess-why-icon {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #e8f6f8, #d0eef2);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .sess-why-icon svg {
+      width: 22px; height: 22px;
+      stroke: var(--teal);
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .sess-why-item h4 {
+      font-family: 'Playfair Display', serif;
+      font-size: 17px;
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+    .sess-why-item p {
+      font-size: 14px;
+      color: #666;
+      line-height: 1.6;
+    }
+
+    /* ========== FLOATING CTA ========== */
+    .sess-float {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 90;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity .3s, transform .3s;
+      pointer-events: none;
+    }
+    .sess-float.show {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+    .sess-float .btn {
+      box-shadow: 0 8px 30px rgba(0,0,0,.3);
+    }
+
+    /* ========== RESPONSIVE ========== */
+    @media (max-width: 900px) {
+      .sess-split { grid-template-columns: 1fr; gap: 30px; }
+      .sess-split.reverse .sess-text { order: 1; }
+      .sess-split.reverse .sess-visual { order: 2; }
+      .sess-steps { grid-template-columns: 1fr; gap: 0; }
+      .sess-step { padding: 24px; text-align: left; display: flex; gap: 20px; align-items: flex-start; }
+      .sess-step-num { margin: 0; flex-shrink: 0; width: 48px; height: 48px; font-size: 18px; }
+      .sess-step-body { flex: 1; }
+      .sess-grid4 { grid-template-columns: 1fr 1fr; }
+      .sess-tgrid { grid-template-columns: 1fr; }
+      .sess-why-grid { grid-template-columns: 1fr; }
+      .sess-hero { min-height: 70vh; }
+      .sess-hero h1 { font-size: clamp(28px, 7vw, 38px); }
+    }
+    @media (max-width: 500px) {
+      .sess-grid4 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========== SHARED HEADER ========== -->
+  <div id="shared-header"></div>
+
+  <!-- ========== HERO ========== -->
+  <section class="sess-hero">
+    <div class="sess-hero-bg"></div>
+    <div class="wrap">
+      <div class="sess-hero-content">
+        <div class="sess-hero-kicker">✦ Private Healing Sessions</div>
+        <h1>Healing That Meets You Where You Are</h1>
+        <p class="lead">
+          One-on-one sessions with Dr. Tracey Clark offer an integrative, whole-person approach
+          to healing — supporting you in uncovering root causes rather than simply addressing symptoms.
+        </p>
+        <div class="sess-hero-actions">
+          <a class="btn taupe" href="#book">Book a Session</a>
+          <a class="btn outline" href="#how">How It Works</a>
+        </div>
+        <div class="sess-hero-meta">
+          <span>◎ Remote &amp; In-Person</span>
+          <span>◎ Personalized Care</span>
+          <span>◎ All Ages Welcome</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== ROOT CAUSE APPROACH ========== -->
+  <section class="sess-section">
+    <div class="wrap">
+      <div class="sess-split">
+        <div class="sess-text">
+          <h3>A Root-Cause Approach to Your Health</h3>
+          <p>
+            Drawing on extensive training in osteopathy, BodyTalk, and integrative medicine,
+            Dr. Clark helps clients uncover the root causes of stress and dis-ease rather than
+            simply addressing symptoms.
+          </p>
+          <p>
+            Sessions are designed to help you feel more regulated, supported, and clear —
+            physically, emotionally, and mentally — with practical guidance you can apply
+            in daily life.
+          </p>
+          <ul class="sess-checks">
+            <li><span class="sess-check-icon"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span> Identify patterns contributing to stress and imbalance</li>
+            <li><span class="sess-check-icon"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span> Support nervous system regulation and resilience</li>
+            <li><span class="sess-check-icon"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span> Clarify next steps for healing, habits, and lifestyle</li>
+            <li><span class="sess-check-icon"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span> Feel more empowered, grounded, and capable</li>
+          </ul>
+        </div>
+        <div class="sess-visual">
+          <img src="/assets/images/Tracey-Treament-Table.png" loading="lazy" alt="Dr. Tracey Clark providing treatment">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== HOW REMOTE SESSIONS WORK ========== -->
+  <section class="sess-section alt" id="how">
+    <div class="wrap">
+      <div class="sess-heading">
+        <h2>How Remote Sessions Work</h2>
+        <p>Simple, accessible, and effective — wherever you are in the world. Sessions are conducted privately and securely so you can stay in your own environment while experiencing deep, focused care.</p>
+      </div>
+      <div class="sess-steps">
+        <div class="sess-step">
+          <div class="sess-step-num">1</div>
+          <div class="sess-step-body">
+            <h3>Book Your Time</h3>
+            <p>Choose a time that works for you. You'll receive a confirmation with everything you need to prepare for your session.</p>
+          </div>
+        </div>
+        <div class="sess-step">
+          <div class="sess-step-num">2</div>
+          <div class="sess-step-body">
+            <h3>Connect Remotely</h3>
+            <p>Sessions are held via video call or phone. You'll be guided through what to expect before, during, and after so you feel comfortable and supported.</p>
+          </div>
+        </div>
+        <div class="sess-step">
+          <div class="sess-step-num">3</div>
+          <div class="sess-step-body">
+            <h3>Integrate &amp; Grow</h3>
+            <p>Leave with clarity, practical next steps, and ongoing support. Many clients notice shifts within the first session.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== WHY CHOOSE A SESSION ========== -->
+  <section class="sess-section">
+    <div class="wrap">
+      <div class="sess-heading">
+        <h2>Why Choose a Session</h2>
+        <p>For those ready to go deeper — beyond symptom management and into lasting change.</p>
+      </div>
+      <div class="sess-why-grid">
+        <div class="sess-why-item">
+          <div class="sess-why-icon"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
+          <div>
+            <h4>Physical Support</h4>
+            <p>Pain, tension, fatigue, chronic stress — address what your body has been holding onto.</p>
+          </div>
+        </div>
+        <div class="sess-why-item">
+          <div class="sess-why-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></div>
+          <div>
+            <h4>Emotional Wellbeing</h4>
+            <p>Anxiety, overwhelm, stuck patterns — find clarity and release in a safe, supportive space.</p>
+          </div>
+        </div>
+        <div class="sess-why-item">
+          <div class="sess-why-icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+          <div>
+            <h4>Mental Clarity</h4>
+            <p>Burnout, indecision, brain fog — cut through the noise and reconnect with what matters.</p>
+          </div>
+        </div>
+        <div class="sess-why-item">
+          <div class="sess-why-icon"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+          <div>
+            <h4>Performance &amp; Growth</h4>
+            <p>Professional resilience, alignment, optimum health — elevate every dimension of your life.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== INTEGRATIVE MEDICINE GRID ========== -->
+  <section class="sess-section dark" id="power">
+    <div class="wrap">
+      <div class="sess-heading">
+        <h2>The Power of Integrative Medicine</h2>
+        <p>A whole-person lens across physical, emotional, and energetic factors. Sessions can support a wide range of concerns.</p>
+      </div>
+      <div class="sess-grid4">
+        <div class="sess-card">
+          <h3>Stress</h3>
+          <ul>
+            <li>Anxiety</li>
+            <li>Pain</li>
+            <li>Chronic Illness</li>
+          </ul>
+        </div>
+        <div class="sess-card">
+          <h3>Immunity</h3>
+          <ul>
+            <li>Allergies</li>
+            <li>Intolerances</li>
+            <li>Lymphatic Support</li>
+          </ul>
+        </div>
+        <div class="sess-card">
+          <h3>Energy</h3>
+          <ul>
+            <li>Fatigue</li>
+            <li>Mental &amp; Emotional Health</li>
+            <li>Digestive Stress</li>
+            <li>Hormonal Balance</li>
+          </ul>
+        </div>
+        <div class="sess-card">
+          <h3>Performance</h3>
+          <ul>
+            <li>Professional Support</li>
+            <li>General Wellness</li>
+            <li>Optimum Health</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== TESTIMONIALS ========== -->
+  <section class="sess-section alt">
+    <div class="wrap">
+      <div class="sess-heading">
+        <h2>What Clients Are Saying</h2>
+      </div>
+      <div class="sess-tgrid">
+        <div class="sess-quote">
+          <div class="sess-quote-icon">"</div>
+          <blockquote>Your skills are unprecedented and necessary! The world NEEDS what you offer. Thank you, thank you, thank you!</blockquote>
+          <div class="sess-quote-author">— K.M.</div>
+        </div>
+        <div class="sess-quote">
+          <div class="sess-quote-icon">"</div>
+          <blockquote>Thank you for class, your work ethic and understanding of the energetic dynamics. It was a most extraordinary experience, beyond the comprehensive and wonderful information.</blockquote>
+          <div class="sess-quote-author">— S.L.</div>
+        </div>
+        <div class="sess-quote">
+          <div class="sess-quote-icon">"</div>
+          <blockquote>You bring such clarity and integrity to this work, which are the values that attracted me to BodyTalk to begin with. I feel more empowered than I have in months.</blockquote>
+          <div class="sess-quote-author">— A.R.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== FINAL CTA ========== -->
+  <section class="sess-cta" id="book">
+    <div class="wrap">
+      <h2>Book Your Private Session<br>with Dr. Clark</h2>
+      <p>Ready to take the next step? Choose a time that works for you and get support that meets you where you are.</p>
+      <div class="btn-wrap">
+        <a class="btn taupe" href="#">Book Now</a>
+        <a class="btn outline" href="#how">How It Works</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== SHARED FOOTER ========== -->
+  <div id="shared-footer"></div>
+
+  <!-- ========== FLOATING CTA ========== -->
+  <div class="sess-float" id="floatCta">
+    <a class="btn taupe" href="#book">Book a Session</a>
+  </div>
+
+  <script src="/js/shared.js"></script>
+  <script>
+    // Load shared header/footer
+    fetch('/components/header.html')
+      .then(r => r.text())
+      .then(html => { document.getElementById('shared-header').innerHTML = html; });
+    fetch('/components/footer.html')
+      .then(r => r.text())
+      .then(html => { document.getElementById('shared-footer').innerHTML = html; });
+
+    // Floating CTA — show after scrolling past hero
+    (function(){
+      var fc = document.getElementById('floatCta');
+      if(!fc) return;
+      var shown = false;
+      window.addEventListener('scroll', function(){
+        var y = window.scrollY;
+        if(y > 500 && !shown){ shown=true; fc.classList.add('show'); }
+        else if(y < 300 && shown){ shown=false; fc.classList.remove('show'); }
+      }, {passive:true});
+    })();
+  </script>
+</body>
+</html>
