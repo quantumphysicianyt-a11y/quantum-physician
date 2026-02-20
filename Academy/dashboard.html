@@ -10,160 +10,242 @@
   <link rel="stylesheet" href="/css/shared.css">
   <link rel="stylesheet" href="/academy/css/academy.css">
   <style>
-    /* === DASHBOARD ENHANCEMENTS === */
+    /* === COMBINED DASHBOARD === */
 
-    /* Purchase success banner */
-    .qa-success-banner {
-      background: linear-gradient(135deg, rgba(91,168,178,0.12), rgba(173,155,132,0.08));
-      border: 1px solid rgba(91,168,178,0.3);
-      border-radius: var(--qa-radius);
-      padding: 28px 32px;
-      margin-bottom: 32px;
+    /* Layout */
+    .qa-dash-layout {
+      display: grid;
+      grid-template-columns: 250px 1fr;
+      min-height: calc(100vh - 80px);
+    }
+
+    /* --- Sidebar --- */
+    .qa-dash-sidebar {
+      background: #071825;
+      border-right: 1px solid var(--qa-border);
+      position: sticky;
+      top: 80px;
+      height: calc(100vh - 80px);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    .qa-dash-sidebar .profile-area {
+      padding: 28px 22px 22px;
+      border-bottom: 1px solid var(--qa-border);
+      text-align: center;
+    }
+    .qa-dash-sidebar .avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--teal), #4a97a1);
       display: flex;
       align-items: center;
-      gap: 20px;
-      animation: fadeSlideIn .5s ease;
+      justify-content: center;
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      margin: 0 auto 10px;
+      font-family: "Playfair Display", serif;
     }
-    .qa-success-banner .icon { font-size: 40px; flex-shrink: 0; }
-    .qa-success-banner h3 { font-family: "Playfair Display", serif; font-size: 20px; margin-bottom: 4px; color: #5ba8b2; }
-    .qa-success-banner p { font-size: 14px; color: var(--qa-text-muted); margin: 0; }
-    .qa-success-banner .dismiss {
-      margin-left: auto;
-      background: none;
-      border: none;
+    .qa-dash-sidebar .profile-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--qa-text);
+      margin-bottom: 2px;
+    }
+    .qa-dash-sidebar .profile-email {
+      font-size: 11px;
       color: var(--qa-text-muted);
-      font-size: 20px;
-      cursor: pointer;
-      padding: 4px 8px;
+      word-break: break-all;
+    }
+    .qa-dash-sidebar nav { padding: 14px 0; flex: 1; }
+    .qa-dash-sidebar nav a {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 11px 22px;
+      font-size: 14px;
+      color: var(--qa-text-muted);
+      text-decoration: none;
+      transition: all .15s;
+      border-left: 3px solid transparent;
+    }
+    .qa-dash-sidebar nav a:hover {
+      color: var(--qa-text);
+      background: rgba(255,255,255,0.02);
+    }
+    .qa-dash-sidebar nav a.active {
+      color: var(--teal);
+      background: rgba(91,168,178,0.06);
+      border-left-color: var(--teal);
+    }
+    .qa-dash-sidebar nav a svg { width: 18px; height: 18px; stroke: currentColor; opacity: .7; }
+    .qa-dash-sidebar nav a.active svg { opacity: 1; }
+    .qa-dash-sidebar nav .divider {
+      height: 1px;
+      background: var(--qa-border);
+      margin: 10px 22px;
+    }
+    .qa-dash-sidebar .sidebar-bottom {
+      padding: 14px 22px;
+      border-top: 1px solid var(--qa-border);
+    }
+    .qa-dash-sidebar .sidebar-bottom a {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--qa-text-muted);
+      text-decoration: none;
+      padding: 6px 0;
+      transition: color .15s;
+    }
+    .qa-dash-sidebar .sidebar-bottom a:hover { color: var(--qa-text); }
+    .qa-dash-sidebar .sidebar-bottom a svg { width: 16px; height: 16px; stroke: currentColor; }
+
+    /* --- Main --- */
+    .qa-dash-main {
+      padding: 32px 40px 80px;
+      overflow-y: auto;
+    }
+
+    /* Success banner */
+    .qa-success-banner {
+      background: linear-gradient(135deg, rgba(91,168,178,0.1), rgba(173,155,132,0.05));
+      border: 1px solid rgba(91,168,178,0.25);
+      border-radius: 10px;
+      padding: 18px 22px;
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      animation: fadeIn .4s ease;
+    }
+    .qa-success-banner .s-icon {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: rgba(91,168,178,0.15);
+      display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
     }
-    .qa-success-banner .dismiss:hover { color: var(--qa-text); }
-
-    @keyframes fadeSlideIn {
-      from { opacity: 0; transform: translateY(-10px); }
-      to { opacity: 1; transform: translateY(0); }
+    .qa-success-banner .s-icon svg { width: 18px; height: 18px; stroke: var(--teal); }
+    .qa-success-banner h4 { font-size: 15px; color: var(--teal); margin-bottom: 2px; }
+    .qa-success-banner p { font-size: 13px; color: var(--qa-text-muted); margin: 0; }
+    .qa-success-banner .dismiss {
+      margin-left: auto; background: none; border: none;
+      color: var(--qa-text-muted); cursor: pointer; font-size: 18px; padding: 4px;
     }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
 
-    /* Continue learning card — featured */
-    .qa-continue-card {
-      background: linear-gradient(135deg, var(--qa-bg-card), rgba(91,168,178,0.06));
-      border: 1px solid var(--qa-border-hover);
+    /* Page header */
+    .qa-page-header { margin-bottom: 24px; }
+    .qa-page-header h1 { font-family: "Playfair Display", serif; font-size: 26px; font-weight: 600; margin-bottom: 4px; }
+    .qa-page-header p { font-size: 14px; color: var(--qa-text-muted); }
+
+    /* Stats */
+    .qa-mini-stats { display: flex; gap: 12px; margin-bottom: 30px; }
+    .qa-mini-stat {
+      background: var(--qa-bg-card);
+      border: 1px solid var(--qa-border);
+      border-radius: 10px;
+      padding: 16px 20px;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .qa-mini-stat .stat-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .qa-mini-stat .stat-icon svg { width: 20px; height: 20px; }
+    .qa-mini-stat .stat-icon.teal { background: rgba(91,168,178,0.1); }
+    .qa-mini-stat .stat-icon.teal svg { stroke: var(--teal); }
+    .qa-mini-stat .stat-icon.taupe { background: rgba(173,155,132,0.1); }
+    .qa-mini-stat .stat-icon.taupe svg { stroke: var(--taupe); }
+    .qa-mini-stat .num { font-family: "Playfair Display", serif; font-size: 24px; font-weight: 700; color: var(--qa-text); line-height: 1; }
+    .qa-mini-stat .lbl { font-size: 11px; color: var(--qa-text-muted); text-transform: uppercase; letter-spacing: .06em; margin-top: 2px; }
+
+    /* Section label */
+    .qa-section-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .qa-section-bar h3 { font-size: 14px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--qa-text-muted); }
+    .qa-section-bar .count { font-size: 12px; color: var(--qa-text-muted); }
+
+    /* Continue learning — featured */
+    .qa-continue {
+      background: var(--qa-bg-card);
+      border: 1px solid var(--qa-border);
       border-radius: var(--qa-radius);
-      padding: 0;
       display: flex;
       overflow: hidden;
       text-decoration: none;
       color: inherit;
-      transition: all var(--qa-transition);
-      margin-bottom: 40px;
+      transition: all .25s;
+      margin-bottom: 30px;
     }
-    .qa-continue-card:hover {
-      border-color: var(--teal);
-      box-shadow: 0 8px 40px rgba(91,168,178,0.15);
+    .qa-continue:hover {
+      border-color: var(--qa-border-hover);
+      box-shadow: 0 6px 30px rgba(0,0,0,0.15);
       transform: translateY(-2px);
     }
-    .qa-continue-card .thumb {
-      width: 280px;
-      min-height: 180px;
-      flex-shrink: 0;
-      overflow: hidden;
-      position: relative;
+    .qa-continue .c-thumb {
+      width: 260px; flex-shrink: 0; overflow: hidden; position: relative;
+      background: var(--qa-bg-light);
     }
-    .qa-continue-card .thumb img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transition: transform .5s;
+    .qa-continue .c-thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s; }
+    .qa-continue:hover .c-thumb img { transform: scale(1.04); }
+    .qa-continue .c-thumb .play {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.25); opacity: 0; transition: opacity .3s;
     }
-    .qa-continue-card:hover .thumb img { transform: scale(1.05); }
-    .qa-continue-card .thumb .play-overlay {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0,0,0,0.3);
-      opacity: 0;
-      transition: opacity .3s;
-    }
-    .qa-continue-card:hover .thumb .play-overlay { opacity: 1; }
-    .qa-continue-card .thumb .play-overlay span {
-      width: 56px;
-      height: 56px;
-      border-radius: 50%;
+    .qa-continue:hover .c-thumb .play { opacity: 1; }
+    .qa-continue .c-thumb .play span {
+      width: 48px; height: 48px; border-radius: 50%;
       background: rgba(91,168,178,0.9);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 22px;
-      color: #fff;
+      display: flex; align-items: center; justify-content: center;
     }
-    .qa-continue-card .details {
-      padding: 28px 32px;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
+    .qa-continue .c-thumb .play span svg { width: 22px; height: 22px; stroke: #fff; margin-left: 2px; }
+    .qa-continue .c-body {
+      padding: 24px 28px; flex: 1;
+      display: flex; flex-direction: column; justify-content: center;
     }
-    .qa-continue-card .details .label-row {
-      font-size: 11px;
-      letter-spacing: .15em;
-      text-transform: uppercase;
-      color: var(--teal);
-      font-weight: 600;
-      margin-bottom: 10px;
+    .qa-continue .c-body .c-label {
+      font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+      color: var(--teal); font-weight: 600; margin-bottom: 8px;
+      display: flex; align-items: center; gap: 6px;
     }
-    .qa-continue-card .details h3 {
-      font-family: "Playfair Display", serif;
-      font-size: 22px;
-      font-weight: 600;
-      margin-bottom: 8px;
-      line-height: 1.3;
+    .qa-continue .c-body .c-label svg { width: 14px; height: 14px; stroke: var(--teal); }
+    .qa-continue .c-body h3 {
+      font-family: "Playfair Display", serif; font-size: 20px;
+      font-weight: 600; margin-bottom: 6px; line-height: 1.3;
     }
-    .qa-continue-card .details .lesson-name {
-      font-size: 14px;
-      color: var(--qa-text-muted);
-      margin-bottom: 16px;
+    .qa-continue .c-body .c-meta { font-size: 13px; color: var(--qa-text-muted); margin-bottom: 14px; }
+    .qa-continue .c-body .prog-row {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
     }
-    .qa-continue-card .progress-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-    .qa-continue-card .progress-row .qa-progress { flex: 1; }
-    .qa-continue-card .progress-row .pct {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--teal);
-      white-space: nowrap;
-    }
-    .qa-continue-card .resume-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 12px 28px;
+    .qa-continue .c-body .prog-row .qa-progress { flex: 1; }
+    .qa-continue .c-body .prog-row .pct { font-size: 12px; font-weight: 600; color: var(--teal); }
+    .qa-continue .c-body .resume-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 10px 24px;
       background: linear-gradient(135deg, var(--teal), #4a97a1);
-      color: #fff;
-      border-radius: 999px;
-      font-size: 13px;
-      font-weight: 600;
-      letter-spacing: .05em;
-      text-transform: uppercase;
-      text-decoration: none;
-      transition: all .2s;
-      width: fit-content;
+      color: #fff; border-radius: 999px;
+      font-size: 12px; font-weight: 600; letter-spacing: .04em;
+      text-transform: uppercase; width: fit-content;
     }
-    .qa-continue-card .resume-btn:hover {
-      box-shadow: 0 4px 20px rgba(91,168,178,0.4);
-      transform: translateY(-1px);
-    }
+    .qa-continue .c-body .resume-btn svg { width: 14px; height: 14px; stroke: #fff; }
 
-    /* Course grid for enrolled */
+    /* Course grid */
     .qa-enrolled-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
     }
     .qa-enrolled-item {
       background: var(--qa-bg-card);
@@ -172,7 +254,7 @@
       overflow: hidden;
       text-decoration: none;
       color: inherit;
-      transition: all var(--qa-transition);
+      transition: all .25s;
       display: flex;
       flex-direction: column;
     }
@@ -181,366 +263,374 @@
       transform: translateY(-3px);
       box-shadow: var(--qa-shadow-hover);
     }
-    .qa-enrolled-item .thumb {
-      aspect-ratio: 16/9;
-      overflow: hidden;
-      position: relative;
-      background: var(--qa-bg-light);
+    .qa-enrolled-item .e-thumb {
+      aspect-ratio: 16/9; overflow: hidden; position: relative; background: var(--qa-bg-light);
     }
-    .qa-enrolled-item .thumb img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transition: transform .5s;
+    .qa-enrolled-item .e-thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s; }
+    .qa-enrolled-item:hover .e-thumb img { transform: scale(1.04); }
+    .qa-enrolled-item .e-thumb .badge {
+      position: absolute; top: 8px; right: 8px;
+      padding: 4px 10px; border-radius: 999px;
+      font-size: 10px; font-weight: 600; letter-spacing: .03em;
+      display: flex; align-items: center; gap: 4px;
     }
-    .qa-enrolled-item:hover .thumb img { transform: scale(1.05); }
-    .qa-enrolled-item .thumb .status-badge {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      padding: 5px 12px;
-      border-radius: 999px;
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: .03em;
+    .qa-enrolled-item .e-thumb .badge svg { width: 12px; height: 12px; stroke: currentColor; }
+    .qa-enrolled-item .e-thumb .badge.done { background: rgba(91,168,178,0.9); color: #fff; }
+    .qa-enrolled-item .e-thumb .badge.new { background: rgba(173,155,132,0.9); color: #fff; }
+    .qa-enrolled-item .e-body {
+      padding: 18px 20px 20px; flex: 1;
+      display: flex; flex-direction: column;
     }
-    .qa-enrolled-item .thumb .status-badge.completed {
-      background: rgba(91,168,178,0.9);
-      color: #fff;
-    }
-    .qa-enrolled-item .thumb .status-badge.new {
-      background: rgba(173,155,132,0.9);
-      color: #fff;
-    }
-    .qa-enrolled-item .body {
-      padding: 20px 24px 24px;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
-    .qa-enrolled-item .body h4 {
+    .qa-enrolled-item .e-body h4 {
       font-family: "Playfair Display", serif;
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 6px;
-      line-height: 1.3;
+      font-size: 16px; font-weight: 600; margin-bottom: 6px; line-height: 1.3;
     }
-    .qa-enrolled-item .body .meta {
-      font-size: 13px;
-      color: var(--qa-text-muted);
-      margin-bottom: 14px;
+    .qa-enrolled-item .e-body .e-meta {
+      font-size: 12px; color: var(--qa-text-muted); margin-bottom: 12px;
+      display: flex; align-items: center; gap: 10px;
     }
-    .qa-enrolled-item .body .qa-progress { margin-bottom: 6px; }
-    .qa-enrolled-item .body .progress-label {
-      font-size: 12px;
-      color: var(--qa-text-muted);
-      display: flex;
-      justify-content: space-between;
+    .qa-enrolled-item .e-body .e-meta span { display: flex; align-items: center; gap: 4px; }
+    .qa-enrolled-item .e-body .e-meta svg { width: 13px; height: 13px; stroke: currentColor; }
+    .qa-enrolled-item .e-body .qa-progress { margin-bottom: 4px; }
+    .qa-enrolled-item .e-body .prog-label {
+      font-size: 11px; color: var(--qa-text-muted);
+      display: flex; justify-content: space-between;
     }
-    .qa-enrolled-item .body .action {
-      margin-top: auto;
-      padding-top: 16px;
+    .qa-enrolled-item .e-body .e-action {
+      margin-top: auto; padding-top: 14px;
       border-top: 1px solid var(--qa-border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      font-size: 12px; font-weight: 600; color: var(--teal);
+      text-transform: uppercase; letter-spacing: .04em;
+      display: flex; align-items: center; gap: 4px;
     }
-    .qa-enrolled-item .body .action .link {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--teal);
-      text-transform: uppercase;
-      letter-spacing: .05em;
-    }
-    .qa-enrolled-item .body .action .time {
-      font-size: 12px;
-      color: var(--qa-text-muted);
-    }
+    .qa-enrolled-item .e-body .e-action svg { width: 14px; height: 14px; stroke: var(--teal); }
 
-    /* Referral section */
-    .qa-referral-card {
+    /* Referral compact */
+    .qa-ref-card {
       background: var(--qa-bg-card);
       border: 1px solid var(--qa-border);
       border-radius: var(--qa-radius);
-      padding: 28px 32px;
-      margin-top: 40px;
+      padding: 22px 24px;
+      margin-top: 30px;
     }
-    .qa-referral-card h3 {
-      font-family: "Playfair Display", serif;
-      font-size: 20px;
-      margin-bottom: 6px;
+    .qa-ref-card .ref-head {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 4px;
     }
-    .qa-referral-card .sub { font-size: 14px; color: var(--qa-text-muted); margin-bottom: 20px; }
-    .qa-referral-row {
-      display: flex;
-      gap: 16px;
-      align-items: stretch;
-      flex-wrap: wrap;
+    .qa-ref-card .ref-head svg { width: 18px; height: 18px; stroke: var(--teal); }
+    .qa-ref-card .ref-head h4 { font-size: 15px; font-weight: 600; }
+    .qa-ref-card .ref-desc { font-size: 12px; color: var(--qa-text-muted); margin-bottom: 14px; }
+    .qa-ref-card .code-row {
+      display: flex; align-items: center; gap: 10px;
     }
-    .qa-referral-stat {
+    .qa-ref-card .code-display {
+      flex: 1; background: rgba(255,255,255,0.03);
+      border: 1px dashed var(--qa-border-hover); border-radius: 8px;
+      padding: 10px 16px;
+      font-family: monospace; font-size: 18px; font-weight: 700;
+      letter-spacing: .12em; color: var(--teal);
+    }
+    .qa-ref-card .copy-btn {
+      background: var(--teal); color: #fff; border: none;
+      padding: 10px 18px; border-radius: 8px;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      text-transform: uppercase; letter-spacing: .04em;
+      transition: opacity .15s; white-space: nowrap;
+    }
+    .qa-ref-card .copy-btn:hover { opacity: .85; }
+    .qa-ref-card .ref-stats {
+      display: flex; gap: 20px; margin-top: 14px;
+      font-size: 12px; color: var(--qa-text-muted);
+    }
+    .qa-ref-card .ref-stats strong { color: var(--teal); }
+
+    /* Empty */
+    .qa-empty-state {
+      text-align: center; padding: 60px 20px;
+    }
+    .qa-empty-state .e-icon {
+      width: 72px; height: 72px; border-radius: 50%;
       background: rgba(91,168,178,0.06);
-      border: 1px solid var(--qa-border);
-      border-radius: var(--qa-radius-sm);
-      padding: 16px 20px;
-      text-align: center;
-      flex: 1;
-      min-width: 120px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
     }
-    .qa-referral-stat .val {
-      font-family: "Playfair Display", serif;
-      font-size: 24px;
-      font-weight: 700;
-      color: var(--teal);
-    }
-    .qa-referral-stat .lbl {
-      font-size: 11px;
-      color: var(--qa-text-muted);
-      text-transform: uppercase;
-      letter-spacing: .08em;
-      margin-top: 2px;
-    }
-    .qa-code-box {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      background: rgba(255,255,255,0.03);
-      border: 1px dashed var(--qa-border-hover);
-      border-radius: var(--qa-radius-sm);
-      padding: 14px 20px;
-      margin-top: 16px;
-    }
-    .qa-code-box .code {
-      font-family: monospace;
-      font-size: 20px;
-      font-weight: 700;
-      letter-spacing: .15em;
-      color: var(--teal);
-      flex: 1;
-    }
-    .qa-code-box .copy-btn {
-      background: var(--teal);
-      color: #fff;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      text-transform: uppercase;
-      letter-spacing: .05em;
-      transition: all .2s;
-    }
-    .qa-code-box .copy-btn:hover { opacity: .85; }
+    .qa-empty-state .e-icon svg { width: 32px; height: 32px; stroke: var(--teal); opacity: .5; }
+    .qa-empty-state h3 { font-family: "Playfair Display", serif; font-size: 22px; margin-bottom: 8px; }
+    .qa-empty-state p { font-size: 14px; color: var(--qa-text-muted); margin-bottom: 24px; max-width: 380px; margin-left: auto; margin-right: auto; }
 
-    /* Quick actions */
-    .qa-quick-actions {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 32px;
-      flex-wrap: wrap;
+    /* Mobile */
+    .qa-mobile-toggle {
+      display: none; position: fixed; bottom: 20px; right: 20px; z-index: 200;
+      width: 50px; height: 50px; border-radius: 50%;
+      background: var(--teal); color: #fff; border: none;
+      cursor: pointer; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      align-items: center; justify-content: center;
     }
-    .qa-quick-actions a {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 18px;
-      background: var(--qa-bg-card);
-      border: 1px solid var(--qa-border);
-      border-radius: 999px;
-      font-size: 13px;
-      color: var(--qa-text);
-      text-decoration: none;
-      transition: all .2s;
-    }
-    .qa-quick-actions a:hover {
-      border-color: var(--qa-border-hover);
-      background: var(--qa-bg-card-hover);
-    }
+    .qa-mobile-toggle svg { width: 22px; height: 22px; stroke: #fff; }
+    .qa-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:299; }
+    .qa-overlay.open { display:block; }
 
-    /* Responsive */
-    @media (max-width: 768px) {
-      .qa-continue-card { flex-direction: column; }
-      .qa-continue-card .thumb { width: 100%; height: 180px; }
-      .qa-continue-card .details { padding: 20px; }
+    @media (max-width: 900px) {
+      .qa-dash-layout { grid-template-columns: 1fr; }
+      .qa-dash-sidebar {
+        display: none; position: fixed; top: 0; left: 0; bottom: 0;
+        width: 270px; z-index: 300;
+      }
+      .qa-dash-sidebar.open { display: flex; }
+      .qa-mobile-toggle { display: flex; }
+      .qa-dash-main { padding: 24px 20px 100px; }
+      .qa-mini-stats { flex-wrap: wrap; }
+      .qa-mini-stat { min-width: calc(50% - 6px); }
+      .qa-continue { flex-direction: column; }
+      .qa-continue .c-thumb { width: 100%; height: 180px; }
+      .qa-continue .c-body { padding: 20px; }
       .qa-enrolled-grid { grid-template-columns: 1fr; }
-      .qa-referral-row { flex-direction: column; }
-      .qa-success-banner { flex-direction: column; text-align: center; }
-      .qa-success-banner .dismiss { margin-left: 0; }
+    }
+    @media (max-width: 480px) {
+      .qa-mini-stat { min-width: 100%; }
     }
   </style>
 </head>
 <body class="qa-page">
   <div id="shared-header"></div>
 
-  <main style="padding:40px 0 80px">
-    <div class="qa-wrap">
+  <!-- SVG icon definitions (Lucide-based) -->
+  <svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <symbol id="i-layout" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/>
+      </symbol>
+      <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
+      </symbol>
+      <symbol id="i-gift" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/>
+      </symbol>
+      <symbol id="i-logout" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+      </symbol>
+      <symbol id="i-check-circle" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+      </symbol>
+      <symbol id="i-play" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="5 3 19 12 5 21 5 3"/>
+      </symbol>
+      <symbol id="i-arrow-right" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+      </symbol>
+      <symbol id="i-graduation" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
+      </symbol>
+      <symbol id="i-layers" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>
+      </symbol>
+      <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+      </symbol>
+      <symbol id="i-trophy" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+      </symbol>
+      <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="18" x2="20" y2="18"/>
+      </symbol>
+      <symbol id="i-star" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+      </symbol>
+      <symbol id="i-video" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/>
+      </symbol>
+    </defs>
+  </svg>
 
-      <!-- Purchase success banner -->
+  <div class="qa-dash-layout">
+    <!-- Sidebar -->
+    <aside class="qa-dash-sidebar" id="sidebar">
+      <div class="profile-area">
+        <div class="avatar" id="avatar">?</div>
+        <div class="profile-name" id="profileName">—</div>
+        <div class="profile-email" id="profileEmail">—</div>
+      </div>
+      <nav>
+        <a href="/academy/dashboard.html" class="active">
+          <svg><use href="#i-layout"/></svg> Dashboard
+        </a>
+        <a href="/academy/">
+          <svg><use href="#i-book"/></svg> Browse Courses
+        </a>
+        <a href="#" onclick="scrollToRef(); return false;" id="navRef" style="display:none">
+          <svg><use href="#i-gift"/></svg> Referrals
+        </a>
+        <div class="divider"></div>
+      </nav>
+      <div class="sidebar-bottom">
+        <a href="#" onclick="handleSignOut(); return false;">
+          <svg><use href="#i-logout"/></svg> Sign Out
+        </a>
+      </div>
+    </aside>
+
+    <div class="qa-overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+    <!-- Main -->
+    <div class="qa-dash-main">
+
+      <!-- Success banner -->
       <div id="successBanner" class="qa-success-banner" style="display:none">
-        <div class="icon">✓</div>
+        <div class="s-icon"><svg><use href="#i-check-circle"/></svg></div>
         <div>
-          <h3>You're In!</h3>
-          <p id="successMsg">Your enrollment is confirmed. You can start learning right away.</p>
+          <h4>You're In!</h4>
+          <p>Your enrollment is confirmed. Start learning below.</p>
         </div>
         <button class="dismiss" onclick="this.parentElement.style.display='none'">&times;</button>
       </div>
 
       <!-- Header -->
-      <div class="qa-dash-header">
-        <div>
-          <div class="qa-label">Dashboard</div>
-          <h1 class="qa-h2" style="margin-top:8px" id="greeting">Welcome back</h1>
-        </div>
-        <div style="display:flex;gap:10px;align-items:center">
-          <a href="/academy/" class="qa-btn qa-btn-outline qa-btn-sm">Browse Courses</a>
-          <button class="qa-btn qa-btn-sm" style="background:transparent;border:1px solid rgba(255,255,255,0.15);color:var(--qa-text-muted)" onclick="handleSignOut()">Sign Out</button>
-        </div>
+      <div class="qa-page-header">
+        <h1 id="greeting">Dashboard</h1>
+        <p id="subGreeting">Here's your learning overview</p>
       </div>
 
       <!-- Stats -->
-      <div class="qa-dash-stats" id="stats">
-        <div class="qa-stat-card">
-          <div class="value" id="statCourses">–</div>
-          <div class="label">Enrolled</div>
+      <div class="qa-mini-stats" id="statsRow">
+        <div class="qa-mini-stat">
+          <div class="stat-icon teal"><svg><use href="#i-layers"/></svg></div>
+          <div><div class="num" id="statCourses">–</div><div class="lbl">Courses</div></div>
         </div>
-        <div class="qa-stat-card">
-          <div class="value" id="statLessons">–</div>
-          <div class="label">Lessons Done</div>
+        <div class="qa-mini-stat">
+          <div class="stat-icon teal"><svg><use href="#i-video"/></svg></div>
+          <div><div class="num" id="statLessons">–</div><div class="lbl">Lessons</div></div>
         </div>
-        <div class="qa-stat-card">
-          <div class="value" id="statHours">–</div>
-          <div class="label">Hours Learned</div>
+        <div class="qa-mini-stat">
+          <div class="stat-icon taupe"><svg><use href="#i-clock"/></svg></div>
+          <div><div class="num" id="statHours">–</div><div class="lbl">Hours</div></div>
         </div>
-        <div class="qa-stat-card">
-          <div class="value" id="statCompleted">–</div>
-          <div class="label">Completed</div>
+        <div class="qa-mini-stat">
+          <div class="stat-icon teal"><svg><use href="#i-trophy"/></svg></div>
+          <div><div class="num" id="statCompleted">–</div><div class="lbl">Complete</div></div>
         </div>
       </div>
 
       <!-- Continue Learning -->
       <div id="continueSection" style="display:none"></div>
 
-      <!-- My Courses -->
+      <!-- Course grid -->
       <div id="coursesSection">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-          <h3 class="qa-h3" style="margin:0">My Courses</h3>
-          <span id="courseCount" style="font-size:13px;color:var(--qa-text-muted)"></span>
+        <div class="qa-section-bar">
+          <h3 id="coursesLabel">My Courses</h3>
         </div>
-        <div id="enrolledCourses" class="qa-enrolled-grid">
+        <div id="courseGrid" class="qa-enrolled-grid">
           <div class="qa-loading" style="grid-column:1/-1"><div class="qa-spinner"></div></div>
         </div>
       </div>
 
-      <!-- Empty state -->
-      <div id="emptyState" class="qa-empty" style="display:none">
-        <div class="icon">🎓</div>
+      <!-- Empty -->
+      <div id="emptyState" class="qa-empty-state" style="display:none">
+        <div class="e-icon"><svg><use href="#i-graduation"/></svg></div>
         <h3>Your Academy Awaits</h3>
-        <p>You haven't enrolled in any courses yet. Browse the catalog and start your transformation today.</p>
+        <p>Browse the catalog and start your transformation today.</p>
         <a href="/academy/" class="qa-btn qa-btn-primary">Explore Courses</a>
       </div>
 
-      <!-- Referral section -->
-      <div id="referralSection" class="qa-referral-card" style="display:none">
-        <h3>Share & Earn</h3>
-        <p class="sub">Share your referral code with friends. They get 10% off, you earn credits toward future courses.</p>
-        <div class="qa-referral-row">
-          <div class="qa-referral-stat">
-            <div class="val" id="refBalance">$0</div>
-            <div class="lbl">Credit Balance</div>
-          </div>
-          <div class="qa-referral-stat">
-            <div class="val" id="refEarned">$0</div>
-            <div class="lbl">Total Earned</div>
-          </div>
-          <div class="qa-referral-stat">
-            <div class="val" id="refCount">0</div>
-            <div class="lbl">Referrals</div>
-          </div>
-        </div>
-        <div class="qa-code-box">
-          <span class="code" id="refCode">—</span>
+      <!-- Referral -->
+      <div id="referralSection" class="qa-ref-card" style="display:none">
+        <div class="ref-head"><svg><use href="#i-gift"/></svg><h4>Share & Earn</h4></div>
+        <div class="ref-desc">Friends get 10% off. You earn credits toward future courses.</div>
+        <div class="code-row">
+          <div class="code-display" id="refCode">—</div>
           <button class="copy-btn" onclick="copyRefCode()">Copy</button>
+        </div>
+        <div class="ref-stats">
+          <span>Balance: <strong id="refBalance">$0</strong></span>
+          <span>Earned: <strong id="refEarned">$0</strong></span>
+          <span>Referrals: <strong id="refCount">0</strong></span>
         </div>
       </div>
 
     </div>
-  </main>
+  </div>
 
-  <div id="shared-footer"></div>
+  <!-- Mobile toggle -->
+  <button class="qa-mobile-toggle" onclick="toggleSidebar()">
+    <svg><use href="#i-menu"/></svg>
+  </button>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/shared.js"></script>
   <script src="/academy/js/academy.js"></script>
   <script>
-    (async () => {
-      // Auth check
-      const user = await getUser();
-      if (!user) {
-        window.location.href = '/academy/login.html?redirect=/academy/dashboard.html';
-        return;
-      }
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('open');
+      document.getElementById('overlay').classList.toggle('open');
+    }
+    function scrollToRef() {
+      document.getElementById('referralSection').scrollIntoView({ behavior: 'smooth' });
+      document.getElementById('sidebar').classList.remove('open');
+      document.getElementById('overlay').classList.remove('open');
+    }
+    function handleSignOut() { signOut(); }
+    function copyRefCode() {
+      const code = document.getElementById('refCode').textContent;
+      navigator.clipboard.writeText(code).then(() => {
+        const btn = document.querySelector('.qa-ref-card .copy-btn');
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+      });
+    }
 
-      // Purchase success banner
+    (async () => {
+      const user = await getUser();
+      if (!user) { window.location.href = '/academy/login.html?redirect=/academy/dashboard.html'; return; }
+
+      // Success banner
       const params = new URLSearchParams(window.location.search);
       if (params.get('purchase') === 'success') {
         document.getElementById('successBanner').style.display = 'flex';
-        // Clean URL without reload
         window.history.replaceState({}, '', '/academy/dashboard.html');
       }
 
-      // Greeting
-      const displayName = user.user_metadata?.full_name?.split(' ')[0] || user.email?.split('@')[0] || 'there';
-      document.getElementById('greeting').textContent = `Welcome back, ${displayName}`;
+      // Profile
+      const name = user.user_metadata?.full_name || user.email?.split('@')[0] || 'there';
+      const firstName = name.split(' ')[0];
+      document.getElementById('avatar').textContent = firstName.charAt(0).toUpperCase();
+      document.getElementById('profileName').textContent = name;
+      document.getElementById('profileEmail').textContent = user.email;
 
-      // Load enrollments
+      const hour = new Date().getHours();
+      const timeGreet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+      document.getElementById('greeting').textContent = `${timeGreet}, ${firstName}`;
+      document.getElementById('subGreeting').textContent = "Here's your learning overview";
+
+      // Enrollments
       const enrollments = await getMyEnrollments();
-      const grid = document.getElementById('enrolledCourses');
-      const empty = document.getElementById('emptyState');
+      const grid = document.getElementById('courseGrid');
       const coursesSection = document.getElementById('coursesSection');
+      const empty = document.getElementById('emptyState');
 
       if (!enrollments || enrollments.length === 0) {
         grid.innerHTML = '';
         coursesSection.style.display = 'none';
+        document.getElementById('statsRow').style.display = 'none';
         empty.style.display = 'block';
       } else {
-        // Load progress for all enrollments
-        let totalLessonsDone = 0;
-        let totalMinutes = 0;
-        let completedCourses = 0;
-
+        let totalLessonsDone = 0, totalMinutes = 0, completedCourses = 0;
         const enriched = [];
+
         for (const e of enrollments) {
           const course = e.qa_courses;
           if (!course) continue;
-
           let lessonsDone = 0;
-          let progressPct = 0;
-
           try {
             const { data: progress } = await sb.from('qa_lesson_progress')
-              .select('id, status')
-              .eq('enrollment_id', e.id)
-              .eq('user_id', user.id);
-            if (progress) {
-              lessonsDone = progress.filter(p => p.status === 'completed').length;
-            }
-          } catch (err) { /* progress table may not exist yet */ }
+              .select('id, status').eq('enrollment_id', e.id).eq('user_id', user.id);
+            if (progress) lessonsDone = progress.filter(p => p.status === 'completed').length;
+          } catch (err) {}
 
           const totalLessons = course.total_lessons || 1;
-          progressPct = Math.round((lessonsDone / totalLessons) * 100);
+          const progressPct = Math.round((lessonsDone / totalLessons) * 100);
           const isComplete = progressPct >= 100;
-
           totalLessonsDone += lessonsDone;
           totalMinutes += (course.total_duration_minutes || 0) * (progressPct / 100);
           if (isComplete) completedCourses++;
-
-          enriched.push({
-            ...e,
-            course,
-            lessonsDone,
-            totalLessons,
-            progressPct,
-            isComplete
-          });
+          enriched.push({ ...e, course, lessonsDone, totalLessons, progressPct, isComplete });
         }
 
         // Stats
@@ -549,142 +639,98 @@
         document.getElementById('statHours').textContent = totalMinutes >= 60 ? Math.round(totalMinutes / 60) + 'h' : Math.round(totalMinutes) + 'm';
         document.getElementById('statCompleted').textContent = completedCourses;
 
-        // Continue Learning — most recent in-progress
-        const inProgress = enriched
-          .filter(e => !e.isComplete && e.lessonsDone > 0)
+        // Continue learning
+        const inProgress = enriched.filter(e => !e.isComplete && e.lessonsDone > 0)
           .sort((a, b) => new Date(b.last_accessed_at || b.enrolled_at || 0) - new Date(a.last_accessed_at || a.enrolled_at || 0));
+        const showContinue = inProgress.length > 0;
+        const showStart = !showContinue && enriched.some(e => e.lessonsDone === 0);
+        const featured = showContinue ? inProgress[0] : showStart ? enriched.find(e => e.lessonsDone === 0) : null;
 
-        if (inProgress.length > 0) {
-          const item = inProgress[0];
-          const c = item.course;
+        if (featured) {
+          const c = featured.course;
+          const label = showContinue ? 'Pick up where you left off' : 'Ready to begin';
+          const btnText = showContinue ? 'Resume' : 'Start';
           document.getElementById('continueSection').style.display = '';
           document.getElementById('continueSection').innerHTML = `
-            <div style="margin-bottom:8px">
-              <h3 class="qa-h3" style="margin:0">Continue Learning</h3>
-            </div>
-            <a class="qa-continue-card" href="/academy/learn.html?slug=${c.slug}">
-              <div class="thumb">
-                ${c.thumbnail_url
-                  ? `<img src="${c.thumbnail_url}" alt="${c.title}" loading="lazy">`
-                  : '<div style="width:100%;height:100%;background:var(--qa-bg-light)"></div>'}
-                <div class="play-overlay"><span>▶</span></div>
+            <div class="qa-section-bar"><h3>${showContinue ? 'Continue Learning' : 'Start Learning'}</h3></div>
+            <a class="qa-continue" href="/academy/learn.html?slug=${c.slug}">
+              <div class="c-thumb">
+                ${c.thumbnail_url ? `<img src="${c.thumbnail_url}" alt="${c.title}" loading="lazy">` : '<div style="width:100%;height:100%;background:var(--qa-bg-light)"></div>'}
+                <div class="play"><span><svg><use href="#i-play"/></svg></span></div>
               </div>
-              <div class="details">
-                <div class="label-row">Pick up where you left off</div>
+              <div class="c-body">
+                <div class="c-label"><svg><use href="#i-play"/></svg> ${label}</div>
                 <h3>${c.title}</h3>
-                <div class="lesson-name">${item.lessonsDone} of ${item.totalLessons} lessons completed</div>
-                <div class="progress-row">
-                  <div class="qa-progress"><div class="qa-progress-fill" style="width:${item.progressPct}%"></div></div>
-                  <span class="pct">${item.progressPct}%</span>
-                </div>
-                <div class="resume-btn">Resume Course →</div>
-              </div>
-            </a>
-          `;
-        } else if (enriched.length > 0 && enriched.every(e => e.lessonsDone === 0)) {
-          // All courses are new — show first one as "Start Learning"
-          const first = enriched[0];
-          const c = first.course;
-          document.getElementById('continueSection').style.display = '';
-          document.getElementById('continueSection').innerHTML = `
-            <div style="margin-bottom:8px">
-              <h3 class="qa-h3" style="margin:0">Start Learning</h3>
-            </div>
-            <a class="qa-continue-card" href="/academy/learn.html?slug=${c.slug}">
-              <div class="thumb">
-                ${c.thumbnail_url
-                  ? `<img src="${c.thumbnail_url}" alt="${c.title}" loading="lazy">`
-                  : '<div style="width:100%;height:100%;background:var(--qa-bg-light)"></div>'}
-                <div class="play-overlay"><span>▶</span></div>
-              </div>
-              <div class="details">
-                <div class="label-row">Ready to begin</div>
-                <h3>${c.title}</h3>
-                <div class="lesson-name">${first.totalLessons} lessons · ${c.total_duration_minutes ? formatDuration(c.total_duration_minutes) : ''}</div>
-                <div class="resume-btn">Start Course →</div>
+                <div class="c-meta">${featured.lessonsDone} of ${featured.totalLessons} lessons${c.total_duration_minutes ? ' · ' + formatDuration(c.total_duration_minutes) : ''}</div>
+                ${featured.progressPct > 0 ? `
+                  <div class="prog-row">
+                    <div class="qa-progress"><div class="qa-progress-fill" style="width:${featured.progressPct}%"></div></div>
+                    <span class="pct">${featured.progressPct}%</span>
+                  </div>
+                ` : ''}
+                <div class="resume-btn"><svg><use href="#i-arrow-right"/></svg> ${btnText} Course</div>
               </div>
             </a>
           `;
         }
 
-        // Course count
-        document.getElementById('courseCount').textContent = `${enrollments.length} course${enrollments.length !== 1 ? 's' : ''}`;
+        // Sort: in-progress > new > completed
+        enriched.sort((a, b) => {
+          if (a.isComplete !== b.isComplete) return a.isComplete ? 1 : -1;
+          if (a.lessonsDone !== b.lessonsDone) return b.lessonsDone - a.lessonsDone;
+          return 0;
+        });
 
-        // All enrolled courses grid
+        document.getElementById('coursesLabel').textContent = `My Courses (${enriched.length})`;
+
         grid.innerHTML = enriched.map(item => {
           const c = item.course;
-          let statusBadge = '';
-          if (item.isComplete) {
-            statusBadge = '<div class="status-badge completed">Completed</div>';
-          } else if (item.lessonsDone === 0) {
-            statusBadge = '<div class="status-badge new">New</div>';
-          }
+          let badge = '';
+          if (item.isComplete) badge = '<div class="badge done"><svg><use href="#i-check-circle"/></svg> Complete</div>';
+          else if (item.lessonsDone === 0) badge = '<div class="badge new"><svg><use href="#i-star"/></svg> New</div>';
 
           const actionText = item.isComplete ? 'Review' : item.lessonsDone > 0 ? 'Continue' : 'Start';
 
           return `
             <a class="qa-enrolled-item" href="/academy/learn.html?slug=${c.slug}">
-              <div class="thumb">
-                ${c.thumbnail_url
-                  ? `<img src="${c.thumbnail_url}" alt="${c.title}" loading="lazy">`
-                  : '<div style="width:100%;height:100%;background:var(--qa-bg-light);display:flex;align-items:center;justify-content:center;opacity:.3;font-size:28px">📖</div>'}
-                ${statusBadge}
+              <div class="e-thumb">
+                ${c.thumbnail_url ? `<img src="${c.thumbnail_url}" alt="${c.title}" loading="lazy">` : '<div style="width:100%;height:100%;background:var(--qa-bg-light)"></div>'}
+                ${badge}
               </div>
-              <div class="body">
+              <div class="e-body">
                 <h4>${c.title}</h4>
-                <div class="meta">
-                  ${item.totalLessons} lessons${c.total_duration_minutes ? ' · ' + formatDuration(c.total_duration_minutes) : ''}
+                <div class="e-meta">
+                  <span><svg><use href="#i-video"/></svg> ${item.totalLessons} lessons</span>
+                  ${c.total_duration_minutes ? `<span><svg><use href="#i-clock"/></svg> ${formatDuration(c.total_duration_minutes)}</span>` : ''}
                 </div>
                 ${!item.isComplete ? `
                   <div class="qa-progress"><div class="qa-progress-fill" style="width:${item.progressPct}%"></div></div>
-                  <div class="progress-label">
-                    <span>${item.lessonsDone} of ${item.totalLessons} done</span>
-                    <span>${item.progressPct}%</span>
-                  </div>
-                ` : `
-                  <div style="font-size:13px;color:var(--teal);margin:8px 0">All lessons completed</div>
-                `}
-                <div class="action">
-                  <span class="link">${actionText} →</span>
-                  ${c.instructor_name ? `<span class="time">${c.instructor_name}</span>` : ''}
-                </div>
+                  <div class="prog-label"><span>${item.lessonsDone} of ${item.totalLessons}</span><span>${item.progressPct}%</span></div>
+                ` : '<div style="font-size:12px;color:var(--teal);margin:6px 0">All lessons completed</div>'}
+                <div class="e-action">${actionText} <svg><use href="#i-arrow-right"/></svg></div>
               </div>
             </a>
           `;
         }).join('');
       }
 
-      // Referral code section
+      // Referral
       try {
         const { data: refData } = await sb.from('referral_codes')
           .select('code, credit_balance, total_earned, successful_referrals')
-          .eq('email', user.email.toLowerCase())
-          .single();
-
+          .eq('email', user.email.toLowerCase()).single();
         if (refData && refData.code) {
           document.getElementById('referralSection').style.display = '';
+          document.getElementById('navRef').style.display = '';
           document.getElementById('refCode').textContent = refData.code;
           document.getElementById('refBalance').textContent = '$' + (refData.credit_balance || 0).toFixed(0);
           document.getElementById('refEarned').textContent = '$' + (refData.total_earned || 0).toFixed(0);
           document.getElementById('refCount').textContent = refData.successful_referrals || 0;
         }
-      } catch (e) { /* No referral code yet — that's fine */ }
+      } catch (e) {}
 
       trackEvent('page_view', null, null, { page: 'dashboard' });
     })();
-
-    function handleSignOut() {
-      signOut();
-    }
-
-    function copyRefCode() {
-      const code = document.getElementById('refCode').textContent;
-      navigator.clipboard.writeText(code).then(() => {
-        const btn = document.querySelector('.qa-code-box .copy-btn');
-        btn.textContent = 'Copied!';
-        setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
-      });
-    }
   </script>
 </body>
 </html>
