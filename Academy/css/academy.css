@@ -17,7 +17,7 @@
   --qa-radius-sm: 8px;
   --qa-shadow: 0 4px 24px rgba(0,0,0,.3);
   --qa-shadow-hover: 0 8px 40px rgba(0,0,0,.4);
-  --qa-transition: .3s cubic-bezier(.22,1,.36,1);
+  --qa-transition: .2s ease;
 }
 
 /* === BASE === */
@@ -69,7 +69,7 @@ body.qa-page {
   text-decoration: none;
   cursor: pointer;
   border: none;
-  transition: all var(--qa-transition);
+  transition: background .2s ease, border-color .2s ease, color .2s ease;
 }
 .qa-btn-primary {
   background: linear-gradient(135deg, var(--teal, #5ba8b2), #4a97a1);
@@ -77,7 +77,6 @@ body.qa-page {
   box-shadow: 0 4px 20px rgba(91,168,178,.3);
 }
 .qa-btn-primary:hover {
-  transform: translateY(-2px);
   box-shadow: 0 8px 30px rgba(91,168,178,.5);
 }
 .qa-btn-outline {
@@ -95,7 +94,6 @@ body.qa-page {
 }
 .qa-btn-taupe:hover {
   background: #bfad98;
-  transform: translateY(-2px);
 }
 .qa-btn-sm { padding: 10px 20px; font-size: 12px; }
 .qa-btn-lg { padding: 18px 40px; font-size: 14px; }
@@ -117,7 +115,7 @@ body.qa-page {
   border: 1px solid var(--qa-border);
   border-radius: var(--qa-radius);
   overflow: hidden;
-  transition: all var(--qa-transition);
+  transition: border-color .2s ease;
   text-decoration: none;
   color: inherit;
   display: flex;
@@ -125,8 +123,6 @@ body.qa-page {
 }
 .qa-course-card:hover {
   border-color: var(--qa-border-hover);
-  transform: translateY(-4px);
-  box-shadow: var(--qa-shadow-hover);
 }
 .qa-course-card .thumb {
   aspect-ratio: 16/9;
@@ -138,9 +134,8 @@ body.qa-page {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform .5s;
 }
-.qa-course-card:hover .thumb img { transform: scale(1.05); }
+.qa-course-card:hover .thumb img { }
 .qa-course-card .thumb .badge {
   position: absolute;
   top: 12px;
@@ -223,7 +218,7 @@ body.qa-page {
   padding: 24px;
   display: flex;
   gap: 20px;
-  transition: all var(--qa-transition);
+  transition: border-color .2s ease;
   text-decoration: none;
   color: inherit;
 }
@@ -296,7 +291,7 @@ body.qa-page {
   font-size: 14px;
   color: var(--qa-text-muted);
   cursor: pointer;
-  transition: all .2s;
+  transition: border-color .2s ease, background .2s ease;
   text-decoration: none;
   border-left: 3px solid transparent;
 }
@@ -408,7 +403,7 @@ body.qa-page {
   margin-bottom: 8px;
   text-decoration: none;
   color: var(--qa-text);
-  transition: all .2s;
+  transition: border-color .2s ease, background .2s ease;
 }
 .qa-attachment-item:hover { background: rgba(91,168,178,.06); border-color: var(--qa-border-hover); }
 .qa-attachment-item .icon { font-size: 20px; }
