@@ -437,7 +437,7 @@
       const list=document.getElementById('dList');
       try{
         // Get top-level posts
-        const{data:posts}=await sb.from('qa_discussions').select('*, profiles:user_id(full_name,avatar_url)').eq('course_id',crs.id).eq('lesson_id',lid).is('is_pinned',null).or('is_pinned.eq.true,is_pinned.eq.false').order('is_pinned',{ascending:false}).order('created_at',{ascending:false});
+        const{data:posts}=await sb.from('qa_discussions').select('*, profiles:user_id(full_name,avatar_url)').eq('course_id',crs.id).eq('lesson_id',lid).order('is_pinned',{ascending:false}).order('created_at',{ascending:false});
 
         if(!posts||!posts.length){list.innerHTML='<div class="d-empty"><svg><use href="#i-chat"/></svg>No discussion yet. Be the first to share!</div>';return}
 
