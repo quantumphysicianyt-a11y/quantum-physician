@@ -27,9 +27,11 @@
     .a-hero .tag { font-family: "Playfair Display", serif; font-size: clamp(18px,2.5vw,24px); font-style: italic; color: var(--qa-taupe); margin-bottom: 20px; }
     .a-hero .sub { font-size: 18px; color: var(--qa-muted); line-height: 1.7; max-width: 650px; margin: 0 auto 28px; }
     .a-hero .btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
-    .a-btn { display: inline-block; padding: 16px 36px; border-radius: 999px; font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; text-decoration: none; }
+    .a-btn { display: inline-block; padding: 16px 36px; border-radius: 999px; font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; text-decoration: none; transition: background .2s ease, border-color .2s ease; }
     .a-btn-p { background: var(--qa-teal); color: #fff; }
+    .a-btn-p:hover { background: #4a97a1; }
     .a-btn-o { background: none; border: 1px solid rgba(91,168,178,.35); color: var(--qa-teal); }
+    .a-btn-o:hover { background: rgba(91,168,178,.08); border-color: var(--qa-teal); }
     .features { display: flex; gap: 32px; justify-content: center; margin-top: 40px; flex-wrap: wrap; }
     .feat { display: flex; align-items: center; gap: 10px; font-size: 14px; color: rgba(255,255,255,.6); }
     .feat .ic { width: 36px; height: 36px; border-radius: 50%; background: rgba(91,168,178,.1); border: 1px solid rgba(91,168,178,.2); display: flex; align-items: center; justify-content: center; font-size: 16px; }
@@ -52,11 +54,13 @@
     .bundle-box { background: rgba(91,168,178,.05); border: 2px solid rgba(91,168,178,.2); border-radius: 16px; padding: 40px; text-align: center; }
     .bundle-box img { width: 100%; max-width: 600px; border-radius: 12px; margin: 0 auto 28px; display: block; }
     .bundle-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; justify-content: center; }
-    .bundle-tags a { background: rgba(91,168,178,.1); border: 1px solid rgba(91,168,178,.2); padding: 6px 14px; border-radius: 999px; font-size: 12px; color: rgba(255,255,255,.7); text-decoration: none; }
+    .bundle-tags a { background: rgba(91,168,178,.1); border: 1px solid rgba(91,168,178,.2); padding: 6px 14px; border-radius: 999px; font-size: 12px; color: rgba(255,255,255,.7); text-decoration: none; transition: background .2s ease; }
+    .bundle-tags a:hover { background: rgba(91,168,178,.25); color: #fff; }
 
     /* COURSE GRID */
     .c-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 28px; margin: 40px 0; }
-    .c-card { background: var(--qa-card); border: 1px solid var(--qa-border); border-radius: 12px; overflow: hidden; text-decoration: none; color: inherit; display: flex; flex-direction: column; }
+    .c-card { background: var(--qa-card); border: 1px solid var(--qa-border); border-radius: 12px; overflow: hidden; text-decoration: none; color: inherit; display: flex; flex-direction: column; transition: border-color .2s ease; }
+    .c-card:hover { border-color: rgba(91,168,178,.35); }
     .c-card .thumb { aspect-ratio: 16/9; background: #0f2942; overflow: hidden; }
     .c-card .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .c-card .body { padding: 24px; flex: 1; display: flex; flex-direction: column; }
@@ -80,7 +84,6 @@
     .a-spin { width: 32px; height: 32px; border: 3px solid var(--qa-border); border-top-color: var(--qa-teal); border-radius: 50%; animation: sp .8s linear infinite; margin: 40px auto; display: block; }
     @keyframes sp { to { transform: rotate(360deg) } }
 
-    /* CTA button label */
     .cta-sub { color: var(--qa-muted); margin-bottom: 28px; max-width: 500px; margin-left: auto; margin-right: auto; }
 
     @media (max-width: 768px) {
