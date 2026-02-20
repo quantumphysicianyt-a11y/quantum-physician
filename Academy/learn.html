@@ -280,6 +280,7 @@
   <button class="mob" onclick="toggleLeft()"><svg><use href="#i-menu"/></svg></button>
   <div class="ov" id="ov" onclick="closeP()"></div>
 
+  <script src="https://player.vimeo.com/api/player.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/shared.js"></script>
   <script src="/academy/js/academy.js"></script>
@@ -290,6 +291,8 @@
 
     let crs,enr,cur,all=[],pm={},usr;
     let discTimestamp=null; // for attaching timestamp to discussion post
+    let vimeoPlayer=null; // Vimeo Player instance
+    let cachedVimeoTime=0; // updated periodically
 
     // Theme
     function toggleTheme(){const t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',t);localStorage.setItem('qa-theme',t)}
@@ -303,15 +306,22 @@
 
     // Helpers
     function fmtTs(s){if(s==null)return'';const m=Math.floor(s/60),sec=s%60;return m+':'+(sec<10?'0':'')+sec}
+
     function getVidTime(){
+      // HTML5 video
       const v=document.getElementById('lVid');
       if(v) return Math.floor(v.currentTime);
-      // For iframe (vimeo/youtube), return 0 — would need postMessage API for real sync
+      // Vimeo — use cached time (updated every second via event)
+      if(vimeoPlayer) return cachedVimeoTime;
       return 0;
     }
+
     function seekTo(s){
+      // HTML5 video
       const v=document.getElementById('lVid');
-      if(v){v.currentTime=s;v.play();}
+      if(v){v.currentTime=s;v.play();return}
+      // Vimeo
+      if(vimeoPlayer){vimeoPlayer.setCurrentTime(s).then(()=>vimeoPlayer.play());return}
     }
 
     function flat(mods){const f=[];mods.forEach(m=>(m.qa_lessons||[]).forEach(l=>f.push({...l,modName:m.title})));return f}
@@ -338,9 +348,29 @@
 
       // Video
       const vw=document.getElementById('vidWrap');
+      // Clean up previous vimeo player
+      if(vimeoPlayer){try{vimeoPlayer.destroy()}catch(e){}vimeoPlayer=null;cachedVimeoTime=0}
       if(l.content_type==='video'&&l.video_url){
         vw.style.display='';
-        if(l.video_url.includes('vimeo.com')){const vid=l.video_url.split('/').pop();vw.innerHTML=`<iframe src="https://player.vimeo.com/video/${vid}" frameborder="0" allow="autoplay;fullscreen;picture-in-picture" allowfullscreen></iframe>`}
+        if(l.video_url.includes('vimeo.com')){
+          const vid=l.video_url.split('/').pop();
+          vw.innerHTML=`<iframe id="vimeoFrame" src="https://player.vimeo.com/video/${vid}" frameborder="0" allow="autoplay;fullscreen;picture-in-picture" allowfullscreen></iframe>`;
+          // Init Vimeo Player SDK
+          vimeoPlayer=new Vimeo.Player(document.getElementById('vimeoFrame'));
+          // Track time every second
+          vimeoPlayer.on('timeupdate',function(data){cachedVimeoTime=Math.floor(data.seconds)});
+          // Resume position
+          const rp=pm[l.id]?.video_position_seconds||0;
+          if(rp>0) vimeoPlayer.ready().then(()=>vimeoPlayer.setCurrentTime(rp));
+          // Auto-save position
+          let vst;
+          vimeoPlayer.on('timeupdate',function(data){
+            clearTimeout(vst);
+            vst=setTimeout(()=>{
+              saveVideoPosition(l.id,crs.id,enr.id,Math.floor(data.seconds),Math.round(data.percent*100));
+            },3000);
+          });
+        }
         else if(l.video_url.includes('youtu')){let eid=l.video_url;if(eid.includes('youtu.be'))eid='https://www.youtube.com/embed/'+eid.split('/').pop();else eid='https://www.youtube.com/embed/'+new URL(eid).searchParams.get('v');vw.innerHTML=`<iframe src="${eid}" frameborder="0" allow="autoplay;fullscreen" allowfullscreen></iframe>`}
         else{const rp=pm[l.id]?.video_position_seconds||0;vw.innerHTML=`<video id="lVid" controls preload="metadata"><source src="${l.video_url}" type="video/mp4"></video>`;const v=document.getElementById('lVid');if(v&&rp>0)v.addEventListener('loadedmetadata',()=>{v.currentTime=rp},{once:true});if(v){let st;v.addEventListener('timeupdate',()=>{clearTimeout(st);st=setTimeout(()=>{const p=v.duration?(v.currentTime/v.duration*100):0;saveVideoPosition(l.id,crs.id,enr.id,Math.floor(v.currentTime),Math.round(p))},3000)})}}
       }else{vw.style.display='none'}
@@ -388,8 +418,9 @@
       if(!cur||!usr)return;
       const inp=document.getElementById('nInp'),text=inp.value.trim();if(!text)return;
       const ts=getVidTime();
+      const hasVideo=document.getElementById('vidWrap').style.display!=='none';
       try{
-        await sb.from('qa_bookmarks').insert({user_id:usr.id,lesson_id:cur.id,note:text,video_timestamp_seconds:ts>0?ts:null});
+        await sb.from('qa_bookmarks').insert({user_id:usr.id,lesson_id:cur.id,note:text,video_timestamp_seconds:hasVideo?ts:null});
         inp.value='';loadNotes(cur.id);
       }catch(e){alert('Failed to save note')}
     }
