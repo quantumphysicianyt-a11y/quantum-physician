@@ -86,6 +86,33 @@
 
     .cta-sub { color: var(--qa-muted); margin-bottom: 28px; max-width: 500px; margin-left: auto; margin-right: auto; }
 
+    /* FLOATING SCHEDULE BUTTON */
+    .float-sched {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--qa-teal), #4a97a1);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      text-decoration: none;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      line-height: 1.3;
+      text-align: center;
+      z-index: 900;
+      cursor: pointer;
+      border: 2px solid rgba(255,255,255,.2);
+    }
+    .float-sched span { font-size: 20px; margin-bottom: 2px; }
+
     @media (max-width: 768px) {
       .a-hero img.logo { max-width: 280px; }
       .features { gap: 16px; }
@@ -183,9 +210,17 @@
   </main>
 
   <div id="shared-footer"></div>
+
+  <!-- Floating Schedule Button -->
+  <a class="float-sched" onclick="if(typeof openEventsPanel==='function')openEventsPanel();return false;" href="#">
+    <span>📅</span>
+    Schedule
+  </a>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/shared.js"></script>
   <script src="/academy/js/academy.js"></script>
+  <script src="/js/events-panel.js"></script>
   <script>
     (async () => {
       try {
