@@ -5,213 +5,162 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Quantum Physician Academy — Empowered Learning</title>
   <link rel="stylesheet" href="/css/shared.css">
-  <link rel="stylesheet" href="/academy/css/academy.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    *, *::before, *::after { will-change: auto !important; backface-visibility: visible !important; }
-    .qa-course-card, .qa-course-card *, .qa-btn, .instructor-card, .step-card { transition: none !important; transform: none !important; animation: none !important; }
-    .qa-hero {
-      padding: 80px 0 70px;
-      background: linear-gradient(160deg, #061320 0%, #0a1e33 30%, #0f2942 60%, #0d2844 100%);
+    :root {
+      --qa-bg: #0a1e33;
+      --qa-card: #112a42;
+      --qa-border: rgba(91,168,178,.15);
+      --qa-text: rgba(255,255,255,.85);
+      --qa-muted: rgba(255,255,255,.55);
+      --qa-teal: #5ba8b2;
+      --qa-taupe: #ad9b84;
     }
-    .hero-logo { max-width: 400px; margin: 0 auto 32px; display: block; }
-    .hero-tagline {
-      font-family: "Playfair Display", serif;
-      font-size: clamp(18px, 2.5vw, 24px);
-      font-style: italic;
-      color: var(--taupe, #ad9b84);
-      margin-bottom: 20px;
-      text-align: center;
-    }
-    .hero-features { display: flex; gap: 32px; justify-content: center; margin-top: 40px; flex-wrap: wrap; }
-    .hero-feature { display: flex; align-items: center; gap: 10px; font-size: 14px; color: rgba(255,255,255,.6); }
-    .hero-feature .icon {
-      width: 36px; height: 36px; border-radius: 50%;
-      background: rgba(91,168,178,.1); border: 1px solid rgba(91,168,178,.2);
-      display: flex; align-items: center; justify-content: center; font-size: 16px;
-    }
-    .qa-section { padding: 70px 0; }
-    .qa-section-alt { background: rgba(255,255,255,.015); }
-    .qa-section-header { text-align: center; margin-bottom: 40px; }
-    .qa-section-header .qa-label { margin-bottom: 12px; display: inline-block; }
-    .steps-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 28px;
-      margin-top: 40px;
-    }
-    .step-card {
-      text-align: center;
-      padding: 32px 20px;
-      background: var(--qa-bg-card);
-      border: 1px solid var(--qa-border);
-      border-radius: var(--qa-radius);
-    }
-    .step-number {
-      width: 48px; height: 48px; border-radius: 50%;
-      background: rgba(91,168,178,.1); border: 1px solid rgba(91,168,178,.3);
-      display: inline-flex; align-items: center; justify-content: center;
-      font-family: "Playfair Display", serif; font-size: 20px; font-weight: 700;
-      color: var(--teal, #5ba8b2); margin-bottom: 16px;
-    }
-    .step-card h4 { font-family: "Playfair Display", serif; font-size: 18px; margin-bottom: 8px; }
-    .step-card p { font-size: 14px; color: var(--qa-text-muted); line-height: 1.6; }
-    .qa-cta {
-      padding: 60px 0;
-      text-align: center;
-      background: rgba(91,168,178,.04);
-      border-top: 1px solid var(--qa-border);
-      border-bottom: 1px solid var(--qa-border);
-    }
-    .instructor-card {
-      display: flex; align-items: center; gap: 40px; padding: 40px;
-      background: var(--qa-bg-card); border: 1px solid var(--qa-border);
-      border-radius: var(--qa-radius); max-width: 800px; margin: 0 auto;
-    }
-    .instructor-avatar {
-      width: 140px; height: 140px; border-radius: 50%;
-      object-fit: cover; object-position: top;
-      border: 3px solid rgba(91,168,178,.3); flex-shrink: 0;
-    }
-    .instructor-card h3 { font-family: "Playfair Display", serif; font-size: 22px; margin-bottom: 4px; }
-    .instructor-card .title { color: var(--teal, #5ba8b2); font-size: 14px; margin-bottom: 12px; }
-    .instructor-card p { color: var(--qa-text-muted); font-size: 15px; line-height: 1.7; }
+    body { background: var(--qa-bg) !important; color: var(--qa-text) !important; }
+    .wrap-a { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+    .pf { font-family: "Playfair Display", serif; }
+
+    /* HERO */
+    .a-hero { padding: 80px 0 70px; text-align: center; background: linear-gradient(160deg, #061320, #0a1e33 30%, #0f2942 60%, #0d2844); }
+    .a-hero img.logo { max-width: 400px; margin: 0 auto 32px; display: block; }
+    .a-hero .tag { font-family: "Playfair Display", serif; font-size: clamp(18px,2.5vw,24px); font-style: italic; color: var(--qa-taupe); margin-bottom: 20px; }
+    .a-hero .sub { font-size: 18px; color: var(--qa-muted); line-height: 1.7; max-width: 650px; margin: 0 auto 28px; }
+    .a-hero .btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .a-btn { display: inline-block; padding: 16px 36px; border-radius: 999px; font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; text-decoration: none; }
+    .a-btn-p { background: var(--qa-teal); color: #fff; }
+    .a-btn-o { background: none; border: 1px solid rgba(91,168,178,.35); color: var(--qa-teal); }
+    .features { display: flex; gap: 32px; justify-content: center; margin-top: 40px; flex-wrap: wrap; }
+    .feat { display: flex; align-items: center; gap: 10px; font-size: 14px; color: rgba(255,255,255,.6); }
+    .feat .ic { width: 36px; height: 36px; border-radius: 50%; background: rgba(91,168,178,.1); border: 1px solid rgba(91,168,178,.2); display: flex; align-items: center; justify-content: center; font-size: 16px; }
+
+    /* SECTIONS */
+    .a-sec { padding: 70px 0; }
+    .a-sec-alt { background: rgba(255,255,255,.015); }
+    .a-sec-head { text-align: center; margin-bottom: 40px; }
+    .a-label { font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--qa-teal); font-weight: 600; display: inline-block; margin-bottom: 12px; }
+    .a-h2 { font-family: "Playfair Display", serif; font-size: clamp(24px,3.5vw,40px); font-weight: 600; margin-bottom: 14px; }
+
+    /* STEPS */
+    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 28px; margin-top: 40px; }
+    .step { text-align: center; padding: 32px 20px; background: var(--qa-card); border: 1px solid var(--qa-border); border-radius: 12px; }
+    .step .num { width: 48px; height: 48px; border-radius: 50%; background: rgba(91,168,178,.1); border: 1px solid rgba(91,168,178,.3); display: inline-flex; align-items: center; justify-content: center; font-family: "Playfair Display", serif; font-size: 20px; font-weight: 700; color: var(--qa-teal); margin-bottom: 16px; }
+    .step h4 { font-family: "Playfair Display", serif; font-size: 18px; margin-bottom: 8px; }
+    .step p { font-size: 14px; color: var(--qa-muted); line-height: 1.6; }
+
+    /* BUNDLE */
+    .bundle-box { background: rgba(91,168,178,.05); border: 2px solid rgba(91,168,178,.2); border-radius: 16px; padding: 40px; text-align: center; }
+    .bundle-box img { width: 100%; max-width: 600px; border-radius: 12px; margin: 0 auto 28px; display: block; }
+    .bundle-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; justify-content: center; }
+    .bundle-tags a { background: rgba(91,168,178,.1); border: 1px solid rgba(91,168,178,.2); padding: 6px 14px; border-radius: 999px; font-size: 12px; color: rgba(255,255,255,.7); text-decoration: none; }
+
+    /* COURSE GRID */
+    .c-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 28px; margin: 40px 0; }
+    .c-card { background: var(--qa-card); border: 1px solid var(--qa-border); border-radius: 12px; overflow: hidden; text-decoration: none; color: inherit; display: flex; flex-direction: column; }
+    .c-card .thumb { aspect-ratio: 16/9; background: #0f2942; overflow: hidden; }
+    .c-card .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .c-card .body { padding: 24px; flex: 1; display: flex; flex-direction: column; }
+    .c-card .body h3 { font-family: "Playfair Display", serif; font-size: 20px; font-weight: 600; margin-bottom: 8px; line-height: 1.3; }
+    .c-card .body .desc { font-size: 14px; color: var(--qa-muted); line-height: 1.6; margin-bottom: 16px; flex: 1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .c-card .meta { display: flex; align-items: center; justify-content: space-between; padding-top: 16px; border-top: 1px solid var(--qa-border); font-size: 13px; }
+    .c-card .meta .stats { display: flex; gap: 14px; color: var(--qa-muted); }
+    .c-card .meta .price { font-weight: 700; font-size: 18px; color: var(--qa-teal); }
+
+    /* INSTRUCTOR */
+    .inst { display: flex; align-items: center; gap: 40px; padding: 40px; background: var(--qa-card); border: 1px solid var(--qa-border); border-radius: 12px; max-width: 800px; margin: 0 auto; }
+    .inst img { width: 140px; height: 140px; border-radius: 50%; object-fit: cover; object-position: top; border: 3px solid rgba(91,168,178,.3); flex-shrink: 0; }
+    .inst h3 { font-family: "Playfair Display", serif; font-size: 22px; margin-bottom: 4px; }
+    .inst .title { color: var(--qa-teal); font-size: 14px; margin-bottom: 12px; }
+    .inst p { color: var(--qa-muted); font-size: 15px; line-height: 1.7; }
+
+    /* CTA */
+    .a-cta { padding: 60px 0; text-align: center; background: rgba(91,168,178,.04); border-top: 1px solid var(--qa-border); border-bottom: 1px solid var(--qa-border); }
+
+    /* LOADING */
+    .a-spin { width: 32px; height: 32px; border: 3px solid var(--qa-border); border-top-color: var(--qa-teal); border-radius: 50%; animation: sp .8s linear infinite; margin: 40px auto; display: block; }
+    @keyframes sp { to { transform: rotate(360deg) } }
+
+    /* CTA button label */
+    .cta-sub { color: var(--qa-muted); margin-bottom: 28px; max-width: 500px; margin-left: auto; margin-right: auto; }
+
     @media (max-width: 768px) {
-      .hero-logo { max-width: 280px; }
-      .hero-features { gap: 16px; }
-      .instructor-card { flex-direction: column; text-align: center; padding: 28px; gap: 20px; }
-    }
-    .bundle-layout {
-      display: flex;
-      gap: 32px;
-      align-items: flex-start;
-    }
-    .bundle-img {
-      flex-shrink: 0;
-      width: 320px;
-    }
-    .bundle-img img {
-      width: 100%;
-      border-radius: 12px;
-    }
-    .bundle-info {
-      flex: 1;
-      min-width: 0;
-      text-align: center;
-    }
-    .bundle-pricing {
-      text-align: center;
-    }
-    @media (max-width: 900px) {
-      .bundle-layout {
-        flex-direction: column;
-      }
-      .bundle-img {
-        width: 100%;
-        max-width: 400px;
-        margin: 0 auto;
-      }
-      .bundle-info {
-        text-align: center;
-      }
-      .bundle-info > div:has(a[style*="border-radius:999px"]),
-      .bundle-info > div[style*="flex-wrap"] {
-        justify-content: center;
-      }
-      .bundle-pricing {
-        text-align: center;
-      }
+      .a-hero img.logo { max-width: 280px; }
+      .features { gap: 16px; }
+      .inst { flex-direction: column; text-align: center; padding: 28px; gap: 20px; }
+      .c-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
-<body class="qa-page">
+<body>
   <div id="shared-header"></div>
 
   <main>
-    <!-- HERO -->
-    <section class="qa-hero">
-      <div class="qa-wrap">
-        <img src="/assets/images/QuantumPhysAcad_STACKED-RGB.png" alt="Quantum Physician Academy" class="hero-logo">
-        <p class="hero-tagline">Empowered Learning for Lasting Transformation</p>
-        <p class="qa-subtitle" style="text-align:center;margin:0 auto 28px">Self-paced courses built on the Quantum Physician model. Release limiting beliefs, unlock your potential, and create lasting wellness — on your schedule.</p>
-        <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
-          <a href="#courses" class="qa-btn qa-btn-primary qa-btn-lg">Browse Courses</a>
-          <a href="/academy/login.html" class="qa-btn qa-btn-outline qa-btn-lg" id="authBtn">Sign In</a>
+    <section class="a-hero">
+      <div class="wrap-a">
+        <img src="/assets/images/QuantumPhysAcad_STACKED-RGB.png" alt="Quantum Physician Academy" class="logo">
+        <p class="tag">Empowered Learning for Lasting Transformation</p>
+        <p class="sub">Self-paced courses built on the Quantum Physician model. Release limiting beliefs, unlock your potential, and create lasting wellness — on your schedule.</p>
+        <div class="btns">
+          <a href="#courses" class="a-btn a-btn-p">Browse Courses</a>
+          <a href="/academy/login.html" class="a-btn a-btn-o" id="authBtn">Sign In</a>
         </div>
-        <div class="hero-features">
-          <div class="hero-feature"><div class="icon">📺</div> Self-Paced Video Lessons</div>
-          <div class="hero-feature"><div class="icon">📜</div> Certificates of Completion</div>
-          <div class="hero-feature"><div class="icon">💬</div> Community Discussions</div>
-          <div class="hero-feature"><div class="icon">♾️</div> Lifetime Access</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- HOW IT WORKS -->
-    <section class="qa-section qa-section-alt">
-      <div class="qa-wrap">
-        <div class="qa-section-header">
-          <div class="qa-label">How It Works</div>
-          <h2 class="qa-h2">Your Learning Journey</h2>
-        </div>
-        <div class="steps-grid">
-          <div class="step-card">
-            <div class="step-number">1</div>
-            <h4>Choose Your Course</h4>
-            <p>Browse our catalog and find the program that resonates with where you are in your journey.</p>
-          </div>
-          <div class="step-card">
-            <div class="step-number">2</div>
-            <h4>Learn at Your Pace</h4>
-            <p>Watch video lessons, read articles, complete exercises, and take quizzes — all on your schedule.</p>
-          </div>
-          <div class="step-card">
-            <div class="step-number">3</div>
-            <h4>Track Your Growth</h4>
-            <p>Monitor your progress, earn XP, maintain streaks, and celebrate milestones along the way.</p>
-          </div>
-          <div class="step-card">
-            <div class="step-number">4</div>
-            <h4>Transform Your Life</h4>
-            <p>Apply what you learn daily and experience real, lasting shifts in your health and wellbeing.</p>
-          </div>
+        <div class="features">
+          <div class="feat"><div class="ic">📺</div> Self-Paced Video Lessons</div>
+          <div class="feat"><div class="ic">📜</div> Certificates of Completion</div>
+          <div class="feat"><div class="ic">💬</div> Community Discussions</div>
+          <div class="feat"><div class="ic">♾️</div> Lifetime Access</div>
         </div>
       </div>
     </section>
 
-    <!-- BUNDLE -->
-    <section id="bundleSection" class="qa-section" style="display:none">
-      <div class="qa-wrap">
-        <div class="qa-section-header">
-          <div class="qa-label">Best Value</div>
-          <h2 class="qa-h2">Get All 5 Courses</h2>
+    <section class="a-sec a-sec-alt">
+      <div class="wrap-a">
+        <div class="a-sec-head">
+          <div class="a-label">How It Works</div>
+          <h2 class="a-h2">Your Learning Journey</h2>
         </div>
-        <div id="bundleContent" style="background:linear-gradient(135deg,rgba(91,168,178,.08),rgba(173,155,132,.06));border:2px solid rgba(91,168,178,.25);border-radius:16px;padding:40px;overflow:hidden"></div>
-      </div>
-    </section>
-
-    <!-- COURSES -->
-    <section id="courses" class="qa-section">
-      <div class="qa-wrap">
-        <div class="qa-section-header">
-          <div class="qa-label">Individual Courses</div>
-          <h2 class="qa-h2">Or Choose Your Path</h2>
-          <p style="color:var(--qa-text-muted);max-width:550px;margin:0 auto">Each course is designed to guide you through a specific aspect of the Self-H.O.P.E. framework.</p>
-        </div>
-        <div id="courseGrid" class="qa-course-grid">
-          <div class="qa-loading"><div class="qa-spinner"></div></div>
+        <div class="steps">
+          <div class="step"><div class="num">1</div><h4>Choose Your Course</h4><p>Browse our catalog and find the program that resonates with where you are in your journey.</p></div>
+          <div class="step"><div class="num">2</div><h4>Learn at Your Pace</h4><p>Watch video lessons, read articles, complete exercises, and take quizzes — all on your schedule.</p></div>
+          <div class="step"><div class="num">3</div><h4>Track Your Growth</h4><p>Monitor your progress, earn XP, maintain streaks, and celebrate milestones along the way.</p></div>
+          <div class="step"><div class="num">4</div><h4>Transform Your Life</h4><p>Apply what you learn daily and experience real, lasting shifts in your health and wellbeing.</p></div>
         </div>
       </div>
     </section>
 
-    <!-- INSTRUCTOR -->
-    <section class="qa-section qa-section-alt">
-      <div class="qa-wrap">
-        <div class="qa-section-header">
-          <div class="qa-label">Your Instructor</div>
-          <h2 class="qa-h2">Learn From the Source</h2>
+    <section id="bundleSection" class="a-sec" style="display:none">
+      <div class="wrap-a">
+        <div class="a-sec-head">
+          <div class="a-label">Best Value</div>
+          <h2 class="a-h2">Get All 5 Courses</h2>
         </div>
-        <div class="instructor-card">
-          <img src="/assets/images/tracey-about-me.png" alt="Dr. Tracey Clark" class="instructor-avatar">
+        <div id="bundleContent" class="bundle-box"></div>
+      </div>
+    </section>
+
+    <section id="courses" class="a-sec">
+      <div class="wrap-a">
+        <div class="a-sec-head">
+          <div class="a-label">Individual Courses</div>
+          <h2 class="a-h2">Or Choose Your Path</h2>
+          <p style="color:var(--qa-muted);max-width:550px;margin:0 auto">Each course is designed to guide you through a specific aspect of the Self-H.O.P.E. framework.</p>
+          <p style="color:var(--qa-muted);margin-top:12px">Create your free account and start exploring courses today.</p>
+          <a href="/academy/login.html#signup" class="a-btn a-btn-p" style="margin-top:16px" id="ctaBtn2">Create Free Account</a>
+        </div>
+        <div id="courseGrid" class="c-grid">
+          <div class="a-spin"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="a-sec a-sec-alt">
+      <div class="wrap-a">
+        <div class="a-sec-head">
+          <div class="a-label">Your Instructor</div>
+          <h2 class="a-h2">Learn From the Source</h2>
+        </div>
+        <div class="inst">
+          <img src="/assets/images/tracey-about-me.png" alt="Dr. Tracey Clark">
           <div>
             <h3>Dr. Tracey Clark</h3>
             <div class="title">Founder, Quantum Physician</div>
@@ -221,12 +170,11 @@
       </div>
     </section>
 
-    <!-- CTA -->
-    <section class="qa-cta">
-      <div class="qa-wrap">
-        <h2 class="qa-h2">Ready to Begin?</h2>
-        <p style="color:var(--qa-text-muted);margin-bottom:28px;max-width:500px;margin-left:auto;margin-right:auto">Create your free account and start exploring courses today.</p>
-        <a href="/academy/login.html#signup" class="qa-btn qa-btn-primary qa-btn-lg" id="ctaBtn">Create Free Account</a>
+    <section class="a-cta">
+      <div class="wrap-a">
+        <h2 class="a-h2">Ready to Begin?</h2>
+        <p class="cta-sub">Create your free account and start exploring courses today.</p>
+        <a href="/academy/login.html#signup" class="a-btn a-btn-p" id="ctaBtn">Create Free Account</a>
       </div>
     </section>
   </main>
@@ -244,62 +192,66 @@
           document.getElementById('authBtn').href = '/academy/dashboard.html';
           document.getElementById('ctaBtn').textContent = 'Go to Dashboard';
           document.getElementById('ctaBtn').href = '/academy/dashboard.html';
+          var cb2 = document.getElementById('ctaBtn2');
+          if(cb2){cb2.textContent='Go to Dashboard';cb2.href='/academy/dashboard.html';}
         }
       } catch(e) {}
     })();
 
     (async () => {
-      const grid = document.getElementById('courseGrid');
+      var grid = document.getElementById('courseGrid');
       try {
-        const courses = await getCourses('published');
-        const { data: coming } = await sb.from('qa_courses').select('*').eq('status', 'coming_soon').order('sort_order');
-        const all = [...courses, ...(coming || [])];
+        var courses = await getCourses('published');
+        var r = await sb.from('qa_courses').select('*').eq('status', 'coming_soon').order('sort_order');
+        var coming = r.data || [];
+        var all = courses.concat(coming);
         if (all.length === 0) { grid.innerHTML = '<p style="text-align:center;opacity:.5">Courses coming soon!</p>'; return; }
-        grid.innerHTML = all.map(c => `
-          <a class="qa-course-card" href="/academy/course.html?slug=${c.slug}">
-            <div class="thumb" style="background:linear-gradient(135deg,#0f2942,#1a3a5c);display:flex;align-items:center;justify-content:center;position:relative">
-              ${c.thumbnail_url ? `<img src="${c.thumbnail_url}" alt="${c.title}" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover">` : `<span style="font-size:48px;opacity:.3">📖</span>`}
-              ${c.status === 'coming_soon' ? '<div class="badge coming">Coming Soon</div>' : ''}
-            </div>
-            <div class="body">
-              <h3>${c.title}</h3>
-              <p class="desc">${c.short_description || c.subtitle || ''}</p>
-              <div class="meta">
-                <div class="stats">
-                  ${c.total_lessons ? `<span>📺 ${c.total_lessons} ${c.total_lessons === 1 ? 'lesson' : 'lessons'}</span>` : ''}
-                  ${c.total_duration_minutes ? `<span>⏱ ${formatDuration(c.total_duration_minutes)}</span>` : ''}
-                </div>
-                <div class="price">${formatPrice(c.price_cents)}</div>
-              </div>
-            </div>
-          </a>
-        `).join('');
-
-        // Load bundle
-        const { data: bundles } = await sb.from('qa_bundles').select('*').eq('status', 'published');
-        if (bundles && bundles.length > 0) {
-          const bundleDiv = document.getElementById('bundleSection');
-          if (bundleDiv) {
-            bundleDiv.style.display = '';
-            const b = bundles[0];
-            const individualTotal = all.reduce((sum, c) => sum + (c.price_cents || 0), 0);
-            const savings = individualTotal - b.price_cents;
-            document.getElementById('bundleContent').innerHTML = `
-              <img src="/assets/images/self-hope-bundle.jpg" alt="Self-H.O.P.E. Series Bundle" loading="lazy" style="width:100%;border-radius:12px;margin-bottom:28px">
-              <div style="text-align:center">
-                <div style="font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#ff6b6b;font-weight:600;margin-bottom:8px">Best Value — Save ${formatPrice(savings)}</div>
-                <h3 style="font-family:'Playfair Display',serif;font-size:28px;margin-bottom:8px">${b.title}</h3>
-                <p style="color:var(--qa-text-muted);font-size:15px;line-height:1.7;margin-bottom:16px;max-width:700px;margin-left:auto;margin-right:auto">${b.description}</p>
-                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px;justify-content:center">
-                  ${all.map(c => `<a href="/academy/course.html?slug=${c.slug}" style="background:rgba(91,168,178,.1);border:1px solid rgba(91,168,178,.2);padding:6px 14px;border-radius:999px;font-size:12px;color:rgba(255,255,255,.7);text-decoration:none;transition:all .2s" onmouseover="this.style.background='rgba(91,168,178,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(91,168,178,.1)';this.style.color='rgba(255,255,255,.7)'">${c.title.split(':')[0]}</a>`).join('')}
-                </div>
-                <div style="font-size:14px;color:rgba(255,255,255,.4);text-decoration:line-through">$${(individualTotal/100).toFixed(0)} if purchased separately</div>
-                <div style="font-family:'Playfair Display',serif;font-size:48px;font-weight:700;color:var(--teal,#5ba8b2)">${formatPrice(b.price_cents)}</div>
-                <div style="font-size:13px;color:var(--qa-text-muted);margin-bottom:16px">for all 5 courses</div>
-                <a href="/academy/course.html?bundle=${b.slug}" class="qa-btn qa-btn-primary">Get the Bundle</a>
-              </div>
-            `;
+        
+        var html = '';
+        for (var i = 0; i < all.length; i++) {
+          var c = all[i];
+          html += '<a class="c-card" href="/academy/course.html?slug=' + c.slug + '">';
+          html += '<div class="thumb">';
+          if (c.thumbnail_url) {
+            html += '<img src="' + c.thumbnail_url + '" alt="' + c.title + '" loading="lazy" decoding="async">';
           }
+          if (c.status === 'coming_soon') {
+            html += '<div style="position:absolute;top:12px;left:12px;background:rgba(10,30,51,.9);padding:6px 14px;border-radius:999px;font-size:11px;font-weight:600;color:#ad9b84">Coming Soon</div>';
+          }
+          html += '</div><div class="body">';
+          html += '<h3>' + c.title + '</h3>';
+          html += '<p class="desc">' + (c.short_description || c.subtitle || '') + '</p>';
+          html += '<div class="meta"><div class="stats">';
+          if (c.total_lessons) html += '<span>📺 ' + c.total_lessons + (c.total_lessons === 1 ? ' lesson' : ' lessons') + '</span>';
+          if (c.total_duration_minutes) html += '<span>⏱ ' + formatDuration(c.total_duration_minutes) + '</span>';
+          html += '</div><div class="price">' + formatPrice(c.price_cents) + '</div></div>';
+          html += '</div></a>';
+        }
+        grid.innerHTML = html;
+
+        // Bundle
+        var br = await sb.from('qa_bundles').select('*').eq('status', 'published');
+        var bundles = br.data;
+        if (bundles && bundles.length > 0) {
+          document.getElementById('bundleSection').style.display = '';
+          var b = bundles[0];
+          var indTotal = 0;
+          for (var j = 0; j < all.length; j++) indTotal += (all[j].price_cents || 0);
+          var savings = indTotal - b.price_cents;
+          var tags = '';
+          for (var k = 0; k < all.length; k++) {
+            tags += '<a href="/academy/course.html?slug=' + all[k].slug + '">' + all[k].title.split(':')[0] + '</a>';
+          }
+          document.getElementById('bundleContent').innerHTML =
+            '<img src="/assets/images/self-hope-bundle.jpg" alt="Bundle" loading="lazy">' +
+            '<div style="font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#ff6b6b;font-weight:600;margin-bottom:8px">Best Value — Save ' + formatPrice(savings) + '</div>' +
+            '<h3 class="pf" style="font-size:28px;margin-bottom:8px">' + b.title + '</h3>' +
+            '<p style="color:var(--qa-muted);font-size:15px;line-height:1.7;margin-bottom:16px;max-width:700px;margin:0 auto 16px">' + b.description + '</p>' +
+            '<div class="bundle-tags">' + tags + '</div>' +
+            '<div style="font-size:14px;color:rgba(255,255,255,.4);text-decoration:line-through">$' + (indTotal/100).toFixed(0) + ' if purchased separately</div>' +
+            '<div class="pf" style="font-size:48px;font-weight:700;color:var(--qa-teal)">' + formatPrice(b.price_cents) + '</div>' +
+            '<div style="font-size:13px;color:var(--qa-muted);margin-bottom:16px">for all 5 courses</div>' +
+            '<a href="/academy/course.html?bundle=' + b.slug + '" class="a-btn a-btn-p">Get the Bundle</a>';
         }
       } catch (err) {
         console.error(err);
