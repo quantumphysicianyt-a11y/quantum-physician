@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -7,364 +7,581 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/shared.css">
   <link rel="stylesheet" href="/academy/css/academy.css">
   <style>
-    /* Player-specific overrides */
-    body { overflow: hidden; }
-    #shared-header { position: sticky; top: 0; z-index: 50; }
-    .qa-player { height: calc(100vh - 72px); }
-    .qa-content { overflow-y: auto; }
-    .mobile-toggle {
-      display: none;
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      z-index: 101;
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      background: var(--teal, #5ba8b2);
-      color: #fff;
-      border: none;
-      font-size: 20px;
-      cursor: pointer;
-      box-shadow: 0 4px 20px rgba(0,0,0,.4);
+    :root {
+      --l-left: 280px;
+      --l-right: 340px;
+      --l-teal: #5ba8b2;
+      --l-cyan: #4acfd9;
+      --l-taupe: #ad9b84;
+      --l-navy: #0a1e33;
+      --l-deep: #071825;
+      --l-mid: #0f2942;
+      --l-card: #112a42;
+      --l-bdr: rgba(91,168,178,.15);
+      --l-bdr2: rgba(91,168,178,.35);
+      --l-text: rgba(255,255,255,.88);
+      --l-muted: rgba(255,255,255,.5);
+      --l-ease: .3s cubic-bezier(.22,1,.36,1);
     }
-    .sidebar-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,.6);
-      z-index: 99;
+    [data-theme="light"] {
+      --l-navy: #f5f3ef;
+      --l-deep: #ebe8e2;
+      --l-mid: #ffffff;
+      --l-card: #ffffff;
+      --l-bdr: rgba(173,155,132,.2);
+      --l-bdr2: rgba(173,155,132,.4);
+      --l-text: #1a1a2e;
+      --l-muted: rgba(26,26,46,.5);
     }
-    @media (max-width: 1024px) {
-      .mobile-toggle { display: flex; align-items: center; justify-content: center; }
-      .qa-sidebar.open ~ .sidebar-overlay { display: block; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'Inter',sans-serif; background:var(--l-navy); color:var(--l-text); height:100vh; overflow:hidden; }
+
+    /* === LAYOUT === */
+    .l-app {
+      display:grid;
+      grid-template-columns: var(--l-left) 1fr var(--l-right);
+      height:100vh;
+      transition: grid-template-columns .3s ease;
     }
-    .lesson-nav {
-      display: flex;
-      gap: 12px;
-      margin-top: 24px;
-      padding-top: 20px;
-      border-top: 1px solid var(--qa-border);
+    .l-app.rp-closed { grid-template-columns: var(--l-left) 1fr 0px; }
+
+    /* === LEFT PANEL === */
+    .l-left {
+      background:var(--l-deep);
+      border-right:1px solid var(--l-bdr);
+      display:flex; flex-direction:column; overflow:hidden;
     }
-    .lesson-nav a {
-      padding: 10px 20px;
-      border: 1px solid var(--qa-border);
-      border-radius: 8px;
-      color: var(--qa-text-muted);
-      text-decoration: none;
-      font-size: 13px;
-      transition: all .2s;
+    .l-left-head {
+      padding:14px 16px; border-bottom:1px solid var(--l-bdr);
+      display:flex; align-items:center; gap:10px;
     }
-    .lesson-nav a:hover { border-color: var(--qa-border-hover); color: var(--qa-text); }
-    .lesson-nav .next { margin-left: auto; background: rgba(91,168,178,.1); border-color: var(--qa-border-hover); color: var(--teal); }
+    .l-left-head img { height:30px; width:auto; }
+    .l-left-head .back {
+      margin-left:auto; display:flex; align-items:center; gap:4px;
+      font-size:11px; color:var(--l-muted); text-decoration:none; transition:color .15s;
+    }
+    .l-left-head .back:hover { color:var(--l-text); }
+    .l-left-head .back svg { width:14px; height:14px; stroke:currentColor; }
+
+    .l-cinfo { padding:16px 16px 12px; border-bottom:1px solid var(--l-bdr); }
+    .l-cinfo h2 { font-family:"Playfair Display",serif; font-size:15px; font-weight:600; line-height:1.3; margin-bottom:8px; }
+    .l-pbar { display:flex; align-items:center; gap:8px; }
+    .l-pbar .trk { flex:1; height:4px; background:rgba(255,255,255,.08); border-radius:2px; overflow:hidden; }
+    .l-pbar .trk .fl { height:100%; border-radius:2px; background:linear-gradient(90deg,var(--l-teal),var(--l-cyan)); transition:width .5s ease; }
+    .l-pbar .pc { font-size:11px; color:var(--l-teal); font-weight:600; }
+    .l-plbl { font-size:10px; color:var(--l-muted); margin-top:4px; }
+
+    .l-mods { flex:1; overflow-y:auto; }
+    .l-mg { border-bottom:1px solid var(--l-bdr); }
+    .l-mt {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:12px 16px; font-size:11px; font-weight:700;
+      letter-spacing:.08em; text-transform:uppercase; color:var(--l-muted);
+      cursor:pointer; transition:color .15s;
+    }
+    .l-mt:hover { color:var(--l-text); }
+    .l-mt .ch { transition:transform .2s; font-size:10px; }
+    .l-mt.open .ch { transform:rotate(180deg); }
+    .l-ll { display:none; }
+    .l-ll.open { display:block; }
+    .l-li {
+      display:flex; align-items:center; gap:10px;
+      padding:10px 16px 10px 24px; font-size:13px; color:var(--l-muted);
+      text-decoration:none; transition:all .15s; border-left:3px solid transparent;
+    }
+    .l-li:hover { color:var(--l-text); background:rgba(255,255,255,.02); }
+    .l-li.act { color:var(--l-teal); background:rgba(91,168,178,.06); border-left-color:var(--l-teal); }
+    .l-li .ck {
+      width:18px; height:18px; border-radius:50%; border:2px solid var(--l-bdr);
+      display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    }
+    .l-li .ck svg { width:10px; height:10px; stroke:var(--l-teal); display:none; }
+    .l-li.dn .ck { background:rgba(91,168,178,.15); border-color:var(--l-teal); }
+    .l-li.dn .ck svg { display:block; }
+    .l-li .tt { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .l-li .dr { font-size:10px; color:var(--l-muted); opacity:.6; margin-left:auto; }
+
+    .l-lfoot {
+      padding:10px 16px; border-top:1px solid var(--l-bdr);
+      display:flex; align-items:center; gap:6px;
+    }
+    .l-lfoot button {
+      display:flex; align-items:center; gap:4px; background:none; border:none;
+      color:var(--l-muted); font-size:11px; cursor:pointer; padding:6px 8px;
+      border-radius:6px; transition:all .15s;
+    }
+    .l-lfoot button:hover { background:rgba(255,255,255,.03); color:var(--l-text); }
+    .l-lfoot button svg { width:14px; height:14px; stroke:currentColor; }
+
+    /* === CENTER === */
+    .l-center { display:flex; flex-direction:column; overflow:hidden; }
+    .l-vid { width:100%; aspect-ratio:16/9; background:#000; flex-shrink:0; position:relative; }
+    .l-vid video, .l-vid iframe { width:100%; height:100%; object-fit:contain; }
+
+    .l-body { flex:1; overflow-y:auto; padding:28px 32px; }
+    .l-body h1 { font-family:"Playfair Display",serif; font-size:24px; margin-bottom:6px; }
+    .l-body .lm {
+      display:flex; align-items:center; gap:12px; font-size:12px; color:var(--l-muted);
+      margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid var(--l-bdr);
+    }
+    .l-body .lm span { display:flex; align-items:center; gap:4px; }
+    .l-body .lm svg { width:13px; height:13px; stroke:currentColor; }
+    .l-body .lc { font-size:15px; line-height:1.8; max-width:800px; }
+    .l-body .lc p { margin-bottom:14px; }
+    .l-body .lc h2 { font-family:"Playfair Display",serif; font-size:20px; margin:28px 0 10px; }
+    .l-body .lc h3 { font-size:16px; margin:20px 0 8px; }
+    .l-body .lc blockquote { border-left:3px solid var(--l-teal); padding:10px 18px; margin:14px 0; color:var(--l-muted); font-style:italic; }
+
+    /* Action bar */
+    .l-acts {
+      display:flex; align-items:center; gap:10px;
+      padding:14px 32px; border-top:1px solid var(--l-bdr);
+      background:rgba(0,0,0,.1); flex-shrink:0;
+    }
+    .l-cbtn {
+      display:flex; align-items:center; gap:6px; padding:10px 22px;
+      background:linear-gradient(135deg,var(--l-teal),var(--l-cyan));
+      color:#fff; border:none; border-radius:999px;
+      font-size:12px; font-weight:600; letter-spacing:.03em; cursor:pointer; transition:all .2s;
+    }
+    .l-cbtn:hover { box-shadow:0 4px 16px rgba(91,168,178,.4); }
+    .l-cbtn.done { background:transparent; border:1px solid var(--l-bdr2); color:var(--l-teal); }
+    .l-cbtn svg { width:14px; height:14px; stroke:currentColor; }
+    .l-nbtn {
+      display:flex; align-items:center; gap:4px; padding:8px 16px;
+      background:none; border:1px solid var(--l-bdr); color:var(--l-muted);
+      border-radius:8px; font-size:12px; cursor:pointer; text-decoration:none; transition:all .15s;
+    }
+    .l-nbtn:hover { border-color:var(--l-bdr2); color:var(--l-text); }
+    .l-nbtn.nxt { margin-left:auto; background:rgba(91,168,178,.08); border-color:var(--l-bdr2); color:var(--l-teal); }
+    .l-nbtn svg { width:14px; height:14px; stroke:currentColor; }
+    .l-tbtn {
+      display:flex; align-items:center; justify-content:center;
+      width:36px; height:36px; background:none; border:1px solid var(--l-bdr);
+      border-radius:8px; color:var(--l-muted); cursor:pointer; margin-left:8px; transition:all .15s;
+    }
+    .l-tbtn:hover { border-color:var(--l-bdr2); color:var(--l-text); }
+    .l-tbtn svg { width:16px; height:16px; stroke:currentColor; }
+
+    /* === RIGHT PANEL === */
+    .l-right {
+      background:var(--l-deep); border-left:1px solid var(--l-bdr);
+      display:flex; flex-direction:column; overflow:hidden;
+      transition: opacity .25s ease;
+    }
+    .l-app.rp-closed .l-right { opacity:0; pointer-events:none; }
+
+    .l-rtabs {
+      display:flex; border-bottom:1px solid var(--l-bdr); flex-shrink:0;
+    }
+    .l-rtabs button {
+      flex:1; padding:12px 8px; background:none; border:none;
+      color:var(--l-muted); font-size:11px; font-weight:600;
+      text-transform:uppercase; letter-spacing:.06em; cursor:pointer;
+      border-bottom:2px solid transparent; transition:all .15s;
+      display:flex; align-items:center; justify-content:center; gap:5px;
+    }
+    .l-rtabs button:hover { color:var(--l-text); }
+    .l-rtabs button.on { color:var(--l-teal); border-bottom-color:var(--l-teal); }
+    .l-rtabs button svg { width:13px; height:13px; stroke:currentColor; }
+
+    .l-tc { flex:1; overflow-y:auto; padding:16px; }
+    .l-tp { display:none; }
+    .l-tp.on { display:block; height:100%; }
+
+    /* Notes */
+    .l-notes {
+      width:100%; min-height:250px; background:rgba(0,0,0,.15);
+      border:1px solid var(--l-bdr); border-radius:8px; padding:14px;
+      color:var(--l-text); font-size:14px; line-height:1.6;
+      resize:vertical; font-family:inherit; outline:none; transition:border-color .2s;
+    }
+    .l-notes:focus { border-color:var(--l-teal); }
+    .l-nsave { display:flex; align-items:center; justify-content:space-between; margin-top:10px; }
+    .l-nsave .st { font-size:11px; color:var(--l-muted); }
+    .l-nsave .sv {
+      padding:8px 18px; background:var(--l-teal); color:#fff; border:none;
+      border-radius:6px; font-size:11px; font-weight:600; cursor:pointer; transition:opacity .15s;
+    }
+    .l-nsave .sv:hover { opacity:.85; }
+
+    /* Discussion */
+    .l-de { text-align:center; padding:30px 10px; color:var(--l-muted); font-size:13px; }
+    .l-de svg { width:28px; height:28px; stroke:var(--l-bdr2); margin-bottom:8px; display:block; margin:0 auto 8px; }
+    .l-di { padding:12px 0; border-bottom:1px solid var(--l-bdr); }
+    .l-di .dh { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+    .l-di .da {
+      width:24px; height:24px; border-radius:50%; background:var(--l-teal);
+      color:#fff; display:flex; align-items:center; justify-content:center;
+      font-size:10px; font-weight:700; flex-shrink:0;
+    }
+    .l-di .dn { font-size:12px; font-weight:600; }
+    .l-di .dt { font-size:10px; color:var(--l-muted); margin-left:auto; }
+    .l-di .db { font-size:13px; line-height:1.5; color:var(--l-muted); }
+    .l-df { margin-top:14px; }
+    .l-dinp {
+      width:100%; padding:10px 12px; background:rgba(0,0,0,.15);
+      border:1px solid var(--l-bdr); border-radius:8px; color:var(--l-text);
+      font-size:13px; outline:none; font-family:inherit; resize:none; transition:border-color .2s;
+    }
+    .l-dinp:focus { border-color:var(--l-teal); }
+    .l-dsub {
+      margin-top:8px; padding:8px 16px; background:var(--l-teal); color:#fff;
+      border:none; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer;
+    }
+
+    /* Resources */
+    .l-ri {
+      display:flex; align-items:center; gap:10px; padding:12px 14px;
+      background:rgba(0,0,0,.1); border:1px solid var(--l-bdr);
+      border-radius:8px; margin-bottom:8px; text-decoration:none; color:inherit; transition:all .15s;
+    }
+    .l-ri:hover { border-color:var(--l-bdr2); background:rgba(91,168,178,.04); }
+    .l-ri svg { width:18px; height:18px; stroke:var(--l-taupe); flex-shrink:0; }
+    .l-ri .rn { flex:1; font-size:13px; }
+
+    /* Loading */
+    .l-load { display:flex; align-items:center; justify-content:center; height:100vh; background:var(--l-navy); }
+    .l-spin { width:36px; height:36px; border:3px solid var(--l-bdr); border-top-color:var(--l-teal); border-radius:50%; animation:sp .7s linear infinite; }
+    @keyframes sp { to { transform:rotate(360deg); } }
+
+    /* Mobile */
+    .l-mob { display:none; position:fixed; bottom:16px; right:16px; z-index:200;
+      width:44px; height:44px; border-radius:50%;
+      background:linear-gradient(135deg,var(--l-teal),var(--l-cyan));
+      color:#fff; border:none; cursor:pointer;
+      box-shadow:0 4px 16px rgba(91,168,178,.4);
+      align-items:center; justify-content:center;
+    }
+    .l-mob svg { width:18px; height:18px; stroke:#fff; }
+    .l-ov { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:99; }
+    .l-ov.open { display:block; }
+
+    @media(max-width:1024px) {
+      .l-app, .l-app.rp-closed { grid-template-columns:1fr; }
+      .l-left { display:none; position:fixed; top:0; left:0; bottom:0; width:300px; z-index:300; }
+      .l-left.open { display:flex; }
+      .l-right { display:none; position:fixed; top:0; right:0; bottom:0; width:320px; z-index:300; }
+      .l-right.mob-open { display:flex; }
+      .l-mob { display:flex; }
+      .l-body { padding:20px; }
+      .l-acts { padding:12px 16px; flex-wrap:wrap; }
+    }
   </style>
 </head>
-<body class="qa-page">
-  <div id="shared-header"></div>
+<body>
+  <svg style="display:none" xmlns="http://www.w3.org/2000/svg"><defs>
+    <symbol id="i-chk" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></symbol>
+    <symbol id="i-al" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></symbol>
+    <symbol id="i-ar" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="18" x2="20" y2="18"/></symbol>
+    <symbol id="i-pen" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></symbol>
+    <symbol id="i-chat" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></symbol>
+    <symbol id="i-panel" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></symbol>
+    <symbol id="i-clk" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+    <symbol id="i-vid" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></symbol>
+    <symbol id="i-dl" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+  </defs></svg>
 
-  <div id="loading" class="qa-loading" style="padding:120px 0"><div class="qa-spinner"></div></div>
+  <div id="loading" class="l-load"><div class="l-spin"></div></div>
 
-  <div id="playerWrap" style="display:none">
-    <div class="qa-player">
-      <!-- Sidebar -->
-      <aside class="qa-sidebar" id="sidebar">
-        <div class="qa-sidebar-header">
-          <a href="#" id="courseLink" style="text-decoration:none;color:var(--qa-text-muted);font-size:12px;display:flex;align-items:center;gap:4px;margin-bottom:8px">← Back to course</a>
-          <h2 id="sidebarTitle"></h2>
-          <div class="qa-progress" style="margin:10px 0 4px"><div class="qa-progress-fill" id="sidebarProgress"></div></div>
-          <div class="progress-label" id="sidebarProgressLabel"></div>
-        </div>
-        <div id="sidebarModules"></div>
-      </aside>
+  <div id="app" class="l-app" style="display:none">
+    <!-- LEFT -->
+    <aside class="l-left" id="leftP">
+      <div class="l-left-head">
+        <a href="/academy/"><img src="/assets/images/QuantumPhysAcad_STACKED-RGB.png" alt="Academy"></a>
+        <a href="/academy/dashboard.html" class="back"><svg><use href="#i-grid"/></svg> Dashboard</a>
+      </div>
+      <div class="l-cinfo">
+        <h2 id="cTitle"></h2>
+        <div class="l-pbar"><div class="trk"><div class="fl" id="pFill" style="width:0%"></div></div><span class="pc" id="pPct">0%</span></div>
+        <div class="l-plbl" id="pLbl">0/0 lessons</div>
+      </div>
+      <div class="l-mods" id="modList"></div>
+      <div class="l-lfoot">
+        <button onclick="toggleTheme()"><svg><use href="#i-sun"/></svg> Theme</button>
+      </div>
+    </aside>
 
-      <div class="sidebar-overlay" onclick="closeSidebar()"></div>
-
-      <!-- Content -->
-      <div class="qa-content" id="content">
-        <!-- Video area -->
-        <div class="qa-video-wrap" id="videoWrap" style="display:none"></div>
-
-        <!-- Lesson body -->
-        <div class="qa-lesson-body" id="lessonBody">
-          <h1 id="lessonTitle"></h1>
-          <div class="lesson-meta" id="lessonMeta"></div>
-          <div class="lesson-content" id="lessonContent"></div>
-          <div class="qa-attachments" id="attachments" style="display:none"></div>
-
-          <!-- Complete + Nav -->
-          <div style="margin-top:32px">
-            <button class="qa-btn qa-btn-primary" id="completeBtn" onclick="handleComplete()" style="display:none">✓ Mark as Complete</button>
-            <div class="lesson-nav" id="lessonNav"></div>
-          </div>
-        </div>
+    <!-- CENTER -->
+    <div class="l-center">
+      <div class="l-vid" id="vidWrap" style="display:none"></div>
+      <div class="l-body" id="lBody">
+        <h1 id="lTitle"></h1>
+        <div class="lm" id="lMeta"></div>
+        <div class="lc" id="lContent"></div>
+      </div>
+      <div class="l-acts">
+        <button class="l-cbtn" id="cBtn" onclick="doComplete()"><svg><use href="#i-chk"/></svg><span>Mark Complete</span></button>
+        <a class="l-nbtn" id="prevB" style="display:none"><svg><use href="#i-al"/></svg> Prev</a>
+        <a class="l-nbtn nxt" id="nextB" style="display:none">Next <svg><use href="#i-ar"/></svg></a>
+        <button class="l-tbtn" onclick="toggleRP()" title="Toggle panel"><svg><use href="#i-panel"/></svg></button>
       </div>
     </div>
 
-    <button class="mobile-toggle" onclick="toggleSidebar()">☰</button>
+    <!-- RIGHT -->
+    <aside class="l-right" id="rightP">
+      <div class="l-rtabs">
+        <button class="on" onclick="stab('notes',this)"><svg><use href="#i-pen"/></svg> Notes</button>
+        <button onclick="stab('disc',this)"><svg><use href="#i-chat"/></svg> Discussion</button>
+        <button onclick="stab('res',this)"><svg><use href="#i-file"/></svg> Files</button>
+      </div>
+      <div class="l-tc">
+        <div class="l-tp on" id="t-notes">
+          <textarea class="l-notes" id="nArea" placeholder="Take notes for this lesson..."></textarea>
+          <div class="l-nsave"><span class="st" id="nSt"></span><button class="sv" onclick="saveN()">Save</button></div>
+        </div>
+        <div class="l-tp" id="t-disc">
+          <div id="dList"></div>
+          <div class="l-df">
+            <textarea class="l-dinp" id="dInp" rows="3" placeholder="Ask a question or share a thought..."></textarea>
+            <button class="l-dsub" onclick="postD()">Post</button>
+          </div>
+        </div>
+        <div class="l-tp" id="t-res">
+          <div id="rList"></div>
+        </div>
+      </div>
+    </aside>
   </div>
+
+  <button class="l-mob" id="mobBtn" onclick="toggleLeft()"><svg><use href="#i-menu"/></svg></button>
+  <div class="l-ov" id="ov" onclick="closeP()"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/shared.js"></script>
   <script src="/academy/js/academy.js"></script>
   <script>
-    const slug = new URLSearchParams(window.location.search).get('slug');
-    const lessonSlug = new URLSearchParams(window.location.search).get('lesson');
-    if (!slug) window.location.href = '/academy/';
+    const slug = new URLSearchParams(location.search).get('slug');
+    const lSlug = new URLSearchParams(location.search).get('lesson');
+    if (!slug) location.href = '/academy/';
 
-    let currentCourse, currentEnrollment, currentLesson, allLessons = [], progressMap = {};
+    let crs, enr, cur, all=[], pm={}, usr;
 
-    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
-    function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); }
+    // Theme
+    function toggleTheme() {
+      const t = document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
+      document.documentElement.setAttribute('data-theme', t);
+      localStorage.setItem('qa-theme', t);
+    }
+    const st = localStorage.getItem('qa-theme');
+    if (st) document.documentElement.setAttribute('data-theme', st);
 
-    // Build flat lesson array from modules
-    function flattenLessons(modules) {
-      const flat = [];
-      modules.forEach(m => (m.qa_lessons || []).forEach(l => flat.push({ ...l, moduleName: m.title })));
-      return flat;
+    // Panels
+    function toggleRP() {
+      document.getElementById('app').classList.toggle('rp-closed');
+      localStorage.setItem('qa-rp', document.getElementById('app').classList.contains('rp-closed')?'c':'o');
+    }
+    function toggleLeft() {
+      document.getElementById('leftP').classList.toggle('open');
+      document.getElementById('ov').classList.toggle('open');
+    }
+    function toggleRightMob() {
+      document.getElementById('rightP').classList.toggle('mob-open');
+      document.getElementById('ov').classList.toggle('open');
+    }
+    function closeP() {
+      document.getElementById('leftP').classList.remove('open');
+      document.getElementById('rightP').classList.remove('mob-open');
+      document.getElementById('ov').classList.remove('open');
     }
 
-    // Render sidebar
-    function renderSidebar(modules) {
-      document.getElementById('sidebarModules').innerHTML = modules.map((m, i) => `
-        <div class="qa-module-group">
-          <div class="qa-module-title open" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
-            <span>Module ${i + 1}: ${m.title}</span>
-            <span class="chevron">▾</span>
+    // Tabs
+    function stab(t, b) {
+      document.querySelectorAll('.l-rtabs button').forEach(x=>x.classList.remove('on'));
+      document.querySelectorAll('.l-tp').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on');
+      document.getElementById('t-'+t).classList.add('on');
+    }
+
+    function flat(mods) {
+      const f=[];
+      mods.forEach(m=>(m.qa_lessons||[]).forEach(l=>f.push({...l,modName:m.title})));
+      return f;
+    }
+
+    function renderSB(mods) {
+      document.getElementById('modList').innerHTML = mods.map((m,i)=>`
+        <div class="l-mg">
+          <div class="l-mt open" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+            <span>Module ${i+1}: ${m.title}</span><span class="ch">▾</span>
           </div>
-          <div class="qa-lesson-list open">
-            ${(m.qa_lessons || []).map(l => {
-              const isActive = currentLesson && currentLesson.id === l.id;
-              const isDone = progressMap[l.id]?.status === 'completed';
-              return `
-                <a class="qa-lesson-item ${isActive ? 'active' : ''} ${isDone ? 'completed' : ''}" 
-                   href="/academy/learn.html?slug=${slug}&lesson=${l.slug}" 
-                   onclick="closeSidebar()">
-                  <div class="check">${isDone ? '✓' : ''}</div>
-                  <span>${l.title}</span>
-                  ${l.estimated_minutes ? `<span class="duration">${l.estimated_minutes}m</span>` : ''}
-                </a>
-              `;
+          <div class="l-ll open">
+            ${(m.qa_lessons||[]).map(l=>{
+              const ac = cur && cur.id===l.id;
+              const dn = pm[l.id]?.status==='completed';
+              return `<a class="l-li ${ac?'act':''} ${dn?'dn':''}" href="/academy/learn.html?slug=${slug}&lesson=${l.slug}" onclick="closeP()">
+                <div class="ck"><svg><use href="#i-chk"/></svg></div>
+                <span class="tt">${l.title}</span>
+                ${l.estimated_minutes?`<span class="dr">${l.estimated_minutes}m</span>`:''}
+              </a>`;
             }).join('')}
           </div>
-        </div>
-      `).join('');
+        </div>`).join('');
     }
 
-    // Render lesson content
-    function renderLesson(lesson) {
-      document.getElementById('pageTitle').textContent = lesson.title + ' — ' + currentCourse.title;
-      document.getElementById('lessonTitle').textContent = lesson.title;
+    function renderL(l) {
+      document.getElementById('pageTitle').textContent = l.title+' — '+crs.title;
+      document.getElementById('lTitle').textContent = l.title;
 
       // Meta
-      const meta = [];
-      if (lesson.content_type === 'video' && lesson.video_duration_seconds) meta.push(`⏱ ${Math.ceil(lesson.video_duration_seconds / 60)}m`);
-      else if (lesson.estimated_minutes) meta.push(`⏱ ${lesson.estimated_minutes}m`);
-      meta.push(lesson.content_type.charAt(0).toUpperCase() + lesson.content_type.slice(1));
-      document.getElementById('lessonMeta').innerHTML = meta.join(' · ');
+      const mt=[];
+      if (l.content_type==='video'&&l.video_duration_seconds) mt.push(`<span><svg><use href="#i-clk"/></svg>${Math.ceil(l.video_duration_seconds/60)}m</span>`);
+      else if (l.estimated_minutes) mt.push(`<span><svg><use href="#i-clk"/></svg>${l.estimated_minutes}m</span>`);
+      mt.push(`<span><svg><use href="#i-vid"/></svg>${l.content_type.charAt(0).toUpperCase()+l.content_type.slice(1)}</span>`);
+      document.getElementById('lMeta').innerHTML = mt.join('');
 
       // Video
-      const videoWrap = document.getElementById('videoWrap');
-      if (lesson.content_type === 'video' && lesson.video_url) {
-        videoWrap.style.display = '';
-        const resumePos = progressMap[lesson.id]?.video_position_seconds || 0;
-        
-        if (lesson.video_url.includes('vimeo.com') || lesson.video_url.includes('youtube.com') || lesson.video_url.includes('youtu.be')) {
-          let embedUrl = lesson.video_url;
-          if (lesson.video_url.includes('youtu.be')) {
-            embedUrl = 'https://www.youtube.com/embed/' + lesson.video_url.split('/').pop();
-          } else if (lesson.video_url.includes('youtube.com/watch')) {
-            embedUrl = 'https://www.youtube.com/embed/' + new URL(lesson.video_url).searchParams.get('v');
-          } else if (lesson.video_url.includes('vimeo.com')) {
-            embedUrl = 'https://player.vimeo.com/video/' + lesson.video_url.split('/').pop();
-          }
-          videoWrap.innerHTML = `<iframe src="${embedUrl}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+      const vw = document.getElementById('vidWrap');
+      if (l.content_type==='video'&&l.video_url) {
+        vw.style.display='';
+        if (l.video_url.includes('vimeo.com')) {
+          const vid = l.video_url.split('/').pop();
+          vw.innerHTML = `<iframe src="https://player.vimeo.com/video/${vid}" frameborder="0" allow="autoplay;fullscreen;picture-in-picture" allowfullscreen></iframe>`;
+        } else if (l.video_url.includes('youtu')) {
+          let eid = l.video_url;
+          if (eid.includes('youtu.be')) eid='https://www.youtube.com/embed/'+eid.split('/').pop();
+          else eid='https://www.youtube.com/embed/'+new URL(eid).searchParams.get('v');
+          vw.innerHTML = `<iframe src="${eid}" frameborder="0" allow="autoplay;fullscreen" allowfullscreen></iframe>`;
         } else {
-          videoWrap.innerHTML = `<video id="lessonVideo" controls preload="metadata" ${lesson.video_thumbnail_url ? `poster="${lesson.video_thumbnail_url}"` : ''}><source src="${lesson.video_url}" type="video/mp4"></video>`;
-          const vid = document.getElementById('lessonVideo');
-          if (vid && resumePos > 0) vid.addEventListener('loadedmetadata', () => { vid.currentTime = resumePos; }, { once: true });
-          
-          // Save position periodically
-          if (vid) {
-            let saveTimer;
-            vid.addEventListener('timeupdate', () => {
-              clearTimeout(saveTimer);
-              saveTimer = setTimeout(() => {
-                const pct = vid.duration ? (vid.currentTime / vid.duration * 100) : 0;
-                saveVideoPosition(lesson.id, currentCourse.id, currentEnrollment.id, Math.floor(vid.currentTime), Math.round(pct));
-              }, 3000);
-            });
-          }
+          const rp = pm[l.id]?.video_position_seconds||0;
+          vw.innerHTML = `<video id="lVid" controls preload="metadata"><source src="${l.video_url}" type="video/mp4"></video>`;
+          const v=document.getElementById('lVid');
+          if (v&&rp>0) v.addEventListener('loadedmetadata',()=>{v.currentTime=rp},{once:true});
+          if (v) { let st; v.addEventListener('timeupdate',()=>{ clearTimeout(st); st=setTimeout(()=>{
+            const p=v.duration?(v.currentTime/v.duration*100):0;
+            saveVideoPosition(l.id,crs.id,enr.id,Math.floor(v.currentTime),Math.round(p));
+          },3000); }); }
         }
-      } else {
-        videoWrap.style.display = 'none';
+      } else { vw.style.display='none'; }
+
+      // Content
+      const cd=document.getElementById('lContent');
+      if (l.content_html) cd.innerHTML=l.content_html;
+      else if (l.content_markdown) {
+        cd.innerHTML = l.content_markdown
+          .replace(/^### (.*$)/gm,'<h3>$1</h3>').replace(/^## (.*$)/gm,'<h2>$1</h2>')
+          .replace(/^# (.*$)/gm,'<h1>$1</h1>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+          .replace(/\*(.*?)\*/g,'<em>$1</em>').replace(/\n\n/g,'</p><p>')
+          .replace(/^/,'<p>').replace(/$/,'</p>');
+      } else if (l.content_type==='pdf'&&l.file_url) { cd.innerHTML='<p>Download the resource below.</p>'; }
+      else { cd.innerHTML=''; }
+
+      if (l.file_url) {
+        cd.innerHTML += `<a class="l-ri" href="${l.file_url}" target="_blank" style="margin-top:16px;display:inline-flex"><svg><use href="#i-dl"/></svg><span class="rn">${l.file_name||'Download'}</span></a>`;
       }
 
-      // Text content
-      const contentDiv = document.getElementById('lessonContent');
-      if (lesson.content_html) {
-        contentDiv.innerHTML = lesson.content_html;
-      } else if (lesson.content_markdown) {
-        // Simple markdown rendering (basic)
-        contentDiv.innerHTML = lesson.content_markdown
-          .replace(/^### (.*$)/gm, '<h3>$1</h3>')
-          .replace(/^## (.*$)/gm, '<h2>$1</h2>')
-          .replace(/^# (.*$)/gm, '<h1>$1</h1>')
-          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-          .replace(/\*(.*?)\*/g, '<em>$1</em>')
-          .replace(/\n\n/g, '</p><p>')
-          .replace(/^/, '<p>').replace(/$/, '</p>');
-      } else if (lesson.content_type === 'pdf' && lesson.file_url) {
-        contentDiv.innerHTML = `<p>Download the PDF below to continue this lesson.</p>`;
-      } else {
-        contentDiv.innerHTML = '';
-      }
+      // Complete btn
+      const btn=document.getElementById('cBtn');
+      const dn=pm[l.id]?.status==='completed';
+      btn.querySelector('span').textContent=dn?'Completed':'Mark Complete';
+      btn.classList.toggle('done',dn); btn.disabled=dn;
 
-      // PDF / Download
-      if (lesson.file_url && (lesson.content_type === 'pdf' || lesson.content_type === 'download')) {
-        contentDiv.innerHTML += `
-          <a class="qa-attachment-item" href="${lesson.file_url}" target="_blank" rel="noopener" style="margin-top:16px;display:inline-flex">
-            <span class="icon">📄</span>
-            <span class="name">${lesson.file_name || 'Download file'}</span>
-          </a>
-        `;
-      }
+      // Nav
+      const idx=all.findIndex(x=>x.id===l.id);
+      const pv=document.getElementById('prevB'), nx=document.getElementById('nextB');
+      if (idx>0){pv.style.display='';pv.href=`/academy/learn.html?slug=${slug}&lesson=${all[idx-1].slug}`;}else pv.style.display='none';
+      if (idx<all.length-1){nx.style.display='';nx.href=`/academy/learn.html?slug=${slug}&lesson=${all[idx+1].slug}`;}else nx.style.display='none';
 
-      // Attachments
-      // TODO: Load from qa_lesson_attachments
-
-      // Complete button
-      const completeBtn = document.getElementById('completeBtn');
-      const isDone = progressMap[lesson.id]?.status === 'completed';
-      if (isDone) {
-        completeBtn.style.display = '';
-        completeBtn.textContent = '✓ Completed';
-        completeBtn.disabled = true;
-        completeBtn.classList.remove('qa-btn-primary');
-        completeBtn.classList.add('qa-btn-outline');
-      } else {
-        completeBtn.style.display = '';
-        completeBtn.textContent = '✓ Mark as Complete';
-        completeBtn.disabled = false;
-        completeBtn.classList.add('qa-btn-primary');
-        completeBtn.classList.remove('qa-btn-outline');
-      }
-
-      // Prev/Next navigation
-      const idx = allLessons.findIndex(l => l.id === lesson.id);
-      const nav = document.getElementById('lessonNav');
-      let navHtml = '';
-      if (idx > 0) {
-        navHtml += `<a href="/academy/learn.html?slug=${slug}&lesson=${allLessons[idx - 1].slug}">← ${allLessons[idx - 1].title}</a>`;
-      }
-      if (idx < allLessons.length - 1) {
-        navHtml += `<a class="next" href="/academy/learn.html?slug=${slug}&lesson=${allLessons[idx + 1].slug}">${allLessons[idx + 1].title} →</a>`;
-      }
-      nav.innerHTML = navHtml;
-
-      // Scroll content to top
-      document.getElementById('content').scrollTop = 0;
-
-      trackEvent('lesson_view', currentCourse.id, lesson.id, { slug: lesson.slug });
+      document.getElementById('lBody').scrollTop=0;
+      loadN(l.id); loadD(l.id); loadR(l);
+      trackEvent('lesson_view',crs.id,l.id,{slug:l.slug});
     }
 
-    async function handleComplete() {
-      if (!currentLesson || !currentEnrollment) return;
+    // Notes
+    async function loadN(lid) {
+      const a=document.getElementById('nArea'); a.value='';
+      document.getElementById('nSt').textContent='';
+      try { const{data}=await sb.from('qa_bookmarks').select('note').eq('user_id',usr.id).eq('lesson_id',lid).single();
+        if(data&&data.note)a.value=data.note; }catch(e){}
+    }
+    async function saveN() {
+      if(!cur||!usr)return;
+      const s=document.getElementById('nSt');
+      try { await sb.from('qa_bookmarks').upsert({user_id:usr.id,lesson_id:cur.id,note:document.getElementById('nArea').value},{onConflict:'user_id,lesson_id'});
+        s.textContent='Saved'; s.style.color='var(--l-teal)'; setTimeout(()=>{s.textContent=''},2000);
+      }catch(e){s.textContent='Error';s.style.color='#ff6b7a';}
+    }
+    let nT; document.getElementById('nArea').addEventListener('input',()=>{
+      clearTimeout(nT); document.getElementById('nSt').textContent='Typing...';
+      document.getElementById('nSt').style.color='var(--l-muted)'; nT=setTimeout(saveN,2000);
+    });
+
+    // Discussion
+    async function loadD(lid) {
+      const ls=document.getElementById('dList');
+      try { const d=await getDiscussions(crs.id,lid);
+        if(!d||!d.length){ls.innerHTML='<div class="l-de"><svg><use href="#i-chat"/></svg><p>No discussion yet. Start the conversation!</p></div>';return;}
+        ls.innerHTML=d.map(x=>`<div class="l-di"><div class="dh"><div class="da">${(x.profiles?.full_name||'U').charAt(0)}</div><span class="dn">${x.profiles?.full_name||'Student'}</span><span class="dt">${timeAgo(x.created_at)}</span></div>${x.title?`<div style="font-size:13px;font-weight:600;margin-bottom:3px">${x.title}</div>`:''}
+          <div class="db">${x.body}</div></div>`).join('');
+      }catch(e){ls.innerHTML='<div class="l-de"><p>Discussions unavailable</p></div>';}
+    }
+    async function postD() {
+      const inp=document.getElementById('dInp'), b=inp.value.trim();
+      if(!b||!cur)return;
+      try{await createDiscussion(crs.id,cur.id,'',b);inp.value='';loadD(cur.id);}catch(e){alert('Failed to post.');}
+    }
+
+    // Resources
+    function loadR(l) {
+      const ls=document.getElementById('rList'), items=[];
+      if(l.file_url) items.push(`<a class="l-ri" href="${l.file_url}" target="_blank"><svg><use href="#i-dl"/></svg><span class="rn">${l.file_name||'Download'}</span></a>`);
+      ls.innerHTML = items.length ? items.join('') : '<div class="l-de"><svg><use href="#i-file"/></svg><p>No resources for this lesson</p></div>';
+    }
+
+    // Complete
+    async function doComplete() {
+      if(!cur||!enr)return;
+      try { await markLessonComplete(cur.id,crs.id,enr.id);
+        pm[cur.id]={status:'completed'}; enr=await getEnrollment(crs.id);
+        const mods=await getCourseModules(crs.id); renderSB(mods); updProg();
+        const btn=document.getElementById('cBtn');
+        btn.querySelector('span').textContent='Completed'; btn.classList.add('done'); btn.disabled=true;
+        const idx=all.findIndex(x=>x.id===cur.id);
+        if(idx<all.length-1) setTimeout(()=>{if(confirm('Nice work! Next lesson?'))location.href=`/academy/learn.html?slug=${slug}&lesson=${all[idx+1].slug}`;},400);
+        else setTimeout(()=>alert('Congratulations — course completed!'),400);
+      }catch(e){console.error(e);alert('Failed to save.');}
+    }
+
+    function updProg() {
+      if(!enr)return;
+      const p=enr.progress_percent||0;
+      document.getElementById('pFill').style.width=p+'%';
+      document.getElementById('pPct').textContent=Math.round(p)+'%';
+      document.getElementById('pLbl').textContent=`${enr.lessons_completed||0}/${crs.total_lessons||0} lessons`;
+    }
+
+    // Init
+    (async()=>{
+      usr=await getUser();
+      if(!usr){location.href=`/academy/login.html?redirect=/academy/learn.html?slug=${slug}`;return;}
       try {
-        await markLessonComplete(currentLesson.id, currentCourse.id, currentEnrollment.id);
-        progressMap[currentLesson.id] = { status: 'completed' };
-        
-        // Refresh enrollment for updated progress
-        currentEnrollment = await getEnrollment(currentCourse.id);
-        
-        // Update UI
-        const modules = await getCourseModules(currentCourse.id);
-        renderSidebar(modules);
-        updateProgressBar();
-        
-        // Update complete button
-        const btn = document.getElementById('completeBtn');
-        btn.textContent = '✓ Completed';
-        btn.disabled = true;
-        btn.classList.remove('qa-btn-primary');
-        btn.classList.add('qa-btn-outline');
-
-        // Auto-navigate to next lesson
-        const idx = allLessons.findIndex(l => l.id === currentLesson.id);
-        if (idx < allLessons.length - 1) {
-          setTimeout(() => {
-            if (confirm('Great job! Move to the next lesson?')) {
-              window.location.href = `/academy/learn.html?slug=${slug}&lesson=${allLessons[idx + 1].slug}`;
-            }
-          }, 500);
-        } else {
-          // Course complete!
-          setTimeout(() => alert('🎉 Congratulations! You completed the course!'), 500);
-        }
-      } catch (err) {
-        console.error('Failed to mark complete:', err);
-        alert('Failed to save progress. Please try again.');
-      }
-    }
-
-    function updateProgressBar() {
-      if (!currentEnrollment) return;
-      document.getElementById('sidebarProgress').style.width = (currentEnrollment.progress_percent || 0) + '%';
-      document.getElementById('sidebarProgressLabel').textContent = `${Math.round(currentEnrollment.progress_percent || 0)}% complete · ${currentEnrollment.lessons_completed || 0}/${currentCourse.total_lessons || 0} lessons`;
-    }
-
-    // INIT
-    (async () => {
-      const user = await getUser();
-      if (!user) { window.location.href = `/academy/login.html?redirect=/academy/learn.html?slug=${slug}`; return; }
-
-      try {
-        currentCourse = await getCourse(slug);
-        if (!currentCourse) { window.location.href = '/academy/'; return; }
-
-        currentEnrollment = await getEnrollment(currentCourse.id);
-        if (!currentEnrollment) { window.location.href = `/academy/course.html?slug=${slug}`; return; }
-
-        // Load modules & lessons
-        const modules = await getCourseModules(currentCourse.id);
-        allLessons = flattenLessons(modules);
-
-        // Load progress
-        const progress = await getLessonProgress(currentEnrollment.id, currentCourse.id);
-        progress.forEach(p => { progressMap[p.lesson_id] = p; });
-
-        // Set sidebar
-        document.getElementById('sidebarTitle').textContent = currentCourse.title;
-        document.getElementById('courseLink').href = `/academy/course.html?slug=${slug}`;
-        updateProgressBar();
-
-        // Determine which lesson to show
-        if (lessonSlug) {
-          currentLesson = allLessons.find(l => l.slug === lessonSlug);
-        }
-        if (!currentLesson) {
-          // Resume: find last accessed or first incomplete
-          if (currentEnrollment.last_lesson_id) {
-            currentLesson = allLessons.find(l => l.id === currentEnrollment.last_lesson_id);
-          }
-          if (!currentLesson) {
-            // First incomplete lesson
-            currentLesson = allLessons.find(l => progressMap[l.id]?.status !== 'completed') || allLessons[0];
-          }
-        }
-
-        // Render
-        renderSidebar(modules);
-        if (currentLesson) renderLesson(currentLesson);
-
-        document.getElementById('loading').style.display = 'none';
-        document.getElementById('playerWrap').style.display = '';
-
-      } catch (err) {
-        console.error(err);
-        document.getElementById('loading').innerHTML = '<p style="color:rgba(255,255,255,.5)">Failed to load course. <a href="/academy/" style="color:var(--teal)">Go back</a></p>';
+        crs=await getCourse(slug);
+        if(!crs){location.href='/academy/';return;}
+        enr=await getEnrollment(crs.id);
+        if(!enr){location.href=`/academy/course.html?slug=${slug}`;return;}
+        const mods=await getCourseModules(crs.id);
+        all=flat(mods);
+        const prog=await getLessonProgress(enr.id,crs.id);
+        prog.forEach(p=>{pm[p.lesson_id]=p;});
+        document.getElementById('cTitle').textContent=crs.title;
+        updProg();
+        if(lSlug) cur=all.find(l=>l.slug===lSlug);
+        if(!cur&&enr.last_lesson_id) cur=all.find(l=>l.id===enr.last_lesson_id);
+        if(!cur) cur=all.find(l=>pm[l.id]?.status!=='completed')||all[0];
+        renderSB(mods);
+        if(cur) renderL(cur);
+        if(localStorage.getItem('qa-rp')==='c') document.getElementById('app').classList.add('rp-closed');
+        document.getElementById('loading').style.display='none';
+        document.getElementById('app').style.display='grid';
+      }catch(e){
+        console.error(e);
+        document.getElementById('loading').innerHTML='<p style="color:rgba(255,255,255,.5)">Failed to load. <a href="/academy/dashboard.html" style="color:var(--l-teal)">Back to Dashboard</a></p>';
       }
     })();
   </script>
