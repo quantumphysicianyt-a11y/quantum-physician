@@ -838,7 +838,27 @@
         }
 
         // Sort
-        items.sort((a,b) => { if(a.done!==b.done) return a.done?1:-1; return b.ld-a.ld; });
+        // Self-H.O.P.E. Workshop Series ordering
+        const COURSE_ORDER = {
+          'breaking up with your beliefs': 1,
+          'power of the question': 2,
+          'the power of the question': 2,
+          'creative mind mapping': 3,
+          'quantum vision boards': 4,
+          'becoming present': 5,
+          'becoming present: meditation for the busy mind': 5
+        };
+        function getCourseOrder(title) {
+          var t = (title||'').toLowerCase().trim();
+          for (var k in COURSE_ORDER) { if (t.includes(k) || t === k) return COURSE_ORDER[k]; }
+          return 99;
+        }
+        items.sort((a,b) => {
+          var oa = getCourseOrder(a.course.title), ob = getCourseOrder(b.course.title);
+          if (oa !== ob) return oa - ob;
+          if(a.done!==b.done) return a.done?1:-1;
+          return b.ld-a.ld;
+        });
         document.getElementById('coursesLabel').innerHTML = `<svg><use href="#i-book"/></svg> My Courses (${items.length})`;
 
         grid.innerHTML = items.map(item => {
