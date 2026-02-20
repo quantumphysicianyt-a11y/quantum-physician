@@ -518,11 +518,17 @@
     }
 
     async function postDisc(){
-      const inp=document.getElementById('dInp'),body=inp.value.trim();if(!body||!cur)return;
+      const inp=document.getElementById('dInp');
+      if(!inp){console.error('dInp not found');return}
+      const body=inp.value.trim();
+      console.log('postDisc called, body:', JSON.stringify(body), 'cur:', !!cur);
+      if(!body){inp.focus();return}
+      if(!cur)return;
       try{
-        await sb.from('qa_discussions').insert({course_id:crs.id,lesson_id:cur.id,user_id:usr.id,title:'',body:body,timestamp_seconds:discTimestamp});
+        const{error}=await sb.from('qa_discussions').insert({course_id:crs.id,lesson_id:cur.id,user_id:usr.id,title:'',body:body,timestamp_seconds:discTimestamp});
+        if(error){console.error('disc insert error:',error);alert('Error: '+error.message);return}
         inp.value='';discTimestamp=null;updateTsBtn();loadDisc(cur.id);
-      }catch(e){console.error(e);alert('Failed to post')}
+      }catch(e){console.error('disc exception:',e);alert('Failed to post')}
     }
 
     async function postReply(pid){
