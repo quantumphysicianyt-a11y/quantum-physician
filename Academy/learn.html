@@ -143,6 +143,14 @@
     .d-post .d-acts button:hover{color:var(--l-teal)}
     .d-post .d-acts button.liked{color:var(--l-teal)}
     .d-post .d-acts button svg{width:13px;height:13px;stroke:currentColor}
+    .d-post .d-acts .d-edit{color:var(--l-muted);opacity:.5}
+    .d-post .d-acts .d-edit:hover{opacity:1;color:var(--l-teal)}
+    .d-post .d-acts .d-del:hover{color:#ff6b7a}
+    .d-post .d-editing textarea{width:100%;padding:8px 10px;background:rgba(0,0,0,.15);border:1px solid var(--l-teal);border-radius:6px;color:var(--l-text);font-size:13px;font-family:inherit;resize:none;outline:none;margin-bottom:6px}
+    .d-post .d-editing .d-ebtns{display:flex;gap:6px}
+    .d-post .d-editing .d-ebtns button{padding:5px 12px;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;border:none}
+    .d-post .d-editing .d-save{background:var(--l-teal);color:#fff}
+    .d-post .d-editing .d-cancel{background:none;border:1px solid var(--l-bdr) !important;color:var(--l-muted)}
     .d-replies{margin-left:20px;border-left:2px solid var(--l-bdr);padding-left:12px}
     .d-replies .d-post{padding:8px 0}
     .d-form{margin-top:12px}
@@ -464,15 +472,16 @@
               ${p.timestamp_seconds!=null?`<a class="d-ts" onclick="seekTo(${p.timestamp_seconds});return false" href="#">${fmtTs(p.timestamp_seconds)}</a>`:''}
               <span class="d-time">${timeAgo(p.created_at)}</span>
             </div>
-            <div class="d-body">${p.body}</div>
+            <div class="d-body" id="dbody-${p.id}">${p.body}</div>
             <div class="d-acts">
               <button onclick="likeDisc('${p.id}')" class="${likedSet.has(p.id)?'liked':''}"><svg><use href="#i-heart"/></svg> ${p.like_count||0}</button>
               <button onclick="showReply('${p.id}')"><svg><use href="#i-reply"/></svg> Reply ${pReplies.length?'('+pReplies.length+')':''}</button>
+              ${p.user_id===usr.id?`<button class="d-edit" onclick="editDisc('${p.id}')"><svg><use href="#i-pen"/></svg> Edit</button><button class="d-edit d-del" onclick="delDisc('${p.id}')"><svg><use href="#i-x"/></svg> Delete</button>`:''}
             </div>
             ${pReplies.length?`<div class="d-replies">${pReplies.map(r=>{
               const rn=r.profiles?.full_name||'Student';
               const ri=crs.instructor_id&&r.user_id===crs.instructor_id;
-              return`<div class="d-post"><div class="d-head"><div class="d-av ${ri?'instr':''}">${rn.charAt(0)}</div><span class="d-name">${rn}</span>${ri?'<span class="d-badge ins">Instructor</span>':''}${r.is_accepted_answer?'<span class="d-badge ans">Best Answer</span>':''}${r.timestamp_seconds!=null?`<a class="d-ts" onclick="seekTo(${r.timestamp_seconds});return false" href="#">${fmtTs(r.timestamp_seconds)}</a>`:''}<span class="d-time">${timeAgo(r.created_at)}</span></div><div class="d-body">${r.body}</div></div>`}).join('')}</div>`:''}
+              return`<div class="d-post"><div class="d-head"><div class="d-av ${ri?'instr':''}">${rn.charAt(0)}</div><span class="d-name">${rn}</span>${ri?'<span class="d-badge ins">Instructor</span>':''}${r.is_accepted_answer?'<span class="d-badge ans">Best Answer</span>':''}${r.timestamp_seconds!=null?`<a class="d-ts" onclick="seekTo(${r.timestamp_seconds});return false" href="#">${fmtTs(r.timestamp_seconds)}</a>`:''}<span class="d-time">${timeAgo(r.created_at)}</span></div><div class="d-body" id="rbody-${r.id}">${r.body}</div><div class="d-acts">${r.user_id===usr.id?`<button class="d-edit" onclick="editReply('${r.id}')"><svg><use href="#i-pen"/></svg> Edit</button><button class="d-edit d-del" onclick="delReply('${r.id}','${p.id}')"><svg><use href="#i-x"/></svg> Delete</button>`:''}</div></div>`}).join('')}</div>`:''}
             <div class="d-replies" id="reply-${p.id}" style="display:none">
               <div class="d-form"><div class="d-row"><textarea id="rinp-${p.id}" rows="2" placeholder="Write a reply..."></textarea></div>
               <div class="d-opts"><button class="post-btn" onclick="postReply('${p.id}')">Reply</button></div></div>
@@ -524,6 +533,44 @@
       sb.from('qa_discussions').insert({course_id:crs.id,lesson_id:cur.id,user_id:usr.id,title:'',body:body,timestamp_seconds:discTimestamp}).then(r=>{
         console.log('posted:',r);
         discTimestamp=null;updateTsBtn();loadDisc(cur.id);
+      });
+    }
+
+    // Edit/Delete discussions
+    function editDisc(pid){
+      const el=document.getElementById('dbody-'+pid);
+      if(!el)return;
+      const old=el.textContent;
+      el.outerHTML=`<div class="d-editing" id="dedit-${pid}"><textarea id="dinp-${pid}" rows="3">${old}</textarea><div class="d-ebtns"><button class="d-save" onclick="saveDiscEdit('${pid}')">Save</button><button class="d-cancel" onclick="loadDisc(cur.id)">Cancel</button></div></div>`;
+    }
+    function saveDiscEdit(pid){
+      const inp=document.getElementById('dinp-'+pid);if(!inp)return;
+      const body=inp.value.trim();if(!body)return;
+      sb.from('qa_discussions').update({body:body,updated_at:new Date().toISOString()}).eq('id',pid).then(()=>loadDisc(cur.id));
+    }
+    function delDisc(pid){
+      if(!confirm('Delete this post?'))return;
+      sb.from('qa_discussions').delete().eq('id',pid).then(()=>loadDisc(cur.id));
+    }
+
+    // Edit/Delete replies
+    function editReply(rid){
+      const el=document.getElementById('rbody-'+rid);
+      if(!el)return;
+      const old=el.textContent;
+      el.outerHTML=`<div class="d-editing" id="redit-${rid}"><textarea id="rinpe-${rid}" rows="2">${old}</textarea><div class="d-ebtns"><button class="d-save" onclick="saveReplyEdit('${rid}')">Save</button><button class="d-cancel" onclick="loadDisc(cur.id)">Cancel</button></div></div>`;
+    }
+    function saveReplyEdit(rid){
+      const inp=document.getElementById('rinpe-'+rid);if(!inp)return;
+      const body=inp.value.trim();if(!body)return;
+      sb.from('qa_discussion_replies').update({body:body,updated_at:new Date().toISOString()}).eq('id',rid).then(()=>loadDisc(cur.id));
+    }
+    function delReply(rid,pid){
+      if(!confirm('Delete this reply?'))return;
+      sb.from('qa_discussion_replies').delete().eq('id',rid).then(()=>{
+        sb.from('qa_discussions').select('reply_count').eq('id',pid).single().then(({data:disc})=>{
+          sb.from('qa_discussions').update({reply_count:Math.max(0,(disc?.reply_count||1)-1)}).eq('id',pid).then(()=>loadDisc(cur.id));
+        });
       });
     }
 
