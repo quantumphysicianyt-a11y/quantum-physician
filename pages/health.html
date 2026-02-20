@@ -16,7 +16,7 @@
     .particles{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
     .pt{position:absolute;border-radius:50%;background:rgba(91,168,178,.45);box-shadow:0 0 6px rgba(91,168,178,.3);animation:ptUp linear infinite}
     @keyframes ptUp{0%{transform:translateY(100vh) scale(0);opacity:0}8%{opacity:1}92%{opacity:.8}100%{transform:translateY(-10vh) scale(1.5);opacity:0}}
-    .orb{position:absolute;border-radius:50%;filter:blur(100px);pointer-events:none;z-index:0}
+    .orb{position:absolute;border-radius:50%;opacity:.4;pointer-events:none;z-index:0}
     .divider{height:1px;max-width:180px;margin:0 auto;background:linear-gradient(90deg,transparent,var(--teal),transparent);opacity:.5}
     section{position:relative;z-index:1}
 
@@ -197,7 +197,7 @@
     /* === MOBILE PERF: lighter GPU load, all animations still run === */
     @media(max-width:768px){
       /* Reduce blur radius — biggest perf killer on mobile GPUs */
-      .orb{filter:blur(50px);contain:strict}
+      .orb{opacity:.3;contain:strict}
       .scrollProg{box-shadow:none}
       /* Simplify multi-layer drop-shadow keyframes to single layer */
       @keyframes bGlow{
