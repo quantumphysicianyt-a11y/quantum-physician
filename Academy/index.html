@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -8,21 +8,43 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    :root {
+    :root, [data-theme="dark"] {
       --qa-bg: #0a1e33;
+      --qa-bg2: #0f2942;
       --qa-card: #112a42;
       --qa-border: rgba(91,168,178,.15);
+      --qa-border-h: rgba(91,168,178,.35);
       --qa-text: rgba(255,255,255,.85);
       --qa-muted: rgba(255,255,255,.55);
       --qa-teal: #5ba8b2;
       --qa-taupe: #ad9b84;
+      --qa-hero-bg: linear-gradient(160deg, #061320, #0a1e33 30%, #0f2942 60%, #0d2844);
+      --qa-alt-bg: rgba(255,255,255,.015);
+      --qa-cta-bg: rgba(91,168,178,.04);
+    }
+    [data-theme="light"] {
+      --qa-bg: #f5f3ef;
+      --qa-bg2: #eae7e0;
+      --qa-card: #fff;
+      --qa-border: rgba(173,155,132,.2);
+      --qa-border-h: rgba(91,168,178,.4);
+      --qa-text: #1a1a2e;
+      --qa-muted: #5a5a6e;
+      --qa-hero-bg: linear-gradient(160deg, #e8e4dd, #f0ece5 30%, #f5f3ef 60%, #eae7e0);
+      --qa-alt-bg: rgba(0,0,0,.02);
+      --qa-cta-bg: rgba(91,168,178,.06);
     }
     body { background: var(--qa-bg) !important; color: var(--qa-text) !important; }
     .wrap-a { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
     .pf { font-family: "Playfair Display", serif; }
 
+    /* THEME TOGGLE */
+    .theme-tog { position: fixed; top: 100px; right: 20px; z-index: 800; background: var(--qa-card); border: 1px solid var(--qa-border); border-radius: 999px; padding: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .theme-tog svg { width: 18px; height: 18px; stroke: var(--qa-teal); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .theme-tog:hover { border-color: var(--qa-border-h); }
+
     /* HERO */
-    .a-hero { padding: 80px 0 70px; text-align: center; background: linear-gradient(160deg, #061320, #0a1e33 30%, #0f2942 60%, #0d2844); }
+    .a-hero { padding: 80px 0 70px; text-align: center; background: var(--qa-hero-bg); }
     .a-hero img.logo { max-width: 400px; margin: 0 auto 32px; display: block; }
     .a-hero .tag { font-family: "Playfair Display", serif; font-size: clamp(18px,2.5vw,24px); font-style: italic; color: var(--qa-taupe); margin-bottom: 20px; }
     .a-hero .sub { font-size: 18px; color: var(--qa-muted); line-height: 1.7; max-width: 650px; margin: 0 auto 28px; }
@@ -30,15 +52,16 @@
     .a-btn { display: inline-block; padding: 16px 36px; border-radius: 999px; font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; text-decoration: none; transition: background .2s ease, border-color .2s ease; }
     .a-btn-p { background: var(--qa-teal); color: #fff; }
     .a-btn-p:hover { background: #4a97a1; }
-    .a-btn-o { background: none; border: 1px solid rgba(91,168,178,.35); color: var(--qa-teal); }
+    .a-btn-o { background: none; border: 1px solid var(--qa-border-h); color: var(--qa-teal); }
     .a-btn-o:hover { background: rgba(91,168,178,.08); border-color: var(--qa-teal); }
     .features { display: flex; gap: 32px; justify-content: center; margin-top: 40px; flex-wrap: wrap; }
-    .feat { display: flex; align-items: center; gap: 10px; font-size: 14px; color: rgba(255,255,255,.6); }
-    .feat .ic { width: 36px; height: 36px; border-radius: 50%; background: rgba(91,168,178,.1); border: 1px solid rgba(91,168,178,.2); display: flex; align-items: center; justify-content: center; font-size: 16px; }
+    .feat { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--qa-muted); }
+    .feat .fic { width: 36px; height: 36px; border-radius: 50%; background: rgba(91,168,178,.1); border: 1px solid rgba(91,168,178,.2); display: flex; align-items: center; justify-content: center; }
+    .feat .fic svg { width: 16px; height: 16px; stroke: var(--qa-teal); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
     /* SECTIONS */
     .a-sec { padding: 70px 0; }
-    .a-sec-alt { background: rgba(255,255,255,.015); }
+    .a-sec-alt { background: var(--qa-alt-bg); }
     .a-sec-head { text-align: center; margin-bottom: 40px; }
     .a-label { font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--qa-teal); font-weight: 600; display: inline-block; margin-bottom: 12px; }
     .a-h2 { font-family: "Playfair Display", serif; font-size: clamp(24px,3.5vw,40px); font-weight: 600; margin-bottom: 14px; }
@@ -54,20 +77,22 @@
     .bundle-box { background: rgba(91,168,178,.05); border: 2px solid rgba(91,168,178,.2); border-radius: 16px; padding: 40px; text-align: center; }
     .bundle-box img { width: 100%; max-width: 600px; border-radius: 12px; margin: 0 auto 28px; display: block; }
     .bundle-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; justify-content: center; }
-    .bundle-tags a { background: rgba(91,168,178,.1); border: 1px solid rgba(91,168,178,.2); padding: 6px 14px; border-radius: 999px; font-size: 12px; color: rgba(255,255,255,.7); text-decoration: none; transition: background .2s ease; }
-    .bundle-tags a:hover { background: rgba(91,168,178,.25); color: #fff; }
+    .bundle-tags a { background: rgba(91,168,178,.1); border: 1px solid rgba(91,168,178,.2); padding: 6px 14px; border-radius: 999px; font-size: 12px; color: var(--qa-muted); text-decoration: none; transition: background .2s ease; }
+    .bundle-tags a:hover { background: rgba(91,168,178,.25); }
 
     /* COURSE GRID */
     .c-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 28px; margin: 40px 0; }
     .c-card { background: var(--qa-card); border: 1px solid var(--qa-border); border-radius: 12px; overflow: hidden; text-decoration: none; color: inherit; display: flex; flex-direction: column; transition: border-color .2s ease; }
-    .c-card:hover { border-color: rgba(91,168,178,.35); }
-    .c-card .thumb { aspect-ratio: 16/9; background: #0f2942; overflow: hidden; }
+    .c-card:hover { border-color: var(--qa-border-h); }
+    .c-card .thumb { aspect-ratio: 16/9; background: var(--qa-bg2); overflow: hidden; }
     .c-card .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .c-card .body { padding: 24px; flex: 1; display: flex; flex-direction: column; }
     .c-card .body h3 { font-family: "Playfair Display", serif; font-size: 20px; font-weight: 600; margin-bottom: 8px; line-height: 1.3; }
     .c-card .body .desc { font-size: 14px; color: var(--qa-muted); line-height: 1.6; margin-bottom: 16px; flex: 1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
     .c-card .meta { display: flex; align-items: center; justify-content: space-between; padding-top: 16px; border-top: 1px solid var(--qa-border); font-size: 13px; }
     .c-card .meta .stats { display: flex; gap: 14px; color: var(--qa-muted); }
+    .c-card .meta .stats span { display: flex; align-items: center; gap: 4px; }
+    .c-card .meta .stats svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .c-card .meta .price { font-weight: 700; font-size: 18px; color: var(--qa-teal); }
 
     /* INSTRUCTOR */
@@ -78,51 +103,46 @@
     .inst p { color: var(--qa-muted); font-size: 15px; line-height: 1.7; }
 
     /* CTA */
-    .a-cta { padding: 60px 0; text-align: center; background: rgba(91,168,178,.04); border-top: 1px solid var(--qa-border); border-bottom: 1px solid var(--qa-border); }
+    .a-cta { padding: 60px 0; text-align: center; background: var(--qa-cta-bg); border-top: 1px solid var(--qa-border); border-bottom: 1px solid var(--qa-border); }
 
     /* LOADING */
     .a-spin { width: 32px; height: 32px; border: 3px solid var(--qa-border); border-top-color: var(--qa-teal); border-radius: 50%; animation: sp .8s linear infinite; margin: 40px auto; display: block; }
     @keyframes sp { to { transform: rotate(360deg) } }
-
     .cta-sub { color: var(--qa-muted); margin-bottom: 28px; max-width: 500px; margin-left: auto; margin-right: auto; }
 
-    /* FLOATING SCHEDULE BUTTON */
-    .float-sched {
-      position: fixed;
-      bottom: 30px;
-      right: 30px;
-      width: 70px;
-      height: 70px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--qa-teal), #4a97a1);
-      color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      text-decoration: none;
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: .12em;
-      text-transform: uppercase;
-      line-height: 1.3;
-      text-align: center;
-      z-index: 900;
-      cursor: pointer;
-      border: 2px solid rgba(255,255,255,.2);
+    /* FLOATING EVENTS BUTTON */
+    .float-ev {
+      position: fixed; right: 20px; bottom: 20px;
+      width: 110px; height: 110px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--qa-bg), var(--qa-bg2));
+      color: var(--qa-teal);
+      display: flex; align-items: center; justify-content: center; text-align: center;
+      z-index: 900; border: 1px solid var(--qa-border-h);
+      cursor: pointer; user-select: none; -webkit-user-select: none; text-decoration: none;
     }
-    .float-sched span { font-size: 20px; margin-bottom: 2px; }
+    .float-ev::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle at 30% 30%, rgba(91,168,178,.08), transparent); }
+    .float-ev span { font-size: 11px; font-weight: 900; letter-spacing: .1em; line-height: 1.3; position: relative; z-index: 1; }
+    .float-ev:hover { background: linear-gradient(135deg, var(--qa-card), var(--qa-bg2)); border-color: var(--qa-teal); }
+    .float-ev .pulse-ring { position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--qa-teal); animation: evPulse 2s ease-out infinite; }
+    @keyframes evPulse { 0% { opacity: .5; transform: scale(1); } 100% { opacity: 0; transform: scale(1.5); } }
 
     @media (max-width: 768px) {
       .a-hero img.logo { max-width: 280px; }
       .features { gap: 16px; }
       .inst { flex-direction: column; text-align: center; padding: 28px; gap: 20px; }
       .c-grid { grid-template-columns: 1fr; }
+      .float-ev { width: 90px; height: 90px; right: 14px; bottom: 14px; }
+      .float-ev span { font-size: 9px; }
+      .theme-tog { top: auto; bottom: 130px; right: 14px; }
     }
   </style>
 </head>
 <body>
   <div id="shared-header"></div>
+
+  <div class="theme-tog" onclick="toggleTheme()" title="Toggle appearance">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+  </div>
 
   <main>
     <section class="a-hero">
@@ -135,10 +155,10 @@
           <a href="/academy/login.html" class="a-btn a-btn-o" id="authBtn">Sign In</a>
         </div>
         <div class="features">
-          <div class="feat"><div class="ic">📺</div> Self-Paced Video Lessons</div>
-          <div class="feat"><div class="ic">📜</div> Certificates of Completion</div>
-          <div class="feat"><div class="ic">💬</div> Community Discussions</div>
-          <div class="feat"><div class="ic">♾️</div> Lifetime Access</div>
+          <div class="feat"><div class="fic"><svg viewBox="0 0 24 24"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg></div> Self-Paced Video Lessons</div>
+          <div class="feat"><div class="fic"><svg viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div> Certificates of Completion</div>
+          <div class="feat"><div class="fic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div> Community Discussions</div>
+          <div class="feat"><div class="fic"><svg viewBox="0 0 24 24"><path d="M18.178 8c5.096 0 5.096 8 0 8-5.095 0-7.133-8-12.739-8-4.585 0-4.585 8 0 8 5.606 0 7.644-8 12.74-8z"/></svg></div> Lifetime Access</div>
         </div>
       </div>
     </section>
@@ -211,90 +231,69 @@
 
   <div id="shared-footer"></div>
 
-  <!-- Floating Schedule Button -->
-  <a class="float-sched" onclick="if(typeof openEventsPanel==='function')openEventsPanel();return false;" href="#">
-    <span>📅</span>
-    Schedule
-  </a>
+  <div class="float-ev" onclick="if(typeof openEventsPanel==='function')openEventsPanel();">
+    <div class="pulse-ring"></div>
+    <span>UPCOMING<br>EVENTS</span>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/shared.js"></script>
   <script src="/academy/js/academy.js"></script>
   <script src="/js/events-panel.js"></script>
   <script>
-    (async () => {
-      try {
-        const user = await getUser();
-        if (user) {
-          document.getElementById('authBtn').textContent = 'My Dashboard';
-          document.getElementById('authBtn').href = '/academy/dashboard.html';
-          document.getElementById('ctaBtn').textContent = 'Go to Dashboard';
-          document.getElementById('ctaBtn').href = '/academy/dashboard.html';
-          var cb2 = document.getElementById('ctaBtn2');
-          if(cb2){cb2.textContent='Go to Dashboard';cb2.href='/academy/dashboard.html';}
-        }
-      } catch(e) {}
-    })();
+    function toggleTheme(){var t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',t);localStorage.setItem('qa-theme',t)}
+    var sv=localStorage.getItem('qa-theme');if(sv)document.documentElement.setAttribute('data-theme',sv);
 
-    (async () => {
-      var grid = document.getElementById('courseGrid');
-      try {
-        var courses = await getCourses('published');
-        var r = await sb.from('qa_courses').select('*').eq('status', 'coming_soon').order('sort_order');
-        var coming = r.data || [];
-        var all = courses.concat(coming);
-        if (all.length === 0) { grid.innerHTML = '<p style="text-align:center;opacity:.5">Courses coming soon!</p>'; return; }
-        
-        var html = '';
-        for (var i = 0; i < all.length; i++) {
-          var c = all[i];
-          html += '<a class="c-card" href="/academy/course.html?slug=' + c.slug + '">';
-          html += '<div class="thumb">';
-          if (c.thumbnail_url) {
-            html += '<img src="' + c.thumbnail_url + '" alt="' + c.title + '" loading="lazy" decoding="async">';
-          }
-          if (c.status === 'coming_soon') {
-            html += '<div style="position:absolute;top:12px;left:12px;background:rgba(10,30,51,.9);padding:6px 14px;border-radius:999px;font-size:11px;font-weight:600;color:#ad9b84">Coming Soon</div>';
-          }
-          html += '</div><div class="body">';
-          html += '<h3>' + c.title + '</h3>';
-          html += '<p class="desc">' + (c.short_description || c.subtitle || '') + '</p>';
-          html += '<div class="meta"><div class="stats">';
-          if (c.total_lessons) html += '<span>📺 ' + c.total_lessons + (c.total_lessons === 1 ? ' lesson' : ' lessons') + '</span>';
-          if (c.total_duration_minutes) html += '<span>⏱ ' + formatDuration(c.total_duration_minutes) + '</span>';
-          html += '</div><div class="price">' + formatPrice(c.price_cents) + '</div></div>';
-          html += '</div></a>';
-        }
-        grid.innerHTML = html;
+    (async()=>{try{var user=await getUser();if(user){document.getElementById('authBtn').textContent='My Dashboard';document.getElementById('authBtn').href='/academy/dashboard.html';document.getElementById('ctaBtn').textContent='Go to Dashboard';document.getElementById('ctaBtn').href='/academy/dashboard.html';var cb2=document.getElementById('ctaBtn2');if(cb2){cb2.textContent='Go to Dashboard';cb2.href='/academy/dashboard.html'}}}catch(e){}})();
 
-        // Bundle
-        var br = await sb.from('qa_bundles').select('*').eq('status', 'published');
-        var bundles = br.data;
-        if (bundles && bundles.length > 0) {
-          document.getElementById('bundleSection').style.display = '';
-          var b = bundles[0];
-          var indTotal = 0;
-          for (var j = 0; j < all.length; j++) indTotal += (all[j].price_cents || 0);
-          var savings = indTotal - b.price_cents;
-          var tags = '';
-          for (var k = 0; k < all.length; k++) {
-            tags += '<a href="/academy/course.html?slug=' + all[k].slug + '">' + all[k].title.split(':')[0] + '</a>';
-          }
-          document.getElementById('bundleContent').innerHTML =
-            '<img src="/assets/images/self-hope-bundle.jpg" alt="Bundle" loading="lazy">' +
-            '<div style="font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#ff6b6b;font-weight:600;margin-bottom:8px">Best Value — Save ' + formatPrice(savings) + '</div>' +
-            '<h3 class="pf" style="font-size:28px;margin-bottom:8px">' + b.title + '</h3>' +
-            '<p style="color:var(--qa-muted);font-size:15px;line-height:1.7;margin-bottom:16px;max-width:700px;margin:0 auto 16px">' + b.description + '</p>' +
-            '<div class="bundle-tags">' + tags + '</div>' +
-            '<div style="font-size:14px;color:rgba(255,255,255,.4);text-decoration:line-through">$' + (indTotal/100).toFixed(0) + ' if purchased separately</div>' +
-            '<div class="pf" style="font-size:48px;font-weight:700;color:var(--qa-teal)">' + formatPrice(b.price_cents) + '</div>' +
-            '<div style="font-size:13px;color:var(--qa-muted);margin-bottom:16px">for all 5 courses</div>' +
-            '<a href="/academy/course.html?bundle=' + b.slug + '" class="a-btn a-btn-p">Get the Bundle</a>';
+    var svgV='<svg viewBox="0 0 24 24"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg>';
+    var svgC='<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+
+    (async()=>{
+      var grid=document.getElementById('courseGrid');
+      try{
+        var courses=await getCourses('published');
+        var r=await sb.from('qa_courses').select('*').eq('status','coming_soon').order('sort_order');
+        var coming=r.data||[];
+        var all=courses.concat(coming);
+        if(all.length===0){grid.innerHTML='<p style="text-align:center;opacity:.5">Courses coming soon!</p>';return}
+        var html='';
+        for(var i=0;i<all.length;i++){
+          var c=all[i];
+          html+='<a class="c-card" href="/academy/course.html?slug='+c.slug+'">';
+          html+='<div class="thumb">';
+          if(c.thumbnail_url)html+='<img src="'+c.thumbnail_url+'" alt="'+c.title+'" loading="lazy" decoding="async">';
+          if(c.status==='coming_soon')html+='<div style="position:absolute;top:12px;left:12px;background:rgba(10,30,51,.9);padding:6px 14px;border-radius:999px;font-size:11px;font-weight:600;color:#ad9b84">Coming Soon</div>';
+          html+='</div><div class="body">';
+          html+='<h3>'+c.title+'</h3>';
+          html+='<p class="desc">'+(c.short_description||c.subtitle||'')+'</p>';
+          html+='<div class="meta"><div class="stats">';
+          if(c.total_lessons)html+='<span>'+svgV+' '+c.total_lessons+(c.total_lessons===1?' lesson':' lessons')+'</span>';
+          if(c.total_duration_minutes)html+='<span>'+svgC+' '+formatDuration(c.total_duration_minutes)+'</span>';
+          html+='</div><div class="price">'+formatPrice(c.price_cents)+'</div></div>';
+          html+='</div></a>';
         }
-      } catch (err) {
-        console.error(err);
-        grid.innerHTML = '<p style="text-align:center;opacity:.5">Error loading courses</p>';
-      }
+        grid.innerHTML=html;
+        var br=await sb.from('qa_bundles').select('*').eq('status','published');
+        var bundles=br.data;
+        if(bundles&&bundles.length>0){
+          document.getElementById('bundleSection').style.display='';
+          var b=bundles[0];var indTotal=0;
+          for(var j=0;j<all.length;j++)indTotal+=(all[j].price_cents||0);
+          var savings=indTotal-b.price_cents;var tags='';
+          for(var k=0;k<all.length;k++)tags+='<a href="/academy/course.html?slug='+all[k].slug+'">'+all[k].title.split(':')[0]+'</a>';
+          document.getElementById('bundleContent').innerHTML=
+            '<img src="/assets/images/self-hope-bundle.jpg" alt="Bundle" loading="lazy">'+
+            '<div style="font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#ff6b6b;font-weight:600;margin-bottom:8px">Best Value — Save '+formatPrice(savings)+'</div>'+
+            '<h3 class="pf" style="font-size:28px;margin-bottom:8px">'+b.title+'</h3>'+
+            '<p style="color:var(--qa-muted);font-size:15px;line-height:1.7;margin-bottom:16px;max-width:700px;margin:0 auto 16px">'+b.description+'</p>'+
+            '<div class="bundle-tags">'+tags+'</div>'+
+            '<div style="font-size:14px;color:var(--qa-muted);text-decoration:line-through">$'+(indTotal/100).toFixed(0)+' if purchased separately</div>'+
+            '<div class="pf" style="font-size:48px;font-weight:700;color:var(--qa-teal)">'+formatPrice(b.price_cents)+'</div>'+
+            '<div style="font-size:13px;color:var(--qa-muted);margin-bottom:16px">for all 5 courses</div>'+
+            '<a href="/academy/course.html?bundle='+b.slug+'" class="a-btn a-btn-p">Get the Bundle</a>';
+        }
+      }catch(err){console.error(err);grid.innerHTML='<p style="text-align:center;opacity:.5">Error loading courses</p>'}
     })();
   </script>
 </body>
