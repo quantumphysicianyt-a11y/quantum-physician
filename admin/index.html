@@ -8,802 +8,214 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <style>
-/* ============================================================
-   UNIFIED QP ADMIN — Matches Dashboard Aesthetic
-   Same: Inter body, Playfair Display headings, navy base
-   Different: Amber/gold accent instead of teal
-   ============================================================ */
-:root {
-  --sidebar-w: 260px;
-  --teal: #5ba8b2;
-  --teal-light: #4acfd9;
-  --teal-soft: rgba(91,168,178,.1);
-  --teal-glow: rgba(91,168,178,.15);
-  --taupe: #ad9b84;
-  --taupe-soft: rgba(173,155,132,.1);
-  --navy: #0a1e33;
-  --navy-deep: #071825;
-  --navy-mid: #0f2942;
-  --navy-card: #112a42;
-  --navy-hover: #153450;
-  --border: rgba(91,168,178,.12);
-  --border-hover: rgba(91,168,178,.3);
-  --text: rgba(255,255,255,.88);
-  --text-muted: rgba(255,255,255,.5);
-  --text-dim: rgba(255,255,255,.3);
-  --purple: #a78bfa;
-  --purple-soft: rgba(167,139,250,.1);
-  --success: #3dd68c;
-  --success-soft: rgba(61,214,140,.1);
-  --danger: #ef5350;
-  --danger-soft: rgba(239,83,80,.1);
-  --warning: #f0b429;
-  --warning-soft: rgba(240,180,41,.1);
-  --radius: 12px;
-  --radius-sm: 8px;
-  --ease: .3s cubic-bezier(.22,1,.36,1);
-}
-/* Light theme */
-[data-theme="light"] {
-  --navy: #f5f3ef;
-  --navy-deep: #ebe8e2;
-  --navy-mid: #ffffff;
-  --navy-card: #ffffff;
-  --navy-hover: #f0ede8;
-  --border: rgba(173,155,132,.2);
-  --border-hover: rgba(173,155,132,.4);
-  --text: #1a1a2e;
-  --text-muted: rgba(26,26,46,.5);
-  --text-dim: rgba(26,26,46,.3);
-}
-[data-theme="light"] .auth-screen{background:var(--navy)}
-[data-theme="light"] .stat-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.06)}
-[data-theme="light"] .card{box-shadow:0 1px 3px rgba(0,0,0,.04)}
-[data-theme="light"] .detail-section{background:rgba(0,0,0,.02);border-color:rgba(0,0,0,.06)}
-[data-theme="light"] .tbl tr:hover td{background:rgba(0,0,0,.02)}
-[data-theme="light"] .feed-item{border-bottom-color:rgba(0,0,0,.05)}
-[data-theme="light"] .tbl td{border-bottom-color:rgba(0,0,0,.05)}
-[data-theme="light"] .sb-link:hover{background:rgba(0,0,0,.03)}
-[data-theme="light"] .sb-link.active{background:rgba(91,168,178,.08)}
-[data-theme="light"] .bs{background:rgba(0,0,0,.02);border-color:rgba(0,0,0,.06)}
-[data-theme="light"] .ref-stat{background:rgba(0,0,0,.03)}
-[data-theme="light"] .input{background:rgba(0,0,0,.03)}
-[data-theme="light"] select.input option{background:#fff;color:#1a1a2e}
-*{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{font-family:'Inter',sans-serif;background:var(--navy);color:var(--text);font-size:14px;line-height:1.6;min-height:100vh}
-a{color:inherit;text-decoration:none}
-img{max-width:100%;display:block}
-
-/* ===== AUTH SCREEN ===== */
-.auth-screen{position:fixed;inset:0;background:var(--navy);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}
-.auth-box{width:100%;max-width:380px;text-align:center}
-.auth-logo{height:70px;width:auto;margin:0 auto 10px;opacity:.9}
-.auth-subtitle{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:32px}
-.auth-card{background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);padding:32px 28px}
-.auth-card h2{font-family:"Playfair Display",serif;font-size:24px;font-weight:600;margin-bottom:4px}
-.auth-card p{font-size:13px;color:var(--text-muted);margin-bottom:24px}
-.auth-field{margin-bottom:14px;text-align:left}
-.auth-field label{display:block;font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px}
-.auth-field input{width:100%;padding:11px 14px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:14px;font-family:'Inter',sans-serif;transition:all var(--ease)}
-.auth-field input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-glow)}
-.auth-field input::placeholder{color:var(--text-dim)}
-.auth-error{color:var(--danger);font-size:12px;margin-bottom:14px;display:none}
-.auth-btn{width:100%;padding:12px;background:linear-gradient(135deg,var(--teal),var(--teal-light));color:#fff;border:none;border-radius:var(--radius-sm);font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all var(--ease);font-family:'Inter',sans-serif;box-shadow:0 4px 16px rgba(91,168,178,.3)}
-.auth-btn:hover{box-shadow:0 6px 24px rgba(91,168,178,.5);transform:translateY(-1px)}
-
-/* ===== LAYOUT ===== */
-.admin-layout{min-height:100vh;display:none}
-.sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar-w);background:var(--navy-deep);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:50;overflow-y:auto}
-.main-content{margin-left:var(--sidebar-w);min-height:100vh}
-
-/* ===== SIDEBAR ===== */
-.sb-logo{padding:24px 20px 16px;border-bottom:1px solid var(--border);text-align:center}
-.sb-logo img{max-width:150px;height:auto;display:block;margin:0 auto;transition:opacity .2s}
-.sb-logo img:hover{opacity:.8}
-.sb-logo-fallback{display:none;font-family:"Playfair Display",serif;font-size:18px;color:var(--text);line-height:1.2;padding:4px 0}
-.sb-logo-fallback small{font-family:'Inter',sans-serif;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);display:block;margin-top:4px}
-
-.sb-nav{flex:1;padding:12px 0}
-.sb-section{margin-bottom:16px}
-.sb-section-label{font-size:9px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim);padding:0 20px;margin-bottom:6px}
-
-.sb-link{display:flex;align-items:center;gap:10px;padding:11px 20px;color:var(--text-muted);font-size:13px;font-weight:400;cursor:pointer;border:none;background:none;width:100%;text-align:left;font-family:'Inter',sans-serif;transition:all .15s;border-left:3px solid transparent;position:relative}
-.sb-link:hover{color:var(--text);background:rgba(255,255,255,.02)}
-.sb-link.active{color:var(--teal);background:rgba(91,168,178,.06);border-left-color:var(--teal);font-weight:500}
-.sb-link svg{width:17px;height:17px;stroke:currentColor;opacity:.7;flex-shrink:0}
-.sb-link.active svg{opacity:1}
-.sb-link .badge{margin-left:auto;background:var(--danger);color:#fff;font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px;min-width:16px;text-align:center}
-
-.sb-divider{height:1px;background:var(--border);margin:8px 20px}
-
-.sb-footer{padding:14px 20px;border-top:1px solid var(--border)}
-.sb-user{display:flex;align-items:center;gap:10px}
-.sb-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--teal),var(--teal-light));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff;flex-shrink:0;font-family:"Playfair Display",serif}.sb-user-info{flex:1;min-width:0}
-.sb-user-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sb-user-role{font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em}
-.sb-logout{background:none;border:none;color:var(--text-dim);cursor:pointer;padding:6px;border-radius:var(--radius-sm);transition:all .15s}
-.sb-logout:hover{color:var(--danger);background:var(--danger-soft)}
-.sb-logout svg{width:16px;height:16px}
-
-/* ===== TOP BAR ===== */
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 32px;border-bottom:1px solid var(--border);background:var(--navy);position:sticky;top:0;z-index:40}
-.topbar-title{font-family:"Playfair Display",serif;font-size:22px;font-weight:600}
-.topbar-right{display:flex;align-items:center;gap:10px}
-.topbar-search{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 14px;min-width:260px;transition:all var(--ease)}
-.topbar-search:focus-within{border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-glow)}
-.topbar-search svg{width:15px;height:15px;color:var(--text-dim);flex-shrink:0}
-.topbar-search input{border:none;background:none;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;flex:1;outline:none}
-.topbar-search input::placeholder{color:var(--text-dim)}
-.topbar-btn{width:34px;height:34px;border-radius:var(--radius-sm);background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
-.topbar-btn:hover{border-color:var(--border-hover);color:var(--text);background:var(--navy-hover)}
-.topbar-btn svg{width:16px;height:16px}
-
-/* ===== CONTENT PAGES ===== */
-.page{display:none;padding:32px 36px 80px}
-.page.active{display:block}
-.page-header{margin-bottom:24px}
-.page-header h1{font-family:"Playfair Display",serif;font-size:28px;font-weight:600;background:linear-gradient(135deg,var(--text),var(--teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:fadeIn .6s ease}
-.page-header p{font-size:13px;color:var(--text-muted);margin-top:4px}
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
-@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-
-/* ===== STAT CARDS ===== */
-.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:24px}
-.stat-card{background:var(--navy-card);border:1px solid var(--border);border-radius:10px;padding:16px 18px;display:flex;align-items:center;gap:12px;transition:all .25s;animation:fadeUp .5s ease both}
-.stat-card:nth-child(1){animation-delay:.05s}
-.stat-card:nth-child(2){animation-delay:.1s}
-.stat-card:nth-child(3){animation-delay:.15s}
-.stat-card:nth-child(4){animation-delay:.2s}
-.stat-card:nth-child(5){animation-delay:.25s}
-.stat-card:nth-child(6){animation-delay:.3s}
-.stat-card:hover{border-color:var(--border-hover);transform:translateY(-2px)}
-.stat-ico{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.stat-ico svg{width:18px;height:18px}
-.stat-ico.warm{background:var(--taupe-soft)}
-.stat-ico.warm svg{stroke:var(--taupe)}
-.stat-ico.teal{background:var(--teal-soft)}
-.stat-ico.teal svg{stroke:var(--teal)}
-.stat-ico.purple{background:var(--purple-soft)}
-.stat-ico.purple svg{stroke:var(--purple)}
-.stat-ico.green{background:var(--success-soft)}
-.stat-ico.green svg{stroke:var(--success)}
-.stat-ico.red{background:var(--danger-soft)}
-.stat-ico.red svg{stroke:var(--danger)}
-.stat-val{font-family:"Playfair Display",serif;font-size:22px;font-weight:700;line-height:1}
-.stat-lbl{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
-
-/* ===== CARDS / SECTIONS ===== */
-.card{background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;animation:fadeUp .5s ease both}
-.card-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.card-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);display:flex;align-items:center;gap:8px}
-.card-title svg{width:14px;height:14px;stroke:var(--teal)}
-.card-body{padding:20px}
-
-/* ===== TWO-COL GRID ===== */
-.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-@media(max-width:900px){.grid-2{grid-template-columns:1fr}}
-
-/* ===== TABLES ===== */
-.tbl{width:100%;border-collapse:collapse}
-.tbl th{text-align:left;font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);padding:10px 14px;border-bottom:1px solid var(--border)}
-.tbl td{padding:11px 14px;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px;color:var(--text-muted)}
-.tbl tr:last-child td{border-bottom:none}
-.tbl tr:hover td{background:rgba(255,255,255,.015)}
-.tbl .email{color:var(--teal);font-weight:500}
-.tbl .name{color:var(--text)}
-.tbl .mono{font-family:monospace;font-size:12px;color:var(--text-dim)}
-
-/* ===== BADGES ===== */
-.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:9px;font-weight:600;letter-spacing:.03em;text-transform:uppercase}
-.badge.teal{background:var(--teal-soft);color:var(--teal)}
-.badge.green{background:var(--success-soft);color:var(--success)}
-.badge.taupe{background:var(--taupe-soft);color:var(--taupe)}
-.badge.purple{background:var(--purple-soft);color:var(--purple)}
-.badge.danger{background:var(--danger-soft);color:var(--danger)}
-.badge.muted{background:rgba(255,255,255,.05);color:var(--text-dim)}
-.badge.yellow{background:var(--warning-soft);color:var(--warning)}
-
-/* ===== BUTTONS ===== */
-.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--radius-sm);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;border:1px solid transparent;font-family:'Inter',sans-serif;letter-spacing:.02em}
-.btn-primary{background:linear-gradient(135deg,var(--teal),var(--teal-light));color:#fff;border-color:var(--teal);box-shadow:0 2px 8px rgba(91,168,178,.2)}
-.btn-primary:hover{box-shadow:0 4px 16px rgba(91,168,178,.4);transform:translateY(-1px)}
-.btn-ghost{background:transparent;color:var(--text-muted);border-color:var(--border)}
-.btn-ghost:hover{background:rgba(255,255,255,.03);color:var(--text);border-color:var(--border-hover)}
-.btn-danger{background:var(--danger-soft);color:var(--danger);border-color:rgba(239,83,80,.2)}
-.btn-danger:hover{background:rgba(239,83,80,.15)}
-.btn-success{background:var(--success-soft);color:var(--success);border-color:rgba(61,214,140,.2)}
-.btn-success:hover{background:rgba(61,214,140,.15)}
-.btn-sm{padding:5px 10px;font-size:10px}
-
-/* ===== FORM ELEMENTS ===== */
-.input{width:100%;padding:9px 14px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:13px;font-family:'Inter',sans-serif;transition:all var(--ease)}
-.input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-glow)}
-.input::placeholder{color:var(--text-dim)}
-select.input{cursor:pointer;appearance:auto}
-select.input option{background:var(--navy-card);color:var(--text)}
-.form-row{display:flex;gap:12px;align-items:end;margin-bottom:16px}
-.form-group{flex:1}
-.form-group label{display:block;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px}
-
-/* ===== ACTIVITY FEED ===== */
-.feed-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)}
-.feed-item:last-child{border-bottom:none}
-.feed-dot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0}
-.feed-content{flex:1;min-width:0}
-.feed-text{font-size:13px;color:var(--text-muted)}
-.feed-text strong{color:var(--text);font-weight:500}
-.feed-time{font-size:11px;color:var(--text-dim);margin-top:2px}
-
-/* ===== CUSTOMER DETAIL PANEL ===== */
-.detail-panel{background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px;position:relative;animation:slideIn .25s ease}
-@keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
-.detail-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
-.detail-email{font-family:"Playfair Display",serif;font-size:20px;font-weight:600;color:var(--teal)}
-.detail-name{font-size:13px;color:var(--text-muted);margin-top:2px}
-.detail-id{font-size:11px;color:var(--text-dim);font-family:monospace;margin-top:2px}
-.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
-@media(max-width:700px){.detail-grid{grid-template-columns:1fr}}
-.detail-section{background:rgba(0,0,0,.15);border:1px solid rgba(255,255,255,.04);border-radius:10px;padding:16px}
-.detail-section h4{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:12px;display:flex;align-items:center;gap:6px}
-.detail-section h4 .dot{width:5px;height:5px;border-radius:50%}
-.product-tags{display:flex;flex-wrap:wrap;gap:6px}
-.product-tag{padding:4px 10px;border-radius:20px;font-size:10px;font-weight:600}
-.product-tag.fusion{background:var(--purple-soft);color:var(--purple)}
-.product-tag.academy{background:var(--teal-soft);color:var(--teal)}
-.product-tag.bundle{background:var(--taupe-soft);color:var(--teal)}
-.ref-stat-row{display:flex;gap:10px;margin-bottom:10px}
-.ref-stat{flex:1;text-align:center;padding:10px;background:rgba(0,0,0,.2);border-radius:var(--radius-sm)}
-.ref-stat-val{font-family:"Playfair Display",serif;font-size:20px;font-weight:700;line-height:1}
-.ref-stat-label{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-top:4px}
-.ref-code{font-family:monospace;font-size:16px;letter-spacing:.12em;font-weight:700;color:var(--teal);background:var(--taupe-soft);padding:6px 14px;border-radius:var(--radius-sm);display:inline-block}
-.credit-actions{display:flex;gap:8px;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.04);flex-wrap:wrap}
-.credit-actions input{width:80px}
-
-/* ===== AUTOCOMPLETE ===== */
-.ac-wrap{position:relative}
-.ac-dropdown{position:absolute;top:100%;left:0;right:0;background:var(--navy-card);border:1px solid var(--teal);border-top:none;border-radius:0 0 var(--radius-sm) var(--radius-sm);max-height:260px;overflow-y:auto;z-index:100;display:none;box-shadow:0 8px 32px rgba(0,0,0,.4)}
-.ac-dropdown.open{display:block}
-.ac-item{padding:10px 14px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04);transition:background .15s}
-.ac-item:hover,.ac-item.sel{background:var(--taupe-soft)}
-.ac-item:last-child{border-bottom:none}
-.ac-item .ac-email{color:var(--teal);font-weight:500;font-size:13px}
-.ac-item .ac-code{color:var(--taupe);font-size:11px;font-family:monospace;margin-left:8px}
-.ac-item .ac-name{color:var(--text-dim);font-size:11px;display:block;margin-top:1px}
-.ac-hl{background:rgba(91,168,178,.25);color:#fff;border-radius:2px}
-
-/* ===== BROWSER STATS ===== */
-.browser-stats{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
-.bs{flex:1;min-width:80px;text-align:center;padding:12px 8px;background:rgba(0,0,0,.15);border:1px solid rgba(255,255,255,.04);border-radius:var(--radius-sm)}
-.bs-val{font-family:"Playfair Display",serif;font-size:22px;font-weight:700}
-.bs-label{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-top:2px}
-
-/* ===== PAGINATION ===== */
-.pagination{display:flex;align-items:center;justify-content:space-between;padding:12px 0;font-size:12px;color:var(--text-dim)}
-.pagination .page-btns{display:flex;gap:6px}
-
-/* ===== EMPTY / LOADING ===== */
-.empty{text-align:center;padding:40px 20px;color:var(--text-dim)}
-.empty svg{width:40px;height:40px;margin:0 auto 12px;display:block;opacity:.3}
-.empty p{font-size:13px;line-height:1.7}
-.empty code{background:rgba(255,255,255,.06);padding:2px 6px;border-radius:4px;font-size:12px}
-.spinner{width:20px;height:20px;border:2px solid rgba(255,255,255,.1);border-top-color:var(--teal);border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
-@keyframes spin{to{transform:rotate(360deg)}}
-.loading-center{display:flex;flex-direction:column;align-items:center;gap:12px;padding:40px;color:var(--text-muted);font-size:13px}
-
-/* ===== MESSAGES ===== */
-.msg{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:14px;display:none}
-.msg.success{display:block;background:var(--success-soft);color:var(--success);border:1px solid rgba(61,214,140,.2)}
-.msg.error{display:block;background:var(--danger-soft);color:var(--danger);border:1px solid rgba(239,83,80,.2)}
-
-/* ===== THEME TOGGLE ===== */
-.sb-theme-toggle{display:flex;align-items:center;gap:10px;padding:11px 20px;font-size:13px;color:var(--text-muted);cursor:pointer;border:none;background:none;width:100%;text-align:left;font-family:'Inter',sans-serif;transition:all .15s}
-.sb-theme-toggle:hover{color:var(--text);background:rgba(255,255,255,.02)}
-[data-theme="light"] .sb-theme-toggle:hover{background:rgba(0,0,0,.03)}
-.sb-theme-toggle svg{width:17px;height:17px;stroke:currentColor;opacity:.7}
-.sb-theme-switch{margin-left:auto;width:36px;height:20px;background:var(--border);border-radius:10px;position:relative;transition:background .3s;flex-shrink:0}
-.sb-theme-switch::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--teal);transition:transform .3s}
-[data-theme="light"] .sb-theme-switch{background:var(--taupe)}
-[data-theme="light"] .sb-theme-switch::after{transform:translateX(16px);background:#fff}
-
-/* ===== MOBILE ===== */
-.mobile-menu-btn{display:none;position:fixed;top:14px;left:14px;z-index:60;width:38px;height:38px;border-radius:var(--radius-sm);background:var(--navy-card);border:1px solid var(--border);color:var(--text);cursor:pointer;align-items:center;justify-content:center}
-.mobile-menu-btn svg{width:18px;height:18px}
-.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:45}
-@media(max-width:900px){
-  .sidebar{transform:translateX(-100%);transition:transform .3s ease}
-  .sidebar.open{transform:translateX(0)}
-  .sb-overlay.open{display:block}
-  .main-content{margin-left:0}
-  .mobile-menu-btn{display:flex}
-  .topbar{padding-left:60px}
-  .stats-grid{grid-template-columns:1fr 1fr}
-}
-@media(max-width:500px){
-  .stats-grid{grid-template-columns:1fr}
-  .page{padding:20px}
-  .topbar{padding:14px 16px 14px 56px}
-  .topbar-search{display:none}
-}
+:root{--sidebar-w:260px;--teal:#5ba8b2;--teal-light:#4acfd9;--teal-soft:rgba(91,168,178,.1);--teal-glow:rgba(91,168,178,.15);--taupe:#ad9b84;--taupe-soft:rgba(173,155,132,.1);--navy:#0a1e33;--navy-deep:#071825;--navy-mid:#0f2942;--navy-card:#112a42;--navy-hover:#153450;--border:rgba(91,168,178,.12);--border-hover:rgba(91,168,178,.3);--text:rgba(255,255,255,.88);--text-muted:rgba(255,255,255,.5);--text-dim:rgba(255,255,255,.3);--purple:#a78bfa;--purple-soft:rgba(167,139,250,.1);--success:#3dd68c;--success-soft:rgba(61,214,140,.1);--danger:#ef5350;--danger-soft:rgba(239,83,80,.1);--warning:#f0b429;--warning-soft:rgba(240,180,41,.1);--radius:12px;--radius-sm:8px;--ease:.3s cubic-bezier(.22,1,.36,1)}
+[data-theme="light"]{--navy:#f5f3ef;--navy-deep:#ebe8e2;--navy-mid:#fff;--navy-card:#fff;--navy-hover:#f0ede8;--border:rgba(173,155,132,.2);--border-hover:rgba(173,155,132,.4);--text:#1a1a2e;--text-muted:rgba(26,26,46,.5);--text-dim:rgba(26,26,46,.3)}
+[data-theme="light"] .auth-screen{background:var(--navy)}[data-theme="light"] .stat-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.06)}[data-theme="light"] .card{box-shadow:0 1px 3px rgba(0,0,0,.04)}[data-theme="light"] .detail-section{background:rgba(0,0,0,.02);border-color:rgba(0,0,0,.06)}[data-theme="light"] .tbl tr:hover td{background:rgba(0,0,0,.02)}[data-theme="light"] .feed-item{border-bottom-color:rgba(0,0,0,.05)}[data-theme="light"] .tbl td{border-bottom-color:rgba(0,0,0,.05)}[data-theme="light"] .sb-link:hover{background:rgba(0,0,0,.03)}[data-theme="light"] .sb-link.active{background:rgba(91,168,178,.08)}[data-theme="light"] .bs{background:rgba(0,0,0,.02);border-color:rgba(0,0,0,.06)}[data-theme="light"] .ref-stat{background:rgba(0,0,0,.03)}[data-theme="light"] .input{background:rgba(0,0,0,.03)}[data-theme="light"] select.input option{background:#fff;color:#1a1a2e}[data-theme="light"] .post-card{border-color:rgba(0,0,0,.08)}[data-theme="light"] .note-item{background:rgba(0,0,0,.02);border-color:rgba(0,0,0,.06)}
+*{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}body{font-family:'Inter',sans-serif;background:var(--navy);color:var(--text);font-size:14px;line-height:1.6;min-height:100vh}a{color:inherit;text-decoration:none}img{max-width:100%;display:block}
+.auth-screen{position:fixed;inset:0;background:var(--navy);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}.auth-box{width:100%;max-width:380px;text-align:center}.auth-logo{height:70px;width:auto;margin:0 auto 10px;opacity:.9}.auth-subtitle{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:32px}.auth-card{background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);padding:32px 28px}.auth-card h2{font-family:"Playfair Display",serif;font-size:24px;font-weight:600;margin-bottom:4px}.auth-card p{font-size:13px;color:var(--text-muted);margin-bottom:24px}.auth-field{margin-bottom:14px;text-align:left}.auth-field label{display:block;font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px}.auth-field input{width:100%;padding:11px 14px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:14px;font-family:'Inter',sans-serif;transition:all var(--ease)}.auth-field input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-glow)}.auth-field input::placeholder{color:var(--text-dim)}.auth-error{color:var(--danger);font-size:12px;margin-bottom:14px;display:none}.auth-btn{width:100%;padding:12px;background:linear-gradient(135deg,var(--teal),var(--teal-light));color:#fff;border:none;border-radius:var(--radius-sm);font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all var(--ease);font-family:'Inter',sans-serif;box-shadow:0 4px 16px rgba(91,168,178,.3)}.auth-btn:hover{box-shadow:0 6px 24px rgba(91,168,178,.5);transform:translateY(-1px)}
+.admin-layout{min-height:100vh;display:none}.sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar-w);background:var(--navy-deep);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:50;overflow-y:auto}.main-content{margin-left:var(--sidebar-w);min-height:100vh}
+.sb-logo{padding:24px 20px 16px;border-bottom:1px solid var(--border);text-align:center}.sb-logo img{max-width:150px;height:auto;display:block;margin:0 auto;transition:opacity .2s}.sb-logo img:hover{opacity:.8}.sb-logo-fallback{display:none;font-family:"Playfair Display",serif;font-size:18px;color:var(--text);line-height:1.2;padding:4px 0}.sb-logo-fallback small{font-family:'Inter',sans-serif;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);display:block;margin-top:4px}
+.sb-nav{flex:1;padding:12px 0}.sb-section{margin-bottom:16px}.sb-section-label{font-size:9px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim);padding:0 20px;margin-bottom:6px}.sb-link{display:flex;align-items:center;gap:10px;padding:11px 20px;color:var(--text-muted);font-size:13px;font-weight:400;cursor:pointer;border:none;background:none;width:100%;text-align:left;font-family:'Inter',sans-serif;transition:all .15s;border-left:3px solid transparent;position:relative}.sb-link:hover{color:var(--text);background:rgba(255,255,255,.02)}.sb-link.active{color:var(--teal);background:rgba(91,168,178,.06);border-left-color:var(--teal);font-weight:500}.sb-link svg{width:17px;height:17px;stroke:currentColor;opacity:.7;flex-shrink:0}.sb-link.active svg{opacity:1}.sb-link .badge{margin-left:auto;background:var(--danger);color:#fff;font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px;min-width:16px;text-align:center}.sb-divider{height:1px;background:var(--border);margin:8px 20px}
+.sb-footer{padding:14px 20px;border-top:1px solid var(--border)}.sb-user{display:flex;align-items:center;gap:10px}.sb-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--teal),var(--teal-light));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff;flex-shrink:0;font-family:"Playfair Display",serif}.sb-user-info{flex:1;min-width:0}.sb-user-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sb-user-role{font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em}.sb-logout{background:none;border:none;color:var(--text-dim);cursor:pointer;padding:6px;border-radius:var(--radius-sm);transition:all .15s}.sb-logout:hover{color:var(--danger);background:var(--danger-soft)}.sb-logout svg{width:16px;height:16px}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 32px;border-bottom:1px solid var(--border);background:var(--navy);position:sticky;top:0;z-index:40}.topbar-title{font-family:"Playfair Display",serif;font-size:22px;font-weight:600}.topbar-right{display:flex;align-items:center;gap:10px}.topbar-search{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 14px;min-width:260px;transition:all var(--ease)}.topbar-search:focus-within{border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-glow)}.topbar-search svg{width:15px;height:15px;color:var(--text-dim);flex-shrink:0}.topbar-search input{border:none;background:none;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;flex:1;outline:none}.topbar-search input::placeholder{color:var(--text-dim)}.topbar-btn{width:34px;height:34px;border-radius:var(--radius-sm);background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}.topbar-btn:hover{border-color:var(--border-hover);color:var(--text);background:var(--navy-hover)}.topbar-btn svg{width:16px;height:16px}
+.page{display:none;padding:32px 36px 80px}.page.active{display:block}.page-header{margin-bottom:24px}.page-header h1{font-family:"Playfair Display",serif;font-size:28px;font-weight:600;background:linear-gradient(135deg,var(--text),var(--teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:fadeIn .6s ease}.page-header p{font-size:13px;color:var(--text-muted);margin-top:4px}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}@keyframes spin{to{transform:rotate(360deg)}}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:24px}.stat-card{background:var(--navy-card);border:1px solid var(--border);border-radius:10px;padding:16px 18px;display:flex;align-items:center;gap:12px;transition:all .25s;animation:fadeUp .5s ease both}.stat-card:nth-child(1){animation-delay:.05s}.stat-card:nth-child(2){animation-delay:.1s}.stat-card:nth-child(3){animation-delay:.15s}.stat-card:nth-child(4){animation-delay:.2s}.stat-card:hover{border-color:var(--border-hover);transform:translateY(-2px)}.stat-ico{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}.stat-ico svg{width:18px;height:18px}.stat-ico.teal{background:var(--teal-soft)}.stat-ico.teal svg{stroke:var(--teal)}.stat-ico.warm{background:var(--taupe-soft)}.stat-ico.warm svg{stroke:var(--taupe)}.stat-ico.purple{background:var(--purple-soft)}.stat-ico.purple svg{stroke:var(--purple)}.stat-ico.green{background:var(--success-soft)}.stat-ico.green svg{stroke:var(--success)}.stat-val{font-family:"Playfair Display",serif;font-size:22px;font-weight:700;line-height:1}.stat-lbl{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+.card{background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;animation:fadeUp .5s ease both}.card-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.card-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);display:flex;align-items:center;gap:8px}.card-title svg{width:14px;height:14px;stroke:var(--teal)}.card-body{padding:20px}.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:900px){.grid-2{grid-template-columns:1fr}}
+.tbl{width:100%;border-collapse:collapse}.tbl th{text-align:left;font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);padding:10px 14px;border-bottom:1px solid var(--border)}.tbl td{padding:11px 14px;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px;color:var(--text-muted)}.tbl tr:last-child td{border-bottom:none}.tbl tr:hover td{background:rgba(255,255,255,.015)}.tbl .email{color:var(--teal);font-weight:500}.tbl .name{color:var(--text)}.tbl .mono{font-family:monospace;font-size:12px;color:var(--text-dim)}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:9px;font-weight:600;letter-spacing:.03em;text-transform:uppercase}.badge.teal{background:var(--teal-soft);color:var(--teal)}.badge.green{background:var(--success-soft);color:var(--success)}.badge.taupe{background:var(--taupe-soft);color:var(--taupe)}.badge.purple{background:var(--purple-soft);color:var(--purple)}.badge.danger{background:var(--danger-soft);color:var(--danger)}.badge.muted{background:rgba(255,255,255,.05);color:var(--text-dim)}.badge.yellow{background:var(--warning-soft);color:var(--warning)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--radius-sm);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;border:1px solid transparent;font-family:'Inter',sans-serif;letter-spacing:.02em}.btn-primary{background:linear-gradient(135deg,var(--teal),var(--teal-light));color:#fff;border-color:var(--teal);box-shadow:0 2px 8px rgba(91,168,178,.2)}.btn-primary:hover{box-shadow:0 4px 16px rgba(91,168,178,.4);transform:translateY(-1px)}.btn-ghost{background:transparent;color:var(--text-muted);border-color:var(--border)}.btn-ghost:hover{background:rgba(255,255,255,.03);color:var(--text);border-color:var(--border-hover)}.btn-danger{background:var(--danger-soft);color:var(--danger);border-color:rgba(239,83,80,.2)}.btn-danger:hover{background:rgba(239,83,80,.15)}.btn-success{background:var(--success-soft);color:var(--success);border-color:rgba(61,214,140,.2)}.btn-success:hover{background:rgba(61,214,140,.15)}.btn-sm{padding:5px 10px;font-size:10px}
+.input{width:100%;padding:9px 14px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:13px;font-family:'Inter',sans-serif;transition:all var(--ease)}.input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-glow)}.input::placeholder{color:var(--text-dim)}select.input{cursor:pointer;appearance:auto}select.input option{background:var(--navy-card);color:var(--text)}textarea.input{resize:vertical;min-height:60px}.form-row{display:flex;gap:12px;align-items:end;margin-bottom:16px;flex-wrap:wrap}.form-group{flex:1;min-width:120px}.form-group label{display:block;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px}
+.feed-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)}.feed-item:last-child{border-bottom:none}.feed-dot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0}.feed-content{flex:1;min-width:0}.feed-text{font-size:13px;color:var(--text-muted)}.feed-text strong{color:var(--text);font-weight:500}.feed-time{font-size:11px;color:var(--text-dim);margin-top:2px}
+.detail-panel{background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px;position:relative;animation:slideIn .25s ease}.detail-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}.detail-email{font-family:"Playfair Display",serif;font-size:20px;font-weight:600;color:var(--teal)}.detail-name{font-size:13px;color:var(--text-muted);margin-top:2px}.detail-id{font-size:11px;color:var(--text-dim);font-family:monospace;margin-top:2px}.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}@media(max-width:700px){.detail-grid{grid-template-columns:1fr}}.detail-section{background:rgba(0,0,0,.15);border:1px solid rgba(255,255,255,.04);border-radius:10px;padding:16px}.detail-section h4{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:12px;display:flex;align-items:center;gap:6px}.detail-section h4 .dot{width:5px;height:5px;border-radius:50%}.product-tags{display:flex;flex-wrap:wrap;gap:6px}.product-tag{padding:4px 10px;border-radius:20px;font-size:10px;font-weight:600}.product-tag.fusion{background:var(--purple-soft);color:var(--purple)}.product-tag.academy{background:var(--teal-soft);color:var(--teal)}.product-tag.bundle{background:var(--taupe-soft);color:var(--taupe)}
+.ref-stat-row{display:flex;gap:10px;margin-bottom:10px}.ref-stat{flex:1;text-align:center;padding:10px;background:rgba(0,0,0,.2);border-radius:var(--radius-sm)}.ref-stat-val{font-family:"Playfair Display",serif;font-size:20px;font-weight:700;line-height:1}.ref-stat-label{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-top:4px}.ref-code{font-family:monospace;font-size:16px;letter-spacing:.12em;font-weight:700;color:var(--teal);background:var(--teal-soft);padding:6px 14px;border-radius:var(--radius-sm);display:inline-block}.credit-actions{display:flex;gap:8px;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.04);flex-wrap:wrap}.credit-actions input{width:80px}
+.note-item{background:rgba(0,0,0,.1);border:1px solid rgba(255,255,255,.04);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:8px}.note-item:last-child{margin-bottom:0}.note-text{font-size:13px;color:var(--text-muted);white-space:pre-wrap;word-break:break-word}.note-meta{font-size:10px;color:var(--text-dim);margin-top:4px;display:flex;justify-content:space-between;align-items:center}.note-delete{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:11px;padding:2px 6px;border-radius:4px;transition:all .15s}.note-delete:hover{color:var(--danger);background:var(--danger-soft)}
+.ac-wrap{position:relative}.ac-dropdown{position:absolute;top:100%;left:0;right:0;background:var(--navy-card);border:1px solid var(--teal);border-top:none;border-radius:0 0 var(--radius-sm) var(--radius-sm);max-height:260px;overflow-y:auto;z-index:100;display:none;box-shadow:0 8px 32px rgba(0,0,0,.4)}.ac-dropdown.open{display:block}.ac-item{padding:10px 14px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04);transition:background .15s}.ac-item:hover,.ac-item.sel{background:var(--teal-soft)}.ac-item:last-child{border-bottom:none}.ac-item .ac-email{color:var(--teal);font-weight:500;font-size:13px}.ac-item .ac-code{color:var(--taupe);font-size:11px;font-family:monospace;margin-left:8px}.ac-item .ac-name{color:var(--text-dim);font-size:11px;display:block;margin-top:1px}.ac-hl{background:rgba(91,168,178,.25);color:#fff;border-radius:2px}
+.browser-stats{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}.bs{flex:1;min-width:80px;text-align:center;padding:12px 8px;background:rgba(0,0,0,.15);border:1px solid rgba(255,255,255,.04);border-radius:var(--radius-sm)}.bs-val{font-family:"Playfair Display",serif;font-size:22px;font-weight:700}.bs-label{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-top:2px}.pagination{display:flex;align-items:center;justify-content:space-between;padding:12px 0;font-size:12px;color:var(--text-dim)}.pagination .page-btns{display:flex;gap:6px}
+.post-card{background:var(--navy-mid);border:1px solid rgba(255,255,255,.06);border-radius:var(--radius-sm);padding:16px;margin-bottom:12px;transition:border-color .15s}.post-card:hover{border-color:var(--border-hover)}.post-card.hidden-post{opacity:.6}.post-card.pinned-post{border-left:3px solid var(--teal)}.post-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;flex-wrap:wrap}.post-author{display:flex;align-items:center;gap:8px}.post-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--teal),var(--teal-light));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}.post-body{font-size:13px;color:var(--text-muted);line-height:1.6;margin-bottom:8px}.post-meta{display:flex;gap:12px;font-size:11px;color:var(--text-dim);margin-bottom:10px;flex-wrap:wrap}.post-actions{display:flex;gap:6px;flex-wrap:wrap}
+.tab-nav{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:0}.tab-btn{padding:10px 16px;font-size:12px;font-weight:500;color:var(--text-muted);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s;margin-bottom:-1px}.tab-btn:hover{color:var(--text)}.tab-btn.active{color:var(--teal);border-bottom-color:var(--teal)}.tab-content{display:none}.tab-content.active{display:block}
+.empty{text-align:center;padding:40px 20px;color:var(--text-dim)}.empty svg{width:40px;height:40px;margin:0 auto 12px;display:block;opacity:.3}.empty p{font-size:13px;line-height:1.7}.empty code{background:rgba(255,255,255,.06);padding:2px 6px;border-radius:4px;font-size:12px}.spinner{width:20px;height:20px;border:2px solid rgba(255,255,255,.1);border-top-color:var(--teal);border-radius:50%;animation:spin .6s linear infinite;display:inline-block}.loading-center{display:flex;flex-direction:column;align-items:center;gap:12px;padding:40px;color:var(--text-muted);font-size:13px}.msg{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:14px;display:none}.msg.success{display:block;background:var(--success-soft);color:var(--success);border:1px solid rgba(61,214,140,.2)}.msg.error{display:block;background:var(--danger-soft);color:var(--danger);border:1px solid rgba(239,83,80,.2)}
+.sb-theme-toggle{display:flex;align-items:center;gap:10px;padding:11px 20px;font-size:13px;color:var(--text-muted);cursor:pointer;border:none;background:none;width:100%;text-align:left;font-family:'Inter',sans-serif;transition:all .15s}.sb-theme-toggle:hover{color:var(--text);background:rgba(255,255,255,.02)}[data-theme="light"] .sb-theme-toggle:hover{background:rgba(0,0,0,.03)}.sb-theme-toggle svg{width:17px;height:17px;stroke:currentColor;opacity:.7}.sb-theme-switch{margin-left:auto;width:36px;height:20px;background:var(--border);border-radius:10px;position:relative;transition:background .3s;flex-shrink:0}.sb-theme-switch::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--teal);transition:transform .3s}[data-theme="light"] .sb-theme-switch{background:var(--taupe)}[data-theme="light"] .sb-theme-switch::after{transform:translateX(16px);background:#fff}
+.mobile-menu-btn{display:none;position:fixed;top:14px;left:14px;z-index:60;width:38px;height:38px;border-radius:var(--radius-sm);background:var(--navy-card);border:1px solid var(--border);color:var(--text);cursor:pointer;align-items:center;justify-content:center}.mobile-menu-btn svg{width:18px;height:18px}.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:45}@media(max-width:900px){.sidebar{transform:translateX(-100%);transition:transform .3s ease}.sidebar.open{transform:translateX(0)}.sb-overlay.open{display:block}.main-content{margin-left:0}.mobile-menu-btn{display:flex}.topbar{padding-left:60px}.stats-grid{grid-template-columns:1fr 1fr}}@media(max-width:500px){.stats-grid{grid-template-columns:1fr}.page{padding:20px}.topbar{padding:14px 16px 14px 56px}.topbar-search{display:none}}
 </style>
 </head>
 <body>
-
-<!-- ============ AUTH SCREEN ============ -->
-<div class="auth-screen" id="auth-screen">
-  <div class="auth-box">
-    <img src="/assets/images/QP-Logo.png" alt="QP" class="auth-logo" onerror="this.style.display='none'">
-    <div class="auth-subtitle">Practice Management</div>
-    <div class="auth-card">
-      <h2>Admin Access</h2>
-      <p>Enter your credentials to continue</p>
-      <div class="auth-field">
-        <label>Username</label>
-        <input type="text" id="auth-user" placeholder="Username" autocomplete="username">
-      </div>
-      <div class="auth-field">
-        <label>Password</label>
-        <input type="password" id="auth-pass" placeholder="Password" autocomplete="current-password" onkeypress="if(event.key==='Enter')doAuth()">
-      </div>
-      <div class="auth-error" id="auth-error">Invalid credentials</div>
-      <button class="auth-btn" onclick="doAuth()">Sign In</button>
-    </div>
-  </div>
-</div>
-
-<!-- ============ ADMIN LAYOUT ============ -->
+<div class="auth-screen" id="auth-screen"><div class="auth-box"><img src="/assets/images/QP-Logo.png" alt="QP" class="auth-logo" onerror="this.style.display='none'"><div class="auth-subtitle">Practice Management</div><div class="auth-card"><h2>Admin Access</h2><p>Enter your credentials to continue</p><div class="auth-field"><label>Username</label><input type="text" id="auth-user" placeholder="Username" autocomplete="username"></div><div class="auth-field"><label>Password</label><input type="password" id="auth-pass" placeholder="Password" autocomplete="current-password" onkeypress="if(event.key==='Enter')doAuth()"></div><div class="auth-error" id="auth-error">Invalid credentials</div><button class="auth-btn" onclick="doAuth()">Sign In</button></div></div></div>
 <div class="admin-layout" id="admin-layout">
+<button class="mobile-menu-btn" onclick="toggleSidebar()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+<div class="sb-overlay" id="sb-overlay" onclick="toggleSidebar()"></div>
+<aside class="sidebar" id="sidebar">
+<div class="sb-logo"><img src="/assets/images/QP-Logo.png" alt="Quantum Physician" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><div class="sb-logo-fallback">Quantum Physician<small>Admin Panel</small></div></div>
+<nav class="sb-nav">
+<div class="sb-section"><div class="sb-section-label">Overview</div>
+<button class="sb-link active" onclick="go('dashboard',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</button>
+<button class="sb-link" onclick="go('customers',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Customers</button></div>
+<div class="sb-divider"></div>
+<div class="sb-section"><div class="sb-section-label">Products</div>
+<button class="sb-link" onclick="go('academy',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>Academy</button>
+<button class="sb-link" onclick="go('fusion',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>Fusion Sessions</button>
+<button class="sb-link" onclick="go('sessions',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>1-on-1 Sessions</button>
+<button class="sb-link" onclick="go('memberships',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Memberships</button></div>
+<div class="sb-divider"></div>
+<div class="sb-section"><div class="sb-section-label">Engage</div>
+<button class="sb-link" onclick="go('community',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Community</button>
+<button class="sb-link" onclick="go('referrals',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Referrals & Credits</button>
+<button class="sb-link" onclick="go('email',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Email Campaigns</button>
+<button class="sb-link" onclick="go('analytics',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Analytics</button></div>
+</nav>
+<div class="sb-divider" style="margin:0 20px"></div>
+<button class="sb-theme-toggle" onclick="toggleTheme()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg><span id="themeLabel">Light</span><div class="sb-theme-switch"></div></button>
+<div class="sb-footer"><div class="sb-user"><div class="sb-avatar">TC</div><div class="sb-user-info"><div class="sb-user-name">Dr. Tracey Clark</div><div class="sb-user-role">Administrator</div></div><button class="sb-logout" onclick="doLogout()" title="Sign out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button></div></div>
+</aside>
+<div class="main-content">
+<div class="topbar"><div class="topbar-title" id="topbar-title">Dashboard</div><div class="topbar-right"><div class="topbar-search ac-wrap" id="global-search-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="global-search" placeholder="Search customers..." autocomplete="off" oninput="handleGlobalSearch()" onkeydown="handleGlobalKeydown(event)"><div class="ac-dropdown" id="global-ac"></div></div><button class="topbar-btn" title="Refresh" onclick="refreshCurrentPage()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button></div></div>
 
-  <button class="mobile-menu-btn" onclick="toggleSidebar()">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-  </button>
-  <div class="sb-overlay" id="sb-overlay" onclick="toggleSidebar()"></div>
+<!-- DASHBOARD -->
+<div class="page active" id="page-dashboard"><div class="page-header"><h1>Dashboard</h1><p>Revenue overview across all products</p></div><div class="stats-grid" id="dash-stats"></div><div class="grid-2"><div class="card"><div class="card-header"><div class="card-title">Recent Purchases</div></div><div class="card-body" id="dash-purchases" style="max-height:380px;overflow-y:auto"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div><div class="card"><div class="card-header"><div class="card-title">Recent Activity</div></div><div class="card-body" id="dash-activity" style="max-height:380px;overflow-y:auto"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div></div></div>
 
-  <!-- SIDEBAR -->
-  <aside class="sidebar" id="sidebar">
-    <div class="sb-logo">
-      <img src="/assets/images/QP-Logo.png" alt="Quantum Physician" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
-      <div class="sb-logo-fallback">Quantum Physician<small>Admin Panel</small></div>
-    </div>
+<!-- CUSTOMERS -->
+<div class="page" id="page-customers"><div class="page-header"><h1>Customers</h1><p>Unified profiles across all products</p></div>
+<div class="form-row" style="margin-bottom:20px"><div class="form-group ac-wrap" style="flex:2"><input type="text" class="input" id="cust-search" placeholder="Search by email, name, or referral code..." autocomplete="off" oninput="handleCustSearch()" onkeydown="handleCustKeydown(event)"><div class="ac-dropdown" id="cust-ac"></div></div><button class="btn btn-primary" onclick="searchCustomer()">Search</button></div>
+<div class="msg" id="cust-msg"></div><div id="cust-result"></div>
+<div class="card" style="margin-top:20px"><div class="card-header"><div class="card-title">All Customers</div><div style="display:flex;gap:8px"><button class="btn btn-ghost btn-sm" onclick="exportCustomers()">Export CSV</button><button class="btn btn-ghost btn-sm" onclick="loadCustomerBrowser()">Refresh</button></div></div><div class="card-body" style="padding:16px"><div class="browser-stats" id="cust-browser-stats"></div><div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap"><select class="input" style="width:170px" id="cb-filter" onchange="applyCBFilter()"><option value="all">All Customers</option><option value="academy">Academy Owners</option><option value="fusion">Fusion Owners</option><option value="bundle">Bundle Owners</option><option value="no-purchase">No Purchases</option><option value="has-credits">Has Credits</option><option value="has-referrals">Has Referrals</option></select><select class="input" style="width:150px" id="cb-sort" onchange="applyCBFilter()"><option value="email-asc">Email A→Z</option><option value="recent">Most Recent</option><option value="credits">Highest Credits</option><option value="referrals">Most Referrals</option><option value="spent">Most Spent</option></select><input type="text" class="input" style="width:200px" id="cb-search" placeholder="Filter..." oninput="applyCBFilter()"></div><div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Email</th><th>Name</th><th>Products</th><th>Spent</th><th>Credits</th><th>Referrals</th><th></th></tr></thead><tbody id="cb-tbody"></tbody></table></div><div class="pagination" id="cb-pagination"></div></div></div>
+<div class="card" style="margin-top:20px"><div class="card-header"><div class="card-title">Grant Access</div></div><div class="card-body"><div class="form-row"><div class="form-group"><label>Email</label><input type="email" class="input" id="grant-email" placeholder="customer@example.com"></div><div class="form-group"><label>Product</label><select class="input" id="grant-product"><optgroup label="Fusion Sessions"><option value="bundle-all">Complete Bundle</option><option value="session-01">S1: Intolerance & Sensitivity</option><option value="session-02">S2: Anxiety & Overwhelm</option><option value="session-03">S3: Pain & Tension</option><option value="session-04">S4: Sleep & Reset</option><option value="session-05">S5: Digestion & Integration</option><option value="session-06">S6: Immune Balance</option><option value="session-07">S7: Hormonal Harmony</option><option value="session-08">S8: Phobias & Fear</option><option value="session-09">S9: Fatigue & Vitality</option><option value="session-10">S10: Weight & Self-Perception</option><option value="session-11">S11: Relationships & Boundaries</option><option value="session-12">S12: Purpose & Alignment</option></optgroup><optgroup label="Academy Courses"><option value="breaking-up-with-your-beliefs">Breaking Up with Your Beliefs</option><option value="power-of-the-question">The Power of The Question</option><option value="creative-mind-mapping">Creative Mind Mapping</option><option value="quantum-vision-boards">Quantum Vision Boards</option><option value="becoming-present">Becoming Present</option><option value="transformational-mastery">Transformational Mastery (All 5)</option></optgroup></select></div><button class="btn btn-success" onclick="grantAccess()">Grant</button></div><div class="msg" id="grant-msg"></div></div></div></div>
 
-    <nav class="sb-nav">
-      <div class="sb-section">
-        <div class="sb-section-label">Overview</div>
-        <button class="sb-link active" onclick="go('dashboard',this)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-          Dashboard
-        </button>
-        <button class="sb-link" onclick="go('customers',this)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          Customers
-        </button>
-      </div>
+<!-- ACADEMY -->
+<div class="page" id="page-academy"><div class="page-header"><h1>Academy</h1><p>Course management, enrollments, and student progress</p></div><div class="stats-grid" id="acad-stats"></div>
+<div class="tab-nav"><button class="tab-btn active" onclick="switchAcadTab('courses',this)">Courses</button><button class="tab-btn" onclick="switchAcadTab('enrollments',this)">Enrollments</button><button class="tab-btn" onclick="switchAcadTab('progress',this)">Student Progress</button><button class="tab-btn" onclick="switchAcadTab('purchases',this)">Purchases</button></div>
+<div class="tab-content active" id="acad-tab-courses"><div class="card"><div class="card-header"><div class="card-title">Course Management</div><button class="btn btn-ghost btn-sm" onclick="loadAcademyData()">Refresh</button></div><div class="card-body" id="acad-courses"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div></div>
+<div class="tab-content" id="acad-tab-enrollments"><div class="card"><div class="card-header"><div class="card-title">Enrollment Browser</div></div><div class="card-body" id="acad-enrollments"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div></div>
+<div class="tab-content" id="acad-tab-progress"><div class="card"><div class="card-header"><div class="card-title">Student Progress</div></div><div class="card-body" id="acad-progress"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div></div>
+<div class="tab-content" id="acad-tab-purchases"><div class="card"><div class="card-header"><div class="card-title">Academy Purchases</div></div><div class="card-body" id="acad-purchases" style="max-height:500px;overflow-y:auto"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div></div></div>
 
-      <div class="sb-divider"></div>
+<!-- FUSION -->
+<div class="page" id="page-fusion"><div class="page-header"><h1>Fusion Sessions</h1><p>Session management and content delivery</p></div><div class="stats-grid" id="fusion-stats"></div><div class="card"><div class="card-header"><div class="card-title">Session Purchases</div><button class="btn btn-ghost btn-sm" onclick="loadFusionData()">Refresh</button></div><div class="card-body" id="fusion-content"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div></div>
 
-      <div class="sb-section">
-        <div class="sb-section-label">Products</div>
-        <button class="sb-link" onclick="go('academy',this)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-          Academy
-        </button>
-        <button class="sb-link" onclick="go('fusion',this)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-          Fusion Sessions
-        </button>
-        <button class="sb-link" onclick="go('sessions',this)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          1-on-1 Sessions
-        </button>
-        <button class="sb-link" onclick="go('memberships',this)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          Memberships
-        </button>
-      </div>
+<!-- PLACEHOLDERS -->
+<div class="page" id="page-sessions"><div class="page-header"><h1>1-on-1 Sessions</h1><p>Booking management</p></div><div class="card"><div class="card-body"><div class="empty"><p>Session booking system coming in Session 3.</p></div></div></div></div>
+<div class="page" id="page-memberships"><div class="page-header"><h1>Memberships</h1><p>Tier management</p></div><div class="card"><div class="card-body"><div class="empty"><p>Membership tiers coming in Session 4.</p></div></div></div></div>
 
-      <div class="sb-divider"></div>
+<!-- COMMUNITY -->
+<div class="page" id="page-community"><div class="page-header"><h1>Community</h1><p>Discussion moderation across Academy and Fusion</p></div><div class="stats-grid" id="comm-stats"></div>
+<div class="tab-nav"><button class="tab-btn active" onclick="switchCommTab('academy',this)">Academy Discussions</button><button class="tab-btn" onclick="switchCommTab('fusion',this)">Fusion Community</button></div>
+<div class="tab-content active" id="comm-tab-academy"><div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap"><select class="input" style="width:150px" id="comm-acad-filter" onchange="loadAcadDiscussions()"><option value="all">All</option><option value="visible">Visible</option><option value="hidden">Hidden</option><option value="pinned">Pinned</option></select><input type="text" class="input" style="width:200px" id="comm-acad-search" placeholder="Search..." oninput="loadAcadDiscussions()"></div><div id="comm-acad-posts"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div>
+<div class="tab-content" id="comm-tab-fusion"><div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap"><select class="input" style="width:150px" id="comm-fus-filter" onchange="loadFusionPosts()"><option value="all">All</option><option value="visible">Visible</option><option value="hidden">Hidden</option><option value="pinned">Pinned</option></select><input type="text" class="input" style="width:200px" id="comm-fus-search" placeholder="Search..." oninput="loadFusionPosts()"></div><div id="comm-fus-posts"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div></div>
 
-      <div class="sb-section">
-        <div class="sb-section-label">Engage</div>
-        <button class="sb-link" onclick="go('referrals',this)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-          Referrals & Credits
-        </button>
-        <button class="sb-link" onclick="go('email',this)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-          Email Campaigns
-        </button>
-        <button class="sb-link" onclick="go('analytics',this)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-          Analytics
-        </button>
-      </div>
-    </nav>
+<!-- REFERRALS -->
+<div class="page" id="page-referrals"><div class="page-header"><h1>Referrals & Credits</h1><p>Cross-platform referral tracking</p></div><div class="stats-grid" id="ref-stats"></div><div class="grid-2" style="margin-bottom:20px"><div class="card"><div class="card-header"><div class="card-title">Top Referrers</div></div><div class="card-body" style="max-height:380px;overflow-y:auto" id="ref-leaderboard"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div><div class="card"><div class="card-header"><div class="card-title">Recent Credit Activity</div></div><div class="card-body" style="max-height:380px;overflow-y:auto" id="ref-activity"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div></div></div>
 
-    <div class="sb-divider" style="margin:0 20px"></div>
-    <button class="sb-theme-toggle" onclick="toggleTheme()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-      <span id="themeLabel">Light</span>
-      <div class="sb-theme-switch"></div>
-    </button>
+<!-- EMAIL & ANALYTICS -->
+<div class="page" id="page-email"><div class="page-header"><h1>Email Campaigns</h1><p>Coming in Session 5</p></div><div class="card"><div class="card-body"><div class="empty"><p>Email campaigns will be migrated from the existing Fusion admin in Session 5.</p></div></div></div></div>
+<div class="page" id="page-analytics"><div class="page-header"><h1>Analytics</h1><p>Coming in Session 5</p></div><div class="card"><div class="card-body"><div class="empty"><p>Full analytics dashboard coming in Session 5.</p></div></div></div></div>
 
-    <div class="sb-footer">
-      <div class="sb-user">
-        <div class="sb-avatar">TC</div>
-        <div class="sb-user-info">
-          <div class="sb-user-name">Dr. Tracey Clark</div>
-          <div class="sb-user-role">Administrator</div>
-        </div>
-        <button class="sb-logout" onclick="doLogout()" title="Sign out">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        </button>
-      </div>
-    </div>
-  </aside>
-
-  <!-- MAIN CONTENT -->
-  <div class="main-content">
-    <div class="topbar">
-      <div class="topbar-title" id="topbar-title">Dashboard</div>
-      <div class="topbar-right">
-        <div class="topbar-search ac-wrap" id="global-search-wrap">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" id="global-search" placeholder="Search customers..." autocomplete="off" oninput="handleGlobalSearch()" onkeydown="handleGlobalKeydown(event)">
-          <div class="ac-dropdown" id="global-ac"></div>
-        </div>
-        <button class="topbar-btn" title="Refresh" onclick="refreshCurrentPage()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-        </button>
-      </div>
-    </div>
-
-    <!-- ============ DASHBOARD ============ -->
-    <div class="page active" id="page-dashboard">
-      <div class="page-header"><h1>Dashboard</h1><p>Revenue overview across all products</p></div>
-      <div class="stats-grid" id="dash-stats">
-        <div class="stat-card"><div class="stat-ico green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div><div class="stat-val" id="ds-revenue">—</div><div class="stat-lbl">Total Revenue</div></div></div>
-        <div class="stat-card"><div class="stat-ico teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div><div><div class="stat-val" id="ds-academy">—</div><div class="stat-lbl">Academy Sales</div></div></div>
-        <div class="stat-card"><div class="stat-ico purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div><div><div class="stat-val" id="ds-fusion">—</div><div class="stat-lbl">Fusion Sales</div></div></div>
-        <div class="stat-card"><div class="stat-ico warm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><div><div class="stat-val" id="ds-customers">—</div><div class="stat-lbl">Total Customers</div></div></div>
-        <div class="stat-card"><div class="stat-ico teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div><div><div class="stat-val" id="ds-enrollments">—</div><div class="stat-lbl">Enrollments</div></div></div>
-        <div class="stat-card"><div class="stat-ico warm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></div><div><div class="stat-val" id="ds-referrers">—</div><div class="stat-lbl">Active Referrers</div></div></div>
-      </div>
-      <div class="grid-2">
-        <div class="card"><div class="card-header"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Recent Purchases</div><button class="btn btn-ghost btn-sm" onclick="go('customers')">View All</button></div><div class="card-body" id="dash-purchases" style="max-height:380px;overflow-y:auto"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div>
-        <div class="card"><div class="card-header"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Recent Activity</div></div><div class="card-body" id="dash-activity" style="max-height:380px;overflow-y:auto"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div>
-      </div>
-    </div>
-
-    <!-- ============ CUSTOMERS ============ -->
-    <div class="page" id="page-customers">
-      <div class="page-header"><h1>Customers</h1><p>Unified profiles across all products</p></div>
-      <div class="form-row" style="margin-bottom:20px">
-        <div class="form-group ac-wrap" style="flex:2">
-          <input type="text" class="input" id="cust-search" placeholder="Search by email, name, or referral code..." autocomplete="off" oninput="handleCustSearch()" onkeydown="handleCustKeydown(event)">
-          <div class="ac-dropdown" id="cust-ac"></div>
-        </div>
-        <button class="btn btn-primary" onclick="searchCustomer()">Search</button>
-      </div>
-      <div class="msg" id="cust-msg"></div>
-      <div id="cust-result"></div>
-      <div class="card" style="margin-top:20px">
-        <div class="card-header"><div class="card-title">All Customers</div><button class="btn btn-ghost btn-sm" onclick="loadCustomerBrowser()">Refresh</button></div>
-        <div class="card-body" style="padding:16px">
-          <div class="browser-stats" id="cust-browser-stats"></div>
-          <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
-            <select class="input" style="width:170px" id="cb-filter" onchange="applyCBFilter()"><option value="all">All Customers</option><option value="academy">Academy Owners</option><option value="fusion">Fusion Owners</option><option value="bundle">Bundle Owners</option><option value="no-purchase">No Purchases</option><option value="has-credits">Has Credits</option><option value="has-referrals">Has Referrals</option></select>
-            <select class="input" style="width:150px" id="cb-sort" onchange="applyCBFilter()"><option value="email-asc">Email A→Z</option><option value="recent">Most Recent</option><option value="credits">Highest Credits</option><option value="referrals">Most Referrals</option></select>
-            <input type="text" class="input" style="width:200px" id="cb-search" placeholder="Filter..." oninput="applyCBFilter()">
-          </div>
-          <div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Email</th><th>Name</th><th>Products</th><th>Credits</th><th>Referrals</th><th></th></tr></thead><tbody id="cb-tbody"><tr><td colspan="6" class="loading-center"><div class="spinner"></div></td></tr></tbody></table></div>
-          <div class="pagination" id="cb-pagination"></div>
-        </div>
-      </div>
-      <div class="card" style="margin-top:20px"><div class="card-header"><div class="card-title">Grant Access</div></div><div class="card-body"><div class="form-row"><div class="form-group"><label>Email</label><input type="email" class="input" id="grant-email" placeholder="customer@example.com"></div><div class="form-group"><label>Product</label><select class="input" id="grant-product"><optgroup label="Fusion Sessions"><option value="bundle-all">Complete Bundle</option><option value="session-01">S1: Intolerance & Sensitivity</option><option value="session-02">S2: Anxiety & Overwhelm</option><option value="session-03">S3: Pain & Tension</option><option value="session-04">S4: Sleep & Reset</option><option value="session-05">S5: Digestion & Integration</option><option value="session-06">S6: Immune Balance</option><option value="session-07">S7: Hormonal Harmony</option><option value="session-08">S8: Phobias & Fear</option><option value="session-09">S9: Fatigue & Vitality</option><option value="session-10">S10: Weight & Self-Perception</option><option value="session-11">S11: Relationships & Boundaries</option><option value="session-12">S12: Purpose & Alignment</option></optgroup><optgroup label="Academy Courses"><option value="breaking-up-with-your-beliefs">Breaking Up with Your Beliefs</option><option value="power-of-the-question">The Power of The Question</option><option value="creative-mind-mapping">Creative Mind Mapping</option><option value="quantum-vision-boards">Quantum Vision Boards</option><option value="becoming-present">Becoming Present</option><option value="transformational-mastery">Transformational Mastery (All 5)</option></optgroup></select></div><button class="btn btn-success" onclick="grantAccess()">Grant</button></div><div class="msg" id="grant-msg"></div></div></div>
-    </div>
-
-    <!-- ============ ACADEMY ============ -->
-    <div class="page" id="page-academy">
-      <div class="page-header"><h1>Academy</h1><p>Course management, enrollments, and student progress</p></div>
-      <div class="stats-grid" id="acad-stats"></div>
-      <div class="card" style="margin-bottom:20px"><div class="card-header"><div class="card-title">Course Enrollments</div><button class="btn btn-ghost btn-sm" onclick="loadAcademyData()">Refresh</button></div><div class="card-body" id="acad-courses"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div>
-      <div class="card"><div class="card-header"><div class="card-title">Recent Academy Purchases</div></div><div class="card-body" style="max-height:400px;overflow-y:auto" id="acad-purchases"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div>
-    </div>
-
-    <!-- ============ FUSION ============ -->
-    <div class="page" id="page-fusion">
-      <div class="page-header"><h1>Fusion Sessions</h1><p>Subscription management and content delivery</p></div>
-      <div class="stats-grid" id="fusion-stats"></div>
-      <div class="card"><div class="card-header"><div class="card-title">Session Purchases</div><button class="btn btn-ghost btn-sm" onclick="loadFusionData()">Refresh</button></div><div class="card-body" id="fusion-content"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div>
-    </div>
-
-    <!-- ============ 1-ON-1 SESSIONS ============ -->
-    <div class="page" id="page-sessions">
-      <div class="page-header"><h1>1-on-1 Sessions</h1><p>Booking management and scheduling</p></div>
-      <div class="card"><div class="card-body"><div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><p>Session booking system coming in Session 3.<br>Database tables <code>session_types</code> and <code>session_bookings</code> will be created.</p></div></div></div>
-    </div>
-
-    <!-- ============ MEMBERSHIPS ============ -->
-    <div class="page" id="page-memberships">
-      <div class="page-header"><h1>Memberships</h1><p>Tier management and access control</p></div>
-      <div class="card"><div class="card-body"><div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><p>Membership tiers coming in Session 4.<br>Tables <code>membership_tiers</code> and <code>memberships</code> will be created.</p></div></div></div>
-    </div>
-
-    <!-- ============ REFERRALS & CREDITS ============ -->
-    <div class="page" id="page-referrals">
-      <div class="page-header"><h1>Referrals & Credits</h1><p>Cross-platform referral tracking and credit management</p></div>
-      <div class="stats-grid" id="ref-stats"></div>
-      <div class="grid-2" style="margin-bottom:20px">
-        <div class="card"><div class="card-header"><div class="card-title">Top Referrers</div></div><div class="card-body" style="max-height:380px;overflow-y:auto" id="ref-leaderboard"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div>
-        <div class="card"><div class="card-header"><div class="card-title">Recent Credit Activity</div></div><div class="card-body" style="max-height:380px;overflow-y:auto" id="ref-activity"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div>
-      </div>
-    </div>
-
-    <!-- ============ EMAIL CAMPAIGNS ============ -->
-    <div class="page" id="page-email">
-      <div class="page-header"><h1>Email Campaigns</h1><p>Targeted email campaigns and automation</p></div>
-      <div class="card"><div class="card-body"><div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><p>Email campaigns will be migrated from the existing Fusion admin in Session 5.<br>The existing admin email system stays live until then.</p></div></div></div>
-    </div>
-
-    <!-- ============ ANALYTICS ============ -->
-    <div class="page" id="page-analytics">
-      <div class="page-header"><h1>Analytics</h1><p>Revenue by product line, engagement metrics</p></div>
-      <div class="card"><div class="card-body"><div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><p>Full analytics dashboard coming in Session 5.<br>Charts and metrics will be migrated here.</p></div></div></div>
-    </div>
-
-  </div>
-</div>
-
+</div></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-// ============================================================
-// CONFIG
-// ============================================================
-const ADMIN_USERNAME = 'QPadmin';
-
-// ============================================================
-// THEME
-// ============================================================
-function toggleTheme(){
-  var cur=document.documentElement.getAttribute('data-theme')||'dark';
-  var next=cur==='dark'?'light':'dark';
-  document.documentElement.setAttribute('data-theme',next);
-  localStorage.setItem('qa-theme',next);
-  var l=document.getElementById('themeLabel');if(l)l.textContent=next==='dark'?'Light':'Dark';
-}
-(function(){
-  var saved=localStorage.getItem('qa-theme');
-  if(saved){document.documentElement.setAttribute('data-theme',saved);var l=document.getElementById('themeLabel');if(l)l.textContent=saved==='dark'?'Light':'Dark'}
-})();
-const ADMIN_PASSWORD = 'QPfs#2026';
-const SUPABASE_URL = 'https://rihlrfiqokqrlmzjjyxj.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpaGxyZmlxb2txcmxtempqeXhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1MTU2NDYsImV4cCI6MjA4NDA5MTY0Nn0.G2TQKSmQpPYb8Cyzo7R833G7xkr0855faLRjrJ9ov-4';
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-const FUSION_NAMES = {'bundle-all':'Complete Bundle','session-01':'S1: Intolerance & Sensitivity','session-02':'S2: Anxiety & Overwhelm','session-03':'S3: Pain & Tension','session-04':'S4: Sleep & Reset','session-05':'S5: Digestion & Integration','session-06':'S6: Immune Balance','session-07':'S7: Hormonal Harmony','session-08':'S8: Phobias & Fear','session-09':'S9: Fatigue & Vitality','session-10':'S10: Weight & Self-Perception','session-11':'S11: Relationships & Boundaries','session-12':'S12: Purpose & Alignment'};
-const ACADEMY_NAMES = {'quantum-vision-boards':'Quantum Vision Boards','becoming-present':'Becoming Present','breaking-up-with-your-beliefs':'Breaking Up with Your Beliefs','creative-mind-mapping':'Creative Mind Mapping','power-of-the-question':'The Power of The Question','transformational-mastery':'Transformational Mastery'};
-const ACADEMY_SLUGS = ['breaking-up-with-your-beliefs','power-of-the-question','creative-mind-mapping','quantum-vision-boards','becoming-present'];
-
-function isFusion(pid){return pid&&(pid.startsWith('session-')||pid==='bundle-all')}
-function isAcademy(pid){return pid&&ACADEMY_NAMES[pid]}
-function productName(pid){return FUSION_NAMES[pid]||ACADEMY_NAMES[pid]||pid}
-function productBadge(pid){
-  if(pid==='bundle-all')return'<span class=.badge.taupe">Bundle</span>';
-  if(pid==='transformational-mastery')return'<span class=.badge.taupe">Academy Bundle</span>';
-  if(isFusion(pid))return'<span class="badge purple">Fusion</span>';
-  if(isAcademy(pid))return'<span class="badge teal">Academy</span>';
-  return'<span class="badge muted">Unknown</span>';
-}
+const ADMIN_USERNAME='QPadmin',ADMIN_PASSWORD='QPfs#2026';
+const SUPABASE_URL='https://rihlrfiqokqrlmzjjyxj.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpaGxyZmlxb2txcmxtempqeXhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1MTU2NDYsImV4cCI6MjA4NDA5MTY0Nn0.G2TQKSmQpPYb8Cyzo7R833G7xkr0855faLRjrJ9ov-4';
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+function toggleTheme(){var c=document.documentElement.getAttribute('data-theme')||'dark',n=c==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',n);localStorage.setItem('qa-theme',n);var l=document.getElementById('themeLabel');if(l)l.textContent=n==='dark'?'Light':'Dark'}
+(function(){var s=localStorage.getItem('qa-theme');if(s){document.documentElement.setAttribute('data-theme',s);var l=document.getElementById('themeLabel');if(l)l.textContent=s==='dark'?'Light':'Dark'}})();
+const FUSION_NAMES={'bundle-all':'Complete Bundle','session-01':'S1: Intolerance & Sensitivity','session-02':'S2: Anxiety & Overwhelm','session-03':'S3: Pain & Tension','session-04':'S4: Sleep & Reset','session-05':'S5: Digestion & Integration','session-06':'S6: Immune Balance','session-07':'S7: Hormonal Harmony','session-08':'S8: Phobias & Fear','session-09':'S9: Fatigue & Vitality','session-10':'S10: Weight & Self-Perception','session-11':'S11: Relationships & Boundaries','session-12':'S12: Purpose & Alignment'};
+const ACADEMY_NAMES={'quantum-vision-boards':'Quantum Vision Boards','becoming-present':'Becoming Present','breaking-up-with-your-beliefs':'Breaking Up with Your Beliefs','creative-mind-mapping':'Creative Mind Mapping','power-of-the-question':'The Power of The Question','transformational-mastery':'Transformational Mastery'};
+const ACADEMY_SLUGS=['breaking-up-with-your-beliefs','power-of-the-question','creative-mind-mapping','quantum-vision-boards','becoming-present'];
+function isFusion(p){return p&&(p.startsWith('session-')||p==='bundle-all')}
+function isAcademy(p){return p&&ACADEMY_NAMES[p]}
+function productName(p){return FUSION_NAMES[p]||ACADEMY_NAMES[p]||p}
+function productBadge(p){if(p==='bundle-all')return'<span class="badge taupe">Bundle</span>';if(p==='transformational-mastery')return'<span class="badge taupe">Academy Bundle</span>';if(isFusion(p))return'<span class="badge purple">Fusion</span>';if(isAcademy(p))return'<span class="badge teal">Academy</span>';return'<span class="badge muted">Unknown</span>'}
 function fmtMoney(v){return'$'+Number(v||0).toFixed(2).replace(/\.00$/,'')}
 function fmt$(c){if(!c)return'$0';return'$'+(c/100||c).toFixed(2).replace(/\.00$/,'')}
-function timeAgo(d){if(!d)return'—';const s=Math.floor((Date.now()-new Date(d))/1000);if(s<60)return'just now';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';if(s<604800)return Math.floor(s/86400)+'d ago';return new Date(d).toLocaleDateString()}
+function timeAgo(d){if(!d)return'\u2014';const s=Math.floor((Date.now()-new Date(d))/1000);if(s<60)return'just now';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';if(s<604800)return Math.floor(s/86400)+'d ago';return new Date(d).toLocaleDateString()}
 function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
-
-// ============================================================
-// AUTH
-// ============================================================
-function doAuth(){
-  const u=document.getElementById('auth-user').value,p=document.getElementById('auth-pass').value;
-  if(u===ADMIN_USERNAME&&p===ADMIN_PASSWORD){document.getElementById('auth-screen').style.display='none';document.getElementById('admin-layout').style.display='block';sessionStorage.setItem('qp_admin_auth','true');initAdmin()}
-  else{document.getElementById('auth-error').style.display='block'}
-}
+function showMsg(el,t,txt){el.className='msg '+t;el.textContent=txt;el.style.display='block';setTimeout(()=>{el.style.display='none'},5000)}
+function doAuth(){const u=document.getElementById('auth-user').value,p=document.getElementById('auth-pass').value;if(u===ADMIN_USERNAME&&p===ADMIN_PASSWORD){document.getElementById('auth-screen').style.display='none';document.getElementById('admin-layout').style.display='block';sessionStorage.setItem('qp_admin_auth','true');initAdmin()}else{document.getElementById('auth-error').style.display='block'}}
 function doLogout(){sessionStorage.removeItem('qp_admin_auth');location.reload()}
 if(sessionStorage.getItem('qp_admin_auth')==='true'){document.getElementById('auth-screen').style.display='none';document.getElementById('admin-layout').style.display='block';setTimeout(initAdmin,50)}
-
-// ============================================================
-// NAVIGATION
-// ============================================================
 let currentPage='dashboard';
-const TITLES={dashboard:'Dashboard',customers:'Customers',academy:'Academy',fusion:'Fusion Sessions',sessions:'1-on-1 Sessions',memberships:'Memberships',referrals:'Referrals & Credits',email:'Email Campaigns',analytics:'Analytics'};
-
-function go(page,btn){
-  currentPage=page;
-  document.querySelectorAll('.sb-link').forEach(l=>l.classList.remove('active'));
-  if(btn)btn.classList.add('active');
-  else document.querySelectorAll('.sb-link').forEach(l=>{if(l.onclick&&l.onclick.toString().includes("'"+page+"'"))l.classList.add('active')});
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  const el=document.getElementById('page-'+page);if(el)el.classList.add('active');
-  document.getElementById('topbar-title').textContent=TITLES[page]||page;
-  loadPageData(page);
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('sb-overlay').classList.remove('open');
-}
+const TITLES={dashboard:'Dashboard',customers:'Customers',academy:'Academy',fusion:'Fusion Sessions',sessions:'1-on-1 Sessions',memberships:'Memberships',community:'Community',referrals:'Referrals & Credits',email:'Email Campaigns',analytics:'Analytics'};
+function go(page,btn){currentPage=page;document.querySelectorAll('.sb-link').forEach(l=>l.classList.remove('active'));if(btn)btn.classList.add('active');document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));var el=document.getElementById('page-'+page);if(el)el.classList.add('active');document.getElementById('topbar-title').textContent=TITLES[page]||page;loadPageData(page);document.getElementById('sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('open')}
 function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sb-overlay').classList.toggle('open')}
-function refreshCurrentPage(){loadPageData(currentPage)}
-
-// ============================================================
-// DATA
-// ============================================================
-let allCustomers=[],purchasesData=[],referralData=[],profilesData=[],creditHistory=[],academyEnrollments=[],academyCourses=[],dataLoaded=false;
-
-async function loadAllData(){
-  try{
-    const[purchases,referrals,profiles,credits,enrollments,courses]=await Promise.all([
-      sb.from('purchases').select('*').order('purchased_at',{ascending:false}),
-      sb.from('referral_codes').select('*'),
-      sb.from('profiles').select('*'),
-      sb.from('credit_history').select('*').order('created_at',{ascending:false}).limit(200),
-      sb.from('qa_enrollments').select('*, qa_courses(id,title,slug)'),
-      sb.from('qa_courses').select('*').order('sort_order')
-    ]);
-    purchasesData=purchases.data||[];referralData=referrals.data||[];profilesData=profiles.data||[];
-    creditHistory=credits.data||[];academyEnrollments=enrollments.data||[];academyCourses=courses.data||[];
-    buildCustomerList();dataLoaded=true;
-  }catch(e){console.error('Data load error:',e)}
-}
-
-function buildCustomerList(){
-  const map=new Map();
-  profilesData.forEach(p=>{if(!p.email)return;const k=p.email.toLowerCase();map.set(k,{email:p.email,name:p.full_name||'',userId:p.id,hasAccount:true,createdAt:p.created_at,purchases:[],academyPurchases:[],fusionPurchases:[],hasBundle:false,hasAcademyBundle:false,creditBalance:0,referralCount:0,referralCode:'',totalEarned:0})});
-  purchasesData.forEach(p=>{if(!p.email)return;const k=p.email.toLowerCase();if(!map.has(k))map.set(k,{email:p.email,name:'',userId:null,hasAccount:false,createdAt:p.purchased_at,purchases:[],academyPurchases:[],fusionPurchases:[],hasBundle:false,hasAcademyBundle:false,creditBalance:0,referralCount:0,referralCode:'',totalEarned:0});const c=map.get(k);if(!c.purchases.includes(p.product_id)){c.purchases.push(p.product_id);if(isFusion(p.product_id))c.fusionPurchases.push(p.product_id);if(isAcademy(p.product_id))c.academyPurchases.push(p.product_id)}if(p.product_id==='bundle-all')c.hasBundle=true;if(p.product_id==='transformational-mastery')c.hasAcademyBundle=true});
-  referralData.forEach(r=>{if(!r.email)return;const k=r.email.toLowerCase();if(!map.has(k))map.set(k,{email:r.email,name:'',userId:null,hasAccount:false,createdAt:null,purchases:[],academyPurchases:[],fusionPurchases:[],hasBundle:false,hasAcademyBundle:false,creditBalance:0,referralCount:0,referralCode:'',totalEarned:0});const c=map.get(k);c.creditBalance=Number(r.credit_balance)||0;c.referralCount=r.successful_referrals||0;c.referralCode=r.code||'';c.totalEarned=Number(r.total_earned)||0});
-  allCustomers=Array.from(map.values());
-}
-
+function refreshCurrentPage(){loadAllData().then(function(){loadPageData(currentPage)})}
+let allCustomers=[],purchasesData=[],referralData=[],profilesData=[],creditHistory=[],academyEnrollments=[],academyCourses=[],lessonProgress=[],dataLoaded=false;
+async function loadAllData(){try{var r=await Promise.all([sb.from('purchases').select('*').order('purchased_at',{ascending:false}),sb.from('referral_codes').select('*'),sb.from('profiles').select('*'),sb.from('credit_history').select('*').order('created_at',{ascending:false}).limit(200),sb.from('qa_enrollments').select('*, qa_courses(id,title,slug)'),sb.from('qa_courses').select('*').order('sort_order'),sb.from('qa_lesson_progress').select('*')]);purchasesData=r[0].data||[];referralData=r[1].data||[];profilesData=r[2].data||[];creditHistory=r[3].data||[];academyEnrollments=r[4].data||[];academyCourses=r[5].data||[];lessonProgress=r[6].data||[];buildCustomerList();dataLoaded=true}catch(e){console.error('Load error:',e)}}
+function buildCustomerList(){var map=new Map();profilesData.forEach(function(p){if(!p.email)return;var k=p.email.toLowerCase();map.set(k,{email:p.email,name:p.full_name||'',userId:p.id,hasAccount:true,createdAt:p.created_at,purchases:[],academyPurchases:[],fusionPurchases:[],hasBundle:false,hasAcademyBundle:false,creditBalance:0,referralCount:0,referralCode:'',totalEarned:0,totalSpent:0})});purchasesData.forEach(function(p){if(!p.email)return;var k=p.email.toLowerCase();if(!map.has(k))map.set(k,{email:p.email,name:'',userId:null,hasAccount:false,createdAt:p.purchased_at,purchases:[],academyPurchases:[],fusionPurchases:[],hasBundle:false,hasAcademyBundle:false,creditBalance:0,referralCount:0,referralCode:'',totalEarned:0,totalSpent:0});var c=map.get(k);if(!c.purchases.includes(p.product_id)){c.purchases.push(p.product_id);if(isFusion(p.product_id))c.fusionPurchases.push(p.product_id);if(isAcademy(p.product_id))c.academyPurchases.push(p.product_id)}if(p.product_id==='bundle-all')c.hasBundle=true;if(p.product_id==='transformational-mastery')c.hasAcademyBundle=true;c.totalSpent+=(Number(p.amount_paid)||0)});referralData.forEach(function(r){if(!r.email)return;var k=r.email.toLowerCase();if(!map.has(k))map.set(k,{email:r.email,name:'',userId:null,hasAccount:false,createdAt:null,purchases:[],academyPurchases:[],fusionPurchases:[],hasBundle:false,hasAcademyBundle:false,creditBalance:0,referralCount:0,referralCode:'',totalEarned:0,totalSpent:0});var c=map.get(k);c.creditBalance=Number(r.credit_balance)||0;c.referralCount=r.successful_referrals||0;c.referralCode=r.code||'';c.totalEarned=Number(r.total_earned)||0});allCustomers=Array.from(map.values())}
 async function initAdmin(){await loadAllData();loadPageData('dashboard')}
-function loadPageData(page){if(!dataLoaded&&page!=='dashboard')return;switch(page){case'dashboard':loadDashboard();break;case'customers':loadCustomerBrowser();break;case'academy':loadAcademyData();break;case'fusion':loadFusionData();break;case'referrals':loadReferralData();break}}
+function loadPageData(page){if(!dataLoaded&&page!=='dashboard')return;switch(page){case'dashboard':loadDashboard();break;case'customers':loadCustomerBrowser();break;case'academy':loadAcademyData();break;case'fusion':loadFusionData();break;case'referrals':loadReferralData();break;case'community':loadCommunityData();break}}
+function getAdminNotes(email){try{return JSON.parse(localStorage.getItem('qp_notes_'+email.toLowerCase()))||[]}catch(e){return[]}}
+function saveAdminNote(email,text){var notes=getAdminNotes(email);notes.unshift({text:text,date:new Date().toISOString(),id:Date.now()});localStorage.setItem('qp_notes_'+email.toLowerCase(),JSON.stringify(notes))}
+function deleteAdminNote(email,id){var notes=getAdminNotes(email).filter(function(n){return n.id!==id});localStorage.setItem('qp_notes_'+email.toLowerCase(),JSON.stringify(notes))}
 
-// ============================================================
-// DASHBOARD
-// ============================================================
-function loadDashboard(){
-  if(!dataLoaded)return;
-  const totalRev=purchasesData.reduce((s,p)=>s+(Number(p.amount_paid)||0),0);
-  const acadRev=purchasesData.filter(p=>isAcademy(p.product_id)).reduce((s,p)=>s+(Number(p.amount_paid)||0),0);
-  const fusionRev=purchasesData.filter(p=>isFusion(p.product_id)).reduce((s,p)=>s+(Number(p.amount_paid)||0),0);
-  document.getElementById('ds-revenue').textContent=fmtMoney(totalRev);
-  document.getElementById('ds-academy').textContent=fmtMoney(acadRev);
-  document.getElementById('ds-fusion').textContent=fmtMoney(fusionRev);
-  document.getElementById('ds-customers').textContent=allCustomers.length;
-  document.getElementById('ds-enrollments').textContent=academyEnrollments.filter(e=>e.status==='active').length;
-  document.getElementById('ds-referrers').textContent=referralData.filter(r=>r.successful_referrals>0).length;
+function loadDashboard(){if(!dataLoaded)return;var tr=purchasesData.reduce(function(s,p){return s+(Number(p.amount_paid)||0)},0);var ar=purchasesData.filter(function(p){return isAcademy(p.product_id)}).reduce(function(s,p){return s+(Number(p.amount_paid)||0)},0);var fr=purchasesData.filter(function(p){return isFusion(p.product_id)}).reduce(function(s,p){return s+(Number(p.amount_paid)||0)},0);var ae=academyEnrollments.filter(function(e){return e.status==='active'}).length;var rr=referralData.filter(function(r){return r.successful_referrals>0}).length;
+document.getElementById('dash-stats').innerHTML='<div class="stat-card"><div class="stat-ico green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div><div class="stat-val">'+fmtMoney(tr)+'</div><div class="stat-lbl">Total Revenue</div></div></div><div class="stat-card"><div class="stat-ico teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/></svg></div><div><div class="stat-val">'+fmtMoney(ar)+'</div><div class="stat-lbl">Academy Sales</div></div></div><div class="stat-card"><div class="stat-ico purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg></div><div><div class="stat-val">'+fmtMoney(fr)+'</div><div class="stat-lbl">Fusion Sales</div></div></div><div class="stat-card"><div class="stat-ico warm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div><div class="stat-val">'+allCustomers.length+'</div><div class="stat-lbl">Total Customers</div></div></div><div class="stat-card"><div class="stat-ico teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/></svg></div><div><div class="stat-val">'+ae+'</div><div class="stat-lbl">Enrollments</div></div></div><div class="stat-card"><div class="stat-ico warm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/></svg></div><div><div class="stat-val">'+rr+'</div><div class="stat-lbl">Active Referrers</div></div></div>';
+var rp=purchasesData.slice(0,10);document.getElementById('dash-purchases').innerHTML=rp.length?rp.map(function(p){return'<div class="feed-item"><div class="feed-dot" style="background:'+(isFusion(p.product_id)?'var(--purple)':'var(--teal)')+'"></div><div class="feed-content"><div class="feed-text"><strong>'+esc(p.email)+'</strong> purchased '+productName(p.product_id)+'</div><div class="feed-time">'+fmtMoney(p.amount_paid)+' \u00b7 '+timeAgo(p.purchased_at)+'</div></div>'+productBadge(p.product_id)+'</div>'}).join(''):'<div class="empty"><p>No purchases</p></div>';
+var rc=creditHistory.slice(0,10);document.getElementById('dash-activity').innerHTML=rc.length?rc.map(function(c){return'<div class="feed-item"><div class="feed-dot" style="background:'+(c.amount>0?'var(--success)':'var(--warning)')+'"></div><div class="feed-content"><div class="feed-text"><strong>'+esc(c.email)+'</strong> '+(c.amount>0?'+':'')+fmtMoney(c.amount)+'</div><div class="feed-time">'+esc(c.description||c.type)+' \u00b7 '+timeAgo(c.created_at)+'</div></div></div>'}).join(''):'<div class="empty"><p>No activity</p></div>'}
 
-  const recent=purchasesData.slice(0,10);
-  document.getElementById('dash-purchases').innerHTML=recent.length?recent.map(p=>`<div class="feed-item"><div class="feed-dot" style="background:${isFusion(p.product_id)?'var(--purple)':'var(--teal)'}"></div><div class="feed-content"><div class="feed-text"><strong>${esc(p.email)}</strong> purchased ${productName(p.product_id)}</div><div class="feed-time">${fmtMoney(p.amount_paid)} · ${timeAgo(p.purchased_at)}</div></div>${productBadge(p.product_id)}</div>`).join(''):'<div class="empty"><p>No purchases yet</p></div>';
-
-  const recentC=creditHistory.slice(0,10);
-  document.getElementById('dash-activity').innerHTML=recentC.length?recentC.map(c=>`<div class="feed-item"><div class="feed-dot" style="background:${c.amount>0?'var(--success)':'var(--warning)'}"></div><div class="feed-content"><div class="feed-text"><strong>${esc(c.email)}</strong> ${c.amount>0?'+':''}${fmtMoney(c.amount)}</div><div class="feed-time">${esc(c.description||c.type)} · ${timeAgo(c.created_at)}</div></div></div>`).join(''):'<div class="empty"><p>No recent activity</p></div>';
-}
-
-// ============================================================
-// CUSTOMER BROWSER
-// ============================================================
-let cbFiltered=[],cbPage=1;const cbPS=20;
+var cbFiltered=[],cbPage=1,cbPS=20;
 function loadCustomerBrowser(){cbPage=1;applyCBFilter();updateBrowserStats()}
-function updateBrowserStats(){
-  const el=document.getElementById('cust-browser-stats');
-  el.innerHTML=`<div class="bs"><div class="bs-val" style="color:var(--text)">${allCustomers.length}</div><div class="bs-label">Total</div></div><div class="bs"><div class="bs-val" style="color:var(--teal)">${allCustomers.filter(c=>c.academyPurchases.length>0).length}</div><div class="bs-label">Academy</div></div><div class="bs"><div class="bs-val" style="color:var(--purple)">${allCustomers.filter(c=>c.fusionPurchases.length>0).length}</div><div class="bs-label">Fusion</div></div><div class="bs"><div class="bs-val" style="color:var(--success)">${allCustomers.filter(c=>c.creditBalance>0).length}</div><div class="bs-label">Credits</div></div><div class="bs"><div class="bs-val" style="color:var(--text-dim)">${allCustomers.filter(c=>c.purchases.length===0).length}</div><div class="bs-label">No Purchase</div></div>`;
-}
-function applyCBFilter(){
-  const f=document.getElementById('cb-filter').value,s=document.getElementById('cb-sort').value,q=(document.getElementById('cb-search').value||'').toLowerCase().trim();
-  cbFiltered=allCustomers.filter(c=>{if(q&&!c.email.toLowerCase().includes(q)&&!c.name.toLowerCase().includes(q)&&!c.referralCode.toLowerCase().includes(q))return false;switch(f){case'academy':return c.academyPurchases.length>0;case'fusion':return c.fusionPurchases.length>0;case'bundle':return c.hasBundle||c.hasAcademyBundle;case'no-purchase':return c.purchases.length===0;case'has-credits':return c.creditBalance>0;case'has-referrals':return c.referralCount>0;default:return true}});
-  cbFiltered.sort((a,b)=>{switch(s){case'email-asc':return a.email.localeCompare(b.email);case'recent':return(b.createdAt||'').localeCompare(a.createdAt||'');case'credits':return b.creditBalance-a.creditBalance;case'referrals':return b.referralCount-a.referralCount;default:return 0}});
-  cbPage=1;renderCBTable();
-}
-function renderCBTable(){
-  const tbody=document.getElementById('cb-tbody'),tp=Math.ceil(cbFiltered.length/cbPS)||1,start=(cbPage-1)*cbPS,pd=cbFiltered.slice(start,start+cbPS);
-  if(!pd.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-dim)">No customers match filters</td></tr>'}
-  else{tbody.innerHTML=pd.map(c=>{const tags=[];if(c.hasBundle)tags.push('<span class=.badge.taupe">Bundle</span>');if(c.hasAcademyBundle)tags.push('<span class="badge teal">Academy All</span>');if(!c.hasBundle&&c.fusionPurchases.length>0)tags.push('<span class="badge purple">'+c.fusionPurchases.length+' Fusion</span>');if(!c.hasAcademyBundle&&c.academyPurchases.length>0)tags.push('<span class="badge teal">'+c.academyPurchases.length+' Academy</span>');if(!tags.length)tags.push(c.hasAccount?'<span class="badge muted">Registered</span>':'<span class="badge muted">Guest</span>');return`<tr style="cursor:pointer" onclick="showCustomerDetail('${esc(c.email.replace(/'/g,"\\'"))}')"><td class="email">${esc(c.email)}${c.referralCode?'<br><span class="mono">'+c.referralCode+'</span>':''}</td><td class="name">${c.name?esc(c.name):'<span style="color:var(--text-dim)">—</span>'}</td><td>${tags.join(' ')}</td><td>${c.creditBalance>0?'<span style="color:var(--success);font-weight:600">'+fmtMoney(c.creditBalance)+'</span>':'<span style="color:var(--text-dim)">—</span>'}</td><td>${c.referralCount>0?'<span style="color:var(--teal);font-weight:600">'+c.referralCount+'</span>':'<span style="color:var(--text-dim)">—</span>'}</td><td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();showCustomerDetail('${esc(c.email.replace(/'/g,"\\'"))}')">View</button></td></tr>`}).join('')}
-  document.getElementById('cb-pagination').innerHTML=`<span>Showing ${cbFiltered.length} · Page ${cbPage} of ${tp}</span><div class="page-btns"><button class="btn btn-ghost btn-sm" onclick="cbPage=Math.max(1,cbPage-1);renderCBTable()" ${cbPage<=1?'disabled':''}>← Prev</button><button class="btn btn-ghost btn-sm" onclick="cbPage=Math.min(${tp},cbPage+1);renderCBTable()" ${cbPage>=tp?'disabled':''}>Next →</button></div>`;
-}
+function updateBrowserStats(){var ac=allCustomers.filter(function(c){return c.academyPurchases.length>0}).length;var fc=allCustomers.filter(function(c){return c.fusionPurchases.length>0}).length;var cr=allCustomers.filter(function(c){return c.creditBalance>0}).length;var np=allCustomers.filter(function(c){return c.purchases.length===0}).length;document.getElementById('cust-browser-stats').innerHTML='<div class="bs"><div class="bs-val" style="color:var(--text)">'+allCustomers.length+'</div><div class="bs-label">Total</div></div><div class="bs"><div class="bs-val" style="color:var(--teal)">'+ac+'</div><div class="bs-label">Academy</div></div><div class="bs"><div class="bs-val" style="color:var(--purple)">'+fc+'</div><div class="bs-label">Fusion</div></div><div class="bs"><div class="bs-val" style="color:var(--success)">'+cr+'</div><div class="bs-label">Credits</div></div><div class="bs"><div class="bs-val" style="color:var(--text-dim)">'+np+'</div><div class="bs-label">No Purchase</div></div>'}
+function applyCBFilter(){var f=document.getElementById('cb-filter').value,s=document.getElementById('cb-sort').value,q=(document.getElementById('cb-search').value||'').toLowerCase().trim();cbFiltered=allCustomers.filter(function(c){if(q&&c.email.toLowerCase().indexOf(q)<0&&c.name.toLowerCase().indexOf(q)<0&&c.referralCode.toLowerCase().indexOf(q)<0)return false;switch(f){case'academy':return c.academyPurchases.length>0;case'fusion':return c.fusionPurchases.length>0;case'bundle':return c.hasBundle||c.hasAcademyBundle;case'no-purchase':return c.purchases.length===0;case'has-credits':return c.creditBalance>0;case'has-referrals':return c.referralCount>0;default:return true}});cbFiltered.sort(function(a,b){switch(s){case'email-asc':return a.email.localeCompare(b.email);case'recent':return(b.createdAt||'').localeCompare(a.createdAt||'');case'credits':return b.creditBalance-a.creditBalance;case'referrals':return b.referralCount-a.referralCount;case'spent':return b.totalSpent-a.totalSpent;default:return 0}});cbPage=1;renderCBTable()}
+function renderCBTable(){var tbody=document.getElementById('cb-tbody'),tp=Math.ceil(cbFiltered.length/cbPS)||1,start=(cbPage-1)*cbPS,pd=cbFiltered.slice(start,start+cbPS);if(!pd.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-dim)">No customers match filters</td></tr>'}else{tbody.innerHTML=pd.map(function(c){var tags=[];if(c.hasBundle)tags.push('<span class="badge taupe">Bundle</span>');if(c.hasAcademyBundle)tags.push('<span class="badge teal">Academy All</span>');if(!c.hasBundle&&c.fusionPurchases.length>0)tags.push('<span class="badge purple">'+c.fusionPurchases.length+' Fusion</span>');if(!c.hasAcademyBundle&&c.academyPurchases.length>0)tags.push('<span class="badge teal">'+c.academyPurchases.length+' Academy</span>');if(!tags.length)tags.push(c.hasAccount?'<span class="badge muted">Registered</span>':'<span class="badge muted">Guest</span>');var e2=esc(c.email.replace(/'/g,"\\'"));return'<tr style="cursor:pointer" onclick="showCustomerDetail(\''+e2+'\')"><td class="email">'+esc(c.email)+(c.referralCode?'<br><span class="mono">'+c.referralCode+'</span>':'')+'</td><td class="name">'+(c.name?esc(c.name):'<span style="color:var(--text-dim)">\u2014</span>')+'</td><td>'+tags.join(' ')+'</td><td>'+(c.totalSpent>0?'<span style="color:var(--success)">'+fmtMoney(c.totalSpent)+'</span>':'\u2014')+'</td><td>'+(c.creditBalance>0?'<span style="color:var(--success);font-weight:600">'+fmtMoney(c.creditBalance)+'</span>':'\u2014')+'</td><td>'+(c.referralCount>0?'<span style="color:var(--teal);font-weight:600">'+c.referralCount+'</span>':'\u2014')+'</td><td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();showCustomerDetail(\''+e2+'\')">View</button></td></tr>'}).join('')}document.getElementById('cb-pagination').innerHTML='<span>'+cbFiltered.length+' customers \u00b7 Page '+cbPage+'/'+tp+'</span><div class="page-btns"><button class="btn btn-ghost btn-sm" onclick="cbPage=Math.max(1,cbPage-1);renderCBTable()" '+(cbPage<=1?'disabled':'')+'>Prev</button><button class="btn btn-ghost btn-sm" onclick="cbPage=Math.min('+tp+',cbPage+1);renderCBTable()" '+(cbPage>=tp?'disabled':'')+'>Next</button></div>'}
+function exportCustomers(){var csv=['Email,Name,Products,Spent,Credits,Code,Referrals'];cbFiltered.forEach(function(c){csv.push([c.email,'"'+(c.name||'')+'"','"'+c.purchases.map(productName).join('; ')+'"',c.totalSpent,c.creditBalance,c.referralCode,c.referralCount].join(','))});var b=new Blob([csv.join('\n')],{type:'text/csv'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='qp-customers.csv';a.click()}
 
-// ============================================================
-// CUSTOMER DETAIL
-// ============================================================
-function showCustomerDetail(email){
-  const c=allCustomers.find(x=>x.email.toLowerCase()===email.toLowerCase());if(!c)return;
-  const cp=purchasesData.filter(p=>p.email&&p.email.toLowerCase()===email.toLowerCase());
-  const cc=creditHistory.filter(h=>h.email&&h.email.toLowerCase()===email.toLowerCase());
-  const ce=academyEnrollments.filter(e=>e.user_id===c.userId&&e.status==='active');
-  document.getElementById('cust-result').innerHTML=`
-    <div class="detail-panel">
-      <button class="btn btn-ghost btn-sm" style="position:absolute;top:16px;right:16px" onclick="this.closest('.detail-panel').remove()">✕ Close</button>
-      <div class="detail-header"><div><div class="detail-email">${esc(c.email)}</div><div class="detail-name">${c.name?esc(c.name):'No name on file'}</div>${c.userId?'<div class="detail-id">'+c.userId+'</div>':''}</div><div>${c.hasAccount?'<span class="badge green">Active Account</span>':'<span class="badge muted">No Account</span>'}</div></div>
-      <div class="detail-grid">
-        <div class="detail-section"><h4><span class="dot" style="background:var(--success)"></span> Purchases</h4>${c.purchases.length?'<div class="product-tags">'+c.purchases.map(pid=>'<span class="product-tag '+(isFusion(pid)?'fusion':(pid.includes('bundle')||pid.includes('mastery')?'bundle':'academy'))+'">'+productName(pid)+'</span>').join('')+'</div>':'<p style="color:var(--text-dim);font-size:13px">No purchases</p>'}${cp.length?'<div style="margin-top:12px;font-size:12px;color:var(--text-muted)">Total paid: <strong style="color:var(--success)">'+fmtMoney(cp.reduce((s,p)=>s+(Number(p.amount_paid)||0),0))+'</strong></div>':''}</div>
-        <div class="detail-section"><h4><span class="dot" style="background:var(--teal)"></span> Referral & Credits</h4>${c.referralCode?'<div style="margin-bottom:10px">Code: <span class="ref-code">'+c.referralCode+'</span></div>':'<p style="color:var(--text-dim);font-size:13px;margin-bottom:10px">No referral code</p>'}<div class="ref-stat-row"><div class="ref-stat"><div class="ref-stat-val" style="color:var(--success)">${fmtMoney(c.creditBalance)}</div><div class="ref-stat-label">Balance</div></div><div class="ref-stat"><div class="ref-stat-val" style="color:var(--teal)">${c.referralCount}</div><div class="ref-stat-label">Referrals</div></div><div class="ref-stat"><div class="ref-stat-val" style="color:var(--taupe)">${fmtMoney(c.totalEarned)}</div><div class="ref-stat-label">Earned</div></div></div><div class="credit-actions"><input type="number" class="input" id="credit-amount" placeholder="$" min="0" step="1" style="width:80px"><button class="btn btn-success btn-sm" onclick="adjustCredit('${esc(c.email)}',1)">+ Add</button><button class="btn btn-danger btn-sm" onclick="adjustCredit('${esc(c.email)}',-1)">− Deduct</button></div></div>
-      </div>
-      ${ce.length?'<div class="detail-section" style="margin-bottom:16px"><h4><span class="dot" style="background:var(--teal)"></span> Academy Enrollments</h4><div class="product-tags">'+ce.map(e=>'<span class="product-tag academy">'+(e.qa_courses?.title||'Course')+'</span>').join('')+'</div></div>':''}
-      ${cc.length?'<div class="detail-section"><h4><span class="dot" style="background:var(--warning)"></span> Credit History</h4><div style="max-height:200px;overflow-y:auto">'+cc.slice(0,10).map(h=>'<div class="feed-item" style="padding:8px 0"><div class="feed-dot" style="background:'+(h.amount>0?'var(--success)':'var(--warning)')+'"></div><div class="feed-content"><div class="feed-text">'+(h.amount>0?'+':'')+fmtMoney(h.amount)+' — '+esc(h.description||h.type)+'</div><div class="feed-time">'+timeAgo(h.created_at)+'</div></div></div>').join('')+'</div></div>':''}
-    </div>`;
-  document.getElementById('cust-result').scrollIntoView({behavior:'smooth',block:'start'});
-}
-async function adjustCredit(email,dir){
-  const amt=Number(document.getElementById('credit-amount').value);if(!amt||amt<=0)return alert('Enter a valid amount');
-  try{const{data:cur}=await sb.from('referral_codes').select('credit_balance').eq('email',email.toLowerCase()).single();if(!cur)return alert('No referral code found');
-  const nb=Math.max(0,Number(cur.credit_balance)+amt*dir);await sb.from('referral_codes').update({credit_balance:nb}).eq('email',email.toLowerCase());
-  await sb.from('credit_history').insert({email:email.toLowerCase(),amount:amt*dir,type:'admin_adjustment',description:'Admin credit adjustment',created_at:new Date().toISOString()});
-  document.getElementById('credit-amount').value='';await loadAllData();showCustomerDetail(email)}catch(e){alert('Error: '+e.message)}
-}
-
-// ============================================================
-// SEARCH AUTOCOMPLETE
-// ============================================================
-let custACF=[],custACI=-1;
-function handleCustSearch(){const q=document.getElementById('cust-search').value.trim().toLowerCase(),dd=document.getElementById('cust-ac');if(q.length<2){dd.classList.remove('open');return}custACF=allCustomers.filter(c=>c.email.toLowerCase().includes(q)||c.name.toLowerCase().includes(q)||(c.referralCode&&c.referralCode.toLowerCase().includes(q))).slice(0,8);if(!custACF.length){dd.classList.remove('open');return}custACI=0;renderCustAC(q);dd.classList.add('open')}
-function renderCustAC(q){const dd=document.getElementById('cust-ac'),hl=s=>s.replace(new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'),'<span class="ac-hl">$1</span>');dd.innerHTML=custACF.map((c,i)=>`<div class="ac-item ${i===custACI?'sel':''}" onclick="selCustAC(${i})"><span class="ac-email">${hl(c.email)}</span>${c.referralCode?'<span class="ac-code">'+hl(c.referralCode)+'</span>':''}${c.name?'<span class="ac-name">'+hl(c.name)+'</span>':''}</div>`).join('')}
-function handleCustKeydown(e){const dd=document.getElementById('cust-ac');if(!dd.classList.contains('open')){if(e.key==='Enter')searchCustomer();return}if(e.key==='ArrowDown'){e.preventDefault();custACI=Math.min(custACI+1,custACF.length-1);renderCustAC(document.getElementById('cust-search').value.trim().toLowerCase())}if(e.key==='ArrowUp'){e.preventDefault();custACI=Math.max(custACI-1,0);renderCustAC(document.getElementById('cust-search').value.trim().toLowerCase())}if(e.key==='Enter'){e.preventDefault();selCustAC(custACI)}if(e.key==='Escape')dd.classList.remove('open')}
-function selCustAC(i){const c=custACF[i];if(c){document.getElementById('cust-search').value=c.email;document.getElementById('cust-ac').classList.remove('open');showCustomerDetail(c.email)}}
-function searchCustomer(){const e=document.getElementById('cust-search').value.trim();if(!e)return;document.getElementById('cust-ac').classList.remove('open');showCustomerDetail(e)}
-document.addEventListener('click',e=>{if(!e.target.closest('#global-search-wrap'))document.getElementById('global-ac').classList.remove('open');if(!e.target.closest('.ac-wrap'))document.getElementById('cust-ac').classList.remove('open')});
-
-// Global search
-function handleGlobalSearch(){const q=document.getElementById('global-search').value.trim().toLowerCase(),dd=document.getElementById('global-ac');if(q.length<2){dd.classList.remove('open');return}const f=allCustomers.filter(c=>c.email.toLowerCase().includes(q)||c.name.toLowerCase().includes(q)).slice(0,6);if(!f.length){dd.classList.remove('open');return}dd.innerHTML=f.map((c,i)=>`<div class="ac-item${i===0?' sel':''}" onclick="go('customers');setTimeout(()=>showCustomerDetail('${esc(c.email)}'),100)"><span class="ac-email">${esc(c.email)}</span>${c.name?'<span class="ac-name">'+esc(c.name)+'</span>':''}</div>`).join('');dd.classList.add('open')}
+function showCustomerDetail(email){var c=allCustomers.find(function(x){return x.email.toLowerCase()===email.toLowerCase()});if(!c)return;var cp=purchasesData.filter(function(p){return p.email&&p.email.toLowerCase()===email.toLowerCase()});var cc=creditHistory.filter(function(h){return h.email&&h.email.toLowerCase()===email.toLowerCase()});var ce=academyEnrollments.filter(function(e){return e.user_id===c.userId&&e.status==='active'});var notes=getAdminNotes(email);var e2=esc(email.replace(/'/g,"\\'"));
+var html='<div class="detail-panel"><button class="btn btn-ghost btn-sm" style="position:absolute;top:16px;right:16px" onclick="this.closest(\'.detail-panel\').remove()">\u2715 Close</button>';
+html+='<div class="detail-header"><div><div class="detail-email">'+esc(c.email)+'</div><div class="detail-name">'+(c.name?esc(c.name):'No name on file')+'</div>'+(c.userId?'<div class="detail-id">'+c.userId+'</div>':'')+'</div><div>'+(c.hasAccount?'<span class="badge green">Active Account</span>':'<span class="badge muted">No Account</span>')+'</div></div>';
+html+='<div class="detail-grid"><div class="detail-section"><h4><span class="dot" style="background:var(--success)"></span> Purchases ('+cp.length+')</h4>';
+if(cp.length){html+='<div style="max-height:200px;overflow-y:auto">';cp.forEach(function(p){html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04)"><div><span style="color:var(--text);font-size:13px">'+productName(p.product_id)+'</span> '+productBadge(p.product_id)+'<div style="font-size:10px;color:var(--text-dim);margin-top:2px">'+timeAgo(p.purchased_at)+(p.stripe_event_id&&p.stripe_event_id.indexOf('admin-grant')===0?' <span class="badge muted">Granted</span>':'')+'</div></div><div style="font-weight:600;color:var(--success)">'+fmtMoney(p.amount_paid)+'</div></div>'});html+='</div><div style="margin-top:8px;font-size:12px;color:var(--text-muted)">Total: <strong style="color:var(--success)">'+fmtMoney(c.totalSpent)+'</strong></div>'}else{html+='<p style="color:var(--text-dim);font-size:13px">No purchases</p>'}
+html+='</div><div class="detail-section"><h4><span class="dot" style="background:var(--teal)"></span> Referral & Credits</h4>';
+if(c.referralCode){html+='<div style="margin-bottom:10px">Code: <span class="ref-code">'+c.referralCode+'</span></div>'}else{html+='<p style="color:var(--text-dim);font-size:13px;margin-bottom:10px">No referral code</p>'}
+html+='<div class="ref-stat-row"><div class="ref-stat"><div class="ref-stat-val" style="color:var(--success)">'+fmtMoney(c.creditBalance)+'</div><div class="ref-stat-label">Balance</div></div><div class="ref-stat"><div class="ref-stat-val" style="color:var(--teal)">'+c.referralCount+'</div><div class="ref-stat-label">Referrals</div></div><div class="ref-stat"><div class="ref-stat-val" style="color:var(--taupe)">'+fmtMoney(c.totalEarned)+'</div><div class="ref-stat-label">Earned</div></div></div>';
+html+='<div class="credit-actions"><input type="number" class="input" id="credit-amount" placeholder="$" min="0" step="1" style="width:80px"><button class="btn btn-success btn-sm" onclick="adjustCredit(\''+e2+'\',1)">+ Add</button><button class="btn btn-danger btn-sm" onclick="adjustCredit(\''+e2+'\',-1)">\u2212 Deduct</button></div></div></div>';
+if(ce.length){html+='<div class="detail-section" style="margin-bottom:16px"><h4><span class="dot" style="background:var(--teal)"></span> Academy Enrollments ('+ce.length+')</h4><div class="product-tags">';ce.forEach(function(e){html+='<span class="product-tag academy" style="display:inline-flex;align-items:center;gap:6px">'+(e.qa_courses&&e.qa_courses.title||'Course')+' <button class="note-delete" title="Unenroll" onclick="event.stopPropagation();unenrollStudent(\''+e.id+'\',\''+e2+'\')">\u2715</button></span>'});html+='</div></div>'}
+html+='<div class="detail-section" style="margin-bottom:16px"><h4><span class="dot" style="background:var(--taupe)"></span> Admin Notes</h4><div style="display:flex;gap:8px;margin-bottom:10px"><input type="text" class="input" id="note-input" placeholder="Add a note..." style="flex:1" onkeypress="if(event.key===\'Enter\')addNote(\''+e2+'\')"><button class="btn btn-primary btn-sm" onclick="addNote(\''+e2+'\')">Add</button></div><div id="notes-list">';
+if(notes.length){notes.forEach(function(n){html+='<div class="note-item"><div class="note-text">'+esc(n.text)+'</div><div class="note-meta"><span>'+timeAgo(n.date)+'</span><button class="note-delete" onclick="deleteNote(\''+e2+'\','+n.id+')">Delete</button></div></div>'})}else{html+='<p style="color:var(--text-dim);font-size:12px">No notes yet</p>'}
+html+='</div></div>';
+if(cc.length){html+='<div class="detail-section"><h4><span class="dot" style="background:var(--warning)"></span> Credit History</h4><div style="max-height:200px;overflow-y:auto">';cc.slice(0,15).forEach(function(h){html+='<div class="feed-item" style="padding:8px 0"><div class="feed-dot" style="background:'+(h.amount>0?'var(--success)':'var(--warning)')+'"></div><div class="feed-content"><div class="feed-text">'+(h.amount>0?'+':'')+fmtMoney(h.amount)+' \u2014 '+esc(h.description||h.type)+'</div><div class="feed-time">'+timeAgo(h.created_at)+'</div></div></div>'});html+='</div></div>'}
+html+='</div>';document.getElementById('cust-result').innerHTML=html;document.getElementById('cust-result').scrollIntoView({behavior:'smooth',block:'start'})}
+function addNote(email){var inp=document.getElementById('note-input');var t=inp.value.trim();if(!t)return;saveAdminNote(email,t);showCustomerDetail(email)}
+function deleteNote(email,id){deleteAdminNote(email,id);showCustomerDetail(email)}
+async function adjustCredit(email,dir){var amt=Number(document.getElementById('credit-amount').value);if(!amt||amt<=0)return alert('Enter a valid amount');try{var res=await sb.from('referral_codes').select('credit_balance').eq('email',email.toLowerCase()).single();if(!res.data)return alert('No referral code found');var nb=Math.max(0,Number(res.data.credit_balance)+amt*dir);await sb.from('referral_codes').update({credit_balance:nb}).eq('email',email.toLowerCase());await sb.from('credit_history').insert({email:email.toLowerCase(),amount:amt*dir,type:'admin_adjustment',description:'Admin credit adjustment',created_at:new Date().toISOString()});document.getElementById('credit-amount').value='';await loadAllData();showCustomerDetail(email)}catch(e){alert('Error: '+e.message)}}
+async function unenrollStudent(enrollmentId,email){if(!confirm('Remove this enrollment?'))return;try{await sb.from('qa_enrollments').update({status:'revoked'}).eq('id',enrollmentId);await loadAllData();showCustomerDetail(email)}catch(e){alert('Error: '+e.message)}}
+var custACF=[],custACI=-1;
+function handleCustSearch(){var q=document.getElementById('cust-search').value.trim().toLowerCase(),dd=document.getElementById('cust-ac');if(q.length<2){dd.classList.remove('open');return}custACF=allCustomers.filter(function(c){return c.email.toLowerCase().indexOf(q)>=0||c.name.toLowerCase().indexOf(q)>=0||(c.referralCode&&c.referralCode.toLowerCase().indexOf(q)>=0)}).slice(0,8);if(!custACF.length){dd.classList.remove('open');return}custACI=0;renderCustAC(q);dd.classList.add('open')}
+function renderCustAC(q){var dd=document.getElementById('cust-ac');var re=new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');dd.innerHTML=custACF.map(function(c,i){return'<div class="ac-item '+(i===custACI?'sel':'')+'" onclick="selCustAC('+i+')"><span class="ac-email">'+c.email.replace(re,'<span class="ac-hl">$1</span>')+'</span>'+(c.referralCode?'<span class="ac-code">'+c.referralCode+'</span>':'')+(c.name?'<span class="ac-name">'+esc(c.name)+'</span>':'')+'</div>'}).join('')}
+function handleCustKeydown(e){var dd=document.getElementById('cust-ac');if(!dd.classList.contains('open')){if(e.key==='Enter')searchCustomer();return}if(e.key==='ArrowDown'){e.preventDefault();custACI=Math.min(custACI+1,custACF.length-1);renderCustAC(document.getElementById('cust-search').value.trim().toLowerCase())}if(e.key==='ArrowUp'){e.preventDefault();custACI=Math.max(custACI-1,0);renderCustAC(document.getElementById('cust-search').value.trim().toLowerCase())}if(e.key==='Enter'){e.preventDefault();selCustAC(custACI)}if(e.key==='Escape')dd.classList.remove('open')}
+function selCustAC(i){var c=custACF[i];if(c){document.getElementById('cust-search').value=c.email;document.getElementById('cust-ac').classList.remove('open');showCustomerDetail(c.email)}}
+function searchCustomer(){var e=document.getElementById('cust-search').value.trim();if(!e)return;document.getElementById('cust-ac').classList.remove('open');showCustomerDetail(e)}
+function handleGlobalSearch(){var q=document.getElementById('global-search').value.trim().toLowerCase(),dd=document.getElementById('global-ac');if(q.length<2){dd.classList.remove('open');return}var f=allCustomers.filter(function(c){return c.email.toLowerCase().indexOf(q)>=0||c.name.toLowerCase().indexOf(q)>=0}).slice(0,6);if(!f.length){dd.classList.remove('open');return}dd.innerHTML=f.map(function(c,i){return'<div class="ac-item'+(i===0?' sel':'')+'" onclick="go(\'customers\');setTimeout(function(){showCustomerDetail(\''+esc(c.email)+'\')},100)"><span class="ac-email">'+esc(c.email)+'</span>'+(c.name?'<span class="ac-name">'+esc(c.name)+'</span>':'')+'</div>'}).join('');dd.classList.add('open')}
 function handleGlobalKeydown(e){if(e.key==='Escape')document.getElementById('global-ac').classList.remove('open')}
+document.addEventListener('click',function(e){if(!e.target.closest('#global-search-wrap'))document.getElementById('global-ac').classList.remove('open');if(!e.target.closest('.ac-wrap')){var dd=document.getElementById('cust-ac');if(dd)dd.classList.remove('open')}});
+async function grantAccess(){var email=document.getElementById('grant-email').value.trim(),pid=document.getElementById('grant-product').value,msg=document.getElementById('grant-msg');if(!email){showMsg(msg,'error','Enter an email');return}try{await sb.from('purchases').upsert({email:email.toLowerCase(),product_id:pid,stripe_event_id:'admin-grant-'+Date.now(),amount_paid:0,purchased_at:new Date().toISOString()},{onConflict:'stripe_event_id'});if(isAcademy(pid)){var slugs=pid==='transformational-mastery'?ACADEMY_SLUGS:[pid];var prof=await sb.from('qa_profiles').select('id').eq('email',email.toLowerCase());if(prof.data&&prof.data.length){var uid=prof.data[0].id;var courses=await sb.from('qa_courses').select('id,slug').in('slug',slugs);if(courses.data)for(var i=0;i<courses.data.length;i++)await sb.from('qa_enrollments').upsert({user_id:uid,course_id:courses.data[i].id,status:'active',enrolled_at:new Date().toISOString()},{onConflict:'user_id,course_id'})}}showMsg(msg,'success','Access granted: '+productName(pid)+' \u2192 '+email);document.getElementById('grant-email').value='';await loadAllData()}catch(e){showMsg(msg,'error','Error: '+e.message)}}
 
-// ============================================================
-// GRANT ACCESS
-// ============================================================
-async function grantAccess(){
-  const email=document.getElementById('grant-email').value.trim(),pid=document.getElementById('grant-product').value,msg=document.getElementById('grant-msg');
-  if(!email){showMsg(msg,'error','Enter an email');return}
-  try{await sb.from('purchases').upsert({email:email.toLowerCase(),product_id:pid,stripe_event_id:'admin-grant-'+Date.now(),amount_paid:0,purchased_at:new Date().toISOString()},{onConflict:'stripe_event_id'});
-  if(isAcademy(pid)){const slugs=pid==='transformational-mastery'?ACADEMY_SLUGS:[pid];const{data:prof}=await sb.from('qa_profiles').select('id').eq('email',email.toLowerCase());if(prof&&prof.length){const uid=prof[0].id;const{data:courses}=await sb.from('qa_courses').select('id,slug').in('slug',slugs);if(courses)for(const c of courses)await sb.from('qa_enrollments').upsert({user_id:uid,course_id:c.id,status:'active',enrolled_at:new Date().toISOString()},{onConflict:'user_id,course_id'})}}
-  showMsg(msg,'success','Access granted: '+productName(pid)+' → '+email);document.getElementById('grant-email').value='';await loadAllData()}catch(e){showMsg(msg,'error','Error: '+e.message)}
-}
-function showMsg(el,t,txt){el.className='msg '+t;el.textContent=txt;el.style.display='block';setTimeout(()=>{el.style.display='none'},5000)}
+function switchAcadTab(tab,btn){document.querySelectorAll('#page-academy .tab-content').forEach(function(t){t.classList.remove('active')});document.getElementById('acad-tab-'+tab).classList.add('active');btn.closest('.tab-nav').querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active')});btn.classList.add('active');if(tab==='enrollments')loadAcadEnrollments();if(tab==='progress')loadAcadProgress();if(tab==='purchases')loadAcadPurchases()}
+function loadAcademyData(){if(!dataLoaded)return;var ae=academyEnrollments.filter(function(e){return e.status==='active'});var us=new Set(ae.map(function(e){return e.user_id})).size;var ap=purchasesData.filter(function(p){return isAcademy(p.product_id)});var ar=ap.reduce(function(s,p){return s+(Number(p.amount_paid)||0)},0);var bc=purchasesData.filter(function(p){return p.product_id==='transformational-mastery'}).length;
+document.getElementById('acad-stats').innerHTML='<div class="stat-card"><div class="stat-ico teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/></svg></div><div><div class="stat-val">'+ae.length+'</div><div class="stat-lbl">Active Enrollments</div></div></div><div class="stat-card"><div class="stat-ico warm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div><div class="stat-val">'+us+'</div><div class="stat-lbl">Unique Students</div></div></div><div class="stat-card"><div class="stat-ico green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div><div class="stat-val">'+fmtMoney(ar)+'</div><div class="stat-lbl">Revenue</div></div></div><div class="stat-card"><div class="stat-ico purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/></svg></div><div><div class="stat-val">'+bc+'</div><div class="stat-lbl">Bundle Sales</div></div></div>';
+var ec={};ae.forEach(function(e){var t=e.qa_courses&&e.qa_courses.title||'Unknown';ec[t]=(ec[t]||0)+1});
+document.getElementById('acad-courses').innerHTML=academyCourses.length?'<table class="tbl"><thead><tr><th>Course</th><th>Slug</th><th>Price</th><th>Enrolled</th><th>Status</th><th></th></tr></thead><tbody>'+academyCourses.map(function(c){return'<tr><td class="name">'+esc(c.title)+'</td><td class="mono">'+c.slug+'</td><td><input type="number" value="'+(c.price_cents||0)+'" style="width:80px;padding:4px 8px;font-size:12px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:Inter,sans-serif" id="price-'+c.id+'"> <span style="font-size:10px;color:var(--text-dim)">\u00a2</span></td><td><strong style="color:var(--teal)">'+(ec[c.title]||0)+'</strong></td><td><select style="padding:4px 8px;font-size:12px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:Inter,sans-serif" id="status-'+c.id+'"><option value="published" '+(c.status==='published'?'selected':'')+'>Published</option><option value="draft" '+(c.status==='draft'?'selected':'')+'>Draft</option><option value="archived" '+(c.status==='archived'?'selected':'')+'>Archived</option></select></td><td><button class="btn btn-primary btn-sm" onclick="updateCourse(\''+c.id+'\')">Save</button></td></tr>'}).join('')+'</tbody></table>':'<div class="empty"><p>No courses</p></div>'}
+async function updateCourse(id){var price=document.getElementById('price-'+id).value,status=document.getElementById('status-'+id).value;try{await sb.from('qa_courses').update({price_cents:Number(price),status:status}).eq('id',id);await loadAllData();loadAcademyData()}catch(e){alert('Error: '+e.message)}}
+function loadAcadEnrollments(){var ae=academyEnrollments.filter(function(e){return e.status==='active'});var byC={};ae.forEach(function(e){var t=e.qa_courses&&e.qa_courses.title||'Unknown';if(!byC[t])byC[t]=[];byC[t].push(e)});var prof=new Map();profilesData.forEach(function(p){prof.set(p.id,p)});var html='';academyCourses.forEach(function(c){var students=byC[c.title]||[];html+='<div style="margin-bottom:20px"><h3 style="font-family:Playfair Display,serif;font-size:16px;margin-bottom:10px;display:flex;align-items:center;gap:8px">'+esc(c.title)+' <span class="badge teal">'+students.length+'</span></h3>';if(students.length){html+='<table class="tbl"><thead><tr><th>Student</th><th>Enrolled</th><th>Status</th><th></th></tr></thead><tbody>';students.forEach(function(e){var p=prof.get(e.user_id);html+='<tr><td class="email">'+(p?esc(p.email):'<span class="mono">'+e.user_id+'</span>')+'</td><td>'+timeAgo(e.enrolled_at)+'</td><td><span class="badge green">Active</span></td><td><button class="btn btn-danger btn-sm" onclick="unenrollDirect(\''+e.id+'\')">Unenroll</button></td></tr>'});html+='</tbody></table>'}else{html+='<p style="color:var(--text-dim);font-size:13px">No enrollments</p>'}html+='</div>'});document.getElementById('acad-enrollments').innerHTML=html||'<div class="empty"><p>No data</p></div>'}
+async function unenrollDirect(id){if(!confirm('Remove this enrollment?'))return;try{await sb.from('qa_enrollments').update({status:'revoked'}).eq('id',id);await loadAllData();loadAcadEnrollments()}catch(e){alert('Error: '+e.message)}}
+function loadAcadProgress(){var prof=new Map();profilesData.forEach(function(p){prof.set(p.id,p)});var userProg={};lessonProgress.forEach(function(lp){if(!userProg[lp.user_id])userProg[lp.user_id]={total:0,completed:0};userProg[lp.user_id].total++;if(lp.completed)userProg[lp.user_id].completed++});var ae=academyEnrollments.filter(function(e){return e.status==='active'});var uids=[...new Set(ae.map(function(e){return e.user_id}))];var html='<table class="tbl"><thead><tr><th>Student</th><th>Courses</th><th>Lessons</th><th>Progress</th></tr></thead><tbody>';uids.forEach(function(uid){var p=prof.get(uid);var enrs=ae.filter(function(e){return e.user_id===uid});var prog=userProg[uid]||{total:0,completed:0};var pct=prog.total?Math.round(prog.completed/prog.total*100):0;html+='<tr><td class="email">'+(p?esc(p.email):'<span class="mono">'+uid+'</span>')+'</td><td>'+enrs.map(function(e){return'<span class="badge teal" style="margin-right:4px">'+(e.qa_courses&&e.qa_courses.title||'?')+'</span>'}).join('')+'</td><td>'+prog.completed+'/'+prog.total+'</td><td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,var(--teal),var(--teal-light));border-radius:3px"></div></div><span style="font-size:11px;font-weight:600;color:var(--teal)">'+pct+'%</span></div></td></tr>'});html+='</tbody></table>';document.getElementById('acad-progress').innerHTML=uids.length?html:'<div class="empty"><p>No progress data</p></div>'}
+function loadAcadPurchases(){var ap=purchasesData.filter(function(p){return isAcademy(p.product_id)});document.getElementById('acad-purchases').innerHTML=ap.length?ap.map(function(p){return'<div class="feed-item"><div class="feed-dot" style="background:var(--teal)"></div><div class="feed-content"><div class="feed-text"><strong>'+esc(p.email)+'</strong> \u2192 '+productName(p.product_id)+'</div><div class="feed-time">'+fmtMoney(p.amount_paid)+' \u00b7 '+timeAgo(p.purchased_at)+(p.stripe_event_id&&p.stripe_event_id.indexOf('admin-grant')===0?' \u00b7 <span class="badge muted">Granted</span>':'')+'</div></div></div>'}).join(''):'<div class="empty"><p>No purchases</p></div>'}
+function loadFusionData(){if(!dataLoaded)return;var fp=purchasesData.filter(function(p){return isFusion(p.product_id)});var fr=fp.reduce(function(s,p){return s+(Number(p.amount_paid)||0)},0);var bc=fp.filter(function(p){return p.product_id==='bundle-all'}).length;var ub=new Set(fp.map(function(p){return p.email&&p.email.toLowerCase()})).size;var sc={};fp.forEach(function(p){if(p.product_id!=='bundle-all')sc[p.product_id]=(sc[p.product_id]||0)+1});
+document.getElementById('fusion-stats').innerHTML='<div class="stat-card"><div class="stat-ico green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div><div class="stat-val">'+fmtMoney(fr)+'</div><div class="stat-lbl">Fusion Revenue</div></div></div><div class="stat-card"><div class="stat-ico purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/></svg></div><div><div class="stat-val">'+bc+'</div><div class="stat-lbl">Bundle Sales</div></div></div><div class="stat-card"><div class="stat-ico warm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div><div class="stat-val">'+ub+'</div><div class="stat-lbl">Total Buyers</div></div></div><div class="stat-card"><div class="stat-ico teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div><div class="stat-val">'+fp.filter(function(p){return p.product_id!=='bundle-all'}).length+'</div><div class="stat-lbl">Individual Sales</div></div></div>';
+var sl=Object.entries(FUSION_NAMES).filter(function(x){return x[0]!=='bundle-all'}).map(function(x){return{pid:x[0],name:x[1],count:sc[x[0]]||0}}).sort(function(a,b){return b.count-a.count});
+document.getElementById('fusion-content').innerHTML='<table class="tbl"><thead><tr><th>Session</th><th>Sales</th></tr></thead><tbody>'+sl.map(function(s){return'<tr><td class="name">'+s.name+'</td><td><strong style="color:var(--purple)">'+s.count+'</strong></td></tr>'}).join('')+'</tbody></table><div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)"><div class="card-title" style="margin-bottom:12px">Recent Purchases</div>'+fp.slice(0,8).map(function(p){return'<div class="feed-item"><div class="feed-dot" style="background:var(--purple)"></div><div class="feed-content"><div class="feed-text"><strong>'+esc(p.email)+'</strong> \u2192 '+productName(p.product_id)+'</div><div class="feed-time">'+fmtMoney(p.amount_paid)+' \u00b7 '+timeAgo(p.purchased_at)+'</div></div></div>'}).join('')+'</div>'}
 
-// ============================================================
-// ACADEMY
-// ============================================================
-function loadAcademyData(){
-  if(!dataLoaded)return;
-  const ae=academyEnrollments.filter(e=>e.status==='active'),us=new Set(ae.map(e=>e.user_id)).size;
-  const ap=purchasesData.filter(p=>isAcademy(p.product_id)),ar=ap.reduce((s,p)=>s+(Number(p.amount_paid)||0),0);
-  const bc=purchasesData.filter(p=>p.product_id==='transformational-mastery').length;
-  document.getElementById('acad-stats').innerHTML=`<div class="stat-card"><div class="stat-ico teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div><div><div class="stat-val">${ae.length}</div><div class="stat-lbl">Active Enrollments</div></div></div><div class="stat-card"><div class="stat-ico warm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div><div class="stat-val">${us}</div><div class="stat-lbl">Unique Students</div></div></div><div class="stat-card"><div class="stat-ico green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div><div class="stat-val">${fmtMoney(ar)}</div><div class="stat-lbl">Revenue</div></div></div><div class="stat-card"><div class="stat-ico purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a4 4 0 0 0-8 0v2"/></svg></div><div><div class="stat-val">${bc}</div><div class="stat-lbl">Bundle Sales</div></div></div>`;
-  const ec={};ae.forEach(e=>{const t=e.qa_courses?.title||'Unknown';ec[t]=(ec[t]||0)+1});
-  document.getElementById('acad-courses').innerHTML=academyCourses.length?`<table class="tbl"><thead><tr><th>Course</th><th>Slug</th><th>Price</th><th>Enrollments</th><th>Status</th></tr></thead><tbody>`+academyCourses.map(c=>`<tr><td class="name">${esc(c.title)}</td><td class="mono">${c.slug}</td><td>${c.price_cents?fmt$(c.price_cents):'<span style="color:var(--success)">Free</span>'}</td><td><strong style="color:var(--teal)">${ec[c.title]||0}</strong></td><td>${c.status==='published'?'<span class="badge green">Published</span>':'<span class="badge muted">'+(c.status||'draft')+'</span>'}</td></tr>`).join('')+'</tbody></table>':'<div class="empty"><p>No courses found</p></div>';
-  const ra=purchasesData.filter(p=>isAcademy(p.product_id)).slice(0,10);
-  document.getElementById('acad-purchases').innerHTML=ra.length?ra.map(p=>`<div class="feed-item"><div class="feed-dot" style="background:var(--teal)"></div><div class="feed-content"><div class="feed-text"><strong>${esc(p.email)}</strong> → ${productName(p.product_id)}</div><div class="feed-time">${fmtMoney(p.amount_paid)} · ${timeAgo(p.purchased_at)}</div></div></div>`).join(''):'<div class="empty"><p>No academy purchases yet</p></div>';
-}
-
-// ============================================================
-// FUSION
-// ============================================================
-function loadFusionData(){
-  if(!dataLoaded)return;
-  const fp=purchasesData.filter(p=>isFusion(p.product_id)),fr=fp.reduce((s,p)=>s+(Number(p.amount_paid)||0),0);
-  const bc=fp.filter(p=>p.product_id==='bundle-all').length,ub=new Set(fp.map(p=>p.email?.toLowerCase())).size;
-  const sc={};fp.forEach(p=>{if(p.product_id!=='bundle-all')sc[p.product_id]=(sc[p.product_id]||0)+1});
-  document.getElementById('fusion-stats').innerHTML=`<div class="stat-card"><div class="stat-ico green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div><div class="stat-val">${fmtMoney(fr)}</div><div class="stat-lbl">Fusion Revenue</div></div></div><div class="stat-card"><div class="stat-ico purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a4 4 0 0 0-8 0v2"/></svg></div><div><div class="stat-val">${bc}</div><div class="stat-lbl">Bundle Sales</div></div></div><div class="stat-card"><div class="stat-ico warm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div><div class="stat-val">${ub}</div><div class="stat-lbl">Total Buyers</div></div></div><div class="stat-card"><div class="stat-ico teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div><div class="stat-val">${fp.filter(p=>p.product_id!=='bundle-all').length}</div><div class="stat-lbl">Individual Sales</div></div></div>`;
-  const sl=Object.entries(FUSION_NAMES).filter(([k])=>k!=='bundle-all').map(([pid,name])=>({pid,name,count:sc[pid]||0})).sort((a,b)=>b.count-a.count);
-  document.getElementById('fusion-content').innerHTML=`<table class="tbl"><thead><tr><th>Session</th><th>Sales</th></tr></thead><tbody>${sl.map(s=>`<tr><td class="name">${s.name}</td><td><strong style="color:var(--purple)">${s.count}</strong></td></tr>`).join('')}</tbody></table><div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)"><div class="card-title" style="margin-bottom:12px">Recent Fusion Purchases</div>${fp.slice(0,8).map(p=>`<div class="feed-item"><div class="feed-dot" style="background:var(--purple)"></div><div class="feed-content"><div class="feed-text"><strong>${esc(p.email)}</strong> → ${productName(p.product_id)}</div><div class="feed-time">${fmtMoney(p.amount_paid)} · ${timeAgo(p.purchased_at)}</div></div></div>`).join('')}</div>`;
-}
-
-// ============================================================
-// REFERRALS
-// ============================================================
-function loadReferralData(){
-  if(!dataLoaded)return;
-  const tco=referralData.reduce((s,r)=>s+(Number(r.credit_balance)||0),0),te=referralData.reduce((s,r)=>s+(Number(r.total_earned)||0),0);
-  const tr=referralData.reduce((s,r)=>s+(r.successful_referrals||0),0),ar=referralData.filter(r=>r.successful_referrals>0).length;
-  document.getElementById('ref-stats').innerHTML=`<div class="stat-card"><div class="stat-ico green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div><div class="stat-val">${fmtMoney(tco)}</div><div class="stat-lbl">Credits Outstanding</div></div></div><div class="stat-card"><div class="stat-ico warm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div><div><div class="stat-val">${fmtMoney(te)}</div><div class="stat-lbl">Total Earned</div></div></div><div class="stat-card"><div class="stat-ico teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></div><div><div class="stat-val">${tr}</div><div class="stat-lbl">Total Referrals</div></div></div><div class="stat-card"><div class="stat-ico purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div><div class="stat-val">${ar}</div><div class="stat-lbl">Active Referrers</div></div></div><div class="stat-card"><div class="stat-ico warm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/></svg></div><div><div class="stat-val">${referralData.length}</div><div class="stat-lbl">Code Holders</div></div></div>`;
-  const top=[...referralData].filter(r=>r.successful_referrals>0).sort((a,b)=>b.successful_referrals-a.successful_referrals).slice(0,10);
-  document.getElementById('ref-leaderboard').innerHTML=top.length?`<table class="tbl"><thead><tr><th>Email</th><th>Code</th><th>Referrals</th><th>Balance</th><th>Earned</th></tr></thead><tbody>${top.map(r=>`<tr><td class="email">${esc(r.email)}</td><td class="mono">${r.code}</td><td><strong style="color:var(--teal)">${r.successful_referrals}</strong></td><td>${Number(r.credit_balance)>0?'<span style="color:var(--success)">'+fmtMoney(r.credit_balance)+'</span>':'—'}</td><td style="color:var(--taupe)">${fmtMoney(r.total_earned)}</td></tr>`).join('')}</tbody></table>`:'<div class="empty"><p>No referrals yet</p></div>';
-  const rc=creditHistory.slice(0,15);
-  document.getElementById('ref-activity').innerHTML=rc.length?rc.map(c=>`<div class="feed-item"><div class="feed-dot" style="background:${c.amount>0?'var(--success)':'var(--warning)'}"></div><div class="feed-content"><div class="feed-text"><strong>${esc(c.email)}</strong> ${c.amount>0?'+':''}${fmtMoney(c.amount)}</div><div class="feed-time">${esc(c.description||c.type)} · ${timeAgo(c.created_at)}</div></div></div>`).join(''):'<div class="empty"><p>No credit activity</p></div>';
-}
+function switchCommTab(tab,btn){document.querySelectorAll('#page-community .tab-content').forEach(function(t){t.classList.remove('active')});document.getElementById('comm-tab-'+tab).classList.add('active');btn.closest('.tab-nav').querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active')});btn.classList.add('active');if(tab==='academy')loadAcadDiscussions();if(tab==='fusion')loadFusionPosts()}
+async function loadCommunityData(){try{var r=await Promise.all([sb.from('qa_discussions').select('*',{count:'exact',head:true}),sb.from('discussion_posts').select('*',{count:'exact',head:true})]);var ac=r[0].count||0,fc=r[1].count||0;document.getElementById('comm-stats').innerHTML='<div class="stat-card"><div class="stat-ico teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div><div class="stat-val">'+ac+'</div><div class="stat-lbl">Academy Posts</div></div></div><div class="stat-card"><div class="stat-ico purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div><div class="stat-val">'+fc+'</div><div class="stat-lbl">Fusion Posts</div></div></div><div class="stat-card"><div class="stat-ico green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div><div class="stat-val">'+(ac+fc)+'</div><div class="stat-lbl">Total Posts</div></div></div>';loadAcadDiscussions()}catch(e){console.error(e)}}
+async function loadAcadDiscussions(){var c=document.getElementById('comm-acad-posts');c.innerHTML='<div class="loading-center"><div class="spinner"></div>Loading...</div>';try{var q=sb.from('qa_discussions').select('*').order('created_at',{ascending:false}).limit(50);var f=document.getElementById('comm-acad-filter').value,s=document.getElementById('comm-acad-search').value.trim();if(f==='visible')q=q.or('is_hidden.is.null,is_hidden.eq.false');else if(f==='hidden')q=q.eq('is_hidden',true);else if(f==='pinned')q=q.eq('is_pinned',true);if(s)q=q.or('content.ilike.%'+s+'%,user_name.ilike.%'+s+'%');var res=await q;if(res.error)throw res.error;var posts=res.data;if(!posts||!posts.length){c.innerHTML='<div class="empty"><p>No discussions found</p></div>';return}c.innerHTML=posts.map(function(p){return renderPostCard(p,'qa_discussions')}).join('')}catch(e){c.innerHTML='<p style="color:var(--danger)">Error: '+e.message+'</p>'}}
+async function loadFusionPosts(){var c=document.getElementById('comm-fus-posts');c.innerHTML='<div class="loading-center"><div class="spinner"></div>Loading...</div>';try{var q=sb.from('discussion_posts').select('*').order('created_at',{ascending:false}).limit(50);var f=document.getElementById('comm-fus-filter').value,s=document.getElementById('comm-fus-search').value.trim();if(f==='visible')q=q.or('is_hidden.is.null,is_hidden.eq.false');else if(f==='hidden')q=q.eq('is_hidden',true);else if(f==='pinned')q=q.eq('is_pinned',true);if(s)q=q.or('content.ilike.%'+s+'%,user_email.ilike.%'+s+'%');var res=await q;if(res.error)throw res.error;var posts=res.data;if(!posts||!posts.length){c.innerHTML='<div class="empty"><p>No posts found</p></div>';return}c.innerHTML=posts.map(function(p){return renderPostCard(p,'discussion_posts')}).join('')}catch(e){c.innerHTML='<p style="color:var(--danger)">Error: '+e.message+'</p>'}}
+function renderPostCard(p,table){var name=p.user_name||(p.user_email?p.user_email.split('@')[0]:'Anonymous');var email=p.user_email||'';var init=(name[0]||'?').toUpperCase();var badges=[];if(p.is_pinned)badges.push('<span class="badge teal">Pinned</span>');if(p.is_hidden)badges.push('<span class="badge danger">Hidden</span>');return'<div class="post-card '+(p.is_hidden?'hidden-post ':'')+' '+(p.is_pinned?'pinned-post':'')+'"><div class="post-header"><div class="post-author"><div class="post-avatar">'+init+'</div><div><div style="font-size:13px;font-weight:500">'+esc(name)+'</div><div style="font-size:11px;color:var(--text-dim)">'+esc(email)+'</div></div></div><div>'+badges.join(' ')+'</div></div><div class="post-body">'+esc((p.content||'').substring(0,300))+((p.content||'').length>300?'...':'')+'</div><div class="post-meta"><span>'+timeAgo(p.created_at)+'</span>'+(p.reply_count?'<span>'+p.reply_count+' replies</span>':'')+'</div><div class="post-actions"><button class="btn btn-ghost btn-sm" onclick="togglePostPin(\''+p.id+'\','+(!p.is_pinned)+',\''+table+'\')">'+(p.is_pinned?'Unpin':'Pin')+'</button><button class="btn btn-ghost btn-sm" onclick="togglePostHide(\''+p.id+'\','+(!p.is_hidden)+',\''+table+'\')">'+(p.is_hidden?'Show':'Hide')+'</button><button class="btn btn-danger btn-sm" onclick="deletePost(\''+p.id+'\',\''+table+'\')">Delete</button></div></div>'}
+async function togglePostPin(id,val,table){try{await sb.from(table).update({is_pinned:val}).eq('id',id);if(table==='qa_discussions')loadAcadDiscussions();else loadFusionPosts()}catch(e){alert('Error: '+e.message)}}
+async function togglePostHide(id,val,table){try{await sb.from(table).update({is_hidden:val}).eq('id',id);if(table==='qa_discussions')loadAcadDiscussions();else loadFusionPosts()}catch(e){alert('Error: '+e.message)}}
+async function deletePost(id,table){if(!confirm('Delete this post permanently?'))return;try{var replyTable=table==='qa_discussions'?'qa_discussion_replies':'discussion_replies';var fk=table==='qa_discussions'?'discussion_id':'post_id';await sb.from(replyTable).delete().eq(fk,id);await sb.from(table).delete().eq('id',id);if(table==='qa_discussions')loadAcadDiscussions();else loadFusionPosts();loadCommunityData()}catch(e){alert('Error: '+e.message)}}
+function loadReferralData(){if(!dataLoaded)return;var tco=referralData.reduce(function(s,r){return s+(Number(r.credit_balance)||0)},0);var te=referralData.reduce(function(s,r){return s+(Number(r.total_earned)||0)},0);var tr=referralData.reduce(function(s,r){return s+(r.successful_referrals||0)},0);var ar=referralData.filter(function(r){return r.successful_referrals>0}).length;
+document.getElementById('ref-stats').innerHTML='<div class="stat-card"><div class="stat-ico green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div><div class="stat-val">'+fmtMoney(tco)+'</div><div class="stat-lbl">Credits Outstanding</div></div></div><div class="stat-card"><div class="stat-ico warm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div><div><div class="stat-val">'+fmtMoney(te)+'</div><div class="stat-lbl">Total Earned</div></div></div><div class="stat-card"><div class="stat-ico teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></div><div><div class="stat-val">'+tr+'</div><div class="stat-lbl">Total Referrals</div></div></div><div class="stat-card"><div class="stat-ico purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div><div class="stat-val">'+ar+'</div><div class="stat-lbl">Active Referrers</div></div></div>';
+var top=referralData.filter(function(r){return r.successful_referrals>0}).sort(function(a,b){return b.successful_referrals-a.successful_referrals}).slice(0,10);
+document.getElementById('ref-leaderboard').innerHTML=top.length?'<table class="tbl"><thead><tr><th>Email</th><th>Code</th><th>Referrals</th><th>Balance</th><th>Earned</th></tr></thead><tbody>'+top.map(function(r){return'<tr><td class="email">'+esc(r.email)+'</td><td class="mono">'+r.code+'</td><td><strong style="color:var(--teal)">'+r.successful_referrals+'</strong></td><td>'+(Number(r.credit_balance)>0?'<span style="color:var(--success)">'+fmtMoney(r.credit_balance)+'</span>':'\u2014')+'</td><td style="color:var(--taupe)">'+fmtMoney(r.total_earned)+'</td></tr>'}).join('')+'</tbody></table>':'<div class="empty"><p>No referrals</p></div>';
+var rc=creditHistory.slice(0,15);document.getElementById('ref-activity').innerHTML=rc.length?rc.map(function(c){return'<div class="feed-item"><div class="feed-dot" style="background:'+(c.amount>0?'var(--success)':'var(--warning)')+'"></div><div class="feed-content"><div class="feed-text"><strong>'+esc(c.email)+'</strong> '+(c.amount>0?'+':'')+fmtMoney(c.amount)+'</div><div class="feed-time">'+esc(c.description||c.type)+' \u00b7 '+timeAgo(c.created_at)+'</div></div></div>'}).join(''):'<div class="empty"><p>No activity</p></div>'}
 </script>
 </body>
 </html>
