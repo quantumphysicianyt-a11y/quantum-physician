@@ -71,7 +71,7 @@
     }
     .sess-hero-bg {
       position: absolute; inset: 0;
-      background: url('/assets/images/1-on-1.png') center/cover no-repeat;
+      background: url('/assets/images/1-on-1.png') center top/cover no-repeat;
       filter: saturate(1.1) contrast(1.05);
     }
     .sess-hero-bg::after {
@@ -215,16 +215,6 @@
       font-size: 15px;
       color: #444;
       line-height: 1.6;
-    }
-    .sess-checks li::before {
-      content: '';
-      flex-shrink: 0;
-      width: 22px; height: 22px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--teal), #4a97a1);
-      margin-top: 2px;
-      position: relative;
-      display: flex; align-items: center; justify-content: center;
     }
     .sess-check-icon {
       width: 20px; height: 20px;
@@ -411,6 +401,13 @@
       background: #fff;
       border: 1px solid rgba(0,0,0,.06);
       border-radius: 4px;
+      text-decoration: none;
+      color: inherit;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .sess-why-item:hover {
+      border-color: rgba(91,168,178,.3);
+      box-shadow: 0 4px 16px rgba(0,0,0,.06);
     }
     .sess-why-icon {
       width: 48px; height: 48px;
@@ -581,34 +578,34 @@
         <p>For those ready to go deeper — beyond symptom management and into lasting change.</p>
       </div>
       <div class="sess-why-grid">
-        <div class="sess-why-item">
+        <a href="#book" class="sess-why-item">
           <div class="sess-why-icon"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
           <div>
             <h4>Physical Support</h4>
             <p>Pain, tension, fatigue, chronic stress — address what your body has been holding onto.</p>
           </div>
-        </div>
-        <div class="sess-why-item">
+        </a>
+        <a href="#book" class="sess-why-item">
           <div class="sess-why-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></div>
           <div>
             <h4>Emotional Wellbeing</h4>
             <p>Anxiety, overwhelm, stuck patterns — find clarity and release in a safe, supportive space.</p>
           </div>
-        </div>
-        <div class="sess-why-item">
+        </a>
+        <a href="#book" class="sess-why-item">
           <div class="sess-why-icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
           <div>
             <h4>Mental Clarity</h4>
             <p>Burnout, indecision, brain fog — cut through the noise and reconnect with what matters.</p>
           </div>
-        </div>
-        <div class="sess-why-item">
+        </a>
+        <a href="#book" class="sess-why-item">
           <div class="sess-why-icon"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
           <div>
             <h4>Performance &amp; Growth</h4>
             <p>Professional resilience, alignment, optimum health — elevate every dimension of your life.</p>
           </div>
-        </div>
+        </a>
       </div>
     </div>
   </section>
