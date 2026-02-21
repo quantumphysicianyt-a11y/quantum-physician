@@ -195,6 +195,7 @@ if(ce.length){html+='<table class="tbl"><thead><tr><th>Course</th><th>Progress</
 var enrolledSlugs=ce.map(function(e){return e.qa_courses&&e.qa_courses.slug||''});var avail=academyCourses.filter(function(c){return enrolledSlugs.indexOf(c.slug)<0});if(avail.length){html+='<div style="display:flex;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.04);align-items:center"><select class="input" style="width:auto;flex:1" id="detail-enroll-course">';avail.forEach(function(c){html+='<option value="'+c.slug+'">'+esc(c.title)+'</option>'});html+='</select><button class="btn btn-success btn-sm" onclick="enrollFromDetail(\''+e2+'\')">+ Enroll</button></div>'}
 html+='</div>';
 if(apurch.length){html+='<div class="detail-section" style="margin-bottom:16px"><h4><span class="dot" style="background:var(--teal)"></span> Academy Purchases</h4><div style="max-height:150px;overflow-y:auto">';apurch.forEach(function(p){html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04)"><div><span style="font-size:13px">'+productName(p.product_id)+'</span><span style="font-size:10px;color:var(--text-dim);margin-left:8px">'+timeAgo(p.purchased_at)+'</span>'+(p.stripe_event_id&&p.stripe_event_id.indexOf('admin-grant')===0?' <span class="badge muted">Granted</span>':'')+'</div><div style="font-weight:600;color:var(--success)">'+fmtMoney(p.amount_paid)+'</div></div>'});html+='</div></div>'}
+html+=creditsHtml;
 html+=notesHtml;
 html+='</div>';
 
