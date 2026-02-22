@@ -39,7 +39,13 @@
 .empty{text-align:center;padding:40px 20px;color:var(--text-dim)}.empty svg{width:40px;height:40px;margin:0 auto 12px;display:block;opacity:.3}.empty p{font-size:13px;line-height:1.7}.empty code{background:rgba(255,255,255,.06);padding:2px 6px;border-radius:4px;font-size:12px}.spinner{width:20px;height:20px;border:2px solid rgba(255,255,255,.1);border-top-color:var(--teal);border-radius:50%;animation:spin .6s linear infinite;display:inline-block}.loading-center{display:flex;flex-direction:column;align-items:center;gap:12px;padding:40px;color:var(--text-muted);font-size:13px}.msg{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:14px;display:none}.msg.success{display:block;background:var(--success-soft);color:var(--success);border:1px solid rgba(61,214,140,.2)}.msg.error{display:block;background:var(--danger-soft);color:var(--danger);border:1px solid rgba(239,83,80,.2)}
 .sb-theme-toggle{display:flex;align-items:center;gap:10px;padding:11px 20px;font-size:13px;color:var(--text-muted);cursor:pointer;border:none;background:none;width:100%;text-align:left;font-family:'Inter',sans-serif;transition:all .15s}.sb-theme-toggle:hover{color:var(--text);background:rgba(255,255,255,.02)}[data-theme="light"] .sb-theme-toggle:hover{background:rgba(0,0,0,.03)}.sb-theme-toggle svg{width:17px;height:17px;stroke:currentColor;opacity:.7}.sb-theme-switch{margin-left:auto;width:36px;height:20px;background:var(--border);border-radius:10px;position:relative;transition:background .3s;flex-shrink:0}.sb-theme-switch::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--teal);transition:transform .3s}[data-theme="light"] .sb-theme-switch{background:var(--taupe)}[data-theme="light"] .sb-theme-switch::after{transform:translateX(16px);background:#fff}
 .mobile-menu-btn{display:none;position:fixed;top:14px;left:14px;z-index:60;width:38px;height:38px;border-radius:var(--radius-sm);background:var(--navy-card);border:1px solid var(--border);color:var(--text);cursor:pointer;align-items:center;justify-content:center}.mobile-menu-btn svg{width:18px;height:18px}.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:45}@media(max-width:900px){.sidebar{transform:translateX(-100%);transition:transform .3s ease}.sidebar.open{transform:translateX(0)}.sb-overlay.open{display:block}.main-content{margin-left:0}.mobile-menu-btn{display:flex}.topbar{padding-left:60px}.stats-grid{grid-template-columns:1fr 1fr}}@media(max-width:500px){.stats-grid{grid-template-columns:1fr}.page{padding:20px}.topbar{padding:14px 16px 14px 56px}.topbar-search{display:none}}
-.ec-filter.active{background:var(--teal-soft);color:var(--teal);border-color:var(--teal)}
+.ec-filter.active{background:var(--teal-soft);color:var(--te
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:999;padding:20px}
+.modal-box{background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;width:100%;max-height:90vh;overflow-y:auto}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.modal-header h3{margin:0;font-size:16px;color:var(--text)}
+.modal-close{background:none;border:none;color:var(--text-dim);font-size:24px;cursor:pointer;padding:0 4px}
+.modal-close:hover{color:var(--text)}al);border-color:var(--teal)}
 .template-btn{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;background:rgba(0,0,0,.15);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;transition:all .15s;text-align:center;font-family:'Inter',sans-serif;color:var(--text-muted);font-size:11px;position:relative}.template-btn:hover{border-color:var(--border-hover);background:rgba(0,0,0,.25);color:var(--text)}.template-btn.custom{border-color:rgba(167,139,250,.2)}.template-btn .template-icon{font-size:22px}.template-btn .template-name{font-size:10px}.template-btn .edit-icon{position:absolute;top:4px;right:4px;font-size:10px;opacity:0;transition:opacity .15s}.template-btn:hover .edit-icon{opacity:.6}
 .campaign-item{background:rgba(0,0,0,.15);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px;overflow:hidden;transition:border-color .15s}.campaign-item:hover{border-color:var(--border-hover)}.campaign-item-header{display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;flex-wrap:wrap}.campaign-item-header:hover{background:rgba(255,255,255,.015)}.campaign-item-body{display:none;padding:0 16px 16px;border-top:1px solid var(--border)}.campaign-item.expanded .campaign-item-body{display:block}.campaign-item.expanded{border-color:var(--teal)}
 .campaign-type-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}.campaign-type-badge.no_purchase{background:rgba(239,83,80,.1);color:var(--danger)}.campaign-type-badge.upsell_bundle{background:var(--success-soft);color:var(--success)}.campaign-type-badge.promote_session{background:var(--purple-soft);color:var(--purple)}.campaign-type-badge.credit_reminder{background:var(--warning-soft);color:var(--warning)}.campaign-type-badge.referral_nudge{background:var(--teal-soft);color:var(--teal)}.campaign-type-badge.custom{background:rgba(255,255,255,.06);color:var(--text-dim)}.campaign-type-badge.promotional{background:var(--purple-soft);color:var(--purple)}
@@ -73,6 +79,7 @@
 <button class="sb-link" onclick="go('community',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Community</button>
 <button class="sb-link" onclick="go('referrals',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Referrals & Credits</button>
 <button class="sb-link" onclick="go('email',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Email Campaigns</button>
+<button class="sb-link" onclick="go('automation',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><polyline points="12 6 12 12 16 14"/></svg>Email Automation</button>
 <button class="sb-link" onclick="go('promotions',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>Promotions</button>
 <button class="sb-link" onclick="go('orders',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Orders</button>
 <button class="sb-link" onclick="go('analytics',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Analytics</button></div>
@@ -202,6 +209,29 @@
 </select>
 <div id="email-type-hint" style="font-size:11px;color:var(--warning);margin-top:6px">Promotional emails count toward the weekly limit and respect opt-out preferences.</div></div>
 
+<!-- Rich HTML Toggle -->
+<div class="form-group" style="margin-bottom:16px">
+<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+<label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0"><input type="checkbox" id="rich-email-toggle" checked onchange="toggleRichEmailOptions()"><span style="font-size:13px;font-weight:600">Send as Rich HTML</span></label>
+<span style="font-size:11px;color:var(--text-dim)">Styled email with branding, tracking pixels &amp; CTA buttons</span>
+</div>
+</div>
+
+<!-- Discount Card Config (shown when rich HTML enabled) -->
+<div id="rich-email-options" style="margin-bottom:16px;padding:14px;background:rgba(0,0,0,.15);border:1px solid var(--border);border-radius:var(--radius-sm)">
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap">
+<label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0"><input type="checkbox" id="discount-toggle" onchange="toggleDiscountConfig()"><span style="font-size:12px;font-weight:600;color:var(--warning)">Include Discount Card</span></label>
+<span style="font-size:10px;color:var(--text-dim)">Add a styled promo card in the email using --- divider</span>
+</div>
+<div id="discount-config" style="display:none;gap:10px;flex-wrap:wrap;align-items:end">
+<div style="flex:1;min-width:150px"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px">Promo Code</label>
+<select class="input" id="discount-promo-select" style="font-size:12px"><option value="">Select promotion...</option></select></div>
+<div style="flex:1;min-width:120px"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px">Or enter code</label>
+<input type="text" class="input" id="discount-promo-custom" placeholder="CUSTOM_CODE" style="font-size:12px"></div>
+</div>
+<div style="margin-top:10px;font-size:11px;color:var(--text-dim)"><strong>Tip:</strong> Use <code style="background:rgba(255,255,255,.06);padding:2px 6px;border-radius:4px">---</code> on its own line to separate main body from discount card content. Use <code style="background:rgba(255,255,255,.06);padding:2px 6px;border-radius:4px">{{qr_code}}</code> in the discount section for a QR code.</div>
+</div>
+
 <!-- Subject -->
 <div class="form-group" style="margin-bottom:16px"><label>Subject Line</label>
 <input type="text" class="input" id="email-subject" placeholder="Your subject line..." maxlength="100">
@@ -229,6 +259,7 @@
 <p style="font-size:12px;margin-bottom:4px"><strong style="color:var(--text-dim)">To:</strong> <span id="preview-to"></span></p>
 <p style="font-size:12px;margin-bottom:12px"><strong style="color:var(--text-dim)">Subject:</strong> <span id="preview-subject" style="color:var(--teal)"></span></p>
 <div id="preview-body" style="font-size:13px;color:var(--text-muted);white-space:pre-wrap;line-height:1.7;padding:16px;background:rgba(0,0,0,.15);border-radius:var(--radius-sm);max-height:300px;overflow-y:auto"></div>
+<iframe id="preview-rich-frame" style="display:none;width:100%;height:500px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff" sandbox="allow-same-origin"></iframe>
 <button class="btn btn-ghost btn-sm" style="margin-top:12px" onclick="document.getElementById('email-preview-box').style.display='none'">Close Preview</button>
 </div>
 
@@ -262,6 +293,76 @@
 <div id="campaign-history-list"><div class="loading-center"><div class="spinner"></div>Loading...</div></div>
 </div></div>
 </div>
+
+<!-- Email Automation Page -->
+<div class="page" id="page-automation">
+<div class="page-header"><h1>Email Automation</h1><p>Manage scheduled emails, view send logs, and configure session reminders.</p></div>
+
+<!-- Automation Stats -->
+<div class="stats-grid" style="margin-bottom:24px">
+<div class="stat-card"><div class="stat-val" id="auto-stat-pending">-</div><div class="stat-label">Pending</div></div>
+<div class="stat-card"><div class="stat-val" id="auto-stat-sent">-</div><div class="stat-label">Sent (30d)</div></div>
+<div class="stat-card"><div class="stat-val" id="auto-stat-failed">-</div><div class="stat-label">Failed</div></div>
+<div class="stat-card"><div class="stat-val" id="auto-stat-next">-</div><div class="stat-label">Next Session</div></div>
+</div>
+
+<!-- Sub-tabs -->
+<div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">
+<button class="btn btn-ghost btn-sm auto-tab-btn active" onclick="switchAutoTab('scheduled',this)">Scheduled Emails</button>
+<button class="btn btn-ghost btn-sm auto-tab-btn" onclick="switchAutoTab('logs',this)">Email Logs</button>
+<button class="btn btn-ghost btn-sm auto-tab-btn" onclick="switchAutoTab('sessions',this)">Session Schedule</button>
+</div>
+
+<!-- Scheduled Emails Tab -->
+<div class="card auto-tab-panel" id="autotab-scheduled" style="margin-bottom:20px">
+<div class="card-header"><div class="card-title">Scheduled Emails</div><button class="btn btn-ghost btn-sm" onclick="loadScheduledEmails()">Refresh</button></div>
+<div class="card-body">
+<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+<select class="input" id="filter-sched-status" onchange="loadScheduledEmails()" style="width:auto;font-size:12px"><option value="all">All Status</option><option value="pending">Pending</option><option value="sent">Sent</option><option value="failed">Failed</option><option value="cancelled">Cancelled</option></select>
+<select class="input" id="filter-sched-type" onchange="loadScheduledEmails()" style="width:auto;font-size:12px"><option value="all">All Types</option><option value="reminder_7day">7-Day Reminder</option><option value="reminder_1day">1-Day Reminder</option><option value="reminder_2hr">2-Hour Reminder</option><option value="promo">Promo</option><option value="custom">Custom</option></select>
+</div>
+<div id="scheduled-emails-list"><div class="empty"><p>Loading...</p></div></div>
+</div></div>
+
+<!-- Email Logs Tab -->
+<div class="card auto-tab-panel" id="autotab-logs" style="display:none;margin-bottom:20px">
+<div class="card-header"><div class="card-title">Email Logs</div><button class="btn btn-ghost btn-sm" onclick="loadEmailLogs()">Refresh</button></div>
+<div class="card-body">
+<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+<input type="text" class="input" id="filter-log-email" placeholder="Filter by email..." style="width:200px;font-size:12px" onkeyup="loadEmailLogs()">
+<select class="input" id="filter-log-status" onchange="loadEmailLogs()" style="width:auto;font-size:12px"><option value="all">All Status</option><option value="sent">Sent</option><option value="failed">Failed</option></select>
+</div>
+<div id="email-logs-list"><div class="empty"><p>Loading...</p></div></div>
+</div></div>
+
+<!-- Session Schedule Tab -->
+<div class="card auto-tab-panel" id="autotab-sessions" style="display:none;margin-bottom:20px">
+<div class="card-header"><div class="card-title">Session Schedule</div></div>
+<div class="card-body">
+<div id="session-schedule-list"><div class="empty"><p>Loading...</p></div></div>
+</div></div>
+</div>
+
+<!-- Scheduled Email Edit Modal -->
+<div class="modal-overlay" id="sched-edit-modal" style="display:none">
+<div class="modal-box" style="max-width:600px">
+<div class="modal-header"><h3 id="sched-edit-title">Edit Scheduled Email</h3><button class="modal-close" onclick="closeSchedEditModal()">&times;</button></div>
+<input type="hidden" id="sched-edit-id">
+<div class="form-group" style="margin-bottom:12px"><label style="font-size:12px">Scheduled For</label><input type="datetime-local" class="input" id="sched-edit-datetime"></div>
+<div class="form-group" style="margin-bottom:12px"><label style="font-size:12px">Audience</label>
+<select class="input" id="sched-edit-audience"><option value="session-owners">Session Owners</option><option value="bundle-owners">Bundle Owners</option><option value="all">All Opted-In</option></select></div>
+<div class="form-group" style="margin-bottom:12px"><label style="font-size:12px">Subject</label><input type="text" class="input" id="sched-edit-subject"></div>
+<div class="form-group" style="margin-bottom:12px"><label style="font-size:12px">Body</label><textarea class="input" id="sched-edit-body" rows="10" style="font-family:inherit"></textarea></div>
+<div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-ghost" onclick="closeSchedEditModal()">Cancel</button><button class="btn btn-primary" onclick="saveScheduledEmail()">Save Changes</button></div>
+</div></div>
+
+<!-- Scheduled Email Preview Modal -->
+<div class="modal-overlay" id="sched-preview-modal" style="display:none">
+<div class="modal-box" style="max-width:700px">
+<div class="modal-header"><h3>Email Preview</h3><button class="modal-close" onclick="closeSchedPreviewModal()">&times;</button></div>
+<div id="sched-preview-content" style="background:#fff;color:#333;padding:20px;border-radius:8px;max-height:60vh;overflow-y:auto"></div>
+</div></div>
+
 <div class="page" id="page-analytics"><div class="card"><div class="card-body"><div class="empty"><p>Full analytics dashboard coming in Session 5.</p></div></div></div></div>
 
 
@@ -340,17 +441,18 @@ function doAuth(){const u=document.getElementById('auth-user').value,p=document.
 function doLogout(){sessionStorage.removeItem('qp_admin_auth');location.reload()}
 if(sessionStorage.getItem('qp_admin_auth')==='true'){document.getElementById('auth-screen').style.display='none';document.getElementById('admin-layout').style.display='block';setTimeout(initAdmin,50)}
 let currentPage='dashboard';
-const TITLES={dashboard:'Dashboard',customers:'Customers',academy:'Academy',fusion:'Fusion Sessions',sessions:'1-on-1 Sessions',memberships:'Memberships',community:'Community',referrals:'Referrals & Credits',email:'Email Campaigns',promotions:'Promotions',orders:'Orders',analytics:'Analytics',audit:'Audit Log'};
+const TITLES={dashboard:'Dashboard',customers:'Customers',academy:'Academy',fusion:'Fusion Sessions',sessions:'1-on-1 Sessions',memberships:'Memberships',community:'Community',referrals:'Referrals & Credits',email:'Email Campaigns',automation:'Email Automation',promotions:'Promotions',orders:'Orders',analytics:'Analytics',audit:'Audit Log'};
 function go(page,btn){currentPage=page;document.querySelectorAll('.sb-link').forEach(l=>l.classList.remove('active'));if(btn)btn.classList.add('active');document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));var el=document.getElementById('page-'+page);if(el)el.classList.add('active');document.getElementById('topbar-title').textContent=TITLES[page]||page;loadPageData(page);document.getElementById('sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('open')}
 function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sb-overlay').classList.toggle('open')}
 function refreshCurrentPage(){loadAllData().then(function(){loadPageData(currentPage)})}
 let allCustomers=[],purchasesData=[],referralData=[],profilesData=[],creditHistory=[],academyEnrollments=[],academyCourses=[],lessonProgress=[],adminNotesData=[],authUsersMap=new Map(),allFusionPosts=[],allAcadPosts=[],emailCampaignsData=[],emailTrackingData=[],dataLoaded=false;
+var scheduledEmailsData=[],emailLogData=[],sessionScheduleData=[];
 var currentPromoFilter='active',ordersPage=1,ordersPS=25,ordersFiltered=[],promotionsData=[];
-async function loadAllData(){try{var r=await Promise.all([sb.from('purchases').select('*').order('purchased_at',{ascending:false}),sb.from('referral_codes').select('*'),sb.from('profiles').select('*'),sb.from('credit_history').select('*').order('created_at',{ascending:false}).limit(200),sb.from('qa_enrollments').select('*, qa_courses(id,title,slug)'),sb.from('qa_courses').select('*').order('sort_order'),sb.from('qa_lesson_progress').select('*'),sbAdmin.from('admin_notes').select('*').order('created_at',{ascending:false}),sb.from('discussion_posts').select('id,user_email'),sb.from('qa_discussions').select('id,user_email'),sb.from('email_campaigns').select('*').order('sent_at',{ascending:false}).limit(50),sb.from('email_tracking').select('id,campaign_id,recipient_email,tracking_id,status,opened_at,clicked_at,sent_at,email_type').order('sent_at',{ascending:false}).limit(500),sb.from('promotions').select('*').order('created_at',{ascending:false})]);purchasesData=r[0].data||[];referralData=r[1].data||[];profilesData=r[2].data||[];creditHistory=r[3].data||[];academyEnrollments=r[4].data||[];academyCourses=r[5].data||[];lessonProgress=r[6].data||[];adminNotesData=r[7].data||[];allFusionPosts=r[8].data||[];allAcadPosts=r[9].data||[];emailCampaignsData=r[10].data||[];emailTrackingData=r[11].data||[];promotionsData=r[12].data||[];await loadAuthUsers();buildCustomerList();dataLoaded=true}catch(e){console.error('Load error:',e)}}
+async function loadAllData(){try{var r=await Promise.all([sb.from('purchases').select('*').order('purchased_at',{ascending:false}),sb.from('referral_codes').select('*'),sb.from('profiles').select('*'),sb.from('credit_history').select('*').order('created_at',{ascending:false}).limit(200),sb.from('qa_enrollments').select('*, qa_courses(id,title,slug)'),sb.from('qa_courses').select('*').order('sort_order'),sb.from('qa_lesson_progress').select('*'),sbAdmin.from('admin_notes').select('*').order('created_at',{ascending:false}),sb.from('discussion_posts').select('id,user_email'),sb.from('qa_discussions').select('id,user_email'),sb.from('email_campaigns').select('*').order('sent_at',{ascending:false}).limit(50),sb.from('email_tracking').select('id,campaign_id,recipient_email,tracking_id,status,opened_at,clicked_at,sent_at,email_type').order('sent_at',{ascending:false}).limit(500),sb.from('promotions').select('*').order('created_at',{ascending:false}),sb.from('scheduled_emails').select('*').order('scheduled_for',{ascending:true}).limit(100),sb.from('email_log').select('*').order('sent_at',{ascending:false}).limit(200),sb.from('session_schedule').select('*').order('session_number',{ascending:true})]);purchasesData=r[0].data||[];referralData=r[1].data||[];profilesData=r[2].data||[];creditHistory=r[3].data||[];academyEnrollments=r[4].data||[];academyCourses=r[5].data||[];lessonProgress=r[6].data||[];adminNotesData=r[7].data||[];allFusionPosts=r[8].data||[];allAcadPosts=r[9].data||[];emailCampaignsData=r[10].data||[];emailTrackingData=r[11].data||[];promotionsData=r[12].data||[];scheduledEmailsData=r[13].data||[];emailLogData=r[14].data||[];sessionScheduleData=r[15].data||[];await loadAuthUsers();buildCustomerList();dataLoaded=true}catch(e){console.error('Load error:',e)}}
 async function loadAuthUsers(){try{var page=1,allUsers=[];while(true){var res=await fetch(SUPABASE_URL+'/auth/v1/admin/users?page='+page+'&per_page=500',{headers:{'apikey':SUPABASE_SERVICE_KEY,'Authorization':'Bearer '+SUPABASE_SERVICE_KEY}});if(!res.ok){console.warn('Auth users fetch failed:',res.status);break}var data=await res.json();var users=data.users||data||[];if(!Array.isArray(users)||!users.length)break;allUsers=allUsers.concat(users);if(users.length<500)break;page++}authUsersMap=new Map();allUsers.forEach(function(u){if(u.email)authUsersMap.set(u.email.toLowerCase(),u)})}catch(e){console.error('Auth users load error:',e)}}
 function buildCustomerList(){var map=new Map();profilesData.forEach(function(p){if(!p.email)return;var k=p.email.toLowerCase();map.set(k,{email:p.email,name:p.full_name||'',userId:p.id,hasAccount:true,isBlocked:p.is_blocked||false,createdAt:p.created_at,purchases:[],academyPurchases:[],fusionPurchases:[],hasBundle:false,hasAcademyBundle:false,creditBalance:0,referralCount:0,referralCode:'',totalEarned:0,totalSpent:0})});purchasesData.forEach(function(p){if(!p.email)return;var k=p.email.toLowerCase();if(!map.has(k))map.set(k,{email:p.email,name:'',userId:null,hasAccount:false,isBlocked:false,createdAt:p.purchased_at,purchases:[],academyPurchases:[],fusionPurchases:[],hasBundle:false,hasAcademyBundle:false,creditBalance:0,referralCount:0,referralCode:'',totalEarned:0,totalSpent:0});var c=map.get(k);if(!c.purchases.includes(p.product_id)){c.purchases.push(p.product_id);if(isFusion(p.product_id))c.fusionPurchases.push(p.product_id);if(isAcademy(p.product_id))c.academyPurchases.push(p.product_id)}if(p.product_id==='bundle-all')c.hasBundle=true;if(p.product_id==='transformational-mastery')c.hasAcademyBundle=true;c.totalSpent+=(Number(p.amount_paid)||0)});referralData.forEach(function(r){if(!r.email)return;var k=r.email.toLowerCase();if(!map.has(k))map.set(k,{email:r.email,name:'',userId:null,hasAccount:false,isBlocked:false,createdAt:null,purchases:[],academyPurchases:[],fusionPurchases:[],hasBundle:false,hasAcademyBundle:false,creditBalance:0,referralCount:0,referralCode:'',totalEarned:0,totalSpent:0});var c=map.get(k);c.creditBalance=Number(r.credit_balance)||0;c.referralCount=r.successful_referrals||0;c.referralCode=r.code||'';c.totalEarned=Number(r.total_earned)||0});allCustomers=Array.from(map.values())}
 async function initAdmin(){await loadAllData();loadPageData('dashboard')}
-function loadPageData(page){if(!dataLoaded&&page!=='dashboard')return;switch(page){case'dashboard':loadDashboard();break;case'customers':loadCustomerBrowser();break;case'academy':loadAcademyData();break;case'fusion':loadFusionData();break;case'referrals':loadReferralData();break;case'community':loadCommunityData();break;case'email':loadEmailPage();break;case'promotions':loadPromotionsPage();break;case'orders':loadOrdersPage();break;case'audit':loadAuditLog();break}}
+function loadPageData(page){if(!dataLoaded&&page!=='dashboard')return;switch(page){case'dashboard':loadDashboard();break;case'customers':loadCustomerBrowser();break;case'academy':loadAcademyData();break;case'fusion':loadFusionData();break;case'referrals':loadReferralData();break;case'community':loadCommunityData();break;case'email':loadEmailPage();break;case'automation':loadAutomationPage();break;case'promotions':loadPromotionsPage();break;case'orders':loadOrdersPage();break;case'audit':loadAuditLog();break}}
 function getAdminNotes(email){return adminNotesData.filter(function(n){return n.target_email&&n.target_email.toLowerCase()===email.toLowerCase()})}
 async function saveAdminNote(email,text){try{await sbAdmin.from('admin_notes').insert({target_email:email.toLowerCase(),note_text:text});await logAudit('add_note',email,'Added note: '+text.substring(0,80));var r=await sbAdmin.from('admin_notes').select('*').order('created_at',{ascending:false});adminNotesData=r.data||[]}catch(e){showToast('Error saving note: '+e.message,'error')}}
 async function deleteAdminNote(email,id){try{await sbAdmin.from('admin_notes').delete().eq('id',id);await logAudit('delete_note',email,'Deleted a note');var r=await sbAdmin.from('admin_notes').select('*').order('created_at',{ascending:false});adminNotesData=r.data||[]}catch(e){showToast('Error deleting note: '+e.message,'error')}}
@@ -529,7 +631,9 @@ function insertEmailVar(v){var ta=document.getElementById('email-body');var s=ta
 
 function updateEmailTypeHint(){var type=document.getElementById('email-type-select').value;var hint=document.getElementById('email-type-hint');if(type==='promotional'){hint.style.color='var(--warning)';hint.textContent='Promotional emails count toward the weekly limit and respect opt-out preferences.'}else if(type==='automated'){hint.style.color='var(--teal)';hint.textContent='Automated/Course emails are NOT limited and sent regardless of opt-out.'}else{hint.style.color='var(--success)';hint.textContent='Transactional emails are NOT limited and sent regardless of opt-out.'}}
 
-function previewEmail(){var fromEmail=document.getElementById('email-from').value;var subject=document.getElementById('email-subject').value;var body=document.getElementById('email-body').value;if(!subject||!body){showToast('Fill in subject and body','error');return}if(document.getElementById('email-audience').value==='custom'){var cust=document.getElementById('custom-emails').value.split('\n').map(function(e){return e.trim().toLowerCase()}).filter(function(e){return e&&e.indexOf('@')>=0});currentAudience=cust.map(function(email){return{email:email,name:'',referral_code:''}});updateSendCount()}if(!currentAudience.length){showToast('No recipients selected','error');return}var s=currentAudience[0];var pb=body.replace(/\{\{name\}\}/g,s.name||'Friend').replace(/\{\{email\}\}/g,s.email).replace(/\{\{referral_code\}\}/g,s.referral_code||'XXXXXX');document.getElementById('preview-from').textContent=fromEmail;document.getElementById('preview-to').textContent=s.email+(currentAudience.length>1?' (+'+( currentAudience.length-1)+' more)':'');document.getElementById('preview-subject').textContent=subject;document.getElementById('preview-body').textContent=pb;document.getElementById('email-preview-box').style.display='block'}
+function previewEmail(){var fromEmail=document.getElementById('email-from').value;var subject=document.getElementById('email-subject').value;var body=document.getElementById('email-body').value;if(!subject||!body){showToast('Fill in subject and body','error');return}if(document.getElementById('email-audience').value==='custom'){var cust=document.getElementById('custom-emails').value.split('\n').map(function(e){return e.trim().toLowerCase()}).filter(function(e){return e&&e.indexOf('@')>=0});currentAudience=cust.map(function(email){return{email:email,name:'',referral_code:''}});updateSendCount()}if(!currentAudience.length){showToast('No recipients selected','error');return}var s=currentAudience[0];var pb=body.replace(/\{\{name\}\}/g,s.name||'Friend').replace(/\{\{email\}\}/g,s.email).replace(/\{\{referral_code\}\}/g,s.referral_code||'XXXXXX');document.getElementById('preview-from').textContent=fromEmail;document.getElementById('preview-to').textContent=s.email+(currentAudience.length>1?' (+'+( currentAudience.length-1)+' more)':'');document.getElementById('preview-subject').textContent=subject;var useRich=document.getElementById('rich-email-toggle').checked;
+if(useRich){var discCfg=getDiscountConfig();var richHtml=buildRichEmail(pb,null,'https://fusionsessions.com',discCfg);if(s.referral_code)richHtml=richHtml.replace(/REFCODE/g,s.referral_code);document.getElementById('preview-body').style.display='none';var frame=document.getElementById('preview-rich-frame');frame.style.display='block';frame.srcdoc=richHtml}else{document.getElementById('preview-body').style.display='block';document.getElementById('preview-rich-frame').style.display='none';document.getElementById('preview-body').textContent=pb}
+document.getElementById('email-preview-box').style.display='block'}
 
 function prepareToSend(){var subject=document.getElementById('email-subject').value;var body=document.getElementById('email-body').value;if(!subject||!body){showToast('Fill in subject and body','error');return}if(document.getElementById('email-audience').value==='custom'){var cust=document.getElementById('custom-emails').value.split('\n').map(function(e){return e.trim().toLowerCase()}).filter(function(e){return e&&e.indexOf('@')>=0});currentAudience=cust.map(function(email){return{email:email,name:'',referral_code:''}});updateSendCount()}if(!currentAudience.length){showToast('No recipients selected','error');return}qpConfirm('Confirm Send','Send this email to '+currentAudience.length+' recipients?\n\nSubject: '+subject+'\nFrom: '+document.getElementById('email-from').value,{okText:'Yes, Send'}).then(function(ok){if(ok)sendEmails()})}
 
@@ -545,7 +649,10 @@ var trackingId=campaignId?(campaignId.slice(0,8)+'-'+Date.now()+'-'+Math.random(
 /* Insert tracking record */
 try{await sbAdmin.from('email_tracking').insert([{campaign_id:campaignId,recipient_email:recipient.email,tracking_id:trackingId,status:'sent',email_type:emailType,sent_at:new Date().toISOString()}])}catch(e){}
 var ps=subject.replace(/\{\{name\}\}/g,recipient.name||'Friend').replace(/\{\{email\}\}/g,recipient.email);var pb=body.replace(/\{\{name\}\}/g,recipient.name||'Friend').replace(/\{\{email\}\}/g,recipient.email).replace(/\{\{referral_code\}\}/g,recipient.referral_code||'');
-try{await fetch(APPS_SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({to:recipient.email,from:fromEmail,subject:ps,body:pb})});sent++;addLogEntry('Sent to '+recipient.email,'success');if(isPromo)recipientEmailCounts[recipient.email]=(recipientEmailCounts[recipient.email]||0)+1}catch(e){failed++;addLogEntry('Error: '+recipient.email+' — '+e.message,'error')}
+var useRich=document.getElementById('rich-email-toggle').checked;
+var sendPayload={to:recipient.email,from:fromEmail,subject:ps,body:pb};
+if(useRich){var discCfg=getDiscountConfig();var richHtml=buildRichEmail(pb,trackingId,'https://fusionsessions.com',discCfg);if(recipient.referral_code)richHtml=richHtml.replace(/REFCODE/g,recipient.referral_code);sendPayload.htmlBody=richHtml}
+try{await fetch(APPS_SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify(sendPayload)});sent++;addLogEntry('Sent to '+recipient.email,'success');if(isPromo)recipientEmailCounts[recipient.email]=(recipientEmailCounts[recipient.email]||0)+1}catch(e){failed++;addLogEntry('Error: '+recipient.email+' — '+e.message,'error')}
 progressFill.style.width=((i+1)/total*100).toFixed(0)+'%';progressText.textContent='Sent '+sent+'/'+total+(failed?' ('+failed+' failed':'')+(skippedLimit?', '+skippedLimit+' skipped':'')+')';await new Promise(function(r){setTimeout(r,100)})}
 /* Update campaign record */
 if(campaignId){try{await sbAdmin.from('email_campaigns').update({status:failed===total?'failed':'sent',sent_count:sent,failed_count:failed}).eq('id',campaignId)}catch(e){}}
@@ -592,6 +699,326 @@ function loadOrdersPage(){if(!dataLoaded)return;filterOrders()}
 function filterOrders(){var f=document.getElementById('orders-filter').value;var s=document.getElementById('orders-sort').value;var q=(document.getElementById('orders-search').value||'').toLowerCase().trim();ordersFiltered=purchasesData.filter(function(p){if(q&&(!p.email||p.email.toLowerCase().indexOf(q)<0))return false;switch(f){case'bundle-all':return p.product_id==='bundle-all';case'fusion-only':return isFusion(p.product_id);case'academy-only':return isAcademy(p.product_id);case'admin-granted':return p.stripe_event_id&&p.stripe_event_id.indexOf('admin-grant')===0;case'refunded':return p.product_id&&p.product_id.startsWith('revoked__');default:return true}});ordersFiltered.sort(function(a,b){switch(s){case'recent':return(b.purchased_at||'').localeCompare(a.purchased_at||'');case'oldest':return(a.purchased_at||'').localeCompare(b.purchased_at||'');case'amount-high':return(Number(b.amount_paid)||0)-(Number(a.amount_paid)||0);case'amount-low':return(Number(a.amount_paid)||0)-(Number(b.amount_paid)||0);default:return 0}});var tr=ordersFiltered.reduce(function(s,p){return s+(Number(p.amount_paid)||0)},0);var to=ordersFiltered.filter(function(p){return Number(p.amount_paid)>0}).length;var ao=to>0?(tr/to):0;var ag=ordersFiltered.filter(function(p){return p.stripe_event_id&&p.stripe_event_id.indexOf('admin-grant')===0}).length;document.getElementById('orders-stats').innerHTML='<div class="stat-card"><div class="stat-ico green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div><div class="stat-val">'+fmtMoney(tr)+'</div><div class="stat-lbl">Revenue</div></div></div><div class="stat-card"><div class="stat-ico teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div><div><div class="stat-val">'+to+'</div><div class="stat-lbl">Paid Orders</div></div></div><div class="stat-card"><div class="stat-ico purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div><div class="stat-val">'+fmtMoney(ao)+'</div><div class="stat-lbl">Avg Order</div></div></div><div class="stat-card"><div class="stat-ico warm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><div><div class="stat-val">'+ag+'</div><div class="stat-lbl">Admin Grants</div></div></div>';ordersPage=1;renderOrdersTable()}
 function renderOrdersTable(){var tbody=document.getElementById('orders-tbody');var tp=Math.ceil(ordersFiltered.length/ordersPS)||1;var start=(ordersPage-1)*ordersPS;var pd=ordersFiltered.slice(start,start+ordersPS);if(!pd.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-dim)">No transactions match filters</td></tr>';document.getElementById('orders-pagination').innerHTML='';return}tbody.innerHTML=pd.map(function(p){var date=p.purchased_at?new Date(p.purchased_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'--';var isGrant=p.stripe_event_id&&p.stripe_event_id.indexOf('admin-grant')===0;var isRev=isRevoked(p.product_id);var sid=p.stripe_session_id||'';var ss=sid.length>20?sid.substring(0,18)+'...':sid;var pr='';if(p.referral_code_used)pr='<span class="badge teal">'+esc(p.referral_code_used)+'</span>';var e2=esc((p.email||'').replace(/'/g,"\\'"));return'<tr style="'+(isRev?'opacity:.5;text-decoration:line-through':'')+'"><td style="font-size:12px;color:var(--text-dim);white-space:nowrap">'+date+'</td><td class="email" style="cursor:pointer" onclick="go(\'customers\');setTimeout(function(){showCustomerDetail(\''+e2+'\')},100)">'+esc(p.email||'')+'</td><td>'+productBadge(p.product_id)+' <span style="font-size:12px">'+productName(p.product_id)+'</span></td><td>'+(Number(p.amount_paid)>0?'<span style="color:var(--success);font-weight:600">'+fmtMoney(p.amount_paid)+'</span>':(isGrant?'<span style="color:var(--taupe);font-size:11px">Granted</span>':'<span style="color:var(--text-dim)">$0</span>'))+'</td><td>'+pr+'</td><td style="font-size:10px;color:var(--text-dim);font-family:monospace" title="'+esc(sid)+'">'+esc(ss)+'</td><td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();go(\'customers\');setTimeout(function(){showCustomerDetail(\''+e2+'\')},100)">View</button></td></tr>'}).join('');document.getElementById('orders-pagination').innerHTML='<span>'+ordersFiltered.length+' transactions · Page '+ordersPage+'/'+tp+'</span><div class="page-btns"><button class="btn btn-ghost btn-sm" onclick="ordersPage=Math.max(1,ordersPage-1);renderOrdersTable()" '+(ordersPage<=1?'disabled':'')+'>Prev</button><button class="btn btn-ghost btn-sm" onclick="ordersPage=Math.min('+tp+',ordersPage+1);renderOrdersTable()" '+(ordersPage>=tp?'disabled':'')+'>Next</button></div>'}
 function exportOrders(){var csv=['Date,Email,Product,Amount,Referral,Stripe ID'];ordersFiltered.forEach(function(p){csv.push([p.purchased_at?new Date(p.purchased_at).toISOString():'','"'+(p.email||'')+'"','"'+productName(p.product_id)+'"',p.amount_paid||0,p.referral_code_used||'','"'+(p.stripe_session_id||'')+'"'].join(','))});var b=new Blob([csv.join('\n')],{type:'text/csv'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='qp-orders-'+new Date().toISOString().split('T')[0]+'.csv';a.click()}
+
+
+/* ==================== RICH HTML EMAIL BUILDER ==================== */
+function getDiscountConfig(){
+if(!document.getElementById('discount-toggle').checked) return null;
+var sel=document.getElementById('discount-promo-select').value;
+var cust=document.getElementById('discount-promo-custom').value.trim();
+var couponId=cust||sel;
+if(!couponId) return null;
+/* Find the promo details from promotionsData */
+var promo=promotionsData.find(function(p){return p.coupon_id===couponId});
+return {couponId:couponId,percent:promo?promo.discount_percent:'10',product:promo?promo.applies_to:'any'}
+}
+
+function toggleRichEmailOptions(){
+var on=document.getElementById('rich-email-toggle').checked;
+document.getElementById('rich-email-options').style.display=on?'block':'none'
+}
+
+function toggleDiscountConfig(){
+var on=document.getElementById('discount-toggle').checked;
+document.getElementById('discount-config').style.display=on?'flex':'none';
+if(on) loadPromoSelect()
+}
+
+function loadPromoSelect(){
+var sel=document.getElementById('discount-promo-select');
+if(sel.options.length>1) return;
+var active=promotionsData.filter(function(p){return p.status==='active'});
+active.forEach(function(p){
+var opt=document.createElement('option');
+opt.value=p.coupon_id;
+var disc=p.discount_type==='percent'?p.discount_percent+'% off':(p.discount_type==='fixed'?'$'+p.discount_fixed+' off':'$'+p.discount_set_price);
+opt.textContent=p.name+' ('+p.coupon_id+') — '+disc;
+sel.appendChild(opt)
+})
+}
+
+function buildRichEmail(bodyText,trackingId,siteUrl,discountConfig){
+var trackBase=siteUrl+'/.netlify/functions/email-track';
+var wrapLink=function(url){return trackingId?trackBase+'?action=click&tid='+trackingId+'&url='+encodeURIComponent(url):url};
+var traceyImg='https://fusionsessions.com/dr-tracey-clark.jpg';
+/* Strip emojis */
+var cleanBody=bodyText
+.replace(/[\u{1F600}-\u{1F64F}]/gu,'').replace(/[\u{1F300}-\u{1F5FF}]/gu,'')
+.replace(/[\u{1F680}-\u{1F6FF}]/gu,'').replace(/[\u{2600}-\u{26FF}]/gu,'')
+.replace(/[\u{2700}-\u{27BF}]/gu,'').replace(/[\u{1F900}-\u{1F9FF}]/gu,'')
+.replace(/[\u{FE00}-\u{FE0F}]/gu,'').replace(/[\u{1F1E0}-\u{1F1FF}]/gu,'')
+.replace(/  +/g,' ');
+/* Split at --- divider */
+var parts=cleanBody.split(/\n---\n/);
+var mainBody=parts[0].trim();
+var discountBody=parts[1]?parts[1].trim():'';
+/* Strip signature block */
+mainBody=mainBody.replace(/\n\n(With warmth,|With healing energy,|With gratitude,)\n.*$/s,'');
+/* Remove raw URLs */
+mainBody=mainBody.replace(/\n.*https?:\/\/[^\s]*/g,'');
+mainBody=mainBody.replace(/^.*https?:\/\/[^\s]*/gm,'');
+mainBody=mainBody.replace(/\n(Your link|Share your link|Claim your|Share it|Your share link|Visit the community|Our community|Join the conversation)[^\n]*/gi,'');
+mainBody=mainBody.replace(/\n- /g,'\n\u2022 ').replace(/^- /gm,'\u2022 ');
+/* Markdown to HTML */
+var mainHtml=mainBody
+.replace(/\*\*([^*]+)\*\*/g,'<strong style="color:#00f5ff;">$1</strong>')
+.replace(/~~([^~]+)~~/g,'<span style="text-decoration:line-through;color:#ff4466;">$1</span>')
+.replace(/\n/g,'<br>').replace(/(<br>){3,}/g,'<br><br>').replace(/^(<br>)+/,'').replace(/(<br>)+$/,'');
+/* Build discount card */
+var discountCardHtml='';
+if(discountBody){
+var discountInner=discountBody
+.replace(/\*\*(10% off)\*\*/g,'<span style="color:#2dff7a;font-size:20px;font-weight:700;">$1</span>')
+.replace(/\*\*(\$\d+)\*\*/g,'<span style="color:#2dff7a;font-size:22px;font-weight:700;">$1</span>')
+.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
+.replace(/Credits work like cash[^<\n]*/g,'<span style="font-size:13px;color:#ffd700;font-weight:600;display:inline-block;margin-top:4px;">$&</span>')
+.replace(/~~([^~]+)~~/g,'<span style="text-decoration:line-through;color:#ff4466;font-size:16px;">$1</span>')
+.replace(/Your link:\s*<strong>((?:https?:\/\/)?fusionsessions\.com[^\s<]*)<\/strong>/gi,'Your link: <a href="https://$1" target="_blank" style="color:#00f5ff;font-size:12px;word-break:break-all;text-decoration:underline;">$1</a>')
+.replace(/Your link:\s*(https?:\/\/[^\s<]+)/gi,'Your link: <a href="$1" target="_blank" style="color:#00f5ff;font-size:12px;word-break:break-all;text-decoration:underline;">$1</a>')
+.replace(/\n(Share your link|Share it|Claim your)[^\n]*/gi,'')
+.replace(/Your discount applies automatically:?\s*/gi,'')
+.replace(/\n- /g,'\n\u2022 ').replace(/^- /gm,'\u2022 ')
+.replace(/\n/g,'<br>').replace(/(<br>){3,}/g,'<br><br>').replace(/^(<br>)+/,'').replace(/(<br>)+$/,'');
+/* QR code */
+var qrHtml='';
+if(discountInner.indexOf('{{qr_code}}')>=0){
+discountInner=discountInner.replace(/\{\{qr_code\}\}/g,'');
+qrHtml='<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:15px auto 5px;"><tr><td style="background:#fff;border-radius:10px;padding:8px;"><img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data='+encodeURIComponent(siteUrl+'/?ref=REFCODE')+'" width="120" height="120" alt="QR Code" style="display:block;border-radius:4px;"></td></tr></table><p style="margin:6px 0 0;font-size:11px;color:#888;">Scan to share your link</p>'
+}
+/* Style code display */
+discountInner=discountInner.replace(/Your code:\s*<strong>([^<]+)<\/strong>/i,'Your code: <span style="font-family:monospace;font-size:22px;letter-spacing:3px;color:#00f5ff;background:rgba(0,245,255,0.1);padding:5px 15px;border-radius:8px;">$1</span>');
+var ctaLabel=discountInner.indexOf('Collection')>=0||discountInner.indexOf('Upgrade')>=0?'COMPLETE YOUR BUNDLE':(discountInner.indexOf('code')>=0||discountInner.indexOf('Share')>=0||discountInner.indexOf('referral')>=0||discountInner.indexOf('Referral')>=0?'GO TO REFERRAL HUB':'CLAIM YOUR DISCOUNT');
+var ctaUrl2=ctaLabel==='GO TO REFERRAL HUB'?siteUrl+'/referral-hub.html':(discountConfig&&discountConfig.couponId?siteUrl+'/?coupon='+discountConfig.couponId:siteUrl);
+discountCardHtml='<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:25px 0 5px;"><tr><td style="background:linear-gradient(135deg,#1a0533,#0f0f23);border:2px solid #ff006e;border-radius:16px;padding:30px 25px;text-align:center;"><p style="margin:0;font-size:18px;color:#fff;line-height:2.0;">'+discountInner+'</p>'+qrHtml+'<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:20px auto 0;"><tr><td style="background:linear-gradient(45deg,#ff006e,#8338ec);border-radius:50px;"><a href="'+wrapLink(ctaUrl2)+'" target="_blank" style="display:inline-block;padding:16px 45px;color:#fff;text-decoration:none;font-weight:700;font-size:16px;letter-spacing:2px;text-transform:uppercase;">'+ctaLabel+'</a></td></tr></table><p style="margin:12px 0 0;font-size:11px;color:#666;">'+(ctaLabel==='GO TO REFERRAL HUB'?'Share your code and start earning':'Applied automatically at checkout')+'</p></td></tr></table>';
+if(cleanBody.indexOf('community')>=0||cleanBody.indexOf('/community')>=0){
+discountCardHtml+='<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:15px 0 0;"><tr><td align="center"><a href="'+wrapLink(siteUrl+'/community')+'" target="_blank" style="color:#8338ec;font-size:14px;font-weight:600;text-decoration:none;">Join the Community &rarr;</a></td></tr></table>'
+}}
+/* Main CTA (only if no discount card) */
+var ctaUrl=discountConfig&&discountConfig.couponId?siteUrl+'/?coupon='+discountConfig.couponId:siteUrl;
+var ctaHtml='';
+if(!discountCardHtml){
+ctaHtml='<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:25px 0 10px;"><tr><td align="center"><table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr><td style="background:linear-gradient(45deg,#ff006e,#8338ec);border-radius:50px;"><a href="'+wrapLink(ctaUrl)+'" target="_blank" style="display:inline-block;padding:16px 50px;color:#fff;text-decoration:none;font-weight:700;font-size:15px;letter-spacing:2px;text-transform:uppercase;">EXPLORE SESSIONS</a></td></tr></table></td></tr></table>'
+}
+var pixelUrl=trackingId?trackBase+'?action=open&tid='+trackingId:'';
+var unsubscribeUrl=wrapLink(siteUrl+'/unsubscribe.html');
+return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body style="margin:0;padding:0;background-color:#0f0f23;font-family:Arial,Helvetica,sans-serif;"><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#0f0f23;"><tr><td align="center" style="padding:20px 10px;"><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="max-width:600px;"><tr><td align="center" style="padding:30px 20px 15px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:16px 16px 0 0;"><h1 style="margin:0;font-size:24px;color:#fff;font-weight:700;letter-spacing:3px;">QUANTUM PHYSICIAN</h1><p style="margin:5px 0 0;font-size:11px;color:rgba(255,255,255,0.8);letter-spacing:4px;text-transform:uppercase;">Empowering Health</p></td></tr><tr><td style="background-color:#161630;padding:35px 30px 20px;"><p style="margin:0;color:#e8e8f0;font-size:16px;line-height:1.8;">'+mainHtml+'</p>'+ctaHtml+discountCardHtml+'</td></tr><tr><td style="background-color:#1a1a35;padding:25px 30px;border-top:1px solid #2a2a4a;"><table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center"><tr><td width="85" valign="top"><img src="'+traceyImg+'" width="75" height="75" alt="Dr. Tracey Clark" style="border-radius:50%;border:3px solid #8338ec;display:block;object-fit:cover;"></td><td valign="middle" style="padding-left:18px;"><p style="margin:0;color:#ccc;font-size:14px;">With warmth,</p><p style="margin:5px 0 0;color:#fff;font-weight:700;font-size:18px;">Dr. Tracey Clark</p><p style="margin:3px 0 0;color:#ff006e;font-size:13px;font-weight:600;letter-spacing:1px;">Quantum Physician</p></td></tr></table></td></tr><tr><td align="center" style="padding:20px;background-color:#0a0a1a;border-radius:0 0 16px 16px;"><p style="margin:0;font-size:11px;color:#555;">&copy; 2026 Quantum Physician. All rights reserved.</p><p style="margin:8px 0 0;"><a href="'+unsubscribeUrl+'" style="color:#444;font-size:10px;text-decoration:none;">unsubscribe</a></p></td></tr></table>'+(pixelUrl?'<img src="'+pixelUrl+'" width="1" height="1" style="display:none;" alt="">':'')+'</td></tr></table></body></html>'
+}
+
+/* ==================== EMAIL AUTOMATION PAGE ==================== */
+function loadAutomationPage(){loadAutomationStats();loadScheduledEmails()}
+
+function switchAutoTab(tab,btn){
+document.querySelectorAll('.auto-tab-panel').forEach(function(p){p.style.display='none'});
+document.getElementById('autotab-'+tab).style.display='block';
+document.querySelectorAll('.auto-tab-btn').forEach(function(b){b.classList.remove('active')});
+btn.classList.add('active');
+if(tab==='scheduled') loadScheduledEmails();
+if(tab==='logs') loadEmailLogs();
+if(tab==='sessions') loadSessionSchedule()
+}
+
+async function loadAutomationStats(){
+try{
+var pending=scheduledEmailsData.filter(function(e){return e.status==='pending'}).length;
+document.getElementById('auto-stat-pending').textContent=pending;
+var thirtyDaysAgo=new Date(Date.now()-30*24*60*60*1000).toISOString();
+var sent30=scheduledEmailsData.filter(function(e){return e.status==='sent'&&e.sent_at&&e.sent_at>=thirtyDaysAgo}).length;
+document.getElementById('auto-stat-sent').textContent=sent30;
+var failed=scheduledEmailsData.filter(function(e){return e.status==='failed'}).length;
+document.getElementById('auto-stat-failed').textContent=failed;
+var now=new Date().toISOString();
+var next=sessionScheduleData.filter(function(s){return s.air_date>=now}).sort(function(a,b){return a.air_date>b.air_date?1:-1})[0];
+if(next){var days=Math.ceil((new Date(next.air_date)-new Date())/(1000*60*60*24));document.getElementById('auto-stat-next').textContent=days+' days'}
+else{document.getElementById('auto-stat-next').textContent='-'}
+}catch(e){console.error('Automation stats error:',e)}
+}
+
+async function loadScheduledEmails(){
+var container=document.getElementById('scheduled-emails-list');
+container.innerHTML='<div class="empty"><p>Loading...</p></div>';
+try{
+var statusFilter=document.getElementById('filter-sched-status').value;
+var typeFilter=document.getElementById('filter-sched-type').value;
+var filtered=scheduledEmailsData;
+if(statusFilter!=='all') filtered=filtered.filter(function(e){return e.status===statusFilter});
+if(typeFilter!=='all') filtered=filtered.filter(function(e){return e.email_type===typeFilter});
+if(!filtered.length){container.innerHTML='<div class="empty"><p>No scheduled emails found</p></div>';return}
+var html='';
+filtered.forEach(function(email){
+var dt=new Date(email.scheduled_for);
+var types={'reminder_7day':'7-Day','reminder_1day':'1-Day','reminder_2hr':'2-Hour','promo':'Promo','custom':'Custom'};
+var typeLabel=types[email.email_type]||email.email_type||'—';
+var statusColors={pending:'var(--warning)',sent:'var(--success)',failed:'var(--danger)',cancelled:'var(--text-dim)'};
+var statusColor=statusColors[email.status]||'var(--text-dim)';
+html+='<div style="padding:14px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px;background:rgba(0,0,0,.1)">';
+html+='<div style="display:flex;justify-content:space-between;align-items:start;gap:12px;flex-wrap:wrap">';
+html+='<div style="flex:1;min-width:200px"><div style="font-weight:600;font-size:14px;margin-bottom:4px">'+esc(email.subject||'(no subject)')+'</div>';
+html+='<div style="display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--text-dim)">';
+html+='<span style="color:'+statusColor+';font-weight:600;text-transform:uppercase">'+email.status+'</span>';
+html+='<span>'+typeLabel+'</span>';
+html+='<span>'+dt.toLocaleDateString()+' '+dt.toLocaleTimeString()+'</span>';
+html+='<span>'+esc(email.audience||'—')+'</span>';
+if(email.sent_count) html+='<span style="color:var(--success)">'+email.sent_count+' sent</span>';
+if(email.failed_count) html+='<span style="color:var(--danger)">'+email.failed_count+' failed</span>';
+html+='</div></div>';
+html+='<div style="display:flex;gap:4px;flex-wrap:wrap">';
+html+='<button class="btn btn-ghost btn-sm" onclick="previewScheduledEmail(\''+email.id+'\')">Preview</button>';
+html+='<button class="btn btn-ghost btn-sm" onclick="editScheduledEmail(\''+email.id+'\')">Edit</button>';
+if(email.status==='pending'){
+html+='<button class="btn btn-sm" style="background:var(--success-soft);color:var(--success)" onclick="sendNowSched(\''+email.id+'\')">Send Now</button>';
+html+='<button class="btn btn-sm" style="background:var(--danger-soft);color:var(--danger)" onclick="cancelSchedEmail(\''+email.id+'\')">Cancel</button>';
+}
+if(email.status==='failed') html+='<button class="btn btn-sm" style="background:var(--warning-soft);color:var(--warning)" onclick="retrySchedEmail(\''+email.id+'\')">Retry</button>';
+if(email.status==='sent') html+='<button class="btn btn-sm" style="background:var(--warning-soft);color:var(--warning)" onclick="resendSchedEmail(\''+email.id+'\')">Resend</button>';
+if(email.status==='cancelled') html+='<button class="btn btn-sm" style="background:var(--success-soft);color:var(--success)" onclick="reactivateSchedEmail(\''+email.id+'\')">Reactivate</button>';
+html+='</div></div></div>'
+});
+container.innerHTML=html
+}catch(e){container.innerHTML='<div class="empty"><p>Error: '+e.message+'</p></div>'}
+}
+
+async function loadEmailLogs(){
+var container=document.getElementById('email-logs-list');
+container.innerHTML='<div class="empty"><p>Loading...</p></div>';
+try{
+var emailFilter=(document.getElementById('filter-log-email').value||'').trim().toLowerCase();
+var statusFilter=document.getElementById('filter-log-status').value;
+var filtered=emailLogData;
+if(emailFilter) filtered=filtered.filter(function(l){return l.recipient_email&&l.recipient_email.toLowerCase().indexOf(emailFilter)>=0});
+if(statusFilter!=='all') filtered=filtered.filter(function(l){return l.status===statusFilter});
+if(!filtered.length){container.innerHTML='<div class="empty"><p>No email logs found</p></div>';return}
+var html='<table class="tbl"><thead><tr><th>Date</th><th>Recipient</th><th>Subject</th><th>Status</th></tr></thead><tbody>';
+filtered.slice(0,100).forEach(function(log){
+var dt=log.sent_at?new Date(log.sent_at):null;
+var dateStr=dt?dt.toLocaleDateString()+' '+dt.toLocaleTimeString():'—';
+var subj=log.subject||'—';
+if(subj.length>50) subj=subj.substring(0,50)+'...';
+var statusColor=log.status==='sent'?'var(--success)':'var(--danger)';
+html+='<tr><td style="font-size:11px">'+dateStr+'</td><td class="email">'+esc(log.recipient_email||'—')+'</td><td style="font-size:12px">'+esc(subj)+'</td><td><span style="color:'+statusColor+';font-weight:600;font-size:10px;text-transform:uppercase">'+esc(log.status||'—')+'</span></td></tr>'
+});
+html+='</tbody></table>';
+container.innerHTML=html
+}catch(e){container.innerHTML='<div class="empty"><p>Error: '+e.message+'</p></div>'}
+}
+
+async function loadSessionSchedule(){
+var container=document.getElementById('session-schedule-list');
+container.innerHTML='<div class="empty"><p>Loading...</p></div>';
+try{
+if(!sessionScheduleData.length){container.innerHTML='<div class="empty"><p>No sessions scheduled yet.</p></div>';return}
+var now=new Date();
+var html='';
+sessionScheduleData.forEach(function(s){
+var airDate=new Date(s.air_date);
+var isPast=airDate<now;
+var daysUntil=Math.ceil((airDate-now)/(1000*60*60*24));
+html+='<div style="padding:14px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px;background:rgba(0,0,0,.1);opacity:'+(isPast?'.6':'1')+'">';
+html+='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">';
+html+='<div><div style="font-weight:600;font-size:14px">Session '+s.session_number+': '+esc(s.title||'')+'</div>';
+html+='<div style="font-size:12px;color:var(--text-dim);margin-top:2px">'+esc(s.topic||'')+'</div>';
+if(s.zoom_link) html+='<div style="font-size:11px;margin-top:6px"><a href="'+esc(s.zoom_link)+'" target="_blank" style="color:var(--teal)">Zoom Link</a>'+(s.zoom_meeting_id?' &middot; ID: '+esc(s.zoom_meeting_id):'')+(s.zoom_passcode?' &middot; Pass: '+esc(s.zoom_passcode):'')+'</div>';
+html+='</div>';
+html+='<div style="text-align:right"><div style="font-size:13px;font-weight:600">'+airDate.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'})+'</div>';
+html+='<div style="font-size:12px;color:var(--text-dim)">'+airDate.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})+'</div>';
+html+='<div style="font-size:11px;color:'+(isPast?'var(--text-dim)':'var(--teal)')+';margin-top:4px">'+(isPast?'Completed':daysUntil+' days away')+'</div>';
+html+='</div></div></div>'
+});
+container.innerHTML=html
+}catch(e){container.innerHTML='<div class="empty"><p>Error: '+e.message+'</p></div>'}
+}
+
+/* Scheduled email actions */
+async function sendNowSched(id){
+var ok=await qpConfirm('Send Now','Send this email immediately?',{okText:'Send Now'});
+if(!ok) return;
+try{var r=await sbAdmin.from('scheduled_emails').update({scheduled_for:new Date().toISOString()}).eq('id',id);
+if(r.error) throw r.error;
+showToast('Email queued for immediate send','success');
+await loadAllData();loadScheduledEmails();loadAutomationStats()
+}catch(e){showToast('Error: '+e.message,'error')}
+}
+
+async function cancelSchedEmail(id){
+var ok=await qpConfirm('Cancel Email','Cancel this scheduled email?',{okText:'Cancel It',okClass:'btn-danger'});
+if(!ok) return;
+try{var r=await sbAdmin.from('scheduled_emails').update({status:'cancelled'}).eq('id',id);
+if(r.error) throw r.error;
+showToast('Email cancelled','success');
+await loadAllData();loadScheduledEmails();loadAutomationStats()
+}catch(e){showToast('Error: '+e.message,'error')}
+}
+
+async function retrySchedEmail(id){
+var ok=await qpConfirm('Retry Email','Retry sending this failed email?',{okText:'Retry'});
+if(!ok) return;
+try{var r=await sbAdmin.from('scheduled_emails').update({status:'pending',scheduled_for:new Date().toISOString(),sent_count:0,failed_count:0,updated_at:new Date().toISOString()}).eq('id',id);
+if(r.error) throw r.error;
+showToast('Email queued for retry','success');
+await loadAllData();loadScheduledEmails();loadAutomationStats()
+}catch(e){showToast('Error: '+e.message,'error')}
+}
+
+async function resendSchedEmail(id){
+var ok=await qpConfirm('Resend Email','Resend this email to all recipients again?',{okText:'Resend'});
+if(!ok) return;
+try{var r=await sbAdmin.from('scheduled_emails').update({status:'pending',scheduled_for:new Date().toISOString(),sent_count:0,failed_count:0,sent_at:null,updated_at:new Date().toISOString()}).eq('id',id);
+if(r.error) throw r.error;
+showToast('Email queued for resend','success');
+await loadAllData();loadScheduledEmails();loadAutomationStats()
+}catch(e){showToast('Error: '+e.message,'error')}
+}
+
+async function reactivateSchedEmail(id){
+var newDT=prompt('Enter new date/time (YYYY-MM-DD HH:MM):');
+if(!newDT) return;
+var parsed=new Date(newDT);
+if(isNaN(parsed.getTime())){showToast('Invalid date format','error');return}
+try{var r=await sbAdmin.from('scheduled_emails').update({status:'pending',scheduled_for:parsed.toISOString(),updated_at:new Date().toISOString()}).eq('id',id);
+if(r.error) throw r.error;
+showToast('Email reactivated','success');
+await loadAllData();loadScheduledEmails();loadAutomationStats()
+}catch(e){showToast('Error: '+e.message,'error')}
+}
+
+async function previewScheduledEmail(id){
+var email=scheduledEmailsData.find(function(e){return e.id===id});
+if(!email){showToast('Email not found','error');return}
+var previewBody=(email.body||'').replace(/\{\{name\}\}/g,'<strong style="color:#8338ec;">John Doe</strong>').replace(/\{\{email\}\}/g,'<strong style="color:#8338ec;">john@example.com</strong>').replace(/\{\{referral_code\}\}/g,'<strong style="color:#8338ec;">ABC123</strong>').replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+var content='<div style="margin-bottom:15px;padding-bottom:15px;border-bottom:2px solid #eee;"><p><strong>Subject:</strong> '+esc(email.subject)+'</p><p><strong>Scheduled:</strong> '+new Date(email.scheduled_for).toLocaleString()+'</p><p><strong>Audience:</strong> '+esc(email.audience||'—')+'</p></div><div style="font-family:Arial,sans-serif;line-height:1.6;">'+previewBody+'</div>';
+document.getElementById('sched-preview-content').innerHTML=content;
+document.getElementById('sched-preview-modal').style.display='flex'
+}
+function closeSchedPreviewModal(){document.getElementById('sched-preview-modal').style.display='none'}
+
+async function editScheduledEmail(id){
+var email=scheduledEmailsData.find(function(e){return e.id===id});
+if(!email){showToast('Email not found','error');return}
+document.getElementById('sched-edit-id').value=email.id;
+document.getElementById('sched-edit-subject').value=email.subject||'';
+document.getElementById('sched-edit-body').value=email.body||'';
+document.getElementById('sched-edit-audience').value=email.audience||'all';
+var dt=new Date(email.scheduled_for);
+var local=new Date(dt.getTime()-dt.getTimezoneOffset()*60000);
+document.getElementById('sched-edit-datetime').value=local.toISOString().slice(0,16);
+document.getElementById('sched-edit-title').textContent=email.status==='pending'?'Edit Scheduled Email':'View/Edit Email';
+document.getElementById('sched-edit-modal').style.display='flex'
+}
+function closeSchedEditModal(){document.getElementById('sched-edit-modal').style.display='none'}
+
+async function saveScheduledEmail(){
+var id=document.getElementById('sched-edit-id').value;
+var subject=document.getElementById('sched-edit-subject').value.trim();
+var body=document.getElementById('sched-edit-body').value.trim();
+var audience=document.getElementById('sched-edit-audience').value;
+var datetime=document.getElementById('sched-edit-datetime').value;
+if(!subject||!body||!datetime){showToast('Fill in all fields','error');return}
+try{var r=await sbAdmin.from('scheduled_emails').update({subject:subject,body:body,audience:audience,scheduled_for:new Date(datetime).toISOString(),updated_at:new Date().toISOString()}).eq('id',id);
+if(r.error) throw r.error;
+showToast('Email updated','success');
+closeSchedEditModal();
+await loadAllData();loadScheduledEmails()
+}catch(e){showToast('Error: '+e.message,'error')}
+}
 
 async function loadAuditLog(){var c=document.getElementById('audit-log-content');if(!c)return;c.innerHTML='<div class="loading-center"><div class="spinner"></div>Loading...</div>';try{var filter=document.getElementById('audit-filter').value;var search=(document.getElementById('audit-search').value||'').trim().toLowerCase();var q=sbAdmin.from('admin_audit_log').select('*',{count:'exact'}).order('created_at',{ascending:false});if(filter!=='all')q=q.eq('action',filter);if(search)q=q.ilike('target_email','%'+search+'%');q=q.range((auditPage-1)*auditPS,auditPage*auditPS-1);var res=await q;if(res.error){console.error('Audit log query error:',res.error);throw new Error(res.error.message||JSON.stringify(res.error))}var logs=res.data||[];var total=res.count||0;var tp=Math.ceil(total/auditPS)||1;var actionColors={'grant_access':'var(--success)','revoke_access':'var(--danger)','block_user':'var(--danger)','adjust_credit':'var(--warning)','set_credit':'var(--warning)','create_referral':'var(--teal)','enroll_student':'var(--success)','unenroll_student':'var(--danger)','reset_password':'var(--purple)','reset_progress':'var(--warning)','delete_account':'var(--danger)','revoke_all':'var(--danger)','add_note':'var(--taupe)','delete_note':'var(--text-dim)','bulk_enroll':'var(--teal)','login_as':'var(--purple)','send_email':'var(--teal)','create_promo':'var(--warning)','update_promo':'var(--taupe)','delete_promo':'var(--danger)'};var actionLabels={'grant_access':'Grant Access','revoke_access':'Revoke Access','block_user':'Block/Unblock','adjust_credit':'Credit Adjust','set_credit':'Credit Set','create_referral':'Create Referral','enroll_student':'Enroll','unenroll_student':'Unenroll','reset_password':'Reset PW','reset_progress':'Reset Progress','delete_account':'Archive Account','archive_account':'Archive Account','revoke_all':'Revoke All','add_note':'Add Note','delete_note':'Delete Note','bulk_enroll':'Bulk Enroll','login_as':'Login As','send_email':'Send Email','create_promo':'Create Promo','update_promo':'Update Promo','delete_promo':'Delete Promo'};document.getElementById('audit-stats').innerHTML='<div class="stat-card"><div class="stat-ico teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div><div class="stat-val">'+total+'</div><div class="stat-lbl">Total Actions</div></div></div>';if(!logs.length){c.innerHTML='<div class="empty"><p>No audit log entries'+(filter!=='all'?' for this filter':'')+'</p></div>';document.getElementById('audit-pagination').innerHTML='';return}c.innerHTML=logs.map(function(l){var col=actionColors[l.action]||'var(--text-dim)';var label=actionLabels[l.action]||l.action;return'<div class="feed-item"><div class="feed-dot" style="background:'+col+'"></div><div class="feed-content"><div class="feed-text"><span class="badge" style="background:rgba(255,255,255,.06);color:'+col+'">'+label+'</span> '+(l.target_email?'<strong style="cursor:pointer" onclick="go(\'customers\');setTimeout(function(){showCustomerDetail(\''+esc(l.target_email)+'\')},100)">'+esc(l.target_email)+'</strong>':'<span style="color:var(--text-dim)">System</span>')+'</div><div style="font-size:12px;color:var(--text-muted);margin-top:2px">'+esc(l.details||'')+'</div><div class="feed-time" style="display:flex;justify-content:space-between;align-items:center"><span>'+timeAgo(l.created_at)+' \u00b7 '+new Date(l.created_at).toLocaleString()+'</span><span style="color:var(--taupe);font-size:10px">by '+(l.admin_user||'QPadmin')+'</span></div></div></div>'}).join('');document.getElementById('audit-pagination').innerHTML='<span>'+total+' entries \u00b7 Page '+auditPage+'/'+tp+'</span><div class="page-btns"><button class="btn btn-ghost btn-sm" onclick="auditPage=Math.max(1,auditPage-1);loadAuditLog()" '+(auditPage<=1?'disabled':'')+'>Prev</button><button class="btn btn-ghost btn-sm" onclick="auditPage=Math.min('+tp+',auditPage+1);loadAuditLog()" '+(auditPage>=tp?'disabled':'')+'>Next</button></div>'}catch(e){console.error('Audit log error:',e);c.innerHTML='<div class="empty"><p>Error loading audit log</p></div>'}}
 if(sessionStorage.getItem('qp_admin_auth')==='true'){document.getElementById('auth-screen').style.display='none';document.getElementById('admin-layout').style.display='block';initAdmin()}
