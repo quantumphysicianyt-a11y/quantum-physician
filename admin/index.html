@@ -40,12 +40,12 @@
 .sb-theme-toggle{display:flex;align-items:center;gap:10px;padding:11px 20px;font-size:13px;color:var(--text-muted);cursor:pointer;border:none;background:none;width:100%;text-align:left;font-family:'Inter',sans-serif;transition:all .15s}.sb-theme-toggle:hover{color:var(--text);background:rgba(255,255,255,.02)}[data-theme="light"] .sb-theme-toggle:hover{background:rgba(0,0,0,.03)}.sb-theme-toggle svg{width:17px;height:17px;stroke:currentColor;opacity:.7}.sb-theme-switch{margin-left:auto;width:36px;height:20px;background:var(--border);border-radius:10px;position:relative;transition:background .3s;flex-shrink:0}.sb-theme-switch::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--teal);transition:transform .3s}[data-theme="light"] .sb-theme-switch{background:var(--taupe)}[data-theme="light"] .sb-theme-switch::after{transform:translateX(16px);background:#fff}
 .mobile-menu-btn{display:none;position:fixed;top:14px;left:14px;z-index:60;width:38px;height:38px;border-radius:var(--radius-sm);background:var(--navy-card);border:1px solid var(--border);color:var(--text);cursor:pointer;align-items:center;justify-content:center}.mobile-menu-btn svg{width:18px;height:18px}.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:45}@media(max-width:900px){.sidebar{transform:translateX(-100%);transition:transform .3s ease}.sidebar.open{transform:translateX(0)}.sb-overlay.open{display:block}.main-content{margin-left:0}.mobile-menu-btn{display:flex}.topbar{padding-left:60px}.stats-grid{grid-template-columns:1fr 1fr}}@media(max-width:500px){.stats-grid{grid-template-columns:1fr}.page{padding:20px}.topbar{padding:14px 16px 14px 56px}.topbar-search{display:none}}
 .ec-filter.active{background:var(--teal-soft);color:var(--te
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:999;padding:20px}
-.modal-box{background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;width:100%;max-height:90vh;overflow-y:auto}
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;backdrop-filter:blur(4px)}
+.modal-box{background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;width:100%;max-height:90vh;overflow-y:auto;position:relative}
 .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
 .modal-header h3{margin:0;font-size:16px;color:var(--text)}
-.modal-close{background:none;border:none;color:var(--text-dim);font-size:24px;cursor:pointer;padding:0 4px}
-.modal-close:hover{color:var(--text)}al);border-color:var(--teal)}
+.modal-x{position:absolute;top:12px;right:16px;background:none;border:none;color:var(--text-dim);font-size:13px;cursor:pointer;padding:4px 10px;border-radius:var(--radius-sm);transition:all .2s}
+.modal-x:hover{color:var(--text);background:rgba(255,255,255,.06)}al);border-color:var(--teal)}
 .template-btn{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;background:rgba(0,0,0,.15);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;transition:all .15s;text-align:center;font-family:'Inter',sans-serif;color:var(--text-muted);font-size:11px;position:relative}.template-btn:hover{border-color:var(--border-hover);background:rgba(0,0,0,.25);color:var(--text)}.template-btn.custom{border-color:rgba(167,139,250,.2)}.template-btn .template-icon{font-size:22px}.template-btn .template-name{font-size:10px}.template-btn .edit-icon{position:absolute;top:4px;right:4px;font-size:10px;opacity:0;transition:opacity .15s}.template-btn:hover .edit-icon{opacity:.6}
 .campaign-item{background:rgba(0,0,0,.15);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px;overflow:hidden;transition:border-color .15s}.campaign-item:hover{border-color:var(--border-hover)}.campaign-item-header{display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;flex-wrap:wrap}.campaign-item-header:hover{background:rgba(255,255,255,.015)}.campaign-item-body{display:none;padding:0 16px 16px;border-top:1px solid var(--border)}.campaign-item.expanded .campaign-item-body{display:block}.campaign-item.expanded{border-color:var(--teal)}
 .campaign-type-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}.campaign-type-badge.no_purchase{background:rgba(239,83,80,.1);color:var(--danger)}.campaign-type-badge.upsell_bundle{background:var(--success-soft);color:var(--success)}.campaign-type-badge.promote_session{background:var(--purple-soft);color:var(--purple)}.campaign-type-badge.credit_reminder{background:var(--warning-soft);color:var(--warning)}.campaign-type-badge.referral_nudge{background:var(--teal-soft);color:var(--teal)}.campaign-type-badge.custom{background:rgba(255,255,255,.06);color:var(--text-dim)}.campaign-type-badge.promotional{background:var(--purple-soft);color:var(--purple)}
@@ -264,12 +264,10 @@
 </div>
 
 <!-- Preview Modal (triggered by Preview button) -->
-<div class="modal-overlay" id="email-preview-modal" style="display:none">
+<div class="modal-overlay" id="email-preview-modal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
 <div class="modal-box" style="max-width:720px">
-<div class="modal-header">
-<h3>Email Preview</h3>
-<button class="modal-close" onclick="document.getElementById('email-preview-modal').style.display='none'">&times;</button>
-</div>
+<button class="modal-x" onclick="document.getElementById('email-preview-modal').style.display='none'">Close</button>
+<h3 style="margin:0 0 14px;font-size:16px;color:var(--text)">Email Preview</h3>
 <div style="margin-bottom:14px">
 <p style="font-size:12px;margin:4px 0"><strong style="color:var(--text-dim)">From:</strong> <span id="preview-from"></span></p>
 <p style="font-size:12px;margin:4px 0"><strong style="color:var(--text-dim)">To:</strong> <span id="preview-to"></span></p>
@@ -360,9 +358,10 @@
 </div>
 
 <!-- Scheduled Email Edit Modal -->
-<div class="modal-overlay" id="sched-edit-modal" style="display:none">
+<div class="modal-overlay" id="sched-edit-modal" style="display:none" onclick="if(event.target===this)closeSchedEditModal()">
 <div class="modal-box" style="max-width:600px">
-<div class="modal-header"><h3 id="sched-edit-title">Edit Scheduled Email</h3><button class="modal-close" onclick="closeSchedEditModal()">&times;</button></div>
+<button class="modal-x" onclick="closeSchedEditModal()">Close</button>
+<h3 id="sched-edit-title" style="margin:0 0 14px;font-size:16px;color:var(--text)">Edit Scheduled Email</h3>
 <input type="hidden" id="sched-edit-id">
 <div class="form-group" style="margin-bottom:12px"><label style="font-size:12px">Scheduled For</label><input type="datetime-local" class="input" id="sched-edit-datetime"></div>
 <div class="form-group" style="margin-bottom:12px"><label style="font-size:12px">Audience</label>
@@ -373,9 +372,10 @@
 </div></div>
 
 <!-- Scheduled Email Preview Modal -->
-<div class="modal-overlay" id="sched-preview-modal" style="display:none">
+<div class="modal-overlay" id="sched-preview-modal" style="display:none" onclick="if(event.target===this)closeSchedPreviewModal()">
 <div class="modal-box" style="max-width:700px">
-<div class="modal-header"><h3>Email Preview</h3><button class="modal-close" onclick="closeSchedPreviewModal()">&times;</button></div>
+<button class="modal-x" onclick="closeSchedPreviewModal()">Close</button>
+<h3 style="margin:0 0 14px;font-size:16px;color:var(--text)">Email Preview</h3>
 <div id="sched-preview-content" style="background:#fff;color:#333;padding:20px;border-radius:8px;max-height:60vh;overflow-y:auto"></div>
 </div></div>
 
