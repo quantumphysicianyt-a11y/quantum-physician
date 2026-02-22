@@ -44,8 +44,8 @@
 .modal-box{background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;width:100%;max-height:90vh;overflow-y:auto;position:relative}
 .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
 .modal-header h3{margin:0;font-size:16px;color:var(--text)}
-.modal-x{position:absolute;top:12px;right:16px;background:none;border:none;color:var(--text-dim);font-size:13px;cursor:pointer;padding:4px 10px;border-radius:var(--radius-sm);transition:all .2s}
-.modal-x:hover{color:var(--text);background:rgba(255,255,255,.06)}al);border-color:var(--teal)}
+.modal-x{position:absolute;top:14px;right:14px;background:rgba(91,168,178,.1);border:1px solid var(--border);color:var(--teal);font-size:18px;cursor:pointer;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all .2s;line-height:1}
+.modal-x:hover{background:rgba(91,168,178,.2);color:var(--teal-light);border-color:var(--teal)}al);border-color:var(--teal)}
 .template-btn{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;background:rgba(0,0,0,.15);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;transition:all .15s;text-align:center;font-family:'Inter',sans-serif;color:var(--text-muted);font-size:11px;position:relative}.template-btn:hover{border-color:var(--border-hover);background:rgba(0,0,0,.25);color:var(--text)}.template-btn.custom{border-color:rgba(167,139,250,.2)}.template-btn .template-icon{font-size:22px}.template-btn .template-name{font-size:10px}.template-btn .edit-icon{position:absolute;top:4px;right:4px;font-size:10px;opacity:0;transition:opacity .15s}.template-btn:hover .edit-icon{opacity:.6}
 .campaign-item{background:rgba(0,0,0,.15);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px;overflow:hidden;transition:border-color .15s}.campaign-item:hover{border-color:var(--border-hover)}.campaign-item-header{display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;flex-wrap:wrap}.campaign-item-header:hover{background:rgba(255,255,255,.015)}.campaign-item-body{display:none;padding:0 16px 16px;border-top:1px solid var(--border)}.campaign-item.expanded .campaign-item-body{display:block}.campaign-item.expanded{border-color:var(--teal)}
 .campaign-type-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}.campaign-type-badge.no_purchase{background:rgba(239,83,80,.1);color:var(--danger)}.campaign-type-badge.upsell_bundle{background:var(--success-soft);color:var(--success)}.campaign-type-badge.promote_session{background:var(--purple-soft);color:var(--purple)}.campaign-type-badge.credit_reminder{background:var(--warning-soft);color:var(--warning)}.campaign-type-badge.referral_nudge{background:var(--teal-soft);color:var(--teal)}.campaign-type-badge.custom{background:rgba(255,255,255,.06);color:var(--text-dim)}.campaign-type-badge.promotional{background:var(--purple-soft);color:var(--purple)}
@@ -266,7 +266,7 @@
 <!-- Preview Modal (triggered by Preview button) -->
 <div class="modal-overlay" id="email-preview-modal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
 <div class="modal-box" style="max-width:720px">
-<button class="modal-x" onclick="document.getElementById('email-preview-modal').style.display='none'">Close</button>
+<button class="modal-x" onclick="document.getElementById('email-preview-modal').style.display='none'">&times;</button>
 <h3 style="margin:0 0 14px;font-size:16px;color:var(--text)">Email Preview</h3>
 <div style="margin-bottom:14px">
 <p style="font-size:12px;margin:4px 0"><strong style="color:var(--text-dim)">From:</strong> <span id="preview-from"></span></p>
@@ -360,7 +360,7 @@
 <!-- Scheduled Email Edit Modal -->
 <div class="modal-overlay" id="sched-edit-modal" style="display:none" onclick="if(event.target===this)closeSchedEditModal()">
 <div class="modal-box" style="max-width:600px">
-<button class="modal-x" onclick="closeSchedEditModal()">Close</button>
+<button class="modal-x" onclick="closeSchedEditModal()">&times;</button>
 <h3 id="sched-edit-title" style="margin:0 0 14px;font-size:16px;color:var(--text)">Edit Scheduled Email</h3>
 <input type="hidden" id="sched-edit-id">
 <div class="form-group" style="margin-bottom:12px"><label style="font-size:12px">Scheduled For</label><input type="datetime-local" class="input" id="sched-edit-datetime"></div>
@@ -374,7 +374,7 @@
 <!-- Scheduled Email Preview Modal -->
 <div class="modal-overlay" id="sched-preview-modal" style="display:none" onclick="if(event.target===this)closeSchedPreviewModal()">
 <div class="modal-box" style="max-width:700px">
-<button class="modal-x" onclick="closeSchedPreviewModal()">Close</button>
+<button class="modal-x" onclick="closeSchedPreviewModal()">&times;</button>
 <h3 style="margin:0 0 14px;font-size:16px;color:var(--text)">Email Preview</h3>
 <div id="sched-preview-content" style="background:#fff;color:#333;padding:20px;border-radius:8px;max-height:60vh;overflow-y:auto"></div>
 </div></div>
@@ -649,7 +649,7 @@ function updateEmailTypeHint(){var type=document.getElementById('email-type-sele
 
 function previewEmail(){var fromEmail=document.getElementById('email-from').value;var subject=document.getElementById('email-subject').value;var body=document.getElementById('email-body').value;if(!subject||!body){showToast('Fill in subject and body','error');return}if(document.getElementById('email-audience').value==='custom'){var cust=document.getElementById('custom-emails').value.split('\n').map(function(e){return e.trim().toLowerCase()}).filter(function(e){return e&&e.indexOf('@')>=0});currentAudience=cust.map(function(email){return{email:email,name:'',referral_code:''}});updateSendCount()}var s=currentAudience.length?currentAudience[0]:{email:'preview@example.com',name:'Friend',referral_code:'ABC123'};var pb=body.replace(/\{\{name\}\}/g,s.name||'Friend').replace(/\{\{email\}\}/g,s.email).replace(/\{\{referral_code\}\}/g,s.referral_code||'XXXXXX');document.getElementById('preview-from').textContent=fromEmail;document.getElementById('preview-to').textContent=s.email+(currentAudience.length>1?' (+'+( currentAudience.length-1)+' more)':'');document.getElementById('preview-subject').textContent=subject;var useRich=document.getElementById('rich-email-toggle').checked;
 if(useRich){var discCfg=getDiscountConfig();var brand=getEmailBrand();var richHtml=brand==='academy'?buildAcademyEmail(pb,null,'https://academy.quantumphysician.com',discCfg):buildRichEmail(pb,null,'https://fusionsessions.com',discCfg);if(s.referral_code)richHtml=richHtml.replace(/REFCODE/g,s.referral_code);document.getElementById('preview-body').style.display='none';var frame=document.getElementById('preview-rich-frame');frame.style.display='block';frame.srcdoc=richHtml}else{document.getElementById('preview-body').style.display='block';document.getElementById('preview-rich-frame').style.display='none';document.getElementById('preview-body').textContent=pb}
-document.getElementById('email-preview-modal').style.display='flex'}
+document.getElementById('email-preview-modal').style.display='flex';window.scrollTo({top:0,behavior:'instant'})}
 
 function prepareToSend(){var subject=document.getElementById('email-subject').value;var body=document.getElementById('email-body').value;if(!subject||!body){showToast('Fill in subject and body','error');return}if(document.getElementById('email-audience').value==='custom'){var cust=document.getElementById('custom-emails').value.split('\n').map(function(e){return e.trim().toLowerCase()}).filter(function(e){return e&&e.indexOf('@')>=0});currentAudience=cust.map(function(email){return{email:email,name:'',referral_code:''}});updateSendCount()}if(!currentAudience.length){showToast('No recipients selected','error');return}qpConfirm('Confirm Send','Send this email to '+currentAudience.length+' recipients?\n\nSubject: '+subject+'\nFrom: '+document.getElementById('email-from').value,{okText:'Yes, Send'}).then(function(ok){if(ok)sendEmails()})}
 
