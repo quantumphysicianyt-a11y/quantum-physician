@@ -263,16 +263,21 @@
 <button class="btn btn-primary" onclick="prepareToSend()" id="send-btn">Send to <span id="send-count">0</span> Recipients</button>
 </div>
 
-<!-- Preview Box -->
-<div id="email-preview-box" style="display:none;background:rgba(0,0,0,.2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:20px;margin-bottom:16px">
-<div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:12px">Email Preview</div>
-<p style="font-size:12px;margin-bottom:4px"><strong style="color:var(--text-dim)">From:</strong> <span id="preview-from"></span></p>
-<p style="font-size:12px;margin-bottom:4px"><strong style="color:var(--text-dim)">To:</strong> <span id="preview-to"></span></p>
-<p style="font-size:12px;margin-bottom:12px"><strong style="color:var(--text-dim)">Subject:</strong> <span id="preview-subject" style="color:var(--teal)"></span></p>
-<div id="preview-body" style="font-size:13px;color:var(--text-muted);white-space:pre-wrap;line-height:1.7;padding:16px;background:rgba(0,0,0,.15);border-radius:var(--radius-sm);max-height:300px;overflow-y:auto"></div>
-<iframe id="preview-rich-frame" style="display:none;width:100%;height:500px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff" sandbox="allow-same-origin"></iframe>
-<button class="btn btn-ghost btn-sm" style="margin-top:12px" onclick="document.getElementById('email-preview-box').style.display='none'">Close Preview</button>
+<!-- Preview Modal (triggered by Preview button) -->
+<div class="modal-overlay" id="email-preview-modal" style="display:none">
+<div class="modal-box" style="max-width:720px">
+<div class="modal-header">
+<h3>Email Preview</h3>
+<button class="modal-close" onclick="document.getElementById('email-preview-modal').style.display='none'">&times;</button>
 </div>
+<div style="margin-bottom:14px">
+<p style="font-size:12px;margin:4px 0"><strong style="color:var(--text-dim)">From:</strong> <span id="preview-from"></span></p>
+<p style="font-size:12px;margin:4px 0"><strong style="color:var(--text-dim)">To:</strong> <span id="preview-to"></span></p>
+<p style="font-size:12px;margin:4px 0"><strong style="color:var(--text-dim)">Subject:</strong> <span id="preview-subject" style="color:var(--teal)"></span></p>
+</div>
+<div id="preview-body" style="font-size:13px;color:var(--text-muted);white-space:pre-wrap;line-height:1.7;padding:16px;background:rgba(0,0,0,.15);border-radius:var(--radius-sm);max-height:60vh;overflow-y:auto"></div>
+<iframe id="preview-rich-frame" style="display:none;width:100%;height:70vh;border:none;border-radius:var(--radius-sm);background:#fff" sandbox="allow-same-origin"></iframe>
+</div></div>
 
 <!-- Send Progress Log -->
 <div id="email-log" style="display:none;margin-bottom:16px">
@@ -642,9 +647,9 @@ function insertEmailVar(v){var ta=document.getElementById('email-body');var s=ta
 
 function updateEmailTypeHint(){var type=document.getElementById('email-type-select').value;var hint=document.getElementById('email-type-hint');if(type==='promotional'){hint.style.color='var(--warning)';hint.textContent='Promotional emails count toward the weekly limit and respect opt-out preferences.'}else if(type==='automated'){hint.style.color='var(--teal)';hint.textContent='Automated/Course emails are NOT limited and sent regardless of opt-out.'}else{hint.style.color='var(--success)';hint.textContent='Transactional emails are NOT limited and sent regardless of opt-out.'}}
 
-function previewEmail(){var fromEmail=document.getElementById('email-from').value;var subject=document.getElementById('email-subject').value;var body=document.getElementById('email-body').value;if(!subject||!body){showToast('Fill in subject and body','error');return}if(document.getElementById('email-audience').value==='custom'){var cust=document.getElementById('custom-emails').value.split('\n').map(function(e){return e.trim().toLowerCase()}).filter(function(e){return e&&e.indexOf('@')>=0});currentAudience=cust.map(function(email){return{email:email,name:'',referral_code:''}});updateSendCount()}if(!currentAudience.length){showToast('No recipients selected','error');return}var s=currentAudience[0];var pb=body.replace(/\{\{name\}\}/g,s.name||'Friend').replace(/\{\{email\}\}/g,s.email).replace(/\{\{referral_code\}\}/g,s.referral_code||'XXXXXX');document.getElementById('preview-from').textContent=fromEmail;document.getElementById('preview-to').textContent=s.email+(currentAudience.length>1?' (+'+( currentAudience.length-1)+' more)':'');document.getElementById('preview-subject').textContent=subject;var useRich=document.getElementById('rich-email-toggle').checked;
+function previewEmail(){var fromEmail=document.getElementById('email-from').value;var subject=document.getElementById('email-subject').value;var body=document.getElementById('email-body').value;if(!subject||!body){showToast('Fill in subject and body','error');return}if(document.getElementById('email-audience').value==='custom'){var cust=document.getElementById('custom-emails').value.split('\n').map(function(e){return e.trim().toLowerCase()}).filter(function(e){return e&&e.indexOf('@')>=0});currentAudience=cust.map(function(email){return{email:email,name:'',referral_code:''}});updateSendCount()}var s=currentAudience.length?currentAudience[0]:{email:'preview@example.com',name:'Friend',referral_code:'ABC123'};var pb=body.replace(/\{\{name\}\}/g,s.name||'Friend').replace(/\{\{email\}\}/g,s.email).replace(/\{\{referral_code\}\}/g,s.referral_code||'XXXXXX');document.getElementById('preview-from').textContent=fromEmail;document.getElementById('preview-to').textContent=s.email+(currentAudience.length>1?' (+'+( currentAudience.length-1)+' more)':'');document.getElementById('preview-subject').textContent=subject;var useRich=document.getElementById('rich-email-toggle').checked;
 if(useRich){var discCfg=getDiscountConfig();var brand=getEmailBrand();var richHtml=brand==='academy'?buildAcademyEmail(pb,null,'https://academy.quantumphysician.com',discCfg):buildRichEmail(pb,null,'https://fusionsessions.com',discCfg);if(s.referral_code)richHtml=richHtml.replace(/REFCODE/g,s.referral_code);document.getElementById('preview-body').style.display='none';var frame=document.getElementById('preview-rich-frame');frame.style.display='block';frame.srcdoc=richHtml}else{document.getElementById('preview-body').style.display='block';document.getElementById('preview-rich-frame').style.display='none';document.getElementById('preview-body').textContent=pb}
-document.getElementById('email-preview-box').style.display='block'}
+document.getElementById('email-preview-modal').style.display='flex'}
 
 function prepareToSend(){var subject=document.getElementById('email-subject').value;var body=document.getElementById('email-body').value;if(!subject||!body){showToast('Fill in subject and body','error');return}if(document.getElementById('email-audience').value==='custom'){var cust=document.getElementById('custom-emails').value.split('\n').map(function(e){return e.trim().toLowerCase()}).filter(function(e){return e&&e.indexOf('@')>=0});currentAudience=cust.map(function(email){return{email:email,name:'',referral_code:''}});updateSendCount()}if(!currentAudience.length){showToast('No recipients selected','error');return}qpConfirm('Confirm Send','Send this email to '+currentAudience.length+' recipients?\n\nSubject: '+subject+'\nFrom: '+document.getElementById('email-from').value,{okText:'Yes, Send'}).then(function(ok){if(ok)sendEmails()})}
 
