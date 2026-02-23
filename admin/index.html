@@ -386,13 +386,14 @@
 <div class="page" id="page-analytics">
 <div class="stats-grid" id="analytics-stats"></div>
 
-<!-- Global Time Range -->
-<div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-bottom:16px;padding:0 4px">
+<!-- Global Time Range (sticky) -->
+<div id="analytics-time-bar" style="display:flex;justify-content:flex-end;align-items:center;gap:8px;padding:10px 4px;position:sticky;top:0;z-index:50;background:var(--navy);border-bottom:1px solid var(--border);margin:-20px -0px 16px;padding:12px 8px">
 <span style="font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim)">Time Range</span>
 <div style="display:flex;gap:3px">
 <button class="btn btn-ghost btn-sm trng" onclick="setTimeRange('day',this)">Day</button>
 <button class="btn btn-ghost btn-sm trng" onclick="setTimeRange('week',this)">Week</button>
 <button class="btn btn-ghost btn-sm trng active" onclick="setTimeRange('month',this)">Month</button>
+<button class="btn btn-ghost btn-sm trng" onclick="setTimeRange('all',this)">All Time</button>
 </div>
 </div>
 
@@ -1317,6 +1318,7 @@ p.filter(function(x){return x.purchased_at}).forEach(function(x){
 var d=new Date(x.purchased_at);var k;
 if(trng==='day')k=d.toISOString().slice(0,10);
 else if(trng==='week'){var ws=new Date(d);ws.setDate(d.getDate()-d.getDay());k=ws.toISOString().slice(0,10)}
+else if(trng==='all')k='All Time';
 else k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
 var amt=(x.amount_paid&&x.amount_paid>0)?x.amount_paid:(PP[x.product_id]||0);
 revByPeriod[k]=(revByPeriod[k]||0)+amt;
@@ -1325,6 +1327,7 @@ var periods=Object.keys(revByPeriod).sort();
 var cum2=0;var cumData=periods.map(function(k){cum2+=revByPeriod[k];return cum2});
 var revType=chartModes['chart-rev-time']||'bar';
 var periodLabels=periods.map(function(k){
+if(trng==='all')return k;
 if(trng==='day')return new Date(k).toLocaleDateString('en-US',{month:'short',day:'numeric'});
 if(trng==='week')return new Date(k).toLocaleDateString('en-US',{month:'short',day:'numeric'});
 var p2=k.split('-');return new Date(p2[0],p2[1]-1).toLocaleDateString('en-US',{month:'short',year:'2-digit'});
@@ -1332,7 +1335,7 @@ var p2=k.split('-');return new Date(p2[0],p2[1]-1).toLocaleDateString('en-US',{m
 destroyQPChart('chart-rev-time');
 qpCharts['chart-rev-time']=new Chart(document.getElementById('chart-rev-time'),{
 type:revType,data:{labels:periodLabels,
-datasets:[{label:trng==='day'?'Daily Revenue':trng.charAt(0).toUpperCase()+trng.slice(1)+'ly Revenue',data:periods.map(function(k){return revByPeriod[k]}),borderColor:COLORS.teal,backgroundColor:revType==='bar'?COLORS.teal:COLORS.tealA,fill:revType==='line',tension:0.4,pointRadius:revType==='line'?3:0,borderWidth:revType==='bar'?0:2,borderRadius:revType==='bar'?6:0},
+datasets:[{label:trng==='day'?'Daily Revenue':trng==='all'?'Total Revenue':trng.charAt(0).toUpperCase()+trng.slice(1)+'ly Revenue',data:periods.map(function(k){return revByPeriod[k]}),borderColor:COLORS.teal,backgroundColor:revType==='bar'?COLORS.teal:COLORS.tealA,fill:revType==='line',tension:0.4,pointRadius:revType==='line'?3:0,borderWidth:revType==='bar'?0:2,borderRadius:revType==='bar'?6:0},
 {label:'Cumulative',data:cumData,backgroundColor:COLORS.purpleA,borderColor:COLORS.purple,borderWidth:revType==='bar'?0:2,borderRadius:revType==='bar'?4:0,fill:revType==='line',tension:0.4,pointRadius:revType==='line'?3:0,yAxisID:'y1'}]},
 options:{responsive:true,plugins:{legend:{labels:{boxWidth:10,font:{size:11}}}},scales:{y:{beginAtZero:true,ticks:{callback:function(v){return '$'+v}}},y1:{position:'right',grid:{drawOnChartArea:false},beginAtZero:true,ticks:{callback:function(v){return '$'+v}}}}}
 });
@@ -1357,6 +1360,7 @@ p.filter(function(x){return x.purchased_at}).forEach(function(x){
 var d=new Date(x.purchased_at);var k;
 if(trng==='day')k=d.toISOString().slice(0,10);
 else if(trng==='week'){var ws=new Date(d);ws.setDate(d.getDate()-d.getDay());k=ws.toISOString().slice(0,10)}
+else if(trng==='all')k='All Time';
 else k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
 if(!byPeriod2[k])byPeriod2[k]={academy:0,fusion:0};
 if(isAcademyProduct(x.product_id))byPeriod2[k].academy++;
@@ -1365,6 +1369,7 @@ else if(isFusionProduct(x.product_id))byPeriod2[k].fusion++;
 var pPeriods=Object.keys(byPeriod2).sort();
 var ptType=chartModes['chart-purch-time']||'bar';
 var pLabels=pPeriods.map(function(k){
+if(trng==='all')return k;
 if(trng==='day'||trng==='week')return new Date(k).toLocaleDateString('en-US',{month:'short',day:'numeric'});
 var p2=k.split('-');return new Date(p2[0],p2[1]-1).toLocaleDateString('en-US',{month:'short',year:'2-digit'});
 });
@@ -1429,6 +1434,7 @@ p.filter(function(x){return x.purchased_at}).forEach(function(x){
 var d=new Date(x.purchased_at);var k;
 if(trng==='day')k=d.toISOString().slice(0,10);
 else if(trng==='week'){var ws=new Date(d);ws.setDate(d.getDate()-d.getDay());k=ws.toISOString().slice(0,10)}
+else if(trng==='all')k='All Time';
 else k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
 if(!platByPeriod[k])platByPeriod[k]={academy:0,fusion:0};
 var amt=(x.amount_paid&&x.amount_paid>0)?x.amount_paid:(PP[x.product_id]||0);
@@ -1438,6 +1444,7 @@ if(isFusionProduct(x.product_id))platByPeriod[k].fusion+=amt;
 var platPeriods=Object.keys(platByPeriod).sort();
 var prType=chartModes['chart-platform-rev']||'bar';
 var platLabels=platPeriods.map(function(k){
+if(trng==='all')return k;
 if(trng==='day'||trng==='week')return new Date(k).toLocaleDateString('en-US',{month:'short',day:'numeric'});
 var p2=k.split('-');return new Date(p2[0],p2[1]-1).toLocaleDateString('en-US',{month:'short',year:'2-digit'});
 });
@@ -1458,6 +1465,7 @@ campaigns.filter(function(c){return c.sent_at}).forEach(function(c){
 var d=new Date(c.sent_at);var k;
 if(trng==='day')k=d.toISOString().slice(0,10);
 else if(trng==='week'){var ws=new Date(d);ws.setDate(d.getDate()-d.getDay());k=ws.toISOString().slice(0,10)}
+else if(trng==='all')k='All Time';
 else k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
 if(!campByPeriod[k])campByPeriod[k]={sent:0,opens:0,clicks:0,conversions:0,count:0};
 campByPeriod[k].sent+=(c.sent_count||0);
@@ -1468,6 +1476,7 @@ campByPeriod[k].count++;
 });
 var campPeriods=Object.keys(campByPeriod).sort().slice(-12);
 var campLabels=campPeriods.map(function(k){
+if(trng==='all')return k;
 if(trng==='day'||trng==='week')return new Date(k).toLocaleDateString('en-US',{month:'short',day:'numeric'});
 var p2=k.split('-');return new Date(p2[0],p2[1]-1).toLocaleDateString('en-US',{month:'short',year:'2-digit'});
 });
