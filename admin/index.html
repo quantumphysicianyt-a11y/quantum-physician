@@ -399,7 +399,7 @@
 
 <!-- Overview Charts (always visible) -->
 <div class="grid-2" style="margin-bottom:20px">
-<div class="card"><div class="card-header"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Revenue Over Time</div><div style="display:flex;gap:4px"><button class="btn btn-ghost btn-sm chart-sw active" onclick="switchQPChart('chart-rev-time','line',this)">Line</button><button class="btn btn-ghost btn-sm chart-sw" onclick="switchQPChart('chart-rev-time','bar',this)">Bar</button></div></div><div class="card-body"><canvas id="chart-rev-time" height="200"></canvas></div></div>
+<div class="card"><div class="card-header"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Revenue Over Time</div><div style="display:flex;gap:4px"><button class="btn btn-ghost btn-sm chart-sw" onclick="switchQPChart('chart-rev-time','line',this)">Line</button><button class="btn btn-ghost btn-sm chart-sw active" onclick="switchQPChart('chart-rev-time','bar',this)">Bar</button></div></div><div class="card-body"><canvas id="chart-rev-time" height="200"></canvas></div></div>
 <div class="card"><div class="card-header"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>Product Mix</div></div><div class="card-body"><canvas id="chart-product-mix" height="200"></canvas></div></div>
 </div>
 
@@ -1267,10 +1267,18 @@ function destroyQPChart(id){if(qpCharts[id]){qpCharts[id].destroy();delete qpCha
 
 var chartModes={};
 function switchQPChart(id,newType,btn){
-btn.parentElement.querySelectorAll('.chart-sw').forEach(function(b){b.classList.remove('active')});
-btn.classList.add('active');
 chartModes[id]=newType;
 renderAnalyticsCharts();
+}
+function syncChartButtons(){
+document.querySelectorAll('[onclick*="switchQPChart"]').forEach(function(btn){
+var m=btn.getAttribute('onclick').match(/switchQPChart\('([^']+)','([^']+)'/);
+if(!m)return;
+var id=m[1],type=m[2];
+var current=chartModes[id]||'bar';
+if(type===current)btn.classList.add('active');
+else btn.classList.remove('active');
+});
 }
 
 function isAcademyProduct(pid){return pid&&(pid.startsWith('qa-')||['quantum-vision-boards','becoming-present','breaking-up-with-your-beliefs','creative-mind-mapping','power-of-the-question','transformational-mastery'].indexOf(pid)!==-1)}
@@ -1521,6 +1529,7 @@ document.getElementById('analytics-key-metrics').innerHTML='<div class="analytic
 +'<div class="kpi-item"><div class="kpi-val">'+paid.length+'</div><div class="kpi-lbl">Paid Transactions</div></div>'
 +(topRef?'<div class="kpi-item"><div class="kpi-val" style="color:var(--success);font-size:13px">'+esc(topRef.email||'').split('@')[0]+'</div><div class="kpi-lbl">Top Referrer ('+((topRef.successful_referrals||0))+' referrals)</div></div>':'')
 +'</div>';
+syncChartButtons();
 }
 
 var campaignChartExpanded=false;
