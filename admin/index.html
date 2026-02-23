@@ -425,11 +425,27 @@
 <div class="form-row">
 <div class="form-group"><label>Data Source</label>
 <select class="input" id="caq-source" onchange="updateCaqFields()">
-<option value="purchases">Purchases</option>
+<optgroup label="Revenue &amp; Orders">
+<option value="purchases">All Purchases</option>
+<option value="purchases-paid">Paid Purchases Only</option>
+<option value="purchases-fusion">Fusion Purchases</option>
+<option value="purchases-academy">Academy Purchases</option>
+</optgroup>
+<optgroup label="Users &amp; Engagement">
+<option value="profiles">User Profiles</option>
 <option value="referrals">Referral Codes</option>
 <option value="credits">Credit History</option>
 <option value="enrollments">Academy Enrollments</option>
+<option value="progress">Lesson Progress</option>
+</optgroup>
+<optgroup label="Marketing">
 <option value="campaigns">Email Campaigns</option>
+<option value="tracking">Email Tracking</option>
+<option value="promotions">Promotions</option>
+</optgroup>
+<optgroup label="Community">
+<option value="posts">Discussion Posts</option>
+</optgroup>
 </select></div>
 <div class="form-group"><label>Measure</label>
 <select class="input" id="caq-measure">
@@ -474,7 +490,7 @@
 <button class="btn btn-ghost" onclick="clearCustomQuery()">Clear</button>
 </div>
 <div id="caq-result" style="display:none">
-<canvas id="caq-chart" height="220" style="margin-bottom:16px"></canvas>
+<div style="max-height:320px;position:relative"><canvas id="caq-chart" style="margin-bottom:16px"></canvas></div>
 <div id="caq-table" style="max-height:300px;overflow-y:auto"></div>
 </div>
 <div id="caq-empty" class="empty" style="display:none"><p>No data matches your query.</p></div>
@@ -1696,28 +1712,49 @@ var src=document.getElementById('caq-source').value;
 var measure=document.getElementById('caq-measure');
 var group=document.getElementById('caq-group');
 var filter=document.getElementById('caq-filter-field');
-// Reset options based on source
 measure.innerHTML='<option value="count">Count</option>';
-if(src==='purchases'){
-measure.innerHTML+='<option value="sum_amount">Sum of Amount</option><option value="avg_amount">Average Amount</option><option value="unique_emails">Unique Emails</option>';
-group.innerHTML='<option value="none">No Grouping</option><option value="month">Month</option><option value="week">Week</option><option value="product">Product</option><option value="email">Email</option>';
-filter.innerHTML='<option value="none">No Filter</option><option value="product_id">Product</option><option value="email">Email (contains)</option><option value="referral_code_used">Has Referral Code</option><option value="amount_paid_gt">Amount > $</option><option value="amount_paid_eq">Amount = $0 (Free)</option><option value="date_after">Date After</option><option value="date_before">Date Before</option>';
+group.innerHTML='<option value="none">No Grouping</option><option value="month">Month</option><option value="week">Week</option>';
+filter.innerHTML='<option value="none">No Filter</option><option value="email">Email (contains)</option><option value="date_after">Date After</option><option value="date_before">Date Before</option>';
+if(src.startsWith('purchases')){
+measure.innerHTML+='<option value="sum_amount">Sum of Amount</option><option value="avg_amount">Average Amount</option><option value="unique_emails">Unique Emails</option><option value="min_amount">Min Amount</option><option value="max_amount">Max Amount</option>';
+group.innerHTML+='<option value="product">Product</option><option value="email">Email</option><option value="day">Day</option><option value="referral_used">Referral Code Used</option>';
+filter.innerHTML+='<option value="product_id">Product (contains)</option><option value="referral_code_used">Has Referral Code</option><option value="amount_paid_gt">Amount &gt; $</option><option value="amount_paid_lt">Amount &lt; $</option><option value="amount_paid_eq">Amount = $0 (Free)</option>';
+}else if(src==='profiles'){
+measure.innerHTML+='<option value="unique_emails">Unique Emails</option>';
+group.innerHTML+='<option value="blocked">Blocked vs Active</option><option value="has_purchases">Has Purchases vs Not</option>';
+filter.innerHTML+='<option value="blocked">Blocked Only</option><option value="full_name">Name (contains)</option>';
 }else if(src==='referrals'){
-measure.innerHTML+='<option value="sum_credits">Sum of Credits</option><option value="sum_earned">Sum Total Earned</option><option value="avg_referrals">Avg Referrals</option>';
-group.innerHTML='<option value="none">No Grouping</option><option value="has_balance">Has Balance vs Not</option><option value="referral_count">By Referral Count</option>';
-filter.innerHTML='<option value="none">No Filter</option><option value="has_referrals">Has Referrals</option><option value="has_balance">Has Balance > 0</option><option value="email">Email (contains)</option>';
+measure.innerHTML+='<option value="sum_credits">Sum of Credit Balance</option><option value="sum_earned">Sum Total Earned</option><option value="avg_referrals">Avg Referrals</option><option value="unique_emails">Unique Emails</option>';
+group.innerHTML+='<option value="has_balance">Has Balance vs Not</option><option value="referral_count">By Referral Count</option><option value="email">Email</option>';
+filter.innerHTML+='<option value="has_referrals">Has Referrals</option><option value="has_balance">Has Balance &gt; 0</option>';
 }else if(src==='credits'){
-measure.innerHTML+='<option value="sum_amount">Sum of Amount</option>';
-group.innerHTML='<option value="none">No Grouping</option><option value="month">Month</option><option value="type">Credit Type</option><option value="email">Email</option>';
-filter.innerHTML='<option value="none">No Filter</option><option value="type">Credit Type</option><option value="email">Email (contains)</option><option value="date_after">Date After</option>';
+measure.innerHTML+='<option value="sum_amount">Sum of Amount</option><option value="avg_amount">Avg Amount</option><option value="unique_emails">Unique Emails</option>';
+group.innerHTML+='<option value="type">Credit Type</option><option value="email">Email</option><option value="day">Day</option>';
+filter.innerHTML+='<option value="type">Type (contains)</option><option value="amount_paid_gt">Amount &gt; $</option>';
 }else if(src==='enrollments'){
 measure.innerHTML+='<option value="unique_emails">Unique Students</option>';
-group.innerHTML='<option value="none">No Grouping</option><option value="course">Course</option><option value="status">Status</option><option value="month">Month</option>';
-filter.innerHTML='<option value="none">No Filter</option><option value="status">Status</option><option value="course">Course</option>';
+group.innerHTML+='<option value="course">Course</option><option value="status">Status</option><option value="day">Day</option>';
+filter.innerHTML+='<option value="status">Status (e.g. active)</option><option value="course">Course (contains)</option>';
+}else if(src==='progress'){
+measure.innerHTML+='<option value="unique_emails">Unique Students</option><option value="unique_lessons">Unique Lessons</option>';
+group.innerHTML+='<option value="course">Course</option><option value="email">Student</option><option value="day">Day Completed</option>';
+filter.innerHTML+='<option value="course">Course (contains)</option><option value="completed">Completed Only</option>';
 }else if(src==='campaigns'){
-measure.innerHTML+='<option value="sum_sent">Total Sent</option><option value="sum_opens">Total Opens</option><option value="sum_clicks">Total Clicks</option><option value="avg_open_rate">Avg Open Rate</option>';
-group.innerHTML='<option value="none">No Grouping</option><option value="month">Month</option><option value="type">Campaign Type</option>';
-filter.innerHTML='<option value="none">No Filter</option><option value="type">Campaign Type</option><option value="date_after">Date After</option>';
+measure.innerHTML+='<option value="sum_sent">Total Sent</option><option value="sum_opens">Total Opens</option><option value="sum_clicks">Total Clicks</option><option value="sum_conversions">Total Conversions</option><option value="avg_open_rate">Avg Open Rate %</option><option value="avg_click_rate">Avg Click Rate %</option>';
+group.innerHTML+='<option value="type">Campaign Type</option><option value="day">Day</option>';
+filter.innerHTML+='<option value="type">Type (contains)</option><option value="has_opens">Has Opens</option>';
+}else if(src==='tracking'){
+measure.innerHTML+='<option value="unique_emails">Unique Recipients</option>';
+group.innerHTML+='<option value="status">Status</option><option value="email">Recipient</option><option value="day">Day</option>';
+filter.innerHTML+='<option value="status">Status (e.g. opened, clicked)</option>';
+}else if(src==='promotions'){
+measure.innerHTML+='<option value="sum_uses">Total Uses</option><option value="avg_discount">Avg Discount %</option>';
+group.innerHTML+='<option value="status">Status</option><option value="product">Applies To</option><option value="type">Discount Type</option>';
+filter.innerHTML+='<option value="status">Status (e.g. active)</option><option value="product_id">Applies To (contains)</option>';
+}else if(src==='posts'){
+measure.innerHTML+='<option value="unique_emails">Unique Posters</option>';
+group.innerHTML+='<option value="email">Author</option><option value="day">Day</option>';
+filter.innerHTML='<option value="none">No Filter</option><option value="email">Author (contains)</option>';
 }
 }
 
@@ -1732,26 +1769,39 @@ var chartType=document.getElementById('caq-chart-type').value;
 // Get source data
 var data=[];
 if(src==='purchases')data=(purchasesData||[]).slice();
+else if(src==='purchases-paid')data=(purchasesData||[]).filter(function(x){return(Number(x.amount_paid)||0)>0});
+else if(src==='purchases-fusion')data=(purchasesData||[]).filter(function(x){return isFusionProduct(x.product_id)});
+else if(src==='purchases-academy')data=(purchasesData||[]).filter(function(x){return isAcademyProduct(x.product_id)});
+else if(src==='profiles')data=(profilesData||[]).slice();
 else if(src==='referrals')data=(referralData||[]).slice();
 else if(src==='credits')data=(creditHistory||[]).slice();
 else if(src==='enrollments')data=(academyEnrollments||[]).slice();
+else if(src==='progress')data=(lessonProgress||[]).slice();
 else if(src==='campaigns')data=(emailCampaignsData||[]).slice();
+else if(src==='tracking')data=(emailTrackingData||[]).slice();
+else if(src==='promotions')data=(promotionsData||[]).slice();
+else if(src==='posts')data=(allFusionPosts||[]).concat(allAcadPosts||[]);
 
 // Apply filter
 if(filterField!=='none'&&filterField){
 data=data.filter(function(d){
-if(filterField==='product_id')return(d.product_id||'').toLowerCase().indexOf(filterVal)!==-1;
-if(filterField==='email')return(d.email||d.recipient_email||'').toLowerCase().indexOf(filterVal)!==-1;
+if(filterField==='product_id')return(d.product_id||d.applies_to||'').toLowerCase().indexOf(filterVal)!==-1;
+if(filterField==='email')return(d.email||d.recipient_email||d.user_email||'').toLowerCase().indexOf(filterVal)!==-1;
+if(filterField==='full_name')return(d.full_name||'').toLowerCase().indexOf(filterVal)!==-1;
 if(filterField==='referral_code_used')return!!d.referral_code_used;
-if(filterField==='amount_paid_gt')return(Number(d.amount_paid)||0)>Number(filterVal);
+if(filterField==='amount_paid_gt')return(Number(d.amount_paid)||Number(d.amount)||0)>Number(filterVal);
+if(filterField==='amount_paid_lt')return(Number(d.amount_paid)||Number(d.amount)||0)<Number(filterVal);
 if(filterField==='amount_paid_eq')return!d.amount_paid||Number(d.amount_paid)===0;
-if(filterField==='date_after'){var df=d.purchased_at||d.created_at||d.enrolled_at||d.sent_at;return df&&new Date(df)>=new Date(filterVal)}
-if(filterField==='date_before'){var df2=d.purchased_at||d.created_at||d.enrolled_at||d.sent_at;return df2&&new Date(df2)<=new Date(filterVal)}
+if(filterField==='date_after'){var df=d.purchased_at||d.created_at||d.enrolled_at||d.sent_at||d.completed_at;return df&&new Date(df)>=new Date(filterVal)}
+if(filterField==='date_before'){var df2=d.purchased_at||d.created_at||d.enrolled_at||d.sent_at||d.completed_at;return df2&&new Date(df2)<=new Date(filterVal)}
 if(filterField==='has_referrals')return(d.successful_referrals||0)>0;
 if(filterField==='has_balance')return(d.credit_balance||0)>0;
-if(filterField==='type')return(d.type||d.campaign_type||d.email_type||'').toLowerCase().indexOf(filterVal)!==-1;
-if(filterField==='status')return(d.status||'').toLowerCase()===filterVal;
-if(filterField==='course'){var cname=(d.qa_courses&&d.qa_courses.slug)||d.course_id||'';return cname.toLowerCase().indexOf(filterVal)!==-1}
+if(filterField==='has_opens')return(d.open_count||0)>0;
+if(filterField==='blocked')return d.is_blocked===true;
+if(filterField==='completed')return d.completed===true||d.status==='completed';
+if(filterField==='type')return(d.type||d.campaign_type||d.email_type||d.discount_type||'').toLowerCase().indexOf(filterVal)!==-1;
+if(filterField==='status')return(d.status||'').toLowerCase().indexOf(filterVal)!==-1;
+if(filterField==='course'){var cname=(d.qa_courses&&(d.qa_courses.title||d.qa_courses.slug))||d.course_id||d.lesson_id||'';return cname.toLowerCase().indexOf(filterVal)!==-1}
 return true;
 });
 }
@@ -1770,7 +1820,11 @@ data.forEach(function(d){
 var key='Unknown';
 if(groupBy==='month'){var dt=d.purchased_at||d.created_at||d.enrolled_at||d.sent_at;if(dt){var dd=new Date(dt);key=dd.getFullYear()+'-'+String(dd.getMonth()+1).padStart(2,'0')}else key='No Date'}
 else if(groupBy==='week'){var dt2=d.purchased_at||d.created_at||d.enrolled_at||d.sent_at;if(dt2){var dd2=new Date(dt2);var ws=new Date(dd2);ws.setDate(dd2.getDate()-dd2.getDay());key=ws.toISOString().slice(0,10)}else key='No Date'}
-else if(groupBy==='product')key=d.product_id||'unknown';
+else if(groupBy==='day'){var dt3=d.purchased_at||d.created_at||d.enrolled_at||d.sent_at||d.completed_at;if(dt3)key=new Date(dt3).toISOString().slice(0,10);else key='No Date'}
+else if(groupBy==='referral_used')key=d.referral_code_used?'With Referral':'No Referral';
+else if(groupBy==='blocked')key=d.is_blocked?'Blocked':'Active';
+else if(groupBy==='has_purchases'){var pe=new Set((purchasesData||[]).map(function(x){return(x.email||'').toLowerCase()}));key=pe.has((d.email||'').toLowerCase())?'Has Purchases':'No Purchases'}
+else if(groupBy==='product')key=d.product_id||d.applies_to||'unknown';
 else if(groupBy==='email')key=(d.email||d.recipient_email||'unknown').toLowerCase();
 else if(groupBy==='type')key=d.type||d.campaign_type||d.email_type||'unknown';
 else if(groupBy==='course')key=(d.qa_courses&&d.qa_courses.title)||d.course_id||'unknown';
@@ -1797,6 +1851,13 @@ if(measure==='sum_sent')return items.reduce(function(s,d){return s+(Number(d.sen
 if(measure==='sum_opens')return items.reduce(function(s,d){return s+(Number(d.open_count)||0)},0);
 if(measure==='sum_clicks')return items.reduce(function(s,d){return s+(Number(d.click_count)||0)},0);
 if(measure==='avg_open_rate'){var rates=items.filter(function(d){return(d.sent_count||0)>0}).map(function(d){return(d.open_count||0)/(d.sent_count||1)*100});return rates.length?(rates.reduce(function(a,b){return a+b},0)/rates.length):0}
+if(measure==='avg_click_rate'){var crates=items.filter(function(d){return(d.open_count||0)>0}).map(function(d){return(d.click_count||0)/(d.open_count||1)*100});return crates.length?(crates.reduce(function(a,b){return a+b},0)/crates.length):0}
+if(measure==='sum_conversions')return items.reduce(function(s,d){return s+(Number(d.conversion_count)||0)},0);
+if(measure==='sum_uses')return items.reduce(function(s,d){return s+(Number(d.times_used)||0)},0);
+if(measure==='avg_discount'){var discs=items.filter(function(d){return(d.discount_percent||0)>0}).map(function(d){return d.discount_percent});return discs.length?(discs.reduce(function(a,b){return a+b},0)/discs.length):0}
+if(measure==='min_amount'){var amts=items.map(function(d){return Number(d.amount_paid)||0}).filter(function(v){return v>0});return amts.length?Math.min.apply(null,amts):0}
+if(measure==='max_amount'){var amts2=items.map(function(d){return Number(d.amount_paid)||0});return amts2.length?Math.max.apply(null,amts2):0}
+if(measure==='unique_lessons')return new Set(items.map(function(d){return d.lesson_id||''}).filter(Boolean)).size;
 return items.length;
 });
 
@@ -1823,7 +1884,7 @@ options:{responsive:true,plugins:{legend:{display:chartType==='doughnut',positio
 }
 
 // Table
-var isMoney=measure.indexOf('amount')!==-1||measure.indexOf('credits')!==-1||measure.indexOf('earned')!==-1;
+var isMoney=measure.indexOf('amount')!==-1||measure.indexOf('credits')!==-1||measure.indexOf('earned')!==-1||measure==='sum_amount'||measure==='avg_amount'||measure==='min_amount'||measure==='max_amount';
 var thtml='<table class="tbl"><thead><tr><th>'+groupBy.charAt(0).toUpperCase()+groupBy.slice(1)+'</th><th style="text-align:right">'+document.getElementById('caq-measure').options[document.getElementById('caq-measure').selectedIndex].text+'</th></tr></thead><tbody>';
 labels.forEach(function(k,i){
 var displayVal=isMoney?'$'+values[i].toLocaleString():measure.indexOf('rate')!==-1?values[i].toFixed(1)+'%':values[i].toLocaleString();
