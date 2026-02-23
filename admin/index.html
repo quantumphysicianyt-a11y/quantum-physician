@@ -23,8 +23,8 @@
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:24px}.stat-card{background:var(--navy-card);border:1px solid var(--border);border-radius:10px;padding:16px 18px;display:flex;align-items:center;gap:12px;transition:all .25s;animation:fadeUp .5s ease both}.stat-card:nth-child(1){animation-delay:.05s}.stat-card:nth-child(2){animation-delay:.1s}.stat-card:nth-child(3){animation-delay:.15s}.stat-card:nth-child(4){animation-delay:.2s}.stat-card:hover{border-color:var(--border-hover);transform:translateY(-2px)}.stat-ico{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}.stat-ico svg{width:18px;height:18px}.stat-ico.teal{background:var(--teal-soft)}.stat-ico.teal svg{stroke:var(--teal)}.stat-ico.warm{background:var(--taupe-soft)}.stat-ico.warm svg{stroke:var(--taupe)}.stat-ico.purple{background:var(--purple-soft)}.stat-ico.purple svg{stroke:var(--purple)}.stat-ico.green{background:var(--success-soft)}.stat-ico.green svg{stroke:var(--success)}.stat-val{font-family:"Playfair Display",serif;font-size:22px;font-weight:700;line-height:1}.stat-lbl{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
 .card{background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;animation:fadeUp .5s ease both}.card-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.card-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);display:flex;align-items:center;gap:8px}.card-title svg{width:14px;height:14px;stroke:var(--teal)}.card-body{padding:20px}.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}@media(max-width:1200px){.grid-3{grid-template-columns:1fr 1fr}}@media(max-width:900px){.grid-2{grid-template-columns:1fr}.grid-3{grid-template-columns:1fr}}.chart-card{transition:all .3s ease}.chart-card .card-body{padding:12px 16px}.chart-card .card-body canvas{max-height:180px}
 .chart-popout-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:10000;display:flex;align-items:center;justify-content:center;padding:24px;animation:fadeIn .2s ease}
-.chart-popout-box{background:var(--navy-card);border:1px solid var(--border);border-radius:16px;width:95%;max-width:900px;max-height:85vh;padding:24px;position:relative;box-shadow:0 24px 80px rgba(0,0,0,.5)}
-.chart-popout-box canvas{max-height:60vh!important}
+.chart-popout-box{background:var(--navy-card);border:1px solid var(--border);border-radius:16px;width:95%;max-width:960px;padding:28px;position:relative;box-shadow:0 24px 80px rgba(0,0,0,.5)}
+.chart-popout-box canvas{width:100%!important;height:420px!important}
 .chart-popout-close{position:absolute;top:14px;right:14px;background:rgba(91,168,178,.08);border:1px solid rgba(91,168,178,.2);color:#5ba8b2;font-size:20px;cursor:pointer;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all .2s;line-height:1;padding:0}
 .chart-popout-close:hover{background:rgba(91,168,178,.15);border-color:#5ba8b2;color:#4acfd9}.chart-expand-btn{cursor:pointer;font-size:10px;padding:3px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);background:none;color:var(--text-dim);transition:all .15s}.chart-expand-btn:hover{color:var(--teal);border-color:var(--teal)}
 .tbl{width:100%;border-collapse:collapse}.tbl th{text-align:left;font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);padding:10px 14px;border-bottom:1px solid var(--border)}.tbl td{padding:11px 14px;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px;color:var(--text-muted)}.tbl tr:last-child td{border-bottom:none}.tbl tr:hover td{background:rgba(255,255,255,.015)}.tbl .email{color:var(--teal);font-weight:500}.tbl .name{color:var(--text)}.tbl .mono{font-family:monospace;font-size:12px;color:var(--text-dim)}
@@ -434,6 +434,17 @@
 
 <!-- Key Metrics Summary -->
 <div class="card"><div class="card-header"><div class="card-title">Key Metrics</div></div><div class="card-body" id="analytics-key-metrics"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div>
+
+<!-- Reports -->
+<div class="card" style="margin-top:20px"><div class="card-header"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Reports</div><span style="font-size:11px;color:var(--text-dim)">Download as CSV for spreadsheets & printing</span></div>
+<div class="card-body"><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">
+<button class="btn btn-ghost" onclick="generateReport('revenue')" style="justify-content:flex-start;padding:14px 16px"><svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" style="width:18px;height:18px;flex-shrink:0"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><div style="text-align:left"><div style="font-weight:600;font-size:12px;color:var(--text)">Revenue Summary</div><div style="font-size:10px;color:var(--text-dim);margin-top:2px">All purchases with totals</div></div></button>
+<button class="btn btn-ghost" onclick="generateReport('customers')" style="justify-content:flex-start;padding:14px 16px"><svg viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2" style="width:18px;height:18px;flex-shrink:0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><div style="text-align:left"><div style="font-weight:600;font-size:12px;color:var(--text)">Customer Report</div><div style="font-size:10px;color:var(--text-dim);margin-top:2px">All customers with products & spend</div></div></button>
+<button class="btn btn-ghost" onclick="generateReport('referrals')" style="justify-content:flex-start;padding:14px 16px"><svg viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2" style="width:18px;height:18px;flex-shrink:0"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/></svg><div style="text-align:left"><div style="font-weight:600;font-size:12px;color:var(--text)">Referral Report</div><div style="font-size:10px;color:var(--text-dim);margin-top:2px">Codes, balances, referral counts</div></div></button>
+<button class="btn btn-ghost" onclick="generateReport('enrollments')" style="justify-content:flex-start;padding:14px 16px"><svg viewBox="0 0 24 24" fill="none" stroke="var(--taupe)" stroke-width="2" style="width:18px;height:18px;flex-shrink:0"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/></svg><div style="text-align:left"><div style="font-weight:600;font-size:12px;color:var(--text)">Enrollment Report</div><div style="font-size:10px;color:var(--text-dim);margin-top:2px">Academy students & progress</div></div></button>
+<button class="btn btn-ghost" onclick="generateReport('monthly')" style="justify-content:flex-start;padding:14px 16px"><svg viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2" style="width:18px;height:18px;flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><div style="text-align:left"><div style="font-weight:600;font-size:12px;color:var(--text)">Monthly Breakdown</div><div style="font-size:10px;color:var(--text-dim);margin-top:2px">Revenue by month & product</div></div></button>
+<button class="btn btn-ghost" onclick="generateReport('campaigns')" style="justify-content:flex-start;padding:14px 16px"><svg viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2" style="width:18px;height:18px;flex-shrink:0"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><div style="text-align:left"><div style="font-weight:600;font-size:12px;color:var(--text)">Campaign Report</div><div style="font-size:10px;color:var(--text-dim);margin-top:2px">Email campaigns with open/click rates</div></div></button>
+</div></div></div>
 
 <!-- Custom Analytics Query Builder -->
 <div class="card" style="margin-top:20px"><div class="card-header"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>Custom Analytics Query</div></div>
@@ -1748,6 +1759,112 @@ if(t){document.getElementById('cse-subject').value=t.subject||'';document.getEle
 
 
 // ============================================================
+// SESSION 7: DOWNLOADABLE REPORTS
+// ============================================================
+function generateReport(type){
+var csv=[],filename='qp-report.csv',now=new Date().toISOString().split('T')[0];
+
+if(type==='revenue'){
+filename='qp-revenue-'+now+'.csv';
+csv.push('Date,Email,Product,Amount,Referral Code,Stripe ID,Type');
+purchasesData.forEach(function(p){
+var date=p.purchased_at?new Date(p.purchased_at).toLocaleDateString():'';
+var isGrant=p.stripe_event_id&&p.stripe_event_id.indexOf('admin-grant')===0;
+var ptype=isGrant?'Admin Grant':(Number(p.amount_paid)>0?'Paid':'Free');
+csv.push([date,'"'+(p.email||'')+'"','"'+productName(p.product_id)+'"',p.amount_paid||0,p.referral_code_used||'','"'+(p.stripe_session_id||'')+'"',ptype].join(','))
+});
+var totalRev=purchasesData.reduce(function(s,p){return s+(Number(p.amount_paid)||0)},0);
+var paidCount=purchasesData.filter(function(p){return Number(p.amount_paid)>0}).length;
+csv.push('');
+csv.push('SUMMARY');
+csv.push('Total Revenue,$'+totalRev.toFixed(2));
+csv.push('Total Transactions,'+purchasesData.length);
+csv.push('Paid Transactions,'+paidCount);
+csv.push('Average Order,$'+(paidCount>0?(totalRev/paidCount).toFixed(2):'0'));
+
+}else if(type==='customers'){
+filename='qp-customers-'+now+'.csv';
+csv.push('Email,Name,Products,Total Spent,Credit Balance,Referral Code,Referrals,Has Account,Blocked');
+allCustomers.forEach(function(c){
+csv.push(['"'+c.email+'"','"'+(c.name||'')+'"','"'+c.purchases.map(productName).join('; ')+'"',c.totalSpent.toFixed(2),c.creditBalance.toFixed(2),c.referralCode,c.referralCount,c.hasAccount?'Yes':'No',c.isBlocked?'Yes':'No'].join(','))
+});
+csv.push('');
+csv.push('SUMMARY');
+csv.push('Total Customers,'+allCustomers.length);
+csv.push('With Purchases,'+allCustomers.filter(function(c){return c.purchases.length>0}).length);
+csv.push('Total Spent,$'+allCustomers.reduce(function(s,c){return s+c.totalSpent},0).toFixed(2));
+
+}else if(type==='referrals'){
+filename='qp-referrals-'+now+'.csv';
+csv.push('Email,Referral Code,Successful Referrals,Credit Balance,Total Earned');
+referralData.forEach(function(r){
+csv.push(['"'+(r.email||'')+'"',r.code||'',r.successful_referrals||0,(Number(r.credit_balance)||0).toFixed(2),(Number(r.total_earned)||0).toFixed(2)].join(','))
+});
+csv.push('');
+csv.push('SUMMARY');
+csv.push('Total Codes,'+referralData.length);
+csv.push('Active Referrers,'+referralData.filter(function(r){return(r.successful_referrals||0)>0}).length);
+csv.push('Credits Outstanding,$'+referralData.reduce(function(s,r){return s+(Number(r.credit_balance)||0)},0).toFixed(2));
+csv.push('Total Earned,$'+referralData.reduce(function(s,r){return s+(Number(r.total_earned)||0)},0).toFixed(2));
+
+}else if(type==='enrollments'){
+filename='qp-enrollments-'+now+'.csv';
+csv.push('Email,Name,Course,Status,Enrolled Date,Lessons Completed,Lessons Total,Progress %');
+var profMap={};profilesData.forEach(function(p){if(p.id)profMap[p.id]=p});
+var progMap={};lessonProgress.forEach(function(lp){var k=lp.user_id+'_'+lp.course_id;if(!progMap[k])progMap[k]={total:0,done:0};progMap[k].total++;if(lp.completed)progMap[k].done++});
+academyEnrollments.forEach(function(e){
+var prof=profMap[e.user_id]||{};
+var courseName=e.qa_courses&&e.qa_courses.title||'Unknown';
+var prog=progMap[e.user_id+'_'+(e.qa_courses&&e.qa_courses.id||e.course_id)]||{total:0,done:0};
+var pct=prog.total>0?Math.round(prog.done/prog.total*100):0;
+csv.push(['"'+(prof.email||'')+'"','"'+(prof.full_name||'')+'"','"'+courseName+'"',e.status,e.enrolled_at?new Date(e.enrolled_at).toLocaleDateString():'',prog.done,prog.total,pct+'%'].join(','))
+});
+csv.push('');
+csv.push('SUMMARY');
+csv.push('Total Enrollments,'+academyEnrollments.length);
+csv.push('Active,'+academyEnrollments.filter(function(e){return e.status==='active'}).length);
+
+}else if(type==='monthly'){
+filename='qp-monthly-breakdown-'+now+'.csv';
+var byMonth={};
+purchasesData.filter(function(p){return p.purchased_at}).forEach(function(p){
+var d=new Date(p.purchased_at);
+var k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+if(!byMonth[k])byMonth[k]={total:0,academy:0,fusion:0,bundles:0,count:0,paid:0};
+var amt=Number(p.amount_paid)||0;
+byMonth[k].total+=amt;
+byMonth[k].count++;
+if(amt>0)byMonth[k].paid++;
+if(isAcademy(p.product_id))byMonth[k].academy+=amt;
+if(isFusion(p.product_id))byMonth[k].fusion+=amt;
+if(p.product_id==='bundle-all')byMonth[k].bundles++;
+});
+csv.push('Month,Total Revenue,Academy Revenue,Fusion Revenue,Transactions,Paid,Bundle Sales');
+Object.keys(byMonth).sort().forEach(function(k){
+var m=byMonth[k];
+csv.push([k,'$'+m.total.toFixed(2),'$'+m.academy.toFixed(2),'$'+m.fusion.toFixed(2),m.count,m.paid,m.bundles].join(','))
+});
+
+}else if(type==='campaigns'){
+filename='qp-campaigns-'+now+'.csv';
+csv.push('Date,Campaign,Type,From,Sent,Opens,Clicks,Open Rate,Click Rate');
+emailCampaignsData.forEach(function(c){
+var date=c.sent_at?new Date(c.sent_at).toLocaleDateString():'Draft';
+var openRate=c.sent_count>0?((c.open_count||0)/c.sent_count*100).toFixed(1)+'%':'0%';
+var clickRate=c.open_count>0?((c.click_count||0)/c.open_count*100).toFixed(1)+'%':'0%';
+csv.push([date,'"'+(c.campaign_name||c.subject||'')+'"',c.campaign_type||'custom',c.from_email||'',c.sent_count||0,c.open_count||0,c.click_count||0,openRate,clickRate].join(','))
+});
+}
+
+var blob=new Blob([csv.join('\n')],{type:'text/csv'});
+var a=document.createElement('a');
+a.href=URL.createObjectURL(blob);
+a.download=filename;
+a.click();
+showToast('Report downloaded: '+filename,'success');
+}
+
+// ============================================================
 // SESSION 7: CUSTOM ANALYTICS QUERY BUILDER
 // ============================================================
 function updateCaqFields(){
@@ -2023,7 +2140,6 @@ var chartId=canvas.id;
 var chart=qpCharts[chartId];
 if(!chart)return;
 
-// Create overlay
 var overlay=document.createElement('div');
 overlay.className='chart-popout-overlay';
 overlay.onclick=function(e){if(e.target===overlay){overlay.remove()}};
@@ -2031,38 +2147,35 @@ overlay.onclick=function(e){if(e.target===overlay){overlay.remove()}};
 var box=document.createElement('div');
 box.className='chart-popout-box';
 
-// Close button
 var closeBtn=document.createElement('button');
 closeBtn.className='chart-popout-close';
 closeBtn.innerHTML='&times;';
 closeBtn.onclick=function(){overlay.remove()};
 box.appendChild(closeBtn);
 
-// Title
 var h=document.createElement('div');
 h.style.cssText='font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:16px;padding-right:40px';
 h.textContent=titleText;
 box.appendChild(h);
 
-// Clone chart into new canvas
 var wrap=document.createElement('div');
-wrap.style.cssText='position:relative;width:100%';
+wrap.style.cssText='position:relative;width:100%;height:420px';
 var newCanvas=document.createElement('canvas');
-newCanvas.id='popout-chart-canvas';
 wrap.appendChild(newCanvas);
 box.appendChild(wrap);
 
 overlay.appendChild(box);
 document.body.appendChild(overlay);
 
-// Recreate chart in popout with same config but bigger
-var cfg=chart.config;
+// Escape key to close
+var escHandler=function(e){if(e.key==='Escape'){overlay.remove();document.removeEventListener('keydown',escHandler)}};
+document.addEventListener('keydown',escHandler);
+
 new Chart(newCanvas,{
-type:cfg.type,
-data:JSON.parse(JSON.stringify(cfg.data)),
-options:Object.assign({},JSON.parse(JSON.stringify(cfg.options)),{responsive:true,maintainAspectRatio:false})
+type:chart.config.type,
+data:JSON.parse(JSON.stringify(chart.config.data)),
+options:Object.assign({},JSON.parse(JSON.stringify(chart.config.options)),{responsive:true,maintainAspectRatio:false})
 });
-newCanvas.style.maxHeight='60vh';
 }
 
 </script>
