@@ -21,7 +21,7 @@
 .page{display:none;padding:32px 36px 80px}.page.active{display:block}.page-header{margin-bottom:24px}.page-header h1{font-family:"Playfair Display",serif;font-size:28px;font-weight:600;background:linear-gradient(135deg,var(--text),var(--teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:fadeIn .6s ease}.page-header p{font-size:13px;color:var(--text-muted);margin-top:4px}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}@keyframes spin{to{transform:rotate(360deg)}}
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:24px}.stat-card{background:var(--navy-card);border:1px solid var(--border);border-radius:10px;padding:16px 18px;display:flex;align-items:center;gap:12px;transition:all .25s;animation:fadeUp .5s ease both}.stat-card:nth-child(1){animation-delay:.05s}.stat-card:nth-child(2){animation-delay:.1s}.stat-card:nth-child(3){animation-delay:.15s}.stat-card:nth-child(4){animation-delay:.2s}.stat-card:hover{border-color:var(--border-hover);transform:translateY(-2px)}.stat-ico{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}.stat-ico svg{width:18px;height:18px}.stat-ico.teal{background:var(--teal-soft)}.stat-ico.teal svg{stroke:var(--teal)}.stat-ico.warm{background:var(--taupe-soft)}.stat-ico.warm svg{stroke:var(--taupe)}.stat-ico.purple{background:var(--purple-soft)}.stat-ico.purple svg{stroke:var(--purple)}.stat-ico.green{background:var(--success-soft)}.stat-ico.green svg{stroke:var(--success)}.stat-val{font-family:"Playfair Display",serif;font-size:22px;font-weight:700;line-height:1}.stat-lbl{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
-.card{background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;animation:fadeUp .5s ease both}.card-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.card-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);display:flex;align-items:center;gap:8px}.card-title svg{width:14px;height:14px;stroke:var(--teal)}.card-body{padding:20px}.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}@media(max-width:1200px){.grid-3{grid-template-columns:1fr 1fr}}@media(max-width:900px){.grid-2{grid-template-columns:1fr}.grid-3{grid-template-columns:1fr}}.chart-card{transition:all .3s ease}.chart-card.expanded{grid-column:1/-1}.chart-expand-btn{cursor:pointer;font-size:10px;padding:3px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);background:none;color:var(--text-dim);transition:all .15s}.chart-expand-btn:hover{color:var(--teal);border-color:var(--teal)}
+.card{background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;animation:fadeUp .5s ease both}.card-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.card-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);display:flex;align-items:center;gap:8px}.card-title svg{width:14px;height:14px;stroke:var(--teal)}.card-body{padding:20px}.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}@media(max-width:1200px){.grid-3{grid-template-columns:1fr 1fr}}@media(max-width:900px){.grid-2{grid-template-columns:1fr}.grid-3{grid-template-columns:1fr}}.chart-card{transition:all .3s ease}.chart-card .card-body{padding:12px 16px}.chart-card .card-body canvas{max-height:180px}.chart-card.expanded .card-body canvas{max-height:400px}.chart-card.expanded{grid-column:1/-1}.chart-expand-btn{cursor:pointer;font-size:10px;padding:3px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);background:none;color:var(--text-dim);transition:all .15s}.chart-expand-btn:hover{color:var(--teal);border-color:var(--teal)}
 .tbl{width:100%;border-collapse:collapse}.tbl th{text-align:left;font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);padding:10px 14px;border-bottom:1px solid var(--border)}.tbl td{padding:11px 14px;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px;color:var(--text-muted)}.tbl tr:last-child td{border-bottom:none}.tbl tr:hover td{background:rgba(255,255,255,.015)}.tbl .email{color:var(--teal);font-weight:500}.tbl .name{color:var(--text)}.tbl .mono{font-family:monospace;font-size:12px;color:var(--text-dim)}
 .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:9px;font-weight:600;letter-spacing:.03em;text-transform:uppercase}.badge.teal{background:var(--teal-soft);color:var(--teal)}.badge.green{background:var(--success-soft);color:var(--success)}.badge.taupe{background:var(--taupe-soft);color:var(--taupe)}.badge.purple{background:var(--purple-soft);color:var(--purple)}.badge.danger{background:var(--danger-soft);color:var(--danger)}.badge.muted{background:rgba(255,255,255,.05);color:var(--text-dim)}.badge.yellow{background:var(--warning-soft);color:var(--warning)}
 .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--radius-sm);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;border:1px solid transparent;font-family:'Inter',sans-serif;letter-spacing:.02em}.btn-primary{background:linear-gradient(135deg,var(--teal),var(--teal-light));color:#fff;border-color:var(--teal);box-shadow:0 2px 8px rgba(91,168,178,.2)}.btn-primary:hover{box-shadow:0 4px 16px rgba(91,168,178,.4);transform:translateY(-1px)}.btn-ghost{background:transparent;color:var(--text-muted);border-color:var(--border)}.btn-ghost:hover{background:rgba(255,255,255,.03);color:var(--text);border-color:var(--border-hover)}.btn-danger{background:var(--danger-soft);color:var(--danger);border-color:rgba(239,83,80,.2)}.btn-danger:hover{background:rgba(239,83,80,.15)}.btn-success{background:var(--success-soft);color:var(--success);border-color:rgba(61,214,140,.2)}.btn-success:hover{background:rgba(61,214,140,.15)}.btn-sm{padding:5px 10px;font-size:10px}
@@ -400,21 +400,21 @@
 <!-- All Charts in 3-column grid -->
 <div class="grid-3" style="margin-bottom:20px" id="analytics-chart-grid">
 
-<div class="card chart-card"><div class="card-header"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Revenue Over Time</div><div style="display:flex;gap:4px;align-items:center"><button class="btn btn-ghost btn-sm chart-sw active" onclick="switchQPChart('chart-rev-time','bar',this)">Bar</button><button class="btn btn-ghost btn-sm chart-sw" onclick="switchQPChart('chart-rev-time','line',this)">Line</button><button class="chart-expand-btn" onclick="toggleChartExpand(this)" title="Expand">⤢</button></div></div><div class="card-body"><canvas id="chart-rev-time" height="160"></canvas></div></div>
+<div class="card chart-card"><div class="card-header"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Revenue Over Time</div><div style="display:flex;gap:4px;align-items:center"><button class="btn btn-ghost btn-sm chart-sw active" onclick="switchQPChart('chart-rev-time','bar',this)">Bar</button><button class="btn btn-ghost btn-sm chart-sw" onclick="switchQPChart('chart-rev-time','line',this)">Line</button><button class="chart-expand-btn" onclick="toggleChartExpand(this)" title="Expand">⤢</button></div></div><div class="card-body"><canvas id="chart-rev-time"></canvas></div></div>
 
-<div class="card chart-card"><div class="card-header"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>Product Mix</div><div style="display:flex;gap:4px;align-items:center"><button class="chart-expand-btn" onclick="toggleChartExpand(this)" title="Expand">⤢</button></div></div><div class="card-body"><canvas id="chart-product-mix" height="160"></canvas></div></div>
+<div class="card chart-card"><div class="card-header"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>Product Mix</div><div style="display:flex;gap:4px;align-items:center"><button class="chart-expand-btn" onclick="toggleChartExpand(this)" title="Expand">⤢</button></div></div><div class="card-body"><canvas id="chart-product-mix"></canvas></div></div>
 
-<div class="card chart-card"><div class="card-header"><div class="card-title">Purchase Timeline</div><div style="display:flex;gap:4px;align-items:center"><button class="btn btn-ghost btn-sm chart-sw active" onclick="switchQPChart('chart-purch-time','bar',this)">Bar</button><button class="btn btn-ghost btn-sm chart-sw" onclick="switchQPChart('chart-purch-time','line',this)">Line</button><button class="chart-expand-btn" onclick="toggleChartExpand(this)" title="Expand">⤢</button></div></div><div class="card-body"><canvas id="chart-purch-time" height="160"></canvas></div></div>
+<div class="card chart-card"><div class="card-header"><div class="card-title">Purchase Timeline</div><div style="display:flex;gap:4px;align-items:center"><button class="btn btn-ghost btn-sm chart-sw active" onclick="switchQPChart('chart-purch-time','bar',this)">Bar</button><button class="btn btn-ghost btn-sm chart-sw" onclick="switchQPChart('chart-purch-time','line',this)">Line</button><button class="chart-expand-btn" onclick="toggleChartExpand(this)" title="Expand">⤢</button></div></div><div class="card-body"><canvas id="chart-purch-time"></canvas></div></div>
 
-<div class="card chart-card"><div class="card-header"><div class="card-title">Session Popularity</div><div style="display:flex;gap:4px;align-items:center"><button class="chart-expand-btn" onclick="toggleChartExpand(this)" title="Expand">⤢</button></div></div><div class="card-body"><canvas id="chart-session-pop" height="160"></canvas></div></div>
+<div class="card chart-card"><div class="card-header"><div class="card-title">Session Popularity</div><div style="display:flex;gap:4px;align-items:center"><button class="chart-expand-btn" onclick="toggleChartExpand(this)" title="Expand">⤢</button></div></div><div class="card-body"><canvas id="chart-session-pop"></canvas></div></div>
 
-<div class="card chart-card"><div class="card-header"><div class="card-title">Customer Segments</div><div style="display:flex;gap:4px;align-items:center"><button class="chart-expand-btn" onclick="toggleChartExpand(this)" title="Expand">⤢</button></div></div><div class="card-body"><canvas id="chart-cust-seg" height="160"></canvas></div></div>
+<div class="card chart-card"><div class="card-header"><div class="card-title">Customer Segments</div><div style="display:flex;gap:4px;align-items:center"><button class="chart-expand-btn" onclick="toggleChartExpand(this)" title="Expand">⤢</button></div></div><div class="card-body"><canvas id="chart-cust-seg"></canvas></div></div>
 
-<div class="card chart-card"><div class="card-header"><div class="card-title">Referral vs Direct</div><div style="display:flex;gap:4px;align-items:center"><button class="btn btn-ghost btn-sm chart-sw active" onclick="switchQPChart('chart-ref-impact','bar',this)">Bar</button><button class="btn btn-ghost btn-sm chart-sw" onclick="switchQPChart('chart-ref-impact','doughnut',this)">Donut</button><button class="chart-expand-btn" onclick="toggleChartExpand(this)" title="Expand">⤢</button></div></div><div class="card-body"><canvas id="chart-ref-impact" height="160"></canvas></div></div>
+<div class="card chart-card"><div class="card-header"><div class="card-title">Referral vs Direct</div><div style="display:flex;gap:4px;align-items:center"><button class="btn btn-ghost btn-sm chart-sw active" onclick="switchQPChart('chart-ref-impact','bar',this)">Bar</button><button class="btn btn-ghost btn-sm chart-sw" onclick="switchQPChart('chart-ref-impact','doughnut',this)">Donut</button><button class="chart-expand-btn" onclick="toggleChartExpand(this)" title="Expand">⤢</button></div></div><div class="card-body"><canvas id="chart-ref-impact"></canvas></div></div>
 
-<div class="card chart-card"><div class="card-header"><div class="card-title">Credit Economy</div><div style="display:flex;gap:4px;align-items:center"><button class="chart-expand-btn" onclick="toggleChartExpand(this)" title="Expand">⤢</button></div></div><div class="card-body"><canvas id="chart-credit-eco" height="160"></canvas></div></div>
+<div class="card chart-card"><div class="card-header"><div class="card-title">Credit Economy</div><div style="display:flex;gap:4px;align-items:center"><button class="chart-expand-btn" onclick="toggleChartExpand(this)" title="Expand">⤢</button></div></div><div class="card-body"><canvas id="chart-credit-eco"></canvas></div></div>
 
-<div class="card chart-card"><div class="card-header"><div class="card-title">Academy vs Fusion</div><div style="display:flex;gap:4px;align-items:center"><button class="btn btn-ghost btn-sm chart-sw active" onclick="switchQPChart('chart-platform-rev','bar',this)">Bar</button><button class="btn btn-ghost btn-sm chart-sw" onclick="switchQPChart('chart-platform-rev','line',this)">Line</button><button class="chart-expand-btn" onclick="toggleChartExpand(this)" title="Expand">⤢</button></div></div><div class="card-body"><canvas id="chart-platform-rev" height="160"></canvas></div></div>
+<div class="card chart-card"><div class="card-header"><div class="card-title">Academy vs Fusion</div><div style="display:flex;gap:4px;align-items:center"><button class="btn btn-ghost btn-sm chart-sw active" onclick="switchQPChart('chart-platform-rev','bar',this)">Bar</button><button class="btn btn-ghost btn-sm chart-sw" onclick="switchQPChart('chart-platform-rev','line',this)">Line</button><button class="chart-expand-btn" onclick="toggleChartExpand(this)" title="Expand">⤢</button></div></div><div class="card-body"><canvas id="chart-platform-rev"></canvas></div></div>
 
 <div class="card chart-card" style="grid-column:1/-1"><div class="card-header"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Campaign Performance</div><div style="display:flex;gap:4px;align-items:center"><button class="chart-expand-btn" onclick="toggleChartExpand(this)" title="Expand">⤢</button></div></div>
 <div class="card-body">
@@ -1345,7 +1345,7 @@ qpCharts['chart-rev-time']=new Chart(document.getElementById('chart-rev-time'),{
 type:revType,data:{labels:periodLabels,
 datasets:[{label:trng==='day'?'Daily Revenue':trng==='all'?'Total Revenue':trng.charAt(0).toUpperCase()+trng.slice(1)+'ly Revenue',data:periods.map(function(k){return revByPeriod[k]}),borderColor:COLORS.teal,backgroundColor:revType==='bar'?COLORS.teal:COLORS.tealA,fill:revType==='line',tension:0.4,pointRadius:revType==='line'?3:0,borderWidth:revType==='bar'?0:2,borderRadius:revType==='bar'?6:0},
 {label:'Cumulative',data:cumData,backgroundColor:COLORS.purpleA,borderColor:COLORS.purple,borderWidth:revType==='bar'?0:2,borderRadius:revType==='bar'?4:0,fill:revType==='line',tension:0.4,pointRadius:revType==='line'?3:0,yAxisID:'y1'}]},
-options:{responsive:true,plugins:{legend:{labels:{boxWidth:10,font:{size:11}}}},scales:{y:{beginAtZero:true,ticks:{callback:function(v){return '$'+v}}},y1:{position:'right',grid:{drawOnChartArea:false},beginAtZero:true,ticks:{callback:function(v){return '$'+v}}}}}
+options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:10,font:{size:11}}}},scales:{y:{beginAtZero:true,ticks:{callback:function(v){return '$'+v}}},y1:{position:'right',grid:{drawOnChartArea:false},beginAtZero:true,ticks:{callback:function(v){return '$'+v}}}}}
 });
 
 // === Product Mix ===
@@ -1358,7 +1358,7 @@ destroyQPChart('chart-product-mix');
 qpCharts['chart-product-mix']=new Chart(document.getElementById('chart-product-mix'),{
 type:'doughnut',data:{labels:['Academy','Fusion Bundles','Fusion Singles','Comps'],
 datasets:[{data:[academyCount,fusionBundles,fusionSingles,comps],backgroundColor:[COLORS.teal,COLORS.purple,COLORS.taupe,COLORS.white15],borderWidth:0}]},
-options:{responsive:true,plugins:{legend:{position:'bottom',labels:{padding:12,boxWidth:10,font:{size:11}}}},cutout:'60%'}
+options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{padding:12,boxWidth:10,font:{size:11}}}},cutout:'60%'}
 });
 
 // === Purchase Timeline (uses time range) ===
@@ -1386,7 +1386,7 @@ qpCharts['chart-purch-time']=new Chart(document.getElementById('chart-purch-time
 type:ptType,data:{labels:pLabels,
 datasets:[{label:'Academy',data:pPeriods.map(function(k){return byPeriod2[k].academy}),backgroundColor:ptType==='bar'?COLORS.teal:COLORS.tealA,borderColor:COLORS.teal,borderWidth:ptType==='bar'?0:2,borderRadius:ptType==='bar'?4:0,tension:0.4,fill:ptType==='line',pointRadius:ptType==='line'?3:0},
 {label:'Fusion',data:pPeriods.map(function(k){return byPeriod2[k].fusion}),backgroundColor:ptType==='bar'?COLORS.purple:COLORS.purpleA,borderColor:COLORS.purple,borderWidth:ptType==='bar'?0:2,borderRadius:ptType==='bar'?4:0,tension:0.4,fill:ptType==='line',pointRadius:ptType==='line'?3:0}]},
-options:{responsive:true,plugins:{legend:{labels:{boxWidth:10,font:{size:11}}}},scales:{x:{stacked:ptType==='bar'},y:{stacked:ptType==='bar',beginAtZero:true}}}
+options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:10,font:{size:11}}}},scales:{x:{stacked:ptType==='bar'},y:{stacked:ptType==='bar',beginAtZero:true}}}
 });
 
 // === Session Popularity (Fusion sessions) ===
@@ -1397,7 +1397,7 @@ destroyQPChart('chart-session-pop');
 qpCharts['chart-session-pop']=new Chart(document.getElementById('chart-session-pop'),{
 type:'bar',data:{labels:Object.keys(sessCounts).map(function(s,i){return 'S'+(i+1)}),
 datasets:[{label:'Individual Sales',data:Object.values(sessCounts),backgroundColor:sessColors,borderWidth:0,borderRadius:4}]},
-options:{responsive:true,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true}}}
+options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true}}}
 });
 
 // === Customer Segments ===
@@ -1410,7 +1410,7 @@ destroyQPChart('chart-cust-seg');
 qpCharts['chart-cust-seg']=new Chart(document.getElementById('chart-cust-seg'),{
 type:'doughnut',data:{labels:['Fusion Customers','Academy Customers','Registered (No Purchase)'],
 datasets:[{data:[fusionOnly,new Set(acadOnly).size,noPurch],backgroundColor:[COLORS.purple,COLORS.teal,COLORS.white15],borderWidth:0}]},
-options:{responsive:true,plugins:{legend:{position:'bottom',labels:{padding:12,boxWidth:10,font:{size:11}}}},cutout:'55%'}
+options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{padding:12,boxWidth:10,font:{size:11}}}},cutout:'55%'}
 });
 
 // === Referral vs Direct Revenue ===
@@ -1421,7 +1421,7 @@ destroyQPChart('chart-ref-impact');
 qpCharts['chart-ref-impact']=new Chart(document.getElementById('chart-ref-impact'),{
 type:riType,data:{labels:['Referred','Direct'],
 datasets:[{label:'Revenue',data:[refRev,directRev],backgroundColor:[COLORS.purple,COLORS.teal],borderColor:[COLORS.purple,COLORS.teal],borderWidth:0,borderRadius:riType==='bar'?6:0}]},
-options:{responsive:true,plugins:{legend:{display:riType==='doughnut',position:'bottom',labels:{boxWidth:10,font:{size:11}}}},scales:riType==='doughnut'?{}:{y:{beginAtZero:true,ticks:{callback:function(v){return '$'+v}}}},cutout:riType==='doughnut'?'55%':undefined}
+options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:riType==='doughnut',position:'bottom',labels:{boxWidth:10,font:{size:11}}}},scales:riType==='doughnut'?{}:{y:{beginAtZero:true,ticks:{callback:function(v){return '$'+v}}}},cutout:riType==='doughnut'?'55%':undefined}
 });
 
 // === Credit Economy ===
@@ -1432,7 +1432,7 @@ destroyQPChart('chart-credit-eco');
 qpCharts['chart-credit-eco']=new Chart(document.getElementById('chart-credit-eco'),{
 type:'doughnut',data:{labels:['Redeemed/Used','Outstanding'],
 datasets:[{data:[redeemed,totalBalance],backgroundColor:[COLORS.success,COLORS.warning],borderWidth:0}]},
-options:{responsive:true,plugins:{legend:{position:'bottom',labels:{padding:12,boxWidth:10,font:{size:11}}}},cutout:'55%'}
+options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{padding:12,boxWidth:10,font:{size:11}}}},cutout:'55%'}
 });
 
 // === Academy vs Fusion Revenue by Month ===
@@ -1461,7 +1461,7 @@ qpCharts['chart-platform-rev']=new Chart(document.getElementById('chart-platform
 type:prType,data:{labels:platLabels,
 datasets:[{label:'Academy',data:platPeriods.map(function(k){return platByPeriod[k].academy}),backgroundColor:prType==='bar'?COLORS.teal:COLORS.tealA,borderColor:COLORS.teal,borderWidth:prType==='bar'?0:2,borderRadius:prType==='bar'?4:0,tension:0.4,fill:prType==='line',pointRadius:prType==='line'?3:0},
 {label:'Fusion',data:platPeriods.map(function(k){return platByPeriod[k].fusion}),backgroundColor:prType==='bar'?COLORS.purple:COLORS.purpleA,borderColor:COLORS.purple,borderWidth:prType==='bar'?0:2,borderRadius:prType==='bar'?4:0,tension:0.4,fill:prType==='line',pointRadius:prType==='line'?3:0}]},
-options:{responsive:true,plugins:{legend:{labels:{boxWidth:10,font:{size:11}}}},scales:{y:{beginAtZero:true,ticks:{callback:function(v){return '$'+v}}}}}
+options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:10,font:{size:11}}}},scales:{y:{beginAtZero:true,ticks:{callback:function(v){return '$'+v}}}}}
 });
 
 // === Campaign Performance Charts ===
@@ -1495,7 +1495,7 @@ datasets:[{label:'Sent',data:campPeriods.map(function(k){return campByPeriod[k].
 {label:'Opens',data:campPeriods.map(function(k){return campByPeriod[k].opens}),backgroundColor:COLORS.purple,borderRadius:4},
 {label:'Clicks',data:campPeriods.map(function(k){return campByPeriod[k].clicks}),backgroundColor:COLORS.warning,borderRadius:4},
 {label:'Conversions',data:campPeriods.map(function(k){return campByPeriod[k].conversions}),backgroundColor:COLORS.success,borderRadius:4}]},
-options:{responsive:true,plugins:{legend:{labels:{boxWidth:10,font:{size:11}}}},scales:{y:{beginAtZero:true}}}
+options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:10,font:{size:11}}}},scales:{y:{beginAtZero:true}}}
 });
 destroyQPChart('chart-camp-rates');
 qpCharts['chart-camp-rates']=new Chart(document.getElementById('chart-camp-rates'),{
@@ -1503,7 +1503,7 @@ type:'bar',data:{labels:campLabels,
 datasets:[{label:'Open %',data:campPeriods.map(function(k){var d=campByPeriod[k];return d.sent>0?((d.opens/d.sent)*100).toFixed(1):0}),backgroundColor:COLORS.purple,borderRadius:4},
 {label:'Click %',data:campPeriods.map(function(k){var d=campByPeriod[k];return d.opens>0?((d.clicks/d.opens)*100).toFixed(1):0}),backgroundColor:COLORS.warning,borderRadius:4},
 {label:'Conv %',data:campPeriods.map(function(k){var d=campByPeriod[k];return d.clicks>0?((d.conversions/d.clicks)*100).toFixed(1):0}),backgroundColor:COLORS.success,borderRadius:4}]},
-options:{responsive:true,plugins:{legend:{labels:{boxWidth:10,font:{size:11}}}},scales:{y:{beginAtZero:true,ticks:{callback:function(v){return v+'%'}}}}}
+options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:10,font:{size:11}}}},scales:{y:{beginAtZero:true,ticks:{callback:function(v){return v+'%'}}}}}
 });
 }else{
 document.getElementById('no-campaigns-msg').style.display='';
@@ -1917,7 +1917,7 @@ var bgAlphas=labels.map(function(_,i){var palette=[COLORS.tealA,COLORS.purpleA,C
 qpCharts['caq-chart']=new Chart(canvas,{
 type:chartType,
 data:{labels:labels,datasets:[{label:document.getElementById('caq-measure').options[document.getElementById('caq-measure').selectedIndex].text,data:values,backgroundColor:chartType==='doughnut'?bgColors:bgAlphas,borderColor:bgColors,borderWidth:chartType==='doughnut'?0:1,borderRadius:chartType==='bar'?4:0,tension:0.4,fill:chartType==='line'}]},
-options:{responsive:true,plugins:{legend:{display:chartType==='doughnut',position:'bottom',labels:{boxWidth:10,font:{size:11}}}},scales:chartType==='doughnut'?{}:{y:{beginAtZero:true}}}
+options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:chartType==='doughnut',position:'bottom',labels:{boxWidth:10,font:{size:11}}}},scales:chartType==='doughnut'?{}:{y:{beginAtZero:true}}}
 });
 }
 
