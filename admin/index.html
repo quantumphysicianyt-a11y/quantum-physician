@@ -94,7 +94,7 @@
 .sg-card.sg-retention::before{background:linear-gradient(90deg,var(--warning),var(--pink))}
 .sg-card.sg-growth::before{background:linear-gradient(90deg,var(--purple),var(--pink))}
 .sg-card.sg-community::before{background:linear-gradient(90deg,var(--pink),var(--teal))}
-.sg-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.sg-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;padding-right:24px}
 .sg-badge{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:3px 8px;border-radius:4px}
 .sg-badge.revenue{background:rgba(45,255,122,.1);color:var(--success)}
 .sg-badge.engagement{background:rgba(91,168,178,.1);color:var(--teal)}
@@ -113,8 +113,8 @@
 .sg-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
 .sg-actions .btn{font-size:11px;padding:5px 12px}
 .sg-empty{text-align:center;padding:32px;color:var(--text-dim);font-size:14px}
-.sg-dismiss{position:absolute;top:8px;right:8px;width:20px;height:20px;border-radius:50%;border:none;background:transparent;color:var(--text-dim);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s}
-.sg-card:hover .sg-dismiss{opacity:1}
+.sg-dismiss{position:absolute;top:12px;right:12px;width:20px;height:20px;border-radius:50%;border:none;background:transparent;color:var(--text-dim);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s}
+.sg-dismiss{opacity:.5}.sg-card:hover .sg-dismiss{opacity:1}
 .sg-dismiss:hover{background:rgba(255,255,255,.08);color:var(--text)}
 .light .sg-card{background:#fff;border-color:#e2e8f0}
 .light .sg-card:hover{border-color:var(--teal);box-shadow:0 4px 16px rgba(0,0,0,.06)}
@@ -684,6 +684,24 @@ var cbFiltered=[],cbPage=1,cbPS=20;
 var sgDismissed=JSON.parse(localStorage.getItem('qp_sg_dismissed')||'[]');
 var sgActiveFilter='all';
 
+function sgSetupEmail(opts){
+go('email',document.querySelector('[onclick*="email"]'));
+setTimeout(function(){
+try{
+if(opts.audience){var sel=document.getElementById('email-audience');if(sel){sel.value=opts.audience;updateAudiencePreview()}}
+if(opts.customEmails){var sel=document.getElementById('email-audience');if(sel){sel.value='custom';updateAudiencePreview();setTimeout(function(){var ta=document.getElementById('custom-emails');if(ta)ta.value=opts.customEmails},100)}}
+if(opts.brand){var bs=document.getElementById('email-brand-select');if(bs)bs.value=opts.brand}
+if(opts.type){var ts=document.getElementById('email-type-select');if(ts){ts.value=opts.type;updateEmailTypeHint()}}
+if(opts.from){var fs=document.getElementById('email-from');if(fs)fs.value=opts.from}
+if(opts.subject){var s=document.getElementById('email-subject');if(s)s.value=opts.subject}
+if(opts.body){var b=document.getElementById('email-body');if(b)b.value=opts.body}
+if(opts.rich!==false){var rt=document.getElementById('rich-email-toggle');if(rt&&!rt.checked){rt.checked=true;toggleRichEmailOptions()}}
+if(opts.discount){var dt=document.getElementById('discount-toggle');if(dt&&!dt.checked){dt.checked=true;toggleDiscountConfig()}setTimeout(function(){var ps=document.getElementById('discount-promo-select');if(ps&&opts.promoCode){for(var i=0;i<ps.options.length;i++){if(ps.options[i].value===opts.promoCode||ps.options[i].text.indexOf(opts.promoCode)>=0){ps.selectedIndex=i;break}}}},200)}
+if(opts.preview){setTimeout(function(){previewEmail()},800)}
+}catch(e){console.error('sgSetupEmail error:',e)}
+},400);
+}
+
 function generateSuggestions(){
 if(!dataLoaded)return[];
 var sg=[];
@@ -692,80 +710,215 @@ var d7=new Date(now-7*864e5);
 var d14=new Date(now-14*864e5);
 var d30=new Date(now-30*864e5);
 
-/* --- REVENUE SUGGESTIONS --- */
+/* --- REVENUE --- */
 
-/* Unused referral codes - users who have codes but 0 referrals */
 var unusedCodes=referralData.filter(function(r){return r.successful_referrals===0&&r.credit_balance===0});
-if(unusedCodes.length>=3){sg.push({id:'unused-refs',cat:'revenue',priority:'med',title:''+unusedCodes.length+' referral codes never shared',detail:'These users signed up and got referral codes but haven\u2019t shared them yet. A quick nudge could activate word-of-mouth.',metrics:[''+unusedCodes.length+' dormant codes'],actions:[{label:'Email These Users',action:function(){go('email',document.querySelector('[onclick*="email"]'));setTimeout(function(){try{document.getElementById('email-type').value='referral_reminder';updateEmailTypeHint()}catch(e){}},300)}}]})}
+if(unusedCodes.length>=3){
+var emails=unusedCodes.map(function(r){return r.email}).join('\n');
+sg.push({id:'unused-refs',cat:'revenue',priority:'med',
+title:''+unusedCodes.length+' referral codes never shared',
+detail:'These users have referral codes but zero referrals. A quick nudge could activate word-of-mouth growth.',
+metrics:[''+unusedCodes.length+' dormant codes'],
+actions:[{label:'\u2709 Compose Email',action:function(){sgSetupEmail({
+customEmails:emails,brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',
+subject:'Did you know you have a referral code? Share it and earn!',
+body:'Hi {{name}},\n\nDid you know you have a personal referral code? Every friend who signs up using your code earns you credits toward future sessions and courses.\n\nYour referral code: {{referral_code}}\n\nShare it with anyone who could benefit from quantum healing. You both win!\n\nWarmly,\nDr. Tracey Clark'
+})}}]})
+}
 
-/* Bundle upsell - users who bought individual sessions but not the bundle */
 var indivBuyers=allCustomers.filter(function(c){return!c.hasBundle&&c.fusionPurchases.length>=2&&c.fusionPurchases.length<12});
-if(indivBuyers.length>=1){var avgOwned=Math.round(indivBuyers.reduce(function(s,c){return s+c.fusionPurchases.length},0)/indivBuyers.length);sg.push({id:'bundle-upsell',cat:'revenue',priority:'high',title:''+indivBuyers.length+' customer'+(indivBuyers.length>1?'s':'')+' ready for bundle upsell',detail:'These users own <strong>'+avgOwned+' sessions on average</strong> but haven\u2019t bought the bundle. They\u2019re already invested \u2014 a discount could convert them.',metrics:[''+indivBuyers.length+' prospects','~'+avgOwned+' sessions avg'],actions:[{label:'Compose Upsell Email',action:function(){go('email',document.querySelector('[onclick*="email"]'));setTimeout(function(){try{var subj=document.getElementById('email-subject');if(subj)subj.value='Complete Your Fusion Journey \u2014 Special Bundle Offer';var body=document.getElementById('email-body');if(body)body.value='Hi {{first_name}},\n\nYou have already experienced '+avgOwned+' Fusion Sessions and we love seeing your progress!\n\nWe would love to help you complete the full journey. For a limited time, upgrade to the Complete Bundle and get all 12 sessions at a special rate.\n\nReady to go all-in?'}catch(e){}},300)}}]})}
+if(indivBuyers.length>=1){
+var avgOwned=Math.round(indivBuyers.reduce(function(s,c){return s+c.fusionPurchases.length},0)/indivBuyers.length);
+var emails=indivBuyers.map(function(c){return c.email}).join('\n');
+var activePromo=promotionsData.find(function(p){return p.status==='active'&&p.applies_to&&p.applies_to.indexOf('bundle')>=0});
+sg.push({id:'bundle-upsell',cat:'revenue',priority:'high',
+title:''+indivBuyers.length+' customer'+(indivBuyers.length>1?'s':'')+' ready for bundle upsell',
+detail:'These users own <strong>'+avgOwned+' sessions on average</strong> but not the bundle. They are already invested \u2014 a discount could convert them.',
+metrics:[''+indivBuyers.length+' prospects','~'+avgOwned+' sessions avg'],
+actions:[{label:'\u2709 Compose Upsell',action:function(){sgSetupEmail({
+customEmails:emails,brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',
+discount:!!activePromo,promoCode:activePromo?activePromo.code:'',
+subject:'Complete Your Fusion Journey \u2014 Upgrade to the Full Bundle',
+body:'Hi {{name}},\n\nYou have already experienced '+avgOwned+' Fusion Sessions and I love seeing your commitment to healing!\n\nI wanted to let you know about something special: the Complete Fusion Bundle gives you access to all 12 sessions at a significant savings compared to buying them individually.\n\nSince you already own several sessions, this is the perfect time to complete your journey.'+(activePromo?'\n\nUse code '+activePromo.code+' for an extra discount!':'')+'\n\nWith love and healing,\nDr. Tracey Clark'
+})}}]})
+}
 
-/* Academy bundle upsell - bought individual courses */
 var acadIndiv=allCustomers.filter(function(c){return!c.hasAcademyBundle&&c.academyPurchases.length>=2});
-if(acadIndiv.length>=1){sg.push({id:'acad-bundle-upsell',cat:'revenue',priority:'med',title:''+acadIndiv.length+' Academy student'+(acadIndiv.length>1?'s':'')+' could upgrade to bundle',detail:'These students bought multiple individual courses. The bundle saves money \u2014 highlight the value.',metrics:[''+acadIndiv.length+' prospects'],actions:[{label:'Compose Email',action:function(){go('email',document.querySelector('[onclick*="email"]'))}}]})}
+if(acadIndiv.length>=1){
+var emails=acadIndiv.map(function(c){return c.email}).join('\n');
+sg.push({id:'acad-bundle-upsell',cat:'revenue',priority:'med',
+title:''+acadIndiv.length+' Academy student'+(acadIndiv.length>1?'s':'')+' could upgrade to bundle',
+detail:'These students bought multiple individual courses. The Transformational Mastery bundle saves money.',
+metrics:[''+acadIndiv.length+' prospects'],
+actions:[{label:'\u2709 Compose Email',action:function(){sgSetupEmail({
+customEmails:emails,brand:'academy',type:'promotional',from:'tracey@quantumphysician.com',
+subject:'Unlock the Full Transformational Mastery Program',
+body:'Hi {{name}},\n\nI see you have been exploring multiple courses in the Quantum Academy \u2014 that tells me you are serious about your personal growth.\n\nThe Transformational Mastery Program bundles all courses together at a significant savings. Since you already own some courses, this is the perfect time to go all-in.\n\nReady to unlock everything?\n\nWith gratitude,\nDr. Tracey Clark'
+})}}]})
+}
 
-/* Credits sitting unused */
 var highCredit=referralData.filter(function(r){return r.credit_balance>=1000});
-if(highCredit.length>=1){var totalUnused=highCredit.reduce(function(s,r){return s+r.credit_balance},0);sg.push({id:'unused-credits',cat:'revenue',priority:'low',title:''+fmtMoney(totalUnused)+' in credits sitting unused',detail:'<strong>'+highCredit.length+' user'+(highCredit.length>1?'s':'')+' </strong>'+( highCredit.length>1?'have':'has')+' $10+ in credits that haven\u2019t been redeemed. Remind them they have free money to spend.',metrics:[fmtMoney(totalUnused)+' total',''+highCredit.length+' users'],actions:[{label:'Send Reminder',action:function(){go('email',document.querySelector('[onclick*="email"]'))}}]})}
+if(highCredit.length>=1){
+var totalUnused=highCredit.reduce(function(s,r){return s+r.credit_balance},0);
+var emails=highCredit.map(function(r){return r.email}).join('\n');
+sg.push({id:'unused-credits',cat:'revenue',priority:'low',
+title:''+fmtMoney(totalUnused)+' in credits sitting unused',
+detail:'<strong>'+highCredit.length+' user'+(highCredit.length>1?'s have':' has')+'</strong> $10+ in credits. Remind them they have free money to spend.',
+metrics:[fmtMoney(totalUnused)+' total',''+highCredit.length+' users'],
+actions:[{label:'\u2709 Send Reminder',action:function(){sgSetupEmail({
+customEmails:emails,brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',
+subject:'You have credits waiting! Use them before they expire',
+body:'Hi {{name}},\n\nJust a friendly reminder \u2014 you have referral credits in your account that are ready to use!\n\nYou can apply them toward any Fusion Session or Academy course. Why not treat yourself to something new?\n\nLog in and check your balance anytime.\n\nWarmly,\nDr. Tracey Clark'
+})}}]})
+}
 
-/* Expiring promotions */
 var expiringPromos=promotionsData.filter(function(p){if(p.status!=='active'||!p.expires_at)return false;var exp=new Date(p.expires_at);return exp>now&&exp<new Date(now.getTime()+7*864e5)});
-if(expiringPromos.length>0){sg.push({id:'expiring-promos',cat:'revenue',priority:'high',title:''+expiringPromos.length+' promo'+(expiringPromos.length>1?'s':'')+' expiring this week',detail:'These active promotions expire within 7 days: <strong>'+expiringPromos.map(function(p){return p.name||p.code}).join(', ')+'</strong>. Send a last-chance email to boost conversions.',metrics:expiringPromos.map(function(p){return p.code}),actions:[{label:'Send Last-Chance Email',action:function(){go('email',document.querySelector('[onclick*="email"]'))}},{label:'View Promotions',action:function(){go('promotions',document.querySelector('[onclick*="promotions"]'))}}]})}
+if(expiringPromos.length>0){
+var promoNames=expiringPromos.map(function(p){return p.name||p.code}).join(', ');
+var firstPromo=expiringPromos[0];
+sg.push({id:'expiring-promos',cat:'revenue',priority:'high',
+title:''+expiringPromos.length+' promo'+(expiringPromos.length>1?'s':'')+' expiring this week',
+detail:'Active promotions expiring within 7 days: <strong>'+promoNames+'</strong>. Send a last-chance email to boost conversions.',
+metrics:expiringPromos.map(function(p){return p.code}),
+actions:[{label:'\u2709 Last-Chance Email',action:function(){sgSetupEmail({
+audience:'all-opted-in',brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',
+discount:true,promoCode:firstPromo.code,
+subject:'Last Chance \u2014 '+firstPromo.code+' expires soon!',
+body:'Hi {{name}},\n\nJust a heads up \u2014 our special offer with code '+firstPromo.code+' is expiring very soon!\n\nIf you have been thinking about taking the next step in your healing journey, now is the time. This discount will not be available again.\n\nDo not miss out!\n\nWith love,\nDr. Tracey Clark'
+})}},{label:'View Promotions',action:function(){go('promotions',document.querySelector('[onclick*="promotions"]'))}}]})
+}
 
-/* --- ENGAGEMENT SUGGESTIONS --- */
+/* --- ENGAGEMENT --- */
 
-/* Inactive Academy students */
 var enrolledUsers={};academyEnrollments.filter(function(e){return e.status==='active'}).forEach(function(e){enrolledUsers[e.user_id]=true});
 var inactiveStudents=allCustomers.filter(function(c){if(!c.userId||!enrolledUsers[c.userId])return false;var lastActivity=null;lessonProgress.filter(function(lp){return lp.user_id===c.userId}).forEach(function(lp){var d=lp.completed_at||lp.updated_at;if(d&&(!lastActivity||d>lastActivity))lastActivity=d});return lastActivity&&new Date(lastActivity)<d14});
-if(inactiveStudents.length>=1){sg.push({id:'inactive-students',cat:'engagement',priority:'high',title:''+inactiveStudents.length+' student'+(inactiveStudents.length>1?'s':'')+' inactive for 14+ days',detail:'These enrolled students haven\u2019t made progress in over two weeks. A re-engagement email can bring them back before they churn.',metrics:[''+inactiveStudents.length+' inactive','14+ days silent'],actions:[{label:'Send Re-engagement Email',action:function(){go('email',document.querySelector('[onclick*="email"]'));setTimeout(function(){try{var subj=document.getElementById('email-subject');if(subj)subj.value='We miss you! Continue your learning journey';var body=document.getElementById('email-body');if(body)body.value='Hi {{first_name}},\n\nWe noticed you have not logged into the Academy recently. Your courses are still waiting for you!\n\nPick up right where you left off \u2014 even 10 minutes a day makes a difference.\n\nReady to jump back in?'}catch(e){}},300)}}]})}
+if(inactiveStudents.length>=1){
+var emails=inactiveStudents.map(function(c){return c.email}).join('\n');
+sg.push({id:'inactive-students',cat:'engagement',priority:'high',
+title:''+inactiveStudents.length+' student'+(inactiveStudents.length>1?'s':'')+' inactive for 14+ days',
+detail:'Enrolled students who stopped making progress. A re-engagement email can bring them back before they churn.',
+metrics:[''+inactiveStudents.length+' inactive','14+ days silent'],
+actions:[{label:'\u2709 Re-engage',action:function(){sgSetupEmail({
+customEmails:emails,brand:'academy',type:'promotional',from:'tracey@quantumphysician.com',
+subject:'We miss you! Your courses are waiting',
+body:'Hi {{name}},\n\nI noticed you have not logged into the Academy recently, and I wanted to check in.\n\nYour courses are still there waiting for you, right where you left off. Even just 10 minutes a day can make a real difference in your growth.\n\nIs there anything I can help with? Sometimes a fresh perspective is all it takes to get back on track.\n\nRooting for you,\nDr. Tracey Clark'
+})}}]})
+}
 
-/* Students close to completion */
 var almostDone=[];
-allCustomers.forEach(function(c){if(!c.userId)return;var userLessons=lessonProgress.filter(function(lp){return lp.user_id===c.userId});if(!userLessons.length)return;var byCourse={};userLessons.forEach(function(lp){var cid=lp.course_id;if(!byCourse[cid])byCourse[cid]={total:0,done:0,name:''};byCourse[cid].total++;if(lp.completed)byCourse[cid].done++});Object.keys(byCourse).forEach(function(cid){var p=byCourse[cid];var pct=p.total?Math.round(p.done/p.total*100):0;if(pct>=60&&pct<100){almostDone.push({email:c.email,pct:pct,remaining:p.total-p.done})}})});
-if(almostDone.length>=1){sg.push({id:'almost-done',cat:'engagement',priority:'med',title:''+almostDone.length+' student'+(almostDone.length>1?'s':'')+' close to finishing a course',detail:'These students are <strong>60%+ complete</strong> \u2014 a little encouragement could push them across the finish line.',metrics:[''+almostDone.length+' students','60-99% done'],actions:[{label:'Send Encouragement',action:function(){go('email',document.querySelector('[onclick*="email"]'));setTimeout(function(){try{var subj=document.getElementById('email-subject');if(subj)subj.value='You are almost there!'}catch(e){}},300)}}]})}
+allCustomers.forEach(function(c){if(!c.userId)return;var userLessons=lessonProgress.filter(function(lp){return lp.user_id===c.userId});if(!userLessons.length)return;var byCourse={};userLessons.forEach(function(lp){var cid=lp.course_id;if(!byCourse[cid])byCourse[cid]={total:0,done:0};byCourse[cid].total++;if(lp.completed)byCourse[cid].done++});Object.keys(byCourse).forEach(function(cid){var p=byCourse[cid];var pct=p.total?Math.round(p.done/p.total*100):0;if(pct>=60&&pct<100){almostDone.push({email:c.email,pct:pct,remaining:p.total-p.done})}})});
+if(almostDone.length>=1){
+var emails=almostDone.map(function(a){return a.email}).join('\n');
+sg.push({id:'almost-done',cat:'engagement',priority:'med',
+title:''+almostDone.length+' student'+(almostDone.length>1?'s':'')+' close to finishing a course',
+detail:'These students are <strong>60%+ complete</strong> \u2014 a little encouragement could push them to the finish line.',
+metrics:[''+almostDone.length+' students','60-99% done'],
+actions:[{label:'\u2709 Encourage',action:function(){sgSetupEmail({
+customEmails:emails,brand:'academy',type:'promotional',from:'tracey@quantumphysician.com',
+subject:'You are SO close to finishing! Keep going',
+body:'Hi {{name}},\n\nI can see you are making incredible progress in the Academy \u2014 you are so close to completing your course!\n\nThe final lessons are some of the most transformative. Do not stop now when you are this close to a breakthrough.\n\nI believe in you. Let us finish this together.\n\nWith encouragement,\nDr. Tracey Clark'
+})}}]})
+}
 
-/* New signups with no purchase */
 var newNoPurchase=allCustomers.filter(function(c){if(!c.hasAccount||c.purchases.length>0)return false;var auth=authUsersMap.get(c.email.toLowerCase());if(!auth)return false;var created=new Date(auth.created_at);return created>d7});
-if(newNoPurchase.length>=1){sg.push({id:'new-no-purchase',cat:'engagement',priority:'high',title:''+newNoPurchase.length+' new signup'+(newNoPurchase.length>1?'s':'')+' in the last 7 days with no purchase',detail:'These people created accounts recently but haven\u2019t bought anything yet. They\u2019re warm leads \u2014 a welcome offer could convert them.',metrics:[''+newNoPurchase.length+' signups','last 7 days'],actions:[{label:'Send Welcome Offer',action:function(){go('email',document.querySelector('[onclick*="email"]'));setTimeout(function(){try{var subj=document.getElementById('email-subject');if(subj)subj.value='Welcome to Quantum Physician \u2014 A special offer for you'}catch(e){}},300)}}]})}
+if(newNoPurchase.length>=1){
+var emails=newNoPurchase.map(function(c){return c.email}).join('\n');
+var welcomePromo=promotionsData.find(function(p){return p.status==='active'});
+sg.push({id:'new-no-purchase',cat:'engagement',priority:'high',
+title:''+newNoPurchase.length+' new signup'+(newNoPurchase.length>1?'s':'')+' with no purchase (last 7 days)',
+detail:'Warm leads who created accounts but have not bought anything. A welcome offer could convert them.',
+metrics:[''+newNoPurchase.length+' signups','last 7 days'],
+actions:[{label:'\u2709 Welcome Offer',action:function(){sgSetupEmail({
+customEmails:emails,brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',
+discount:!!welcomePromo,promoCode:welcomePromo?welcomePromo.code:'',
+subject:'Welcome to Quantum Physician \u2014 A gift to get you started',
+body:'Hi {{name}},\n\nWelcome to the Quantum Physician family! I am so glad you are here.\n\nI know exploring something new can feel like a big step, so I wanted to offer you something special to help you get started.'+(welcomePromo?'\n\nUse code '+welcomePromo.code+' on your first purchase!':'')+'\n\nWhether you start with a single Fusion Session or dive into the Academy, every step you take is a step toward healing.\n\nI am here for you,\nDr. Tracey Clark'
+})}}]})
+}
 
-/* --- RETENTION SUGGESTIONS --- */
+/* --- RETENTION --- */
 
-/* Customers who bought but never logged back in */
 var boughtNoReturn=allCustomers.filter(function(c){if(!c.hasAccount||c.purchases.length===0)return false;var auth=authUsersMap.get(c.email.toLowerCase());if(!auth||!auth.last_sign_in_at)return false;var lastLogin=new Date(auth.last_sign_in_at);var firstPurchase=c.purchases.reduce(function(min,p){var d=new Date(p.purchased_at);return d<min?d:min},new Date());return lastLogin<d30&&firstPurchase<d30});
-if(boughtNoReturn.length>=1){sg.push({id:'bought-no-return',cat:'retention',priority:'high',title:''+boughtNoReturn.length+' buyer'+(boughtNoReturn.length>1?'s':'')+' haven\u2019t returned in 30+ days',detail:'These customers paid for content but haven\u2019t logged in for over a month. They may have forgotten or need help accessing their purchase.',metrics:[''+boughtNoReturn.length+' customers','30+ days absent'],actions:[{label:'Send Check-in Email',action:function(){go('email',document.querySelector('[onclick*="email"]'));setTimeout(function(){try{var subj=document.getElementById('email-subject');if(subj)subj.value='Your content is waiting for you!'}catch(e){}},300)}}]})}
+if(boughtNoReturn.length>=1){
+var emails=boughtNoReturn.map(function(c){return c.email}).join('\n');
+sg.push({id:'bought-no-return',cat:'retention',priority:'high',
+title:''+boughtNoReturn.length+' buyer'+(boughtNoReturn.length>1?'s':'')+ ' absent 30+ days',
+detail:'These customers paid for content but have not logged in for over a month. They may need help or a reminder.',
+metrics:[''+boughtNoReturn.length+' customers','30+ days absent'],
+actions:[{label:'\u2709 Check-in Email',action:function(){sgSetupEmail({
+customEmails:emails,brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',
+subject:'Your healing content is waiting for you',
+body:'Hi {{name}},\n\nI wanted to personally reach out because I noticed you have not visited in a while.\n\nYour sessions and courses are still there for you, ready whenever you are. Life gets busy \u2014 I understand. But your healing journey does not have an expiration date.\n\nIf you are having any trouble accessing your content, just reply to this email and I will help.\n\nWith care,\nDr. Tracey Clark'
+})}}]})
+}
 
-/* Opted-out users */
 var optedOut=0;authUsersMap.forEach(function(u){if(u.raw_user_meta_data&&u.raw_user_meta_data.marketing_opt_in===false)optedOut++});
-if(optedOut>=5){sg.push({id:'opted-out',cat:'retention',priority:'low',title:''+optedOut+' users opted out of marketing emails',detail:'These users won\u2019t receive your campaigns. Consider improving email value or frequency to reduce opt-outs over time.',metrics:[''+optedOut+' opted out'],actions:[{label:'View Customers',action:function(){go('customers',document.querySelector('[onclick*="customers"]'))}}]})}
+if(optedOut>=5){
+sg.push({id:'opted-out',cat:'retention',priority:'low',
+title:''+optedOut+' users opted out of marketing emails',
+detail:'These users will not receive your campaigns. Consider improving email value or reducing frequency to prevent more opt-outs.',
+metrics:[''+optedOut+' opted out'],
+actions:[{label:'View Customers',action:function(){go('customers',document.querySelector('[onclick*="customers"]'))}}]})
+}
 
-/* --- GROWTH SUGGESTIONS --- */
+/* --- GROWTH --- */
 
-/* Top referrers who could do more */
 var topRefs=referralData.filter(function(r){return r.successful_referrals>=2}).sort(function(a,b){return b.successful_referrals-a.successful_referrals}).slice(0,5);
-if(topRefs.length>=1){sg.push({id:'top-referrers',cat:'growth',priority:'med',title:'Your top '+topRefs.length+' referrer'+(topRefs.length>1?'s':'')+' could be brand ambassadors',detail:'<strong>'+topRefs[0].email+'</strong> has referred '+topRefs[0].successful_referrals+' people'+(topRefs.length>1?', and '+(topRefs.length-1)+' others are active referrers too':'')+'. Consider rewarding them or creating an ambassador program.',metrics:topRefs.slice(0,3).map(function(r){return r.successful_referrals+' refs'}),actions:[{label:'Email Top Referrers',action:function(){go('email',document.querySelector('[onclick*="email"]'))}}]})}
+if(topRefs.length>=1){
+var emails=topRefs.map(function(r){return r.email}).join('\n');
+sg.push({id:'top-referrers',cat:'growth',priority:'med',
+title:'Your top '+topRefs.length+' referrer'+(topRefs.length>1?'s':'')+' could be brand ambassadors',
+detail:'<strong>'+topRefs[0].email+'</strong> has referred '+topRefs[0].successful_referrals+' people. Reward your best advocates.',
+metrics:topRefs.slice(0,3).map(function(r){return r.successful_referrals+' refs'}),
+actions:[{label:'\u2709 Thank Top Referrers',action:function(){sgSetupEmail({
+customEmails:emails,brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',
+subject:'Thank you for being an amazing ambassador!',
+body:'Hi {{name}},\n\nI wanted to take a moment to personally thank you. You have referred friends and family to Quantum Physician, and that means the world to me.\n\nYour word-of-mouth support helps more people discover the power of quantum healing. As a small token of my gratitude, I have added a bonus to your referral credits.\n\nKeep spreading the word \u2014 together we are building something special.\n\nWith deep gratitude,\nDr. Tracey Clark'
+})}}]})
+}
 
-/* Campaign performance insight */
 var recentCampaigns=emailCampaignsData.filter(function(c){return c.sent_at&&new Date(c.sent_at)>d30});
-if(recentCampaigns.length>=2){var totalSent=recentCampaigns.reduce(function(s,c){return s+(c.recipient_count||0)},0);var totalOpens=recentCampaigns.reduce(function(s,c){return s+(c.opens||0)},0);var avgOpen=totalSent?Math.round(totalOpens/totalSent*100):0;if(avgOpen<25&&avgOpen>0){sg.push({id:'low-open-rate',cat:'growth',priority:'med',title:'Email open rate is '+avgOpen+'% (below 25% target)',detail:'Your last '+recentCampaigns.length+' campaigns averaged a <strong>'+avgOpen+'% open rate</strong>. Consider testing different subject lines, send times, or audience segments.',metrics:[avgOpen+'% open rate',''+recentCampaigns.length+' campaigns'],actions:[{label:'View Campaign History',action:function(){go('email',document.querySelector('[onclick*="email"]'));setTimeout(function(){try{document.querySelector('[onclick*="switchEmailTab"]')&&document.querySelector('[onclick*="history"]').click()}catch(e){}},300)}}]})}}
+if(recentCampaigns.length>=2){
+var totalSent=recentCampaigns.reduce(function(s,c){return s+(c.recipient_count||0)},0);
+var totalOpens=recentCampaigns.reduce(function(s,c){return s+(c.opens||0)},0);
+var avgOpen=totalSent?Math.round(totalOpens/totalSent*100):0;
+if(avgOpen<25&&avgOpen>0){
+sg.push({id:'low-open-rate',cat:'growth',priority:'med',
+title:'Email open rate is '+avgOpen+'% (below 25% target)',
+detail:'Your last '+recentCampaigns.length+' campaigns averaged <strong>'+avgOpen+'% opens</strong>. Try different subject lines, send times, or audience segments.',
+metrics:[avgOpen+'% open rate',''+recentCampaigns.length+' campaigns'],
+actions:[{label:'View Campaigns',action:function(){go('email',document.querySelector('[onclick*="email"]'))}}]})
+}}
 
-/* No recent campaigns */
 var lastCampaign=emailCampaignsData.length?new Date(emailCampaignsData[0].sent_at||emailCampaignsData[0].created_at):null;
-if(!lastCampaign||lastCampaign<d14){var daysSince=lastCampaign?Math.round((now-lastCampaign)/864e5):-1;sg.push({id:'no-recent-campaigns',cat:'growth',priority:'med',title:daysSince>0?'No email campaigns in '+daysSince+' days':'No campaigns sent yet',detail:'Consistent email outreach keeps your audience engaged. '+(daysSince>14?'It\u2019s been over two weeks \u2014 time to reconnect.':'Get your first campaign out to build momentum.'),metrics:daysSince>0?[daysSince+' days since last']:[],actions:[{label:'Create Campaign',action:function(){go('email',document.querySelector('[onclick*="email"]'))}}]})}
+if(!lastCampaign||lastCampaign<d14){
+var daysSince=lastCampaign?Math.round((now-lastCampaign)/864e5):-1;
+sg.push({id:'no-recent-campaigns',cat:'growth',priority:'med',
+title:daysSince>0?'No campaigns in '+daysSince+' days':'No campaigns sent yet',
+detail:'Consistent outreach keeps your audience engaged. '+(daysSince>14?'It has been over two weeks \u2014 time to reconnect.':'Get your first campaign out to build momentum.'),
+metrics:daysSince>0?[daysSince+' days']:[], 
+actions:[{label:'\u2709 Create Campaign',action:function(){sgSetupEmail({
+audience:'all-opted-in',brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',
+subject:'',body:''
+})}}]})
+}
 
-/* --- COMMUNITY SUGGESTIONS --- */
+/* --- COMMUNITY --- */
 
-/* Unanswered/unengaged posts */
-if(allFusionPosts&&allFusionPosts.length){var recentPosts=allFusionPosts.filter(function(p){return new Date(p.created_at)>d7&&!p.is_hidden});var unanswered=recentPosts.filter(function(p){return(!p.reply_count||p.reply_count===0)});if(unanswered.length>=1){sg.push({id:'unanswered-posts',cat:'community',priority:'high',title:''+unanswered.length+' community post'+(unanswered.length>1?'s':'')+' with no replies',detail:'Posts without responses make the community feel empty. Even a quick acknowledgment shows people they\u2019re heard.',metrics:[''+unanswered.length+' unanswered','last 7 days'],actions:[{label:'Go to Community',action:function(){go('community',document.querySelector('[onclick*="community"]'))}}]})}}
+if(allFusionPosts&&allFusionPosts.length){
+var recentPosts=allFusionPosts.filter(function(p){return new Date(p.created_at)>d7&&!p.is_hidden});
+var unanswered=recentPosts.filter(function(p){return!p.reply_count||p.reply_count===0});
+if(unanswered.length>=1){
+sg.push({id:'unanswered-posts',cat:'community',priority:'high',
+title:''+unanswered.length+' community post'+(unanswered.length>1?'s':'')+' with no replies',
+detail:'Posts without responses make the community feel empty. A quick acknowledgment shows people they are heard.',
+metrics:[''+unanswered.length+' unanswered','last 7 days'],
+actions:[{label:'Go to Community',action:function(){go('community',document.querySelector('[onclick*="community"]'))}}]})
+}}
 
-/* Filter out dismissed */
 sg=sg.filter(function(s){return sgDismissed.indexOf(s.id)<0});
-
-/* Sort by priority */
 var pOrder={high:0,med:1,low:2};
 sg.sort(function(a,b){return(pOrder[a.priority]||1)-(pOrder[b.priority]||1)});
-
 return sg;
 }
 
@@ -774,38 +927,30 @@ var sg=generateSuggestions();
 var panel=document.getElementById('dash-suggestions');
 if(!sg.length){panel.style.display='none';return}
 panel.style.display='block';
-
 var filtered=sgActiveFilter==='all'?sg:sg.filter(function(s){return s.cat===sgActiveFilter});
 var cats={};sg.forEach(function(s){cats[s.cat]=(cats[s.cat]||0)+1});
-
 var html='<div class="suggestions-header"><h3><div class="sg-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>Smart Suggestions <span class="sg-count">'+sg.length+' insight'+(sg.length>1?'s':'')+'</span></h3><div class="sg-filters"><button class="sg-filter-btn'+(sgActiveFilter==='all'?' active':'')+'" onclick="sgActiveFilter=\'all\';renderSuggestions()">All ('+sg.length+')</button>';
 ['revenue','engagement','retention','growth','community'].forEach(function(c){if(cats[c])html+='<button class="sg-filter-btn'+(sgActiveFilter===c?' active':'')+'" onclick="sgActiveFilter=\''+c+'\';renderSuggestions()">'+c.charAt(0).toUpperCase()+c.slice(1)+' ('+cats[c]+')</button>'});
 html+='</div></div>';
-
 if(!filtered.length){html+='<div class="sg-empty">No suggestions in this category</div>'}else{
 html+='<div class="sg-grid">';
-filtered.forEach(function(s,i){
+filtered.forEach(function(s){
 var pLabel=s.priority==='high'?'High':s.priority==='med'?'Medium':'Low';
-var pClass=s.priority;
-html+='<div class="sg-card sg-'+s.cat+'" data-sg-id="'+s.id+'"><button class="sg-dismiss" onclick="dismissSuggestion(\''+s.id+'\')" title="Dismiss">\u2715</button><div class="sg-card-top"><span class="sg-badge '+s.cat+'">'+s.cat+'</span><span class="sg-priority"><span class="dot '+pClass+'"></span>'+pLabel+'</span></div><div class="sg-title">'+s.title+'</div><div class="sg-detail">'+s.detail+'</div>';
+html+='<div class="sg-card sg-'+s.cat+'" data-sg-id="'+s.id+'"><button class="sg-dismiss" onclick="event.stopPropagation();dismissSuggestion(\''+s.id+'\')" title="Dismiss">&times;</button><div class="sg-card-top"><span class="sg-badge '+s.cat+'">'+s.cat+'</span><span class="sg-priority"><span class="dot '+s.priority+'"></span>'+pLabel+'</span></div><div class="sg-title">'+s.title+'</div><div class="sg-detail">'+s.detail+'</div>';
 if(s.metrics&&s.metrics.length){html+='<div style="margin-bottom:10px">';s.metrics.forEach(function(m){html+='<span class="sg-metric">'+m+'</span>'});html+='</div>'}
 if(s.actions&&s.actions.length){html+='<div class="sg-actions">';s.actions.forEach(function(a,j){html+='<button class="btn '+(j===0?'btn-primary':'btn-ghost')+' btn-sm" onclick="sgAction(\''+s.id+'\','+j+')">'+a.label+'</button>'});html+='</div>'}
-html+='</div>';
-});
-html+='</div>';
-}
+html+='</div>'});
+html+='</div>'}
 panel.innerHTML=html;
 }
 
-var sgActionMap={};
 function sgAction(id,actionIndex){
 var sg=generateSuggestions();
 var s=sg.find(function(x){return x.id===id});
 if(s&&s.actions&&s.actions[actionIndex]&&s.actions[actionIndex].action){
 logAudit('suggestion_action','Acted on: '+s.title);
 s.actions[actionIndex].action();
-}
-}
+}}
 
 function dismissSuggestion(id){
 sgDismissed.push(id);
