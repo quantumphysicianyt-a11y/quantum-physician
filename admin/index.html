@@ -385,7 +385,7 @@
 
 <!-- Overview Charts (always visible) -->
 <div class="grid-2" style="margin-bottom:20px">
-<div class="card"><div class="card-header"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Revenue Over Time</div><div style="display:flex;gap:4px"><button class="btn btn-ghost btn-sm chart-sw active" onclick="switchQPChart('chart-rev-time','line',this)">Line</button><button class="btn btn-ghost btn-sm chart-sw" onclick="switchQPChart('chart-rev-time','bar',this)">Bar</button></div></div><div class="card-body"><canvas id="chart-rev-time" height="200"></canvas></div></div>
+<div class="card"><div class="card-header"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Revenue Over Time</div><div style="display:flex;gap:4px;align-items:center"><div style="display:flex;gap:3px;margin-right:8px"><button class="btn btn-ghost btn-sm chart-sw trng active" onclick="setTimeRange('month',this)">Month</button><button class="btn btn-ghost btn-sm chart-sw trng" onclick="setTimeRange('week',this)">Week</button><button class="btn btn-ghost btn-sm chart-sw trng" onclick="setTimeRange('day',this)">Day</button></div><button class="btn btn-ghost btn-sm chart-sw active" onclick="switchQPChart('chart-rev-time','line',this)">Line</button><button class="btn btn-ghost btn-sm chart-sw" onclick="switchQPChart('chart-rev-time','bar',this)">Bar</button></div></div><div class="card-body"><canvas id="chart-rev-time" height="200"></canvas></div></div>
 <div class="card"><div class="card-header"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>Product Mix</div></div><div class="card-body"><canvas id="chart-product-mix" height="200"></canvas></div></div>
 </div>
 
@@ -1262,6 +1262,16 @@ document.getElementById('analytics-stats').innerHTML='<div class="stat-card"><di
 renderAnalyticsCharts();
 }
 
+
+// Time range for charts
+var currentTimeRange='month';
+function setTimeRange(range,btn){
+currentTimeRange=range;
+document.querySelectorAll('.trng').forEach(function(b){b.classList.remove('active')});
+if(btn)btn.classList.add('active');
+renderAnalyticsCharts();
+}
+
 function renderAnalyticsCharts(){
 if(typeof Chart==='undefined')return;
 var p=purchasesData||[],r=referralData||[],cr=creditHistory||[],prof=profilesData||[];
@@ -1270,25 +1280,32 @@ var campaigns=emailCampaignsData||[];
 // --- PRODUCT PRICES for fallback ---
 var PP={'bundle-all':500,'session-01':50,'session-02':50,'session-03':50,'session-04':50,'session-05':50,'session-06':50,'session-07':50,'session-08':50,'session-09':50,'session-10':50,'session-11':50,'session-12':50,'quantum-vision-boards':90,'becoming-present':90,'breaking-up-with-your-beliefs':90,'creative-mind-mapping':90,'power-of-the-question':90,'transformational-mastery':360};
 
-// === Revenue Over Time ===
-var revByMonth={};
+// === Revenue Over Time (time-range aware) ===
+// Build revenue by selected time range
+var trng=currentTimeRange||'month';
+var revByPeriod={};
 p.filter(function(x){return x.purchased_at}).forEach(function(x){
-var d=new Date(x.purchased_at);var k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+var d=new Date(x.purchased_at);var k;
+if(trng==='day')k=d.toISOString().slice(0,10);
+else if(trng==='week'){var ws=new Date(d);ws.setDate(d.getDate()-d.getDay());k=ws.toISOString().slice(0,10)}
+else k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
 var amt=(x.amount_paid&&x.amount_paid>0)?x.amount_paid:(PP[x.product_id]||0);
-if(!revByMonth[k])revByMonth[k]={total:0,academy:0,fusion:0};
-revByMonth[k].total+=amt;
-if(isAcademyProduct(x.product_id))revByMonth[k].academy+=amt;
-if(isFusionProduct(x.product_id))revByMonth[k].fusion+=amt;
+revByPeriod[k]=(revByPeriod[k]||0)+amt;
 });
-var sm=Object.keys(revByMonth).sort();
-var cum=0;var cumData=sm.map(function(m){cum+=revByMonth[m].total;return cum});
-var revType=chartModes['chart-rev-time']||'line';
+var periods=Object.keys(revByPeriod).sort();
+var cum2=0;var cumData=periods.map(function(k){cum2+=revByPeriod[k];return cum2});
+var revType=chartModes['chart-rev-time']||'bar';
+var periodLabels=periods.map(function(k){
+if(trng==='day')return new Date(k).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+if(trng==='week')return new Date(k).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+var p2=k.split('-');return new Date(p2[0],p2[1]-1).toLocaleDateString('en-US',{month:'short',year:'2-digit'});
+});
 destroyQPChart('chart-rev-time');
 qpCharts['chart-rev-time']=new Chart(document.getElementById('chart-rev-time'),{
-type:revType,data:{labels:sm.map(function(m){var p2=m.split('-');return new Date(p2[0],p2[1]-1).toLocaleDateString('en-US',{month:'short',year:'2-digit'})}),
-datasets:[{label:'Monthly Revenue',data:sm.map(function(m){return revByMonth[m].total}),borderColor:COLORS.teal,backgroundColor:revType==='bar'?COLORS.teal:COLORS.tealA,fill:revType==='line',tension:0.4,pointRadius:4,borderWidth:revType==='bar'?0:2,borderRadius:revType==='bar'?6:0},
-{label:'Cumulative',type:'line',data:cumData,borderColor:COLORS.purple,borderWidth:2.5,borderDash:[6,4],fill:false,tension:0.4,pointRadius:4,pointBackgroundColor:COLORS.purple,yAxisID:'y1'}]},
-options:{responsive:true,plugins:{legend:{labels:{boxWidth:10,font:{size:11}}}},scales:{y:{ticks:{callback:function(v){return '$'+v}}},y1:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:function(v){return '$'+v}}}}}
+type:revType,data:{labels:periodLabels,
+datasets:[{label:trng.charAt(0).toUpperCase()+trng.slice(1)+'ly Revenue',data:periods.map(function(k){return revByPeriod[k]}),borderColor:COLORS.teal,backgroundColor:revType==='bar'?COLORS.teal:COLORS.tealA,fill:revType==='line',tension:0.4,pointRadius:revType==='line'?3:0,borderWidth:revType==='bar'?0:2,borderRadius:revType==='bar'?6:0},
+{label:'Cumulative',data:cumData,backgroundColor:COLORS.purpleA,borderColor:COLORS.purple,borderWidth:revType==='bar'?0:2,borderRadius:revType==='bar'?4:0,fill:revType==='line',tension:0.4,pointRadius:revType==='line'?3:0,yAxisID:'y1'}]},
+options:{responsive:true,plugins:{legend:{labels:{boxWidth:10,font:{size:11}}}},scales:{y:{beginAtZero:true,ticks:{callback:function(v){return '$'+v}}},y1:{position:'right',grid:{drawOnChartArea:false},beginAtZero:true,ticks:{callback:function(v){return '$'+v}}}}}
 });
 
 // === Product Mix ===
@@ -1304,22 +1321,29 @@ datasets:[{data:[academyCount,fusionBundles,fusionSingles,comps],backgroundColor
 options:{responsive:true,plugins:{legend:{position:'bottom',labels:{padding:12,boxWidth:10,font:{size:11}}}},cutout:'60%'}
 });
 
-// === Purchase Timeline (weekly, stacked) ===
-var byWeek={};
+// === Purchase Timeline (uses time range) ===
+// Purchase Timeline with time range
+var byPeriod2={};
 p.filter(function(x){return x.purchased_at}).forEach(function(x){
-var d=new Date(x.purchased_at);var ws=new Date(d);ws.setDate(d.getDate()-d.getDay());
-var k=ws.toISOString().slice(0,10);
-if(!byWeek[k])byWeek[k]={academy:0,fusion:0};
-if(isAcademyProduct(x.product_id))byWeek[k].academy++;
-else if(isFusionProduct(x.product_id))byWeek[k].fusion++;
+var d=new Date(x.purchased_at);var k;
+if(trng==='day')k=d.toISOString().slice(0,10);
+else if(trng==='week'){var ws=new Date(d);ws.setDate(d.getDate()-d.getDay());k=ws.toISOString().slice(0,10)}
+else k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+if(!byPeriod2[k])byPeriod2[k]={academy:0,fusion:0};
+if(isAcademyProduct(x.product_id))byPeriod2[k].academy++;
+else if(isFusionProduct(x.product_id))byPeriod2[k].fusion++;
 });
-var weeks=Object.keys(byWeek).sort();
+var pPeriods=Object.keys(byPeriod2).sort();
 var ptType=chartModes['chart-purch-time']||'bar';
+var pLabels=pPeriods.map(function(k){
+if(trng==='day'||trng==='week')return new Date(k).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+var p2=k.split('-');return new Date(p2[0],p2[1]-1).toLocaleDateString('en-US',{month:'short',year:'2-digit'});
+});
 destroyQPChart('chart-purch-time');
 qpCharts['chart-purch-time']=new Chart(document.getElementById('chart-purch-time'),{
-type:ptType,data:{labels:weeks.map(function(w){return new Date(w).toLocaleDateString('en-US',{month:'short',day:'numeric'})}),
-datasets:[{label:'Academy',data:weeks.map(function(w){return byWeek[w].academy}),backgroundColor:ptType==='bar'?COLORS.teal:COLORS.tealA,borderColor:COLORS.teal,borderWidth:ptType==='bar'?0:2,borderRadius:ptType==='bar'?4:0,tension:0.4,fill:ptType==='line',pointRadius:ptType==='line'?3:0},
-{label:'Fusion',data:weeks.map(function(w){return byWeek[w].fusion}),backgroundColor:ptType==='bar'?COLORS.purple:COLORS.purpleA,borderColor:COLORS.purple,borderWidth:ptType==='bar'?0:2,borderRadius:ptType==='bar'?4:0,tension:0.4,fill:ptType==='line',pointRadius:ptType==='line'?3:0}]},
+type:ptType,data:{labels:pLabels,
+datasets:[{label:'Academy',data:pPeriods.map(function(k){return byPeriod2[k].academy}),backgroundColor:ptType==='bar'?COLORS.teal:COLORS.tealA,borderColor:COLORS.teal,borderWidth:ptType==='bar'?0:2,borderRadius:ptType==='bar'?4:0,tension:0.4,fill:ptType==='line',pointRadius:ptType==='line'?3:0},
+{label:'Fusion',data:pPeriods.map(function(k){return byPeriod2[k].fusion}),backgroundColor:ptType==='bar'?COLORS.purple:COLORS.purpleA,borderColor:COLORS.purple,borderWidth:ptType==='bar'?0:2,borderRadius:ptType==='bar'?4:0,tension:0.4,fill:ptType==='line',pointRadius:ptType==='line'?3:0}]},
 options:{responsive:true,plugins:{legend:{labels:{boxWidth:10,font:{size:11}}}},scales:{x:{stacked:ptType==='bar'},y:{stacked:ptType==='bar',beginAtZero:true}}}
 });
 
@@ -1370,12 +1394,29 @@ options:{responsive:true,plugins:{legend:{position:'bottom',labels:{padding:12,b
 });
 
 // === Academy vs Fusion Revenue by Month ===
+// Platform revenue with time range
+var platByPeriod={};
+p.filter(function(x){return x.purchased_at}).forEach(function(x){
+var d=new Date(x.purchased_at);var k;
+if(trng==='day')k=d.toISOString().slice(0,10);
+else if(trng==='week'){var ws=new Date(d);ws.setDate(d.getDate()-d.getDay());k=ws.toISOString().slice(0,10)}
+else k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+if(!platByPeriod[k])platByPeriod[k]={academy:0,fusion:0};
+var amt=(x.amount_paid&&x.amount_paid>0)?x.amount_paid:(PP[x.product_id]||0);
+if(isAcademyProduct(x.product_id))platByPeriod[k].academy+=amt;
+if(isFusionProduct(x.product_id))platByPeriod[k].fusion+=amt;
+});
+var platPeriods=Object.keys(platByPeriod).sort();
 var prType=chartModes['chart-platform-rev']||'bar';
+var platLabels=platPeriods.map(function(k){
+if(trng==='day'||trng==='week')return new Date(k).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+var p2=k.split('-');return new Date(p2[0],p2[1]-1).toLocaleDateString('en-US',{month:'short',year:'2-digit'});
+});
 destroyQPChart('chart-platform-rev');
 qpCharts['chart-platform-rev']=new Chart(document.getElementById('chart-platform-rev'),{
-type:prType,data:{labels:sm.map(function(m){var p2=m.split('-');return new Date(p2[0],p2[1]-1).toLocaleDateString('en-US',{month:'short',year:'2-digit'})}),
-datasets:[{label:'Academy',data:sm.map(function(m){return revByMonth[m].academy}),backgroundColor:prType==='bar'?COLORS.teal:COLORS.tealA,borderColor:COLORS.teal,borderWidth:prType==='bar'?0:2,borderRadius:prType==='bar'?4:0,tension:0.4,fill:prType==='line',pointRadius:prType==='line'?3:0},
-{label:'Fusion',data:sm.map(function(m){return revByMonth[m].fusion}),backgroundColor:prType==='bar'?COLORS.purple:COLORS.purpleA,borderColor:COLORS.purple,borderWidth:prType==='bar'?0:2,borderRadius:prType==='bar'?4:0,tension:0.4,fill:prType==='line',pointRadius:prType==='line'?3:0}]},
+type:prType,data:{labels:platLabels,
+datasets:[{label:'Academy',data:platPeriods.map(function(k){return platByPeriod[k].academy}),backgroundColor:prType==='bar'?COLORS.teal:COLORS.tealA,borderColor:COLORS.teal,borderWidth:prType==='bar'?0:2,borderRadius:prType==='bar'?4:0,tension:0.4,fill:prType==='line',pointRadius:prType==='line'?3:0},
+{label:'Fusion',data:platPeriods.map(function(k){return platByPeriod[k].fusion}),backgroundColor:prType==='bar'?COLORS.purple:COLORS.purpleA,borderColor:COLORS.purple,borderWidth:prType==='bar'?0:2,borderRadius:prType==='bar'?4:0,tension:0.4,fill:prType==='line',pointRadius:prType==='line'?3:0}]},
 options:{responsive:true,plugins:{legend:{labels:{boxWidth:10,font:{size:11}}}},scales:{y:{beginAtZero:true,ticks:{callback:function(v){return '$'+v}}}}}
 });
 
@@ -1414,7 +1455,7 @@ var refPurch=p.filter(function(x){return x.referral_code_used}).length;
 var withCredits=r.filter(function(x){return(x.credit_balance||0)>0}).length;
 var topRef=r.slice().sort(function(a,b){return(b.successful_referrals||0)-(a.successful_referrals||0)})[0];
 var thisMonth=new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0');
-var thisMonthRev=0;p.filter(function(x){return x.purchased_at&&x.amount_paid>0}).forEach(function(x){var d=new Date(x.purchased_at);var k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');if(k===thisMonth)thisMonthRev+=x.amount_paid});
+var thisMonthRev=0;p.filter(function(x){return x.purchased_at&&x.amount_paid>0}).forEach(function(x){var d=new Date(x.purchased_at);var k2=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');if(k2===thisMonth)thisMonthRev+=x.amount_paid});
 
 document.getElementById('analytics-key-metrics').innerHTML='<div class="analytics-kpi-grid">'
 +'<div class="kpi-item"><div class="kpi-val" style="color:var(--success)">$'+totalRev.toLocaleString()+'</div><div class="kpi-lbl">Lifetime Revenue</div></div>'
