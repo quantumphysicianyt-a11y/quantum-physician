@@ -392,13 +392,21 @@
 <div class="stats-grid" id="analytics-stats"></div>
 
 <!-- Global Time Range (sticky) -->
-<div id="analytics-time-bar" style="display:flex;justify-content:flex-end;align-items:center;gap:8px;position:sticky;top:60px;z-index:40;background:var(--navy);border-bottom:1px solid var(--border);margin:0 0 16px;padding:10px 8px">
+<div id="analytics-time-bar" style="display:flex;justify-content:space-between;align-items:center;gap:8px;position:sticky;top:60px;z-index:40;background:var(--navy);border-bottom:1px solid var(--border);margin:0 0 16px;padding:10px 8px;flex-wrap:wrap">
+<div style="display:flex;gap:4px">
+<button class="btn btn-ghost btn-sm" onclick="document.getElementById('analytics-chart-grid').scrollIntoView({behavior:'smooth',block:'start'})" style="font-size:11px;gap:4px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Charts</button>
+<button class="btn btn-ghost btn-sm" onclick="document.getElementById('analytics-key-metrics').scrollIntoView({behavior:'smooth',block:'start'})" style="font-size:11px">Key Metrics</button>
+<button class="btn btn-ghost btn-sm" onclick="document.getElementById('analytics-reports-card').scrollIntoView({behavior:'smooth',block:'start'})" style="font-size:11px;gap:4px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Reports</button>
+<button class="btn btn-ghost btn-sm" onclick="document.getElementById('analytics-query-card').scrollIntoView({behavior:'smooth',block:'start'})" style="font-size:11px;gap:4px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>Custom Query</button>
+</div>
+<div style="display:flex;align-items:center;gap:8px">
 <span style="font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim)">Time Range</span>
 <div style="display:flex;gap:3px">
 <button class="btn btn-ghost btn-sm trng" onclick="setTimeRange('day',this)">Day</button>
 <button class="btn btn-ghost btn-sm trng" onclick="setTimeRange('week',this)">Week</button>
 <button class="btn btn-ghost btn-sm trng active" onclick="setTimeRange('month',this)">Month</button>
 <button class="btn btn-ghost btn-sm trng" onclick="setTimeRange('all',this)">All Time</button>
+</div>
 </div>
 </div>
 
@@ -436,7 +444,7 @@
 <div class="card"><div class="card-header"><div class="card-title">Key Metrics</div></div><div class="card-body" id="analytics-key-metrics"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div>
 
 <!-- Reports -->
-<div class="card" style="margin-top:20px"><div class="card-header"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Reports</div><span style="font-size:11px;color:var(--text-dim)">Download as CSV for spreadsheets & printing</span></div>
+<div class="card" id="analytics-reports-card" style="margin-top:20px"><div class="card-header"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Reports</div><span style="font-size:11px;color:var(--text-dim)">Download as CSV for spreadsheets & printing</span></div>
 <div class="card-body"><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">
 <button class="btn btn-ghost" onclick="generateReport('revenue')" style="justify-content:flex-start;padding:14px 16px"><svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" style="width:18px;height:18px;flex-shrink:0"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><div style="text-align:left"><div style="font-weight:600;font-size:12px;color:var(--text)">Revenue Summary</div><div style="font-size:10px;color:var(--text-dim);margin-top:2px">All purchases with totals</div></div></button>
 <button class="btn btn-ghost" onclick="generateReport('customers')" style="justify-content:flex-start;padding:14px 16px"><svg viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2" style="width:18px;height:18px;flex-shrink:0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><div style="text-align:left"><div style="font-weight:600;font-size:12px;color:var(--text)">Customer Report</div><div style="font-size:10px;color:var(--text-dim);margin-top:2px">All customers with products & spend</div></div></button>
@@ -447,7 +455,7 @@
 </div></div></div>
 
 <!-- Custom Analytics Query Builder -->
-<div class="card" style="margin-top:20px"><div class="card-header"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>Custom Analytics Query</div></div>
+<div class="card" id="analytics-query-card" style="margin-top:20px"><div class="card-header"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>Custom Analytics Query</div></div>
 <div class="card-body">
 <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">Build custom queries to explore your data. Select a data source, choose what to measure, and optionally filter and group.</p>
 <div class="form-row">
