@@ -62,6 +62,9 @@
 
 .chart-sw{padding:4px 10px !important;font-size:10px !important}
 .chart-sw.active{background:var(--teal-soft) !important;color:var(--teal) !important;border-color:var(--teal) !important}
+.trng{padding:5px 12px !important;font-size:10px !important;letter-spacing:.04em}
+.trng.active{background:var(--teal-soft) !important;color:var(--teal) !important;border-color:var(--teal) !important}
+
 .analytics-kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
 .kpi-item{background:rgba(0,0,0,.15);border:1px solid rgba(255,255,255,.04);border-radius:10px;padding:14px 16px;text-align:center}
 .kpi-val{font-family:"Playfair Display",serif;font-size:20px;font-weight:700;line-height:1.2}
@@ -383,9 +386,19 @@
 <div class="page" id="page-analytics">
 <div class="stats-grid" id="analytics-stats"></div>
 
+<!-- Global Time Range -->
+<div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-bottom:16px;padding:0 4px">
+<span style="font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim)">Time Range</span>
+<div style="display:flex;gap:3px">
+<button class="btn btn-ghost btn-sm trng" onclick="setTimeRange('day',this)">Day</button>
+<button class="btn btn-ghost btn-sm trng" onclick="setTimeRange('week',this)">Week</button>
+<button class="btn btn-ghost btn-sm trng active" onclick="setTimeRange('month',this)">Month</button>
+</div>
+</div>
+
 <!-- Overview Charts (always visible) -->
 <div class="grid-2" style="margin-bottom:20px">
-<div class="card"><div class="card-header"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Revenue Over Time</div><div style="display:flex;gap:4px;align-items:center"><div style="display:flex;gap:3px;margin-right:8px"><button class="btn btn-ghost btn-sm chart-sw trng active" onclick="setTimeRange('month',this)">Month</button><button class="btn btn-ghost btn-sm chart-sw trng" onclick="setTimeRange('week',this)">Week</button><button class="btn btn-ghost btn-sm chart-sw trng" onclick="setTimeRange('day',this)">Day</button></div><button class="btn btn-ghost btn-sm chart-sw active" onclick="switchQPChart('chart-rev-time','line',this)">Line</button><button class="btn btn-ghost btn-sm chart-sw" onclick="switchQPChart('chart-rev-time','bar',this)">Bar</button></div></div><div class="card-body"><canvas id="chart-rev-time" height="200"></canvas></div></div>
+<div class="card"><div class="card-header"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Revenue Over Time</div><div style="display:flex;gap:4px"><button class="btn btn-ghost btn-sm chart-sw active" onclick="switchQPChart('chart-rev-time','line',this)">Line</button><button class="btn btn-ghost btn-sm chart-sw" onclick="switchQPChart('chart-rev-time','bar',this)">Bar</button></div></div><div class="card-body"><canvas id="chart-rev-time" height="200"></canvas></div></div>
 <div class="card"><div class="card-header"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>Product Mix</div></div><div class="card-body"><canvas id="chart-product-mix" height="200"></canvas></div></div>
 </div>
 
@@ -1319,7 +1332,7 @@ var p2=k.split('-');return new Date(p2[0],p2[1]-1).toLocaleDateString('en-US',{m
 destroyQPChart('chart-rev-time');
 qpCharts['chart-rev-time']=new Chart(document.getElementById('chart-rev-time'),{
 type:revType,data:{labels:periodLabels,
-datasets:[{label:trng.charAt(0).toUpperCase()+trng.slice(1)+'ly Revenue',data:periods.map(function(k){return revByPeriod[k]}),borderColor:COLORS.teal,backgroundColor:revType==='bar'?COLORS.teal:COLORS.tealA,fill:revType==='line',tension:0.4,pointRadius:revType==='line'?3:0,borderWidth:revType==='bar'?0:2,borderRadius:revType==='bar'?6:0},
+datasets:[{label:trng==='day'?'Daily Revenue':trng.charAt(0).toUpperCase()+trng.slice(1)+'ly Revenue',data:periods.map(function(k){return revByPeriod[k]}),borderColor:COLORS.teal,backgroundColor:revType==='bar'?COLORS.teal:COLORS.tealA,fill:revType==='line',tension:0.4,pointRadius:revType==='line'?3:0,borderWidth:revType==='bar'?0:2,borderRadius:revType==='bar'?6:0},
 {label:'Cumulative',data:cumData,backgroundColor:COLORS.purpleA,borderColor:COLORS.purple,borderWidth:revType==='bar'?0:2,borderRadius:revType==='bar'?4:0,fill:revType==='line',tension:0.4,pointRadius:revType==='line'?3:0,yAxisID:'y1'}]},
 options:{responsive:true,plugins:{legend:{labels:{boxWidth:10,font:{size:11}}}},scales:{y:{beginAtZero:true,ticks:{callback:function(v){return '$'+v}}},y1:{position:'right',grid:{drawOnChartArea:false},beginAtZero:true,ticks:{callback:function(v){return '$'+v}}}}}
 });
@@ -1439,23 +1452,40 @@ options:{responsive:true,plugins:{legend:{labels:{boxWidth:10,font:{size:11}}}},
 // === Campaign Performance Charts ===
 if(campaigns.length>0){
 document.getElementById('no-campaigns-msg').style.display='none';
-var recent=campaigns.slice(0,8).reverse();
-var campLabels=recent.map(function(c){var d=c.sent_at?new Date(c.sent_at):null;return d?(d.getMonth()+1)+'/'+d.getDate():'?'});
+// Group campaigns by time range
+var campByPeriod={};
+campaigns.filter(function(c){return c.sent_at}).forEach(function(c){
+var d=new Date(c.sent_at);var k;
+if(trng==='day')k=d.toISOString().slice(0,10);
+else if(trng==='week'){var ws=new Date(d);ws.setDate(d.getDate()-d.getDay());k=ws.toISOString().slice(0,10)}
+else k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+if(!campByPeriod[k])campByPeriod[k]={sent:0,opens:0,clicks:0,conversions:0,count:0};
+campByPeriod[k].sent+=(c.sent_count||0);
+campByPeriod[k].opens+=(c.open_count||0);
+campByPeriod[k].clicks+=(c.click_count||0);
+campByPeriod[k].conversions+=(c.conversion_count||0);
+campByPeriod[k].count++;
+});
+var campPeriods=Object.keys(campByPeriod).sort().slice(-12);
+var campLabels=campPeriods.map(function(k){
+if(trng==='day'||trng==='week')return new Date(k).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+var p2=k.split('-');return new Date(p2[0],p2[1]-1).toLocaleDateString('en-US',{month:'short',year:'2-digit'});
+});
 destroyQPChart('chart-camp-overview');
 qpCharts['chart-camp-overview']=new Chart(document.getElementById('chart-camp-overview'),{
 type:'bar',data:{labels:campLabels,
-datasets:[{label:'Sent',data:recent.map(function(c){return c.sent_count||0}),backgroundColor:COLORS.tealA,borderRadius:4},
-{label:'Opens',data:recent.map(function(c){return c.open_count||0}),backgroundColor:COLORS.purpleA,borderRadius:4},
-{label:'Clicks',data:recent.map(function(c){return c.click_count||0}),backgroundColor:COLORS.warningA,borderRadius:4},
-{label:'Conversions',data:recent.map(function(c){return c.conversion_count||0}),backgroundColor:COLORS.successA,borderRadius:4}]},
+datasets:[{label:'Sent',data:campPeriods.map(function(k){return campByPeriod[k].sent}),backgroundColor:COLORS.teal,borderRadius:4},
+{label:'Opens',data:campPeriods.map(function(k){return campByPeriod[k].opens}),backgroundColor:COLORS.purple,borderRadius:4},
+{label:'Clicks',data:campPeriods.map(function(k){return campByPeriod[k].clicks}),backgroundColor:COLORS.warning,borderRadius:4},
+{label:'Conversions',data:campPeriods.map(function(k){return campByPeriod[k].conversions}),backgroundColor:COLORS.success,borderRadius:4}]},
 options:{responsive:true,plugins:{legend:{labels:{boxWidth:10,font:{size:11}}}},scales:{y:{beginAtZero:true}}}
 });
 destroyQPChart('chart-camp-rates');
 qpCharts['chart-camp-rates']=new Chart(document.getElementById('chart-camp-rates'),{
 type:'bar',data:{labels:campLabels,
-datasets:[{label:'Open %',data:recent.map(function(c){return c.sent_count>0?((c.open_count/c.sent_count)*100).toFixed(1):0}),backgroundColor:COLORS.purpleA,borderRadius:4},
-{label:'Click %',data:recent.map(function(c){return c.open_count>0?((c.click_count/c.open_count)*100).toFixed(1):0}),backgroundColor:COLORS.warningA,borderRadius:4},
-{label:'Conv %',data:recent.map(function(c){return c.click_count>0?((c.conversion_count/c.click_count)*100).toFixed(1):0}),backgroundColor:COLORS.successA,borderRadius:4}]},
+datasets:[{label:'Open %',data:campPeriods.map(function(k){var d=campByPeriod[k];return d.sent>0?((d.opens/d.sent)*100).toFixed(1):0}),backgroundColor:COLORS.purple,borderRadius:4},
+{label:'Click %',data:campPeriods.map(function(k){var d=campByPeriod[k];return d.opens>0?((d.clicks/d.opens)*100).toFixed(1):0}),backgroundColor:COLORS.warning,borderRadius:4},
+{label:'Conv %',data:campPeriods.map(function(k){var d=campByPeriod[k];return d.clicks>0?((d.conversions/d.clicks)*100).toFixed(1):0}),backgroundColor:COLORS.success,borderRadius:4}]},
 options:{responsive:true,plugins:{legend:{labels:{boxWidth:10,font:{size:11}}}},scales:{y:{beginAtZero:true,ticks:{callback:function(v){return v+'%'}}}}}
 });
 }else{
