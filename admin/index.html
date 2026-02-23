@@ -21,7 +21,12 @@
 .page{display:none;padding:32px 36px 80px}.page.active{display:block}.page-header{margin-bottom:24px}.page-header h1{font-family:"Playfair Display",serif;font-size:28px;font-weight:600;background:linear-gradient(135deg,var(--text),var(--teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:fadeIn .6s ease}.page-header p{font-size:13px;color:var(--text-muted);margin-top:4px}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}@keyframes spin{to{transform:rotate(360deg)}}
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:24px}.stat-card{background:var(--navy-card);border:1px solid var(--border);border-radius:10px;padding:16px 18px;display:flex;align-items:center;gap:12px;transition:all .25s;animation:fadeUp .5s ease both}.stat-card:nth-child(1){animation-delay:.05s}.stat-card:nth-child(2){animation-delay:.1s}.stat-card:nth-child(3){animation-delay:.15s}.stat-card:nth-child(4){animation-delay:.2s}.stat-card:hover{border-color:var(--border-hover);transform:translateY(-2px)}.stat-ico{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}.stat-ico svg{width:18px;height:18px}.stat-ico.teal{background:var(--teal-soft)}.stat-ico.teal svg{stroke:var(--teal)}.stat-ico.warm{background:var(--taupe-soft)}.stat-ico.warm svg{stroke:var(--taupe)}.stat-ico.purple{background:var(--purple-soft)}.stat-ico.purple svg{stroke:var(--purple)}.stat-ico.green{background:var(--success-soft)}.stat-ico.green svg{stroke:var(--success)}.stat-val{font-family:"Playfair Display",serif;font-size:22px;font-weight:700;line-height:1}.stat-lbl{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
-.card{background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;animation:fadeUp .5s ease both}.card-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.card-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);display:flex;align-items:center;gap:8px}.card-title svg{width:14px;height:14px;stroke:var(--teal)}.card-body{padding:20px}.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}@media(max-width:1200px){.grid-3{grid-template-columns:1fr 1fr}}@media(max-width:900px){.grid-2{grid-template-columns:1fr}.grid-3{grid-template-columns:1fr}}.chart-card{transition:all .3s ease}.chart-card .card-body{padding:12px 16px}.chart-card .card-body canvas{max-height:180px}.chart-card.expanded .card-body canvas{max-height:400px}.chart-card.expanded{grid-column:1/-1}.chart-expand-btn{cursor:pointer;font-size:10px;padding:3px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);background:none;color:var(--text-dim);transition:all .15s}.chart-expand-btn:hover{color:var(--teal);border-color:var(--teal)}
+.card{background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;animation:fadeUp .5s ease both}.card-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.card-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);display:flex;align-items:center;gap:8px}.card-title svg{width:14px;height:14px;stroke:var(--teal)}.card-body{padding:20px}.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}@media(max-width:1200px){.grid-3{grid-template-columns:1fr 1fr}}@media(max-width:900px){.grid-2{grid-template-columns:1fr}.grid-3{grid-template-columns:1fr}}.chart-card{transition:all .3s ease}.chart-card .card-body{padding:12px 16px}.chart-card .card-body canvas{max-height:180px}
+.chart-popout-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:10000;display:flex;align-items:center;justify-content:center;padding:24px;animation:fadeIn .2s ease}
+.chart-popout-box{background:var(--navy-card);border:1px solid var(--border);border-radius:16px;width:95%;max-width:900px;max-height:85vh;padding:24px;position:relative;box-shadow:0 24px 80px rgba(0,0,0,.5)}
+.chart-popout-box canvas{max-height:60vh!important}
+.chart-popout-close{position:absolute;top:14px;right:14px;background:rgba(91,168,178,.08);border:1px solid rgba(91,168,178,.2);color:#5ba8b2;font-size:20px;cursor:pointer;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all .2s;line-height:1;padding:0}
+.chart-popout-close:hover{background:rgba(91,168,178,.15);border-color:#5ba8b2;color:#4acfd9}.chart-expand-btn{cursor:pointer;font-size:10px;padding:3px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);background:none;color:var(--text-dim);transition:all .15s}.chart-expand-btn:hover{color:var(--teal);border-color:var(--teal)}
 .tbl{width:100%;border-collapse:collapse}.tbl th{text-align:left;font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);padding:10px 14px;border-bottom:1px solid var(--border)}.tbl td{padding:11px 14px;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px;color:var(--text-muted)}.tbl tr:last-child td{border-bottom:none}.tbl tr:hover td{background:rgba(255,255,255,.015)}.tbl .email{color:var(--teal);font-weight:500}.tbl .name{color:var(--text)}.tbl .mono{font-family:monospace;font-size:12px;color:var(--text-dim)}
 .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:9px;font-weight:600;letter-spacing:.03em;text-transform:uppercase}.badge.teal{background:var(--teal-soft);color:var(--teal)}.badge.green{background:var(--success-soft);color:var(--success)}.badge.taupe{background:var(--taupe-soft);color:var(--taupe)}.badge.purple{background:var(--purple-soft);color:var(--purple)}.badge.danger{background:var(--danger-soft);color:var(--danger)}.badge.muted{background:rgba(255,255,255,.05);color:var(--text-dim)}.badge.yellow{background:var(--warning-soft);color:var(--warning)}
 .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--radius-sm);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;border:1px solid transparent;font-family:'Inter',sans-serif;letter-spacing:.02em}.btn-primary{background:linear-gradient(135deg,var(--teal),var(--teal-light));color:#fff;border-color:var(--teal);box-shadow:0 2px 8px rgba(91,168,178,.2)}.btn-primary:hover{box-shadow:0 4px 16px rgba(91,168,178,.4);transform:translateY(-1px)}.btn-ghost{background:transparent;color:var(--text-muted);border-color:var(--border)}.btn-ghost:hover{background:rgba(255,255,255,.03);color:var(--text);border-color:var(--border-hover)}.btn-danger{background:var(--danger-soft);color:var(--danger);border-color:rgba(239,83,80,.2)}.btn-danger:hover{background:rgba(239,83,80,.15)}.btn-success{background:var(--success-soft);color:var(--success);border-color:rgba(61,214,140,.2)}.btn-success:hover{background:rgba(61,214,140,.15)}.btn-sm{padding:5px 10px;font-size:10px}
@@ -416,7 +421,7 @@
 
 <div class="card chart-card"><div class="card-header"><div class="card-title">Academy vs Fusion</div><div style="display:flex;gap:4px;align-items:center"><button class="btn btn-ghost btn-sm chart-sw active" onclick="switchQPChart('chart-platform-rev','bar',this)">Bar</button><button class="btn btn-ghost btn-sm chart-sw" onclick="switchQPChart('chart-platform-rev','line',this)">Line</button><button class="chart-expand-btn" onclick="toggleChartExpand(this)" title="Expand">⤢</button></div></div><div class="card-body"><canvas id="chart-platform-rev"></canvas></div></div>
 
-<div class="card chart-card" style="grid-column:1/-1"><div class="card-header"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Campaign Performance</div><div style="display:flex;gap:4px;align-items:center"><button class="chart-expand-btn" onclick="toggleChartExpand(this)" title="Expand">⤢</button></div></div>
+<div class="card chart-card" style="grid-column:1/-1"><div class="card-header"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Campaign Performance</div></div>
 <div class="card-body">
 <div id="campaign-charts-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
 <div><div style="font-size:11px;font-weight:600;color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em">Send / Open / Click / Convert</div><canvas id="chart-camp-overview" height="180"></canvas></div>
@@ -2010,19 +2015,54 @@ showToast('Preset "'+name+'" removed','info');
 function toggleChartExpand(btn){
 var card=btn.closest('.chart-card');
 if(!card)return;
-var isExpanded=card.classList.contains('expanded');
-card.classList.toggle('expanded');
-btn.textContent=isExpanded?'⤢':'⤡';
-btn.title=isExpanded?'Expand':'Collapse';
-// Resize chart canvas after expand/collapse
-setTimeout(function(){
+var title=card.querySelector('.card-title');
+var titleText=title?title.textContent.trim():'Chart';
 var canvas=card.querySelector('canvas');
-if(canvas){
-var id=canvas.id;
-var chart=qpCharts[id];
-if(chart)chart.resize();
-}
-},350);
+if(!canvas)return;
+var chartId=canvas.id;
+var chart=qpCharts[chartId];
+if(!chart)return;
+
+// Create overlay
+var overlay=document.createElement('div');
+overlay.className='chart-popout-overlay';
+overlay.onclick=function(e){if(e.target===overlay){overlay.remove()}};
+
+var box=document.createElement('div');
+box.className='chart-popout-box';
+
+// Close button
+var closeBtn=document.createElement('button');
+closeBtn.className='chart-popout-close';
+closeBtn.innerHTML='&times;';
+closeBtn.onclick=function(){overlay.remove()};
+box.appendChild(closeBtn);
+
+// Title
+var h=document.createElement('div');
+h.style.cssText='font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:16px;padding-right:40px';
+h.textContent=titleText;
+box.appendChild(h);
+
+// Clone chart into new canvas
+var wrap=document.createElement('div');
+wrap.style.cssText='position:relative;width:100%';
+var newCanvas=document.createElement('canvas');
+newCanvas.id='popout-chart-canvas';
+wrap.appendChild(newCanvas);
+box.appendChild(wrap);
+
+overlay.appendChild(box);
+document.body.appendChild(overlay);
+
+// Recreate chart in popout with same config but bigger
+var cfg=chart.config;
+new Chart(newCanvas,{
+type:cfg.type,
+data:JSON.parse(JSON.stringify(cfg.data)),
+options:Object.assign({},JSON.parse(JSON.stringify(cfg.options)),{responsive:true,maintainAspectRatio:false})
+});
+newCanvas.style.maxHeight='60vh';
 }
 
 </script>
