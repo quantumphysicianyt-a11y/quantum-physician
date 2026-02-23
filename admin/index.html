@@ -502,7 +502,9 @@
 <div style="display:flex;gap:10px;margin-bottom:16px">
 <button class="btn btn-primary" onclick="runCustomQuery()">Run Query</button>
 <button class="btn btn-ghost" onclick="clearCustomQuery()">Clear</button>
+<button class="btn btn-ghost" onclick="saveQueryPreset()" style="margin-left:auto">💾 Save Preset</button>
 </div>
+<div id="caq-presets" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px"></div>
 <div id="caq-result" style="display:none">
 <div style="max-height:320px;position:relative"><canvas id="caq-chart" style="margin-bottom:16px"></canvas></div>
 <div id="caq-table" style="max-height:300px;overflow-y:auto"></div>
@@ -1284,7 +1286,7 @@ else btn.classList.remove('active');
 function isAcademyProduct(pid){return pid&&(pid.startsWith('qa-')||['quantum-vision-boards','becoming-present','breaking-up-with-your-beliefs','creative-mind-mapping','power-of-the-question','transformational-mastery'].indexOf(pid)!==-1)}
 function isFusionProduct(pid){return pid&&(pid.startsWith('session-')||pid==='bundle-all')}
 
-function loadAnalyticsPage(){
+function loadAnalyticsPage(){renderQueryPresets();
 if(!dataLoaded)return;
 var p=purchasesData,r=referralData,cr=creditHistory,prof=profilesData;
 var totalRev=p.reduce(function(s,x){return s+(Number(x.amount_paid)||0)},0);
@@ -1953,6 +1955,67 @@ document.getElementById('caq-result').style.display='none';
 document.getElementById('caq-empty').style.display='none';
 destroyQPChart('caq-chart');
 document.getElementById('caq-table').innerHTML='';
+}
+
+
+// ============================================================
+// CUSTOM QUERY PRESETS
+// ============================================================
+function getQueryPresets(){return JSON.parse(localStorage.getItem('caq-presets')||'[]')}
+function saveQueryPresets(list){localStorage.setItem('caq-presets',JSON.stringify(list))}
+
+function renderQueryPresets(){
+var presets=getQueryPresets();
+var container=document.getElementById('caq-presets');
+if(!container)return;
+if(!presets.length){container.innerHTML='';return}
+container.innerHTML=presets.map(function(p,i){
+return '<button class="btn btn-ghost btn-sm" style="font-size:11px;border-color:var(--teal);color:var(--teal)" onclick="loadQueryPreset('+i+')" title="'+esc(p.source+' → '+p.measure+' by '+p.group)+'">'+esc(p.name)+'</button>'
++'<button class="btn btn-ghost btn-sm" style="font-size:9px;padding:2px 5px;color:var(--text-dim);border-color:var(--border)" onclick="deleteQueryPreset('+i+')" title="Remove">✕</button>';
+}).join(' ');
+}
+
+function saveQueryPreset(){
+var source=document.getElementById('caq-source').value;
+var measure=document.getElementById('caq-measure').value;
+var group=document.getElementById('caq-group').value;
+var filterField=document.getElementById('caq-filter-field').value;
+var filterVal=document.getElementById('caq-filter-val').value;
+var chartType=document.getElementById('caq-chart-type').value;
+var measureLabel=document.getElementById('caq-measure').options[document.getElementById('caq-measure').selectedIndex].text;
+var sourceLabel=document.getElementById('caq-source').options[document.getElementById('caq-source').selectedIndex].text;
+var defaultName=sourceLabel+': '+measureLabel;
+var name=prompt('Name this preset:',defaultName);
+if(!name)return;
+var presets=getQueryPresets();
+presets.push({name:name,source:source,measure:measure,group:group,filterField:filterField,filterVal:filterVal,chartType:chartType});
+saveQueryPresets(presets);
+renderQueryPresets();
+showToast('Preset "'+name+'" saved','success');
+}
+
+function loadQueryPreset(idx){
+var presets=getQueryPresets();
+var p=presets[idx];if(!p)return;
+document.getElementById('caq-source').value=p.source;
+updateCaqFields();
+setTimeout(function(){
+document.getElementById('caq-measure').value=p.measure;
+document.getElementById('caq-group').value=p.group;
+document.getElementById('caq-filter-field').value=p.filterField||'none';
+document.getElementById('caq-filter-val').value=p.filterVal||'';
+document.getElementById('caq-chart-type').value=p.chartType||'bar';
+runCustomQuery();
+},50);
+}
+
+function deleteQueryPreset(idx){
+var presets=getQueryPresets();
+var name=presets[idx]?presets[idx].name:'';
+presets.splice(idx,1);
+saveQueryPresets(presets);
+renderQueryPresets();
+showToast('Preset "'+name+'" removed','info');
 }
 
 </script>
