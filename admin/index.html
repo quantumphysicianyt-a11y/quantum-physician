@@ -685,21 +685,159 @@ var sgDismissed=JSON.parse(localStorage.getItem('qp_sg_dismissed')||'[]');
 var sgActiveFilter='all';
 
 function sgSetupEmail(opts){
-go('email',document.querySelector('[onclick*="email"]'));
-setTimeout(function(){
+/* Build self-contained email compose modal - appended to document.body */
+var old=document.getElementById('sg-email-modal');if(old)old.remove();
+var recipients=[];
+if(opts.customEmails){
+var emailList=opts.customEmails.split('\n').filter(function(e){return e.trim()});
+emailList.forEach(function(email){
+var e=email.trim().toLowerCase();
+var prof=profilesData.find(function(p){return p.email&&p.email.toLowerCase()===e});
+var ref=referralData.find(function(r){return r.email&&r.email.toLowerCase()===e});
+recipients.push({email:e,name:prof?prof.full_name||'':'',referral_code:ref?ref.code||''})});
+}
+window._sgRecipients=recipients;
+window._sgOpts=opts;
+
+var ov=document.createElement('div');ov.id='sg-email-modal';
+ov.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';
+ov.onclick=function(e){if(e.target===ov)ov.remove()};
+
+var box=document.createElement('div');
+box.style.cssText='background:var(--navy-card,#112a42);border:1px solid rgba(91,168,178,.25);border-radius:16px;padding:28px;width:95%;max-width:720px;max-height:90vh;overflow-y:auto;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.5)';
+
+var promoOpts='';
+promotionsData.filter(function(p){return p.status==='active'}).forEach(function(p){
+var sel=opts.promoCode&&(p.code===opts.promoCode)?' selected':'';
+promoOpts+='<option value="'+p.code+'"'+sel+'>'+p.code+' — '+(p.name||p.discount_type+' '+p.discount_value)+'</option>'});
+
+box.innerHTML='<button onclick="document.getElementById(\'sg-email-modal\').remove()" style="position:absolute;top:14px;right:14px;background:rgba(91,168,178,.1);border:1px solid rgba(91,168,178,.25);color:#5ba8b2;font-size:18px;cursor:pointer;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;padding:0">&times;</button>'
++'<h3 style="margin:0 0 6px;font-size:17px;color:var(--text,#e8e8e8)">Compose Email</h3>'
++'<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;font-size:12px;color:var(--text-muted,#8899aa)">Sending to <span style="color:var(--teal,#5ba8b2);font-weight:600">'+recipients.length+'</span> recipient'+(recipients.length!==1?'s':'')+'<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 10px" onclick="document.getElementById(\'sg-recipient-list\').style.display=document.getElementById(\'sg-recipient-list\').style.display===\'block\'?\'none\':\'block\'">View List</button></div>'
++'<div id="sg-recipient-list" style="display:none;background:rgba(0,0,0,.2);border:1px solid var(--border,#1e3a5f);border-radius:8px;padding:10px;margin-bottom:14px;max-height:120px;overflow-y:auto;font-size:11px;color:var(--text-dim,#667788)">'+recipients.map(function(r){return r.email+(r.name?' ('+r.name+')':'')}).join('<br>')+'</div>'
++'<div style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;color:var(--text-muted,#8899aa);margin-bottom:4px;display:block">Subject</label><input type="text" id="sg-subject" class="input" value="'+(opts.subject||'').replace(/"/g,'&quot;')+'" style="width:100%"></div>'
++'<div style="margin-bottom:6px"><label style="font-size:12px;font-weight:600;color:var(--text-muted,#8899aa);margin-bottom:4px;display:block">Body</label>'
++'<div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">'
++'<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 8px" onclick="sgInsertVar(\'{{name}}\')">Name</button>'
++'<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 8px" onclick="sgInsertVar(\'{{email}}\')">Email</button>'
++'<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 8px" onclick="sgInsertVar(\'{{referral_code}}\')">Referral Code</button>'
++'</div>'
++'<textarea id="sg-body" class="input" rows="10" style="width:100%;font-size:13px;line-height:1.6">'+(opts.body||'')+'</textarea></div>'
++'<div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap">'
++'<div style="flex:1;min-width:140px"><label style="font-size:11px;font-weight:600;color:var(--text-muted,#8899aa);margin-bottom:4px;display:block">Brand</label><select id="sg-brand" class="input" style="width:100%;font-size:12px"><option value="fusion"'+(opts.brand==='fusion'?' selected':'')+'>Fusion (Neon)</option><option value="academy"'+(opts.brand==='academy'?' selected':'')+'>Academy (Teal)</option></select></div>'
++'<div style="flex:1;min-width:140px"><label style="font-size:11px;font-weight:600;color:var(--text-muted,#8899aa);margin-bottom:4px;display:block">From</label><select id="sg-from" class="input" style="width:100%;font-size:12px"><option value="tracey@quantumphysician.com"'+(opts.from==='tracey@quantumphysician.com'?' selected':'')+'>Dr. Tracey (Personal)</option><option value="hello@quantumphysician.com"'+(opts.from==='hello@quantumphysician.com'?' selected':'')+'>Hello (Marketing)</option></select></div>'
++'</div>'
++'<div style="background:rgba(255,215,0,.04);border:1px solid rgba(255,215,0,.15);border-radius:10px;padding:14px;margin-bottom:16px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;color:var(--warning,#ffd700)"><input type="checkbox" id="sg-discount-toggle" '+(opts.discount?'checked':'')+' onchange="document.getElementById(\'sg-discount-opts\').style.display=this.checked?\'block\':\'none\'" style="accent-color:#ffd700"> Include Discount Card</label>'
++'<div id="sg-discount-opts" style="display:'+(opts.discount?'block':'none')+';margin-top:10px"><select id="sg-promo-select" class="input" style="width:100%;font-size:12px"><option value="">Select promotion...</option>'+promoOpts+'</select></div></div>'
++'<div id="sg-preview-area" style="display:none;margin-bottom:16px"></div>'
++'<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;padding-top:8px;border-top:1px solid var(--border,#1e3a5f)">'
++'<button class="btn btn-ghost btn-sm" onclick="document.getElementById(\'sg-email-modal\').remove()">Cancel</button>'
++'<button class="btn btn-sm" style="background:var(--teal,#5ba8b2);color:#fff" onclick="sgPreview()">Preview</button>'
++'<button class="btn btn-sm" style="background:var(--warning,#ffd700);color:#000" onclick="sgTestEmail()">Send Test</button>'
++'<button class="btn btn-sm" style="background:var(--success,#2dff7a);color:#000;font-weight:600" onclick="sgSendAll()">Send to All</button>'
++'</div>';
+
+ov.appendChild(box);document.body.appendChild(ov);
+document.addEventListener('keydown',function sgEsc(e){if(e.key==='Escape'){var m=document.getElementById('sg-email-modal');if(m){m.remove();document.removeEventListener('keydown',sgEsc)}}});
+}
+
+function sgInsertVar(v){var ta=document.getElementById('sg-body');if(!ta)return;var s=ta.selectionStart,e=ta.selectionEnd,t=ta.value;ta.value=t.substring(0,s)+v+t.substring(e);ta.focus();ta.selectionStart=ta.selectionEnd=s+v.length}
+
+function sgGetDiscountConfig(){
+var tog=document.getElementById('sg-discount-toggle');
+if(!tog||!tog.checked)return null;
+var code=document.getElementById('sg-promo-select').value;
+if(!code)return null;
+var promo=promotionsData.find(function(p){return p.code===code});
+if(!promo)return null;
+return{couponId:code,percent:promo.discount_value,product:promo.applies_to||'any'};
+}
+
+function sgBuildHtml(bodyText){
+var brand=document.getElementById('sg-brand').value;
+var discCfg=sgGetDiscountConfig();
+var siteUrl=brand==='academy'?'https://academy.quantumphysician.com':'https://fusionsessions.com';
+return brand==='academy'?buildAcademyEmail(bodyText,null,siteUrl,discCfg):buildRichEmail(bodyText,null,siteUrl,discCfg);
+}
+
+function sgPreview(){
+var subject=document.getElementById('sg-subject').value;
+var body=document.getElementById('sg-body').value;
+var from=document.getElementById('sg-from').value;
+if(!subject||!body){showToast('Fill in subject and body first','error');return}
+var s=window._sgRecipients&&window._sgRecipients[0]?window._sgRecipients[0]:{email:'preview@example.com',name:'Friend',referral_code:'XXXXXX'};
+var pb=body.replace(/\{\{name\}\}/g,s.name||'Friend').replace(/\{\{email\}\}/g,s.email).replace(/\{\{referral_code\}\}/g,s.referral_code||'XXXXXX');
+var richHtml=sgBuildHtml(pb);
+if(s.referral_code)richHtml=richHtml.replace(/REFCODE/g,s.referral_code);
+var area=document.getElementById('sg-preview-area');
+area.style.display='block';
+area.innerHTML='<div style="border-top:2px solid rgba(91,168,178,.3);padding-top:14px"><div style="font-size:12px;color:var(--text-muted,#8899aa);margin-bottom:8px"><strong>From:</strong> '+from+' &nbsp; <strong>Subject:</strong> <span style="color:var(--teal,#5ba8b2)">'+esc(subject)+'</span></div><iframe id="sg-preview-iframe" style="width:100%;min-height:500px;border:none;border-radius:8px;background:#1a1a2e" srcdoc=""></iframe></div>';
+var fr=document.getElementById('sg-preview-iframe');
+fr.srcdoc=richHtml;
+setTimeout(function(){try{fr.style.height=fr.contentDocument.body.scrollHeight+20+'px'}catch(e){}},400);
+area.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+async function sgTestEmail(){
+var subject=document.getElementById('sg-subject').value;
+var body=document.getElementById('sg-body').value;
+var from=document.getElementById('sg-from').value;
+if(!subject||!body){showToast('Fill in subject and body first','error');return}
+var testAddr=prompt('Send test email to:','');
+if(!testAddr)return;
+showToast('Sending test...','info');
+var testName='Friend',testRef='TESTCODE';
 try{
-if(opts.audience){var sel=document.getElementById('email-audience');if(sel){sel.value=opts.audience;updateAudiencePreview()}}
-if(opts.customEmails){var sel=document.getElementById('email-audience');if(sel){sel.value='custom';updateAudiencePreview();setTimeout(function(){var ta=document.getElementById('custom-emails');if(ta)ta.value=opts.customEmails},100)}}
-if(opts.brand){var bs=document.getElementById('email-brand-select');if(bs)bs.value=opts.brand}
-if(opts.type){var ts=document.getElementById('email-type-select');if(ts){ts.value=opts.type;updateEmailTypeHint()}}
-if(opts.from){var fs=document.getElementById('email-from');if(fs)fs.value=opts.from}
-if(opts.subject){var s=document.getElementById('email-subject');if(s)s.value=opts.subject}
-if(opts.body){var b=document.getElementById('email-body');if(b)b.value=opts.body}
-if(opts.rich!==false){var rt=document.getElementById('rich-email-toggle');if(rt&&!rt.checked){rt.checked=true;toggleRichEmailOptions()}}
-if(opts.discount){var dt=document.getElementById('discount-toggle');if(dt&&!dt.checked){dt.checked=true;toggleDiscountConfig()}setTimeout(function(){var ps=document.getElementById('discount-promo-select');if(ps&&opts.promoCode){for(var i=0;i<ps.options.length;i++){if(ps.options[i].value===opts.promoCode||ps.options[i].text.indexOf(opts.promoCode)>=0){ps.selectedIndex=i;break}}}},200)}
-if(opts.preview){setTimeout(function(){previewEmail()},800)}
-}catch(e){console.error('sgSetupEmail error:',e)}
-},400);
+var prof=profilesData.find(function(p){return p.email&&p.email.toLowerCase()===testAddr.toLowerCase()});
+if(prof&&prof.full_name)testName=prof.full_name.split(' ')[0];
+var ref=referralData.find(function(r){return r.email&&r.email.toLowerCase()===testAddr.toLowerCase()});
+if(ref&&ref.code)testRef=ref.code;
+}catch(e){}
+var pb=body.replace(/\{\{name\}\}/g,testName).replace(/\{\{email\}\}/g,testAddr).replace(/\{\{referral_code\}\}/g,testRef);
+var richHtml=sgBuildHtml(pb);
+richHtml=richHtml.replace(/REFCODE/g,testRef);
+try{
+await fetch(APPS_SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},
+body:JSON.stringify({to:testAddr,from:from,subject:'[TEST] '+subject.replace(/\{\{name\}\}/g,testName),body:richHtml,isHtml:true})});
+showToast('Test email sent to '+testAddr+'!','success');
+logAudit('suggestion_test_email','Test to '+testAddr+': '+subject);
+}catch(e){showToast('Error: '+e.message,'error')}
+}
+
+async function sgSendAll(){
+var subject=document.getElementById('sg-subject').value;
+var body=document.getElementById('sg-body').value;
+var from=document.getElementById('sg-from').value;
+var recipients=window._sgRecipients||[];
+if(!subject||!body){showToast('Fill in subject and body first','error');return}
+if(!recipients.length){showToast('No recipients','error');return}
+if(!await qpConfirm('Send this email to '+recipients.length+' recipient'+(recipients.length>1?'s':'')+'?\n\nSubject: '+subject+'\nFrom: '+from))return;
+document.getElementById('sg-email-modal').remove();
+showToast('Sending to '+recipients.length+' recipients...','info');
+var sent=0,failed=0;
+var discCfg=sgGetDiscountConfig();
+var brand=document.getElementById('sg-brand')?document.getElementById('sg-brand').value:'fusion';
+var campName=subject;
+try{
+var {data:camp}=await sbAdmin.from('email_campaigns').insert([{campaign_type:'suggestion',campaign_name:campName,subject:subject,from_email:from,recipient_count:recipients.length,status:'sending'}]).select().single();
+var campaignId=camp?camp.id:null;
+for(var i=0;i<recipients.length;i++){
+var r=recipients[i];
+var pb=body.replace(/\{\{name\}\}/g,r.name||'Friend').replace(/\{\{email\}\}/g,r.email).replace(/\{\{referral_code\}\}/g,r.referral_code||'');
+var siteUrl=brand==='academy'?'https://academy.quantumphysician.com':'https://fusionsessions.com';
+var richHtml=brand==='academy'?buildAcademyEmail(pb,null,siteUrl,discCfg):buildRichEmail(pb,null,siteUrl,discCfg);
+if(r.referral_code)richHtml=richHtml.replace(/REFCODE/g,r.referral_code);
+try{
+await fetch(APPS_SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},
+body:JSON.stringify({to:r.email,from:from,subject:subject.replace(/\{\{name\}\}/g,r.name||'Friend'),body:richHtml,isHtml:true})});
+sent++;
+if(campaignId)await sbAdmin.from('email_tracking').insert([{campaign_id:campaignId,recipient_email:r.email,sent_at:new Date().toISOString()}]);
+}catch(e){failed++}}
+if(campaignId)await sbAdmin.from('email_campaigns').update({status:'sent',sent_count:sent,failed_count:failed}).eq('id',campaignId);
+logAudit('suggestion_send','Sent "'+subject+'" to '+sent+'/'+recipients.length);
+showToast('Sent '+sent+'/'+recipients.length+(failed?' ('+failed+' failed)':''),'success');
+await loadAllData();
+}catch(e){showToast('Error: '+e.message,'error')}
 }
 
 function generateSuggestions(){
