@@ -1041,7 +1041,7 @@ html+='</div>';
 html+='<div style="text-align:right"><div style="font-size:13px;font-weight:600">'+airDate.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'})+'</div>';
 html+='<div style="font-size:12px;color:var(--text-dim)">'+airDate.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})+'</div>';
 html+='<div style="font-size:11px;color:'+(isPast?'var(--text-dim)':'var(--teal)')+';margin-top:4px">'+(isPast?'Completed':daysUntil+' days away')+'</div>';
-html+='<button class="btn btn-ghost btn-sm" style="margin-top:6px;font-size:10px" onclick="editSessionSchedule(''+s.id+'')">✏️ Edit</button>';
+html+='<button class="btn btn-ghost btn-sm" style="margin-top:6px;font-size:10px" onclick="editSessionSchedule(\''+s.id+'\')">Edit</button>';
 html+='</div></div></div>'
 });
 container.innerHTML=html
