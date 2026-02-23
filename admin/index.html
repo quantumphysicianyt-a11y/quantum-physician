@@ -59,7 +59,15 @@
 .promo-link-box{background:rgba(0,0,0,.15);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;margin-top:10px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-size:12px;color:var(--text-muted);transition:all .15s;font-family:monospace}.promo-link-box:hover{background:rgba(91,168,178,.06);border-color:var(--teal)}
 .promo-filter-btn.active{background:var(--teal-soft);color:var(--teal);border-color:var(--teal)}
 .promo-badges{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+
+.chart-sw{padding:4px 10px !important;font-size:10px !important}
+.chart-sw.active{background:var(--teal-soft) !important;color:var(--teal) !important;border-color:var(--teal) !important}
+.analytics-kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.kpi-item{background:rgba(0,0,0,.15);border:1px solid rgba(255,255,255,.04);border-radius:10px;padding:14px 16px;text-align:center}
+.kpi-val{font-family:"Playfair Display",serif;font-size:20px;font-weight:700;line-height:1.2}
+.kpi-lbl{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-top:4px}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 </head>
 <body>
 <div class="auth-screen" id="auth-screen"><div class="auth-box"><img src="/assets/images/QP-Logo.png" alt="QP" class="auth-logo" onerror="this.style.display='none'"><div class="auth-subtitle">Practice Management</div><div class="auth-card"><h2>Admin Access</h2><p>Enter your credentials to continue</p><div class="auth-field"><label>Username</label><input type="text" id="auth-user" placeholder="Username" autocomplete="username"></div><div class="auth-field"><label>Password</label><input type="password" id="auth-pass" placeholder="Password" autocomplete="current-password" onkeypress="if(event.key==='Enter')doAuth()"></div><div class="auth-error" id="auth-error">Invalid credentials</div><button class="auth-btn" onclick="doAuth()">Sign In</button></div></div></div>
@@ -303,7 +311,7 @@
 
 <!-- Email Automation Page -->
 <div class="page" id="page-automation">
-<div class="page-header"><h1>Email Automation</h1><p>Manage scheduled emails, view send logs, and configure session reminders.</p></div>
+<div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px"><div><h1>Email Automation</h1><p>Manage scheduled emails, view send logs, and configure session reminders.</p></div><button class="btn btn-primary" onclick="createScheduledEmail()">+ Schedule Email</button></div>
 
 <!-- Automation Stats -->
 <div class="stats-grid" style="margin-bottom:24px">
@@ -372,7 +380,45 @@
 <div id="sched-preview-content" style="background:#fff;color:#333;padding:20px;border-radius:8px;max-height:60vh;overflow-y:auto"></div>
 </div></div>
 
-<div class="page" id="page-analytics"><div class="card"><div class="card-body"><div class="empty"><p>Full analytics dashboard coming in Session 7.</p></div></div></div></div>
+<div class="page" id="page-analytics">
+<div class="stats-grid" id="analytics-stats"></div>
+
+<!-- Overview Charts (always visible) -->
+<div class="grid-2" style="margin-bottom:20px">
+<div class="card"><div class="card-header"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Revenue Over Time</div><div style="display:flex;gap:4px"><button class="btn btn-ghost btn-sm chart-sw active" onclick="switchQPChart('chart-rev-time','line',this)">Line</button><button class="btn btn-ghost btn-sm chart-sw" onclick="switchQPChart('chart-rev-time','bar',this)">Bar</button></div></div><div class="card-body"><canvas id="chart-rev-time" height="200"></canvas></div></div>
+<div class="card"><div class="card-header"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>Product Mix</div></div><div class="card-body"><canvas id="chart-product-mix" height="200"></canvas></div></div>
+</div>
+
+<!-- Expandable Detail Charts -->
+<div class="grid-2" style="margin-bottom:20px">
+<div class="card"><div class="card-header"><div class="card-title">Purchase Timeline</div><div style="display:flex;gap:4px"><button class="btn btn-ghost btn-sm chart-sw active" onclick="switchQPChart('chart-purch-time','bar',this)">Bar</button><button class="btn btn-ghost btn-sm chart-sw" onclick="switchQPChart('chart-purch-time','line',this)">Line</button></div></div><div class="card-body"><canvas id="chart-purch-time" height="200"></canvas></div></div>
+<div class="card"><div class="card-header"><div class="card-title">Session Popularity</div></div><div class="card-body"><canvas id="chart-session-pop" height="200"></canvas></div></div>
+</div>
+
+<div class="grid-2" style="margin-bottom:20px">
+<div class="card"><div class="card-header"><div class="card-title">Customer Segments</div></div><div class="card-body"><canvas id="chart-cust-seg" height="200"></canvas></div></div>
+<div class="card"><div class="card-header"><div class="card-title">Referral vs Direct Revenue</div><div style="display:flex;gap:4px"><button class="btn btn-ghost btn-sm chart-sw active" onclick="switchQPChart('chart-ref-impact','bar',this)">Bar</button><button class="btn btn-ghost btn-sm chart-sw" onclick="switchQPChart('chart-ref-impact','doughnut',this)">Donut</button></div></div><div class="card-body"><canvas id="chart-ref-impact" height="200"></canvas></div></div>
+</div>
+
+<div class="grid-2" style="margin-bottom:20px">
+<div class="card"><div class="card-header"><div class="card-title">Credit Economy</div></div><div class="card-body"><canvas id="chart-credit-eco" height="200"></canvas></div></div>
+<div class="card"><div class="card-header"><div class="card-title">Academy vs Fusion Revenue</div><div style="display:flex;gap:4px"><button class="btn btn-ghost btn-sm chart-sw active" onclick="switchQPChart('chart-platform-rev','bar',this)">Bar</button><button class="btn btn-ghost btn-sm chart-sw" onclick="switchQPChart('chart-platform-rev','line',this)">Line</button></div></div><div class="card-body"><canvas id="chart-platform-rev" height="200"></canvas></div></div>
+</div>
+
+<!-- Campaign Performance -->
+<div class="card" style="margin-bottom:20px"><div class="card-header"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Campaign Performance</div><div style="display:flex;gap:4px"><button class="btn btn-ghost btn-sm" id="expand-camp-btn" onclick="toggleCampaignExpand()">Expand</button></div></div>
+<div class="card-body">
+<div id="campaign-charts-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+<div><div style="font-size:11px;font-weight:600;color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em">Send / Open / Click / Convert</div><canvas id="chart-camp-overview" height="180"></canvas></div>
+<div><div style="font-size:11px;font-weight:600;color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em">Rates (%)</div><canvas id="chart-camp-rates" height="180"></canvas></div>
+</div>
+<div id="no-campaigns-msg" style="display:none" class="empty"><p>No campaigns sent yet.</p></div>
+</div></div>
+
+<!-- Key Metrics Summary -->
+<div class="card"><div class="card-header"><div class="card-title">Key Metrics</div></div><div class="card-body" id="analytics-key-metrics"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div>
+
+</div>
 
 
 <!-- PROMOTIONS MANAGER -->
@@ -461,7 +507,7 @@ async function loadAllData(){try{var r=await Promise.all([sb.from('purchases').s
 async function loadAuthUsers(){try{var page=1,allUsers=[];while(true){var res=await fetch(SUPABASE_URL+'/auth/v1/admin/users?page='+page+'&per_page=500',{headers:{'apikey':SUPABASE_SERVICE_KEY,'Authorization':'Bearer '+SUPABASE_SERVICE_KEY}});if(!res.ok){console.warn('Auth users fetch failed:',res.status);break}var data=await res.json();var users=data.users||data||[];if(!Array.isArray(users)||!users.length)break;allUsers=allUsers.concat(users);if(users.length<500)break;page++}authUsersMap=new Map();allUsers.forEach(function(u){if(u.email)authUsersMap.set(u.email.toLowerCase(),u)})}catch(e){console.error('Auth users load error:',e)}}
 function buildCustomerList(){var map=new Map();profilesData.forEach(function(p){if(!p.email)return;var k=p.email.toLowerCase();map.set(k,{email:p.email,name:p.full_name||'',userId:p.id,hasAccount:true,isBlocked:p.is_blocked||false,createdAt:p.created_at,purchases:[],academyPurchases:[],fusionPurchases:[],hasBundle:false,hasAcademyBundle:false,creditBalance:0,referralCount:0,referralCode:'',totalEarned:0,totalSpent:0})});purchasesData.forEach(function(p){if(!p.email)return;var k=p.email.toLowerCase();if(!map.has(k))map.set(k,{email:p.email,name:'',userId:null,hasAccount:false,isBlocked:false,createdAt:p.purchased_at,purchases:[],academyPurchases:[],fusionPurchases:[],hasBundle:false,hasAcademyBundle:false,creditBalance:0,referralCount:0,referralCode:'',totalEarned:0,totalSpent:0});var c=map.get(k);if(!c.purchases.includes(p.product_id)){c.purchases.push(p.product_id);if(isFusion(p.product_id))c.fusionPurchases.push(p.product_id);if(isAcademy(p.product_id))c.academyPurchases.push(p.product_id)}if(p.product_id==='bundle-all')c.hasBundle=true;if(p.product_id==='transformational-mastery')c.hasAcademyBundle=true;c.totalSpent+=(Number(p.amount_paid)||0)});referralData.forEach(function(r){if(!r.email)return;var k=r.email.toLowerCase();if(!map.has(k))map.set(k,{email:r.email,name:'',userId:null,hasAccount:false,isBlocked:false,createdAt:null,purchases:[],academyPurchases:[],fusionPurchases:[],hasBundle:false,hasAcademyBundle:false,creditBalance:0,referralCount:0,referralCode:'',totalEarned:0,totalSpent:0});var c=map.get(k);c.creditBalance=Number(r.credit_balance)||0;c.referralCount=r.successful_referrals||0;c.referralCode=r.code||'';c.totalEarned=Number(r.total_earned)||0});allCustomers=Array.from(map.values())}
 async function initAdmin(){await loadAllData();loadPageData('dashboard')}
-function loadPageData(page){if(!dataLoaded&&page!=='dashboard')return;switch(page){case'dashboard':loadDashboard();break;case'customers':loadCustomerBrowser();break;case'academy':loadAcademyData();break;case'fusion':loadFusionData();break;case'referrals':loadReferralData();break;case'community':loadCommunityData();break;case'email':loadEmailPage();break;case'automation':loadAutomationPage();break;case'promotions':loadPromotionsPage();break;case'orders':loadOrdersPage();break;case'audit':loadAuditLog();break}}
+function loadPageData(page){if(!dataLoaded&&page!=='dashboard')return;switch(page){case'dashboard':loadDashboard();break;case'customers':loadCustomerBrowser();break;case'academy':loadAcademyData();break;case'fusion':loadFusionData();break;case'referrals':loadReferralData();break;case'community':loadCommunityData();break;case'email':loadEmailPage();break;case'automation':loadAutomationPage();break;case'promotions':loadPromotionsPage();break;case'orders':loadOrdersPage();break;case'audit':loadAuditLog();break;case'analytics':loadAnalyticsPage();break}}
 function getAdminNotes(email){return adminNotesData.filter(function(n){return n.target_email&&n.target_email.toLowerCase()===email.toLowerCase()})}
 async function saveAdminNote(email,text){try{await sbAdmin.from('admin_notes').insert({target_email:email.toLowerCase(),note_text:text});await logAudit('add_note',email,'Added note: '+text.substring(0,80));var r=await sbAdmin.from('admin_notes').select('*').order('created_at',{ascending:false});adminNotesData=r.data||[]}catch(e){showToast('Error saving note: '+e.message,'error')}}
 async function deleteAdminNote(email,id){try{await sbAdmin.from('admin_notes').delete().eq('id',id);await logAudit('delete_note',email,'Deleted a note');var r=await sbAdmin.from('admin_notes').select('*').order('created_at',{ascending:false});adminNotesData=r.data||[]}catch(e){showToast('Error deleting note: '+e.message,'error')}}
@@ -696,7 +742,7 @@ function loadPromotionsPage(){if(!dataLoaded)return;var active=promotionsData.fi
 function updatePromoDiscountUI(){var t=document.getElementById('promo-discount-type').value;document.getElementById('promo-percent-group').style.display=t==='percent'?'':'none';document.getElementById('promo-fixed-group').style.display=t==='fixed'?'':'none';document.getElementById('promo-setprice-group').style.display=t==='set_price'?'':'none'}
 async function createPromotion(){var name=document.getElementById('promo-name').value.trim();var couponId=document.getElementById('promo-coupon-id').value.trim();var discountType=document.getElementById('promo-discount-type').value;var percent=document.getElementById('promo-percent').value;var fixedAmt=document.getElementById('promo-fixed-amount').value||0;var setP=document.getElementById('promo-set-price').value||0;var product=document.getElementById('promo-product').value;var method=document.getElementById('promo-method').value;var expires=document.getElementById('promo-expires').value;var maxUses=parseInt(document.getElementById('promo-max-uses').value)||0;var minPurch=parseInt(document.getElementById('promo-min-purchase').value)||0;var restrictions=document.getElementById('promo-restrictions').value;var stackable=document.getElementById('promo-stackable').checked;var onePerUser=document.getElementById('promo-one-per-user').checked;var notes=document.getElementById('promo-notes').value.trim();if(!name||!couponId){showToast('Fill in promotion name and promo code','error');return}var dp=0,df=0,ds=0;if(discountType==='percent')dp=parseInt(percent);else if(discountType==='fixed'){df=parseInt(fixedAmt)||0;if(!df){showToast('Enter a dollar amount','error');return}}else if(discountType==='set_price'){ds=parseInt(setP)||0;if(!ds){showToast('Enter the set price','error');return}}var dupCheck=await sbAdmin.from('promotions').select('id,status').eq('coupon_id',couponId.toUpperCase()).maybeSingle();if(dupCheck.data){showToast('Code '+couponId+' already exists (status: '+dupCheck.data.status+'). Delete or reuse it from the All tab.','error');return}try{var res=await sbAdmin.from('promotions').insert({name:name,coupon_id:couponId.toUpperCase(),discount_percent:dp,discount_type:discountType,discount_fixed:df,discount_set_price:ds,applies_to:product,distribution_method:method,min_purchase:minPurch,restrictions:restrictions,stackable_with_credits:stackable,one_per_user:onePerUser,notes:notes,expires_at:expires?new Date(expires+'T23:59:59Z').toISOString():null,max_uses:maxUses,status:'active'});if(res.error)throw new Error(res.error.message);document.getElementById('promo-name').value='';document.getElementById('promo-coupon-id').value='';document.getElementById('promo-expires').value='';document.getElementById('promo-max-uses').value='0';document.getElementById('promo-min-purchase').value='0';if(document.getElementById('promo-fixed-amount'))document.getElementById('promo-fixed-amount').value='';if(document.getElementById('promo-set-price'))document.getElementById('promo-set-price').value='';document.getElementById('promo-notes').value='';document.getElementById('promo-stackable').checked=false;document.getElementById('promo-one-per-user').checked=true;await logAudit('create_promo',null,'Created promotion: '+name+' ('+couponId.toUpperCase()+')',{coupon_id:couponId.toUpperCase(),discount_type:discountType});await loadAllData();loadPromotionsPage();showToast('Promotion created: '+couponId.toUpperCase(),'success')}catch(e){showToast('Error: '+e.message,'error')}}
 function filterPromos(status,btn){currentPromoFilter=status;document.querySelectorAll('.promo-filter-btn').forEach(function(b){b.classList.remove('active')});btn.classList.add('active');renderPromotionsList()}
-function renderPromotionsList(){var container=document.getElementById('promotions-list');var promos=promotionsData;if(currentPromoFilter!=='all'){promos=promos.filter(function(p){var isExp=p.expires_at&&new Date(p.expires_at)<new Date();var es=isExp&&p.status==='active'?'expired':p.status;return es===currentPromoFilter})}if(!promos.length){container.innerHTML='<div class="empty"><p>No '+currentPromoFilter+' promotions.</p></div>';return}var pl={'any':'Site-wide','bundle-all':'Bundle','sessions-only':'Sessions','session-01':'S1','session-02':'S2','session-03':'S3','session-04':'S4','session-05':'S5','session-06':'S6','session-07':'S7','session-08':'S8','session-09':'S9','session-10':'S10','session-11':'S11','session-12':'S12'};container.innerHTML=promos.map(function(p){var isExp=p.expires_at&&new Date(p.expires_at)<new Date();var es=isExp&&p.status==='active'?'expired':p.status;var sl=es.charAt(0).toUpperCase()+es.slice(1);var lnk='https://fusionsessions.com/?coupon='+p.coupon_id;var cd=new Date(p.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});var ed=p.expires_at?new Date(p.expires_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'Never';var ut=p.max_uses>0?(p.times_used||0)+'/'+p.max_uses:(p.times_used||0)+' (unlimited)';var dt=p.discount_type||'percent';var db='';if(dt==='percent')db=p.discount_percent+'% OFF';else if(dt==='fixed')db='$'+(p.discount_fixed||0)+' OFF';else if(dt==='set_price')db='SET $'+(p.discount_set_price||0);var al=pl[p.applies_to]||p.applies_to;var m=p.distribution_method||'both';var ml=m==='link'?'Link Only':m==='code'?'Code Only':'Link + Code';var sc=m!=='link',slk=m!=='code';var rb='';if(p.restrictions==='first_purchase')rb+='<span class="badge teal">1st Purchase</span> ';if(p.restrictions==='no_bundle_owners')rb+='<span class="badge teal">No Bundle</span> ';if(p.one_per_user)rb+='<span class="badge yellow">1x/User</span> ';if(p.stackable_with_credits)rb+='<span class="badge green">Stackable</span> ';if(p.min_purchase>0)rb+='<span class="badge muted">Min $'+p.min_purchase+'</span> ';var h='<div class="promo-card promo-'+es+'"><div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px"><div><div style="font-weight:600;font-size:14px;margin-bottom:3px">'+esc(p.name)+'</div><div style="font-size:11px;color:var(--text-dim)">Created '+cd+' · Expires: '+ed+' · Uses: '+ut+(p.notes?' · <span style="color:var(--taupe)" title="'+esc(p.notes)+'">'+esc(p.notes.length>30?p.notes.substring(0,30)+'...':p.notes)+'</span>':'')+'</div>'+(rb?'<div class="promo-badges">'+rb+'</div>':'')+'</div><div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap"><span class="badge yellow">'+db+'</span><span class="badge purple">'+al+'</span><span class="badge teal">'+ml+'</span><span class="badge '+(es==='active'?'green':es==='inactive'?'yellow':es==='expired'?'danger':'muted')+'">'+sl+'</span></div></div>';if(es==='active'){if(slk)h+='<div class="promo-link-box" onclick="copyPromoLink(\''+lnk+'\',this)"><span>'+lnk+'</span><span style="font-size:10px;color:var(--text-dim)">Click to copy</span></div>';if(sc)h+='<div class="promo-link-box" onclick="copyPromoLink(\''+p.coupon_id+'\',this)" style="border-color:rgba(240,180,41,.3)"><span>Code: <strong style="color:var(--warning);font-size:14px;letter-spacing:2px">'+p.coupon_id+'</strong></span><span style="font-size:10px;color:var(--text-dim)">Click to copy</span></div>'}h+='<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">';if(es==='active')h+='<button class="btn btn-ghost btn-sm" onclick="usePromoInEmail(\''+p.coupon_id+'\',\''+esc(p.name.replace(/'/g,"\\'"))+'\')">Use in Email</button><button class="btn btn-ghost btn-sm" style="color:var(--warning);border-color:rgba(240,180,41,.2)" onclick="updatePromoStatus(\''+p.id+'\',\'inactive\')">Deactivate</button>';if(es==='inactive')h+='<button class="btn btn-success btn-sm" onclick="updatePromoStatus(\''+p.id+'\',\'active\')">Reactivate</button><button class="btn btn-ghost btn-sm" onclick="updatePromoStatus(\''+p.id+'\',\'archived\')">Archive</button>';if(es==='archived')h+='<button class="btn btn-success btn-sm" onclick="updatePromoStatus(\''+p.id+'\',\'active\')">Reactivate</button><button class="btn btn-danger btn-sm" onclick="deletePromotion(\''+p.id+'\',\''+esc(p.name.replace(/'/g,"\\'"))+'\')">Delete</button>';if(es==='expired')h+='<button class="btn btn-ghost btn-sm" onclick="updatePromoStatus(\''+p.id+'\',\'archived\')">Archive</button>';h+='</div></div>';return h}).join('')}
+function renderPromotionsList(){var container=document.getElementById('promotions-list');var promos=promotionsData;if(currentPromoFilter!=='all'){promos=promos.filter(function(p){var isExp=p.expires_at&&new Date(p.expires_at)<new Date();var es=isExp&&p.status==='active'?'expired':p.status;return es===currentPromoFilter})}if(!promos.length){container.innerHTML='<div class="empty"><p>No '+currentPromoFilter+' promotions.</p></div>';return}var pl={'any':'Site-wide','bundle-all':'Bundle','sessions-only':'Sessions','session-01':'S1','session-02':'S2','session-03':'S3','session-04':'S4','session-05':'S5','session-06':'S6','session-07':'S7','session-08':'S8','session-09':'S9','session-10':'S10','session-11':'S11','session-12':'S12'};container.innerHTML=promos.map(function(p){var isExp=p.expires_at&&new Date(p.expires_at)<new Date();var es=isExp&&p.status==='active'?'expired':p.status;var sl=es.charAt(0).toUpperCase()+es.slice(1);var lnk='https://fusionsessions.com/?coupon='+p.coupon_id;var cd=new Date(p.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});var ed=p.expires_at?new Date(p.expires_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'Never';var ut=p.max_uses>0?(p.times_used||0)+'/'+p.max_uses:(p.times_used||0)+' (unlimited)';var dt=p.discount_type||'percent';var db='';if(dt==='percent')db=p.discount_percent+'% OFF';else if(dt==='fixed')db='$'+(p.discount_fixed||0)+' OFF';else if(dt==='set_price')db='SET $'+(p.discount_set_price||0);var al=pl[p.applies_to]||p.applies_to;var m=p.distribution_method||'both';var ml=m==='link'?'Link Only':m==='code'?'Code Only':'Link + Code';var sc=m!=='link',slk=m!=='code';var rb='';if(p.restrictions==='first_purchase')rb+='<span class="badge teal">1st Purchase</span> ';if(p.restrictions==='no_bundle_owners')rb+='<span class="badge teal">No Bundle</span> ';if(p.one_per_user)rb+='<span class="badge yellow">1x/User</span> ';if(p.stackable_with_credits)rb+='<span class="badge green">Stackable</span> ';if(p.min_purchase>0)rb+='<span class="badge muted">Min $'+p.min_purchase+'</span> ';var h='<div class="promo-card promo-'+es+'"><div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px"><div><div style="font-weight:600;font-size:14px;margin-bottom:3px">'+esc(p.name)+'</div><div style="font-size:11px;color:var(--text-dim)">Created '+cd+' · Expires: '+ed+' · Uses: '+ut+(p.notes?' · <span style="color:var(--taupe)" title="'+esc(p.notes)+'">'+esc(p.notes.length>30?p.notes.substring(0,30)+'...':p.notes)+'</span>':'')+'</div>'+(rb?'<div class="promo-badges">'+rb+'</div>':'')+'</div><div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap"><span class="badge yellow">'+db+'</span><span class="badge purple">'+al+'</span><span class="badge teal">'+ml+'</span><span class="badge '+(es==='active'?'green':es==='inactive'?'yellow':es==='expired'?'danger':'muted')+'">'+sl+'</span></div></div>';if(es==='active'){if(slk)h+='<div class="promo-link-box" onclick="copyPromoLink(\''+lnk+'\',this)"><span>'+lnk+'</span><span style="font-size:10px;color:var(--text-dim)">Click to copy</span></div>';if(sc)h+='<div class="promo-link-box" onclick="copyPromoLink(\''+p.coupon_id+'\',this)" style="border-color:rgba(240,180,41,.3)"><span>Code: <strong style="color:var(--warning);font-size:14px;letter-spacing:2px">'+p.coupon_id+'</strong></span><span style="font-size:10px;color:var(--text-dim)">Click to copy</span></div>'}h+='<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">';if(es==='active')h+='<button class="btn btn-ghost btn-sm" onclick="editPromotion(\''+p.id+'\')">Edit</button><button class="btn btn-ghost btn-sm" onclick="usePromoInEmail(\''+p.coupon_id+'\',\''+esc(p.name.replace(/'/g,"\\'"))+'\')">Use in Email</button><button class="btn btn-ghost btn-sm" style="color:var(--warning);border-color:rgba(240,180,41,.2)" onclick="updatePromoStatus(\''+p.id+'\',\'inactive\')">Deactivate</button>';if(es==='inactive')h+='<button class="btn btn-success btn-sm" onclick="updatePromoStatus(\''+p.id+'\',\'active\')">Reactivate</button><button class="btn btn-ghost btn-sm" onclick="updatePromoStatus(\''+p.id+'\',\'archived\')">Archive</button>';if(es==='archived')h+='<button class="btn btn-success btn-sm" onclick="updatePromoStatus(\''+p.id+'\',\'active\')">Reactivate</button><button class="btn btn-danger btn-sm" onclick="deletePromotion(\''+p.id+'\',\''+esc(p.name.replace(/'/g,"\\'"))+'\')">Delete</button>';if(es==='expired')h+='<button class="btn btn-ghost btn-sm" onclick="updatePromoStatus(\''+p.id+'\',\'archived\')">Archive</button>';h+='</div></div>';return h}).join('')}
 function copyPromoLink(link,el){navigator.clipboard.writeText(link).then(function(){var sp=el.querySelector('span:last-child');var orig=sp.textContent;sp.textContent='Copied!';sp.style.color='var(--success)';setTimeout(function(){sp.textContent=orig;sp.style.color=''},2000)})}
 function usePromoInEmail(couponId,promoName){go('email',document.querySelector('.sb-link[onclick*="email"]'));setTimeout(function(){document.getElementById('email-body').value='Hi {{name}},\n\nWe have a special offer for you!\n\nUse code '+couponId+' at checkout or visit:\nhttps://fusionsessions.com/?coupon='+couponId+'\n\nWith warmth,\nDr. Tracey Clark';document.getElementById('email-subject').value='Special Offer: '+promoName;document.getElementById('subject-count').textContent=('Special Offer: '+promoName).length;document.getElementById('email-subject').scrollIntoView({behavior:'smooth',block:'center'});showToast('Email pre-filled with promo '+couponId,'success')},200)}
 async function updatePromoStatus(promoId,newStatus){var act=newStatus==='inactive'?'deactivate':newStatus==='active'?'reactivate':'archive';if(!await qpConfirm('Confirm','Are you sure you want to '+act+' this promotion?'))return;try{var res=await sbAdmin.from('promotions').update({status:newStatus,updated_at:new Date().toISOString()}).eq('id',promoId);if(res.error)throw new Error(res.error.message);var pr=promotionsData.find(function(p){return p.id===promoId});await logAudit('update_promo',null,(pr?pr.name:'Promo')+' '+act+'d',{promo_id:promoId,new_status:newStatus});await loadAllData();loadPromotionsPage();showToast('Promotion '+act+'d','success')}catch(e){showToast('Error: '+e.message,'error')}}
@@ -704,7 +750,7 @@ async function deletePromotion(promoId,name){if(!await qpConfirm('Delete Promoti
 /* ===== ORDERS (SESSION 5) ===== */
 function loadOrdersPage(){if(!dataLoaded)return;filterOrders()}
 function filterOrders(){var f=document.getElementById('orders-filter').value;var s=document.getElementById('orders-sort').value;var q=(document.getElementById('orders-search').value||'').toLowerCase().trim();ordersFiltered=purchasesData.filter(function(p){if(q&&(!p.email||p.email.toLowerCase().indexOf(q)<0))return false;switch(f){case'bundle-all':return p.product_id==='bundle-all';case'fusion-only':return isFusion(p.product_id);case'academy-only':return isAcademy(p.product_id);case'admin-granted':return p.stripe_event_id&&p.stripe_event_id.indexOf('admin-grant')===0;case'refunded':return p.product_id&&p.product_id.startsWith('revoked__');default:return true}});ordersFiltered.sort(function(a,b){switch(s){case'recent':return(b.purchased_at||'').localeCompare(a.purchased_at||'');case'oldest':return(a.purchased_at||'').localeCompare(b.purchased_at||'');case'amount-high':return(Number(b.amount_paid)||0)-(Number(a.amount_paid)||0);case'amount-low':return(Number(a.amount_paid)||0)-(Number(b.amount_paid)||0);default:return 0}});var tr=ordersFiltered.reduce(function(s,p){return s+(Number(p.amount_paid)||0)},0);var to=ordersFiltered.filter(function(p){return Number(p.amount_paid)>0}).length;var ao=to>0?(tr/to):0;var ag=ordersFiltered.filter(function(p){return p.stripe_event_id&&p.stripe_event_id.indexOf('admin-grant')===0}).length;document.getElementById('orders-stats').innerHTML='<div class="stat-card"><div class="stat-ico green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div><div class="stat-val">'+fmtMoney(tr)+'</div><div class="stat-lbl">Revenue</div></div></div><div class="stat-card"><div class="stat-ico teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div><div><div class="stat-val">'+to+'</div><div class="stat-lbl">Paid Orders</div></div></div><div class="stat-card"><div class="stat-ico purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div><div class="stat-val">'+fmtMoney(ao)+'</div><div class="stat-lbl">Avg Order</div></div></div><div class="stat-card"><div class="stat-ico warm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><div><div class="stat-val">'+ag+'</div><div class="stat-lbl">Admin Grants</div></div></div>';ordersPage=1;renderOrdersTable()}
-function renderOrdersTable(){var tbody=document.getElementById('orders-tbody');var tp=Math.ceil(ordersFiltered.length/ordersPS)||1;var start=(ordersPage-1)*ordersPS;var pd=ordersFiltered.slice(start,start+ordersPS);if(!pd.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-dim)">No transactions match filters</td></tr>';document.getElementById('orders-pagination').innerHTML='';return}tbody.innerHTML=pd.map(function(p){var date=p.purchased_at?new Date(p.purchased_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'--';var isGrant=p.stripe_event_id&&p.stripe_event_id.indexOf('admin-grant')===0;var isRev=isRevoked(p.product_id);var sid=p.stripe_session_id||'';var ss=sid.length>20?sid.substring(0,18)+'...':sid;var pr='';if(p.referral_code_used)pr='<span class="badge teal">'+esc(p.referral_code_used)+'</span>';var e2=esc((p.email||'').replace(/'/g,"\\'"));return'<tr style="'+(isRev?'opacity:.5;text-decoration:line-through':'')+'"><td style="font-size:12px;color:var(--text-dim);white-space:nowrap">'+date+'</td><td class="email" style="cursor:pointer" onclick="go(\'customers\');setTimeout(function(){showCustomerDetail(\''+e2+'\')},100)">'+esc(p.email||'')+'</td><td>'+productBadge(p.product_id)+' <span style="font-size:12px">'+productName(p.product_id)+'</span></td><td>'+(Number(p.amount_paid)>0?'<span style="color:var(--success);font-weight:600">'+fmtMoney(p.amount_paid)+'</span>':(isGrant?'<span style="color:var(--taupe);font-size:11px">Granted</span>':'<span style="color:var(--text-dim)">$0</span>'))+'</td><td>'+pr+'</td><td style="font-size:10px;color:var(--text-dim);font-family:monospace" title="'+esc(sid)+'">'+esc(ss)+'</td><td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();go(\'customers\');setTimeout(function(){showCustomerDetail(\''+e2+'\')},100)">View</button></td></tr>'}).join('');document.getElementById('orders-pagination').innerHTML='<span>'+ordersFiltered.length+' transactions · Page '+ordersPage+'/'+tp+'</span><div class="page-btns"><button class="btn btn-ghost btn-sm" onclick="ordersPage=Math.max(1,ordersPage-1);renderOrdersTable()" '+(ordersPage<=1?'disabled':'')+'>Prev</button><button class="btn btn-ghost btn-sm" onclick="ordersPage=Math.min('+tp+',ordersPage+1);renderOrdersTable()" '+(ordersPage>=tp?'disabled':'')+'>Next</button></div>'}
+function renderOrdersTable(){var tbody=document.getElementById('orders-tbody');var tp=Math.ceil(ordersFiltered.length/ordersPS)||1;var start=(ordersPage-1)*ordersPS;var pd=ordersFiltered.slice(start,start+ordersPS);if(!pd.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-dim)">No transactions match filters</td></tr>';document.getElementById('orders-pagination').innerHTML='';return}tbody.innerHTML=pd.map(function(p){var date=p.purchased_at?new Date(p.purchased_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'--';var isGrant=p.stripe_event_id&&p.stripe_event_id.indexOf('admin-grant')===0;var isRev=isRevoked(p.product_id);var sid=p.stripe_session_id||'';var ss=sid.length>20?sid.substring(0,18)+'...':sid;var pr='';if(p.referral_code_used)pr='<span class="badge teal">'+esc(p.referral_code_used)+'</span>';var e2=esc((p.email||'').replace(/'/g,"\\'"));return'<tr style="'+(isRev?'opacity:.5;text-decoration:line-through':'')+'"><td style="font-size:12px;color:var(--text-dim);white-space:nowrap">'+date+'</td><td class="email" style="cursor:pointer" onclick="go(\'customers\');setTimeout(function(){showCustomerDetail(\''+e2+'\')},100)">'+esc(p.email||'')+'</td><td>'+productBadge(p.product_id)+' <span style="font-size:12px">'+productName(p.product_id)+'</span></td><td>'+(Number(p.amount_paid)>0?'<span style="color:var(--success);font-weight:600">'+fmtMoney(p.amount_paid)+'</span>':(isGrant?'<span style="color:var(--taupe);font-size:11px">Granted</span>':'<span style="color:var(--text-dim)">$0</span>'))+'</td><td>'+pr+'</td><td style="font-size:10px;color:var(--text-dim);font-family:monospace" title="'+esc(sid)+'">'+esc(ss)+'</td><td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();go(\'customers\');setTimeout(function(){showCustomerDetail(\''+e2+'\')},100)">View</button>'+(Number(p.amount_paid)>0&&sid&&sid.indexOf('credit-')!==0&&sid.indexOf('admin-grant')!==0&&!isRev?' <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();refundPurchase(\''+esc(sid.replace(/'/g,"\\'"))+'\',\''+e2+'\',' + 'Number(p.amount_paid)||0)" style="font-size:9px;padding:3px 8px">Refund</button>':'')+'</td></tr>'}).join('');document.getElementById('orders-pagination').innerHTML='<span>'+ordersFiltered.length+' transactions · Page '+ordersPage+'/'+tp+'</span><div class="page-btns"><button class="btn btn-ghost btn-sm" onclick="ordersPage=Math.max(1,ordersPage-1);renderOrdersTable()" '+(ordersPage<=1?'disabled':'')+'>Prev</button><button class="btn btn-ghost btn-sm" onclick="ordersPage=Math.min('+tp+',ordersPage+1);renderOrdersTable()" '+(ordersPage>=tp?'disabled':'')+'>Next</button></div>'}
 function exportOrders(){var csv=['Date,Email,Product,Amount,Referral,Stripe ID'];ordersFiltered.forEach(function(p){csv.push([p.purchased_at?new Date(p.purchased_at).toISOString():'','"'+(p.email||'')+'"','"'+productName(p.product_id)+'"',p.amount_paid||0,p.referral_code_used||'','"'+(p.stripe_session_id||'')+'"'].join(','))});var b=new Blob([csv.join('\n')],{type:'text/csv'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='qp-orders-'+new Date().toISOString().split('T')[0]+'.csv';a.click()}
 
 
@@ -995,6 +1041,7 @@ html+='</div>';
 html+='<div style="text-align:right"><div style="font-size:13px;font-weight:600">'+airDate.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'})+'</div>';
 html+='<div style="font-size:12px;color:var(--text-dim)">'+airDate.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})+'</div>';
 html+='<div style="font-size:11px;color:'+(isPast?'var(--text-dim)':'var(--teal)')+';margin-top:4px">'+(isPast?'Completed':daysUntil+' days away')+'</div>';
+html+='<button class="btn btn-ghost btn-sm" style="margin-top:6px;font-size:10px" onclick="editSessionSchedule(''+s.id+'')">✏️ Edit</button>';
 html+='</div></div></div>'
 });
 container.innerHTML=html
@@ -1096,6 +1143,416 @@ await loadAllData();loadScheduledEmails()
 
 async function loadAuditLog(){var c=document.getElementById('audit-log-content');if(!c)return;c.innerHTML='<div class="loading-center"><div class="spinner"></div>Loading...</div>';try{var filter=document.getElementById('audit-filter').value;var search=(document.getElementById('audit-search').value||'').trim().toLowerCase();var q=sbAdmin.from('admin_audit_log').select('*',{count:'exact'}).order('created_at',{ascending:false});if(filter!=='all')q=q.eq('action',filter);if(search)q=q.ilike('target_email','%'+search+'%');q=q.range((auditPage-1)*auditPS,auditPage*auditPS-1);var res=await q;if(res.error){console.error('Audit log query error:',res.error);throw new Error(res.error.message||JSON.stringify(res.error))}var logs=res.data||[];var total=res.count||0;var tp=Math.ceil(total/auditPS)||1;var actionColors={'grant_access':'var(--success)','revoke_access':'var(--danger)','block_user':'var(--danger)','adjust_credit':'var(--warning)','set_credit':'var(--warning)','create_referral':'var(--teal)','enroll_student':'var(--success)','unenroll_student':'var(--danger)','reset_password':'var(--purple)','reset_progress':'var(--warning)','delete_account':'var(--danger)','revoke_all':'var(--danger)','add_note':'var(--taupe)','delete_note':'var(--text-dim)','bulk_enroll':'var(--teal)','login_as':'var(--purple)','send_email':'var(--teal)','create_promo':'var(--warning)','update_promo':'var(--taupe)','delete_promo':'var(--danger)'};var actionLabels={'grant_access':'Grant Access','revoke_access':'Revoke Access','block_user':'Block/Unblock','adjust_credit':'Credit Adjust','set_credit':'Credit Set','create_referral':'Create Referral','enroll_student':'Enroll','unenroll_student':'Unenroll','reset_password':'Reset PW','reset_progress':'Reset Progress','delete_account':'Archive Account','archive_account':'Archive Account','revoke_all':'Revoke All','add_note':'Add Note','delete_note':'Delete Note','bulk_enroll':'Bulk Enroll','login_as':'Login As','send_email':'Send Email','create_promo':'Create Promo','update_promo':'Update Promo','delete_promo':'Delete Promo'};document.getElementById('audit-stats').innerHTML='<div class="stat-card"><div class="stat-ico teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div><div class="stat-val">'+total+'</div><div class="stat-lbl">Total Actions</div></div></div>';if(!logs.length){c.innerHTML='<div class="empty"><p>No audit log entries'+(filter!=='all'?' for this filter':'')+'</p></div>';document.getElementById('audit-pagination').innerHTML='';return}c.innerHTML=logs.map(function(l){var col=actionColors[l.action]||'var(--text-dim)';var label=actionLabels[l.action]||l.action;return'<div class="feed-item"><div class="feed-dot" style="background:'+col+'"></div><div class="feed-content"><div class="feed-text"><span class="badge" style="background:rgba(255,255,255,.06);color:'+col+'">'+label+'</span> '+(l.target_email?'<strong style="cursor:pointer" onclick="go(\'customers\');setTimeout(function(){showCustomerDetail(\''+esc(l.target_email)+'\')},100)">'+esc(l.target_email)+'</strong>':'<span style="color:var(--text-dim)">System</span>')+'</div><div style="font-size:12px;color:var(--text-muted);margin-top:2px">'+esc(l.details||'')+'</div><div class="feed-time" style="display:flex;justify-content:space-between;align-items:center"><span>'+timeAgo(l.created_at)+' \u00b7 '+new Date(l.created_at).toLocaleString()+'</span><span style="color:var(--taupe);font-size:10px">by '+(l.admin_user||'QPadmin')+'</span></div></div></div>'}).join('');document.getElementById('audit-pagination').innerHTML='<span>'+total+' entries \u00b7 Page '+auditPage+'/'+tp+'</span><div class="page-btns"><button class="btn btn-ghost btn-sm" onclick="auditPage=Math.max(1,auditPage-1);loadAuditLog()" '+(auditPage<=1?'disabled':'')+'>Prev</button><button class="btn btn-ghost btn-sm" onclick="auditPage=Math.min('+tp+',auditPage+1);loadAuditLog()" '+(auditPage>=tp?'disabled':'')+'>Next</button></div>'}catch(e){console.error('Audit log error:',e);c.innerHTML='<div class="empty"><p>Error loading audit log</p></div>'}}
 if(sessionStorage.getItem('qp_admin_auth')==='true'){document.getElementById('auth-screen').style.display='none';document.getElementById('admin-layout').style.display='block';initAdmin()}
+
+
+// ============================================================
+// SESSION 7: ANALYTICS DASHBOARD + CHART SYSTEM
+// ============================================================
+var qpCharts={};
+var COLORS={teal:'#5ba8b2',tealA:'rgba(91,168,178,0.3)',purple:'#a78bfa',purpleA:'rgba(167,139,250,0.3)',success:'#3dd68c',successA:'rgba(61,214,140,0.3)',danger:'#ef5350',dangerA:'rgba(239,83,80,0.3)',taupe:'#ad9b84',taupeA:'rgba(173,155,132,0.3)',warning:'#f0b429',warningA:'rgba(240,180,41,0.3)',white15:'rgba(255,255,255,0.15)'};
+
+if(typeof Chart!=='undefined'){Chart.defaults.color='rgba(255,255,255,0.5)';Chart.defaults.borderColor='rgba(255,255,255,0.06)'}
+
+function destroyQPChart(id){if(qpCharts[id]){qpCharts[id].destroy();delete qpCharts[id]}}
+
+function switchQPChart(id,newType,btn){
+var c=qpCharts[id];if(!c)return;
+btn.parentElement.querySelectorAll('.chart-sw').forEach(function(b){b.classList.remove('active')});
+btn.classList.add('active');
+c.config.type=newType;c.update();
+}
+
+function isAcademyProduct(pid){return pid&&(pid.startsWith('qa-')||['quantum-vision-boards','becoming-present','breaking-up-with-your-beliefs','creative-mind-mapping','power-of-the-question','transformational-mastery'].indexOf(pid)!==-1)}
+function isFusionProduct(pid){return pid&&(pid.startsWith('session-')||pid==='bundle-all')}
+
+function loadAnalyticsPage(){
+if(!dataLoaded)return;
+var p=purchasesData,r=referralData,cr=creditHistoryData,prof=profilesData;
+var totalRev=p.reduce(function(s,x){return s+(Number(x.amount_paid)||0)},0);
+var acadRev=p.filter(function(x){return isAcademyProduct(x.product_id)}).reduce(function(s,x){return s+(Number(x.amount_paid)||0)},0);
+var fusionRev=p.filter(function(x){return isFusionProduct(x.product_id)}).reduce(function(s,x){return s+(Number(x.amount_paid)||0)},0);
+var totalCredits=r.reduce(function(s,x){return s+(Number(x.total_earned)||0)},0);
+
+document.getElementById('analytics-stats').innerHTML='<div class="stat-card"><div class="stat-ico teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div><div class="stat-val">$'+totalRev.toLocaleString()+'</div><div class="stat-lbl">Total Revenue</div></div></div>'
++'<div class="stat-card"><div class="stat-ico purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div><div><div class="stat-val">$'+acadRev.toLocaleString()+'</div><div class="stat-lbl">Academy Revenue</div></div></div>'
++'<div class="stat-card"><div class="stat-ico warm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10"/></svg></div><div><div class="stat-val">$'+fusionRev.toLocaleString()+'</div><div class="stat-lbl">Fusion Revenue</div></div></div>'
++'<div class="stat-card"><div class="stat-ico green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/></svg></div><div><div class="stat-val">$'+totalCredits.toLocaleString()+'</div><div class="stat-lbl">Credits Issued</div></div></div>';
+
+renderAnalyticsCharts();
+}
+
+function renderAnalyticsCharts(){
+if(typeof Chart==='undefined')return;
+var p=purchasesData||[],r=referralData||[],cr=creditHistoryData||[],prof=profilesData||[];
+var campaigns=campaignsData||[];
+
+// --- PRODUCT PRICES for fallback ---
+var PP={'bundle-all':500,'session-01':50,'session-02':50,'session-03':50,'session-04':50,'session-05':50,'session-06':50,'session-07':50,'session-08':50,'session-09':50,'session-10':50,'session-11':50,'session-12':50,'quantum-vision-boards':90,'becoming-present':90,'breaking-up-with-your-beliefs':90,'creative-mind-mapping':90,'power-of-the-question':90,'transformational-mastery':360};
+
+// === Revenue Over Time ===
+var revByMonth={};
+p.filter(function(x){return x.purchased_at}).forEach(function(x){
+var d=new Date(x.purchased_at);var k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+var amt=(x.amount_paid&&x.amount_paid>0)?x.amount_paid:(PP[x.product_id]||0);
+if(!revByMonth[k])revByMonth[k]={total:0,academy:0,fusion:0};
+revByMonth[k].total+=amt;
+if(isAcademyProduct(x.product_id))revByMonth[k].academy+=amt;
+if(isFusionProduct(x.product_id))revByMonth[k].fusion+=amt;
+});
+var sm=Object.keys(revByMonth).sort();
+var cum=0;var cumData=sm.map(function(m){cum+=revByMonth[m].total;return cum});
+destroyQPChart('chart-rev-time');
+qpCharts['chart-rev-time']=new Chart(document.getElementById('chart-rev-time'),{
+type:'line',data:{labels:sm.map(function(m){var p2=m.split('-');return new Date(p2[0],p2[1]-1).toLocaleDateString('en-US',{month:'short',year:'2-digit'})}),
+datasets:[{label:'Monthly Revenue',data:sm.map(function(m){return revByMonth[m].total}),borderColor:COLORS.teal,backgroundColor:COLORS.tealA,fill:true,tension:0.4,pointRadius:4},
+{label:'Cumulative',data:cumData,borderColor:COLORS.taupe,borderDash:[5,5],fill:false,tension:0.4,pointRadius:2,yAxisID:'y1'}]},
+options:{responsive:true,plugins:{legend:{labels:{boxWidth:10,font:{size:11}}}},scales:{y:{ticks:{callback:function(v){return '$'+v}}},y1:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:function(v){return '$'+v}}}}}
+});
+
+// === Product Mix ===
+var bundleEmails=new Set(p.filter(function(x){return x.product_id&&x.product_id.indexOf('bundle')!==-1}).map(function(x){return(x.email||'').toLowerCase()}).filter(Boolean));
+var academyCount=p.filter(function(x){return isAcademyProduct(x.product_id)&&x.amount_paid>0}).length;
+var fusionBundles=p.filter(function(x){return x.product_id==='bundle-all'}).length;
+var fusionSingles=p.filter(function(x){return x.product_id&&x.product_id.startsWith('session-')&&!bundleEmails.has((x.email||'').toLowerCase())}).length;
+var comps=p.filter(function(x){return!x.amount_paid||x.amount_paid===0}).length;
+destroyQPChart('chart-product-mix');
+qpCharts['chart-product-mix']=new Chart(document.getElementById('chart-product-mix'),{
+type:'doughnut',data:{labels:['Academy','Fusion Bundles','Fusion Singles','Comps'],
+datasets:[{data:[academyCount,fusionBundles,fusionSingles,comps],backgroundColor:[COLORS.teal,COLORS.purple,COLORS.taupe,COLORS.white15],borderWidth:0}]},
+options:{responsive:true,plugins:{legend:{position:'bottom',labels:{padding:12,boxWidth:10,font:{size:11}}}},cutout:'60%'}
+});
+
+// === Purchase Timeline (weekly, stacked) ===
+var byWeek={};
+p.filter(function(x){return x.purchased_at}).forEach(function(x){
+var d=new Date(x.purchased_at);var ws=new Date(d);ws.setDate(d.getDate()-d.getDay());
+var k=ws.toISOString().slice(0,10);
+if(!byWeek[k])byWeek[k]={academy:0,fusion:0};
+if(isAcademyProduct(x.product_id))byWeek[k].academy++;
+else if(isFusionProduct(x.product_id))byWeek[k].fusion++;
+});
+var weeks=Object.keys(byWeek).sort();
+destroyQPChart('chart-purch-time');
+qpCharts['chart-purch-time']=new Chart(document.getElementById('chart-purch-time'),{
+type:'bar',data:{labels:weeks.map(function(w){return new Date(w).toLocaleDateString('en-US',{month:'short',day:'numeric'})}),
+datasets:[{label:'Academy',data:weeks.map(function(w){return byWeek[w].academy}),backgroundColor:COLORS.tealA,borderColor:COLORS.teal,borderWidth:1},
+{label:'Fusion',data:weeks.map(function(w){return byWeek[w].fusion}),backgroundColor:COLORS.purpleA,borderColor:COLORS.purple,borderWidth:1}]},
+options:{responsive:true,plugins:{legend:{labels:{boxWidth:10,font:{size:11}}}},scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true}}}
+});
+
+// === Session Popularity (Fusion sessions) ===
+var sessCounts={};
+for(var i=1;i<=12;i++){var sid='session-'+String(i).padStart(2,'0');sessCounts[sid]=p.filter(function(x){return x.product_id===sid&&!bundleEmails.has((x.email||'').toLowerCase())}).length}
+var sessColors=[COLORS.teal,COLORS.purple,COLORS.taupe,COLORS.success,COLORS.warning,COLORS.danger,'#60a5fa','#c084fc','#f472b6','#34d399','#fbbf24','#fb923c'];
+destroyQPChart('chart-session-pop');
+qpCharts['chart-session-pop']=new Chart(document.getElementById('chart-session-pop'),{
+type:'bar',data:{labels:Object.keys(sessCounts).map(function(s,i){return 'S'+(i+1)}),
+datasets:[{label:'Individual Sales',data:Object.values(sessCounts),backgroundColor:sessColors,borderWidth:0,borderRadius:4}]},
+options:{responsive:true,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true}}}
+});
+
+// === Customer Segments ===
+var purchEmails=new Set(p.map(function(x){return(x.email||'').toLowerCase()}).filter(Boolean));
+var profEmails=new Set(prof.map(function(x){return(x.email||'').toLowerCase()}).filter(Boolean));
+var noPurch=[...profEmails].filter(function(e){return!purchEmails.has(e)}).length;
+var acadOnly=p.filter(function(x){return isAcademyProduct(x.product_id)}).map(function(x){return(x.email||'').toLowerCase()});
+var fusionOnly=[...new Set(p.filter(function(x){return isFusionProduct(x.product_id)}).map(function(x){return(x.email||'').toLowerCase()}))].length;
+destroyQPChart('chart-cust-seg');
+qpCharts['chart-cust-seg']=new Chart(document.getElementById('chart-cust-seg'),{
+type:'doughnut',data:{labels:['Fusion Customers','Academy Customers','Registered (No Purchase)'],
+datasets:[{data:[fusionOnly,new Set(acadOnly).size,noPurch],backgroundColor:[COLORS.purple,COLORS.teal,COLORS.white15],borderWidth:0}]},
+options:{responsive:true,plugins:{legend:{position:'bottom',labels:{padding:12,boxWidth:10,font:{size:11}}}},cutout:'55%'}
+});
+
+// === Referral vs Direct Revenue ===
+var refRev=p.filter(function(x){return x.referral_code_used&&x.amount_paid>0}).reduce(function(s,x){return s+(x.amount_paid||0)},0);
+var directRev=p.filter(function(x){return!x.referral_code_used&&x.amount_paid>0}).reduce(function(s,x){return s+(x.amount_paid||0)},0);
+destroyQPChart('chart-ref-impact');
+qpCharts['chart-ref-impact']=new Chart(document.getElementById('chart-ref-impact'),{
+type:'bar',data:{labels:['Referred','Direct'],
+datasets:[{label:'Revenue',data:[refRev,directRev],backgroundColor:[COLORS.purpleA,COLORS.tealA],borderColor:[COLORS.purple,COLORS.teal],borderWidth:2,borderRadius:6}]},
+options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{callback:function(v){return '$'+v}}}}}
+});
+
+// === Credit Economy ===
+var totalIssued=r.reduce(function(s,x){return s+(Number(x.total_earned)||0)},0);
+var totalBalance=r.reduce(function(s,x){return s+(Number(x.credit_balance)||0)},0);
+var redeemed=Math.max(0,totalIssued-totalBalance);
+destroyQPChart('chart-credit-eco');
+qpCharts['chart-credit-eco']=new Chart(document.getElementById('chart-credit-eco'),{
+type:'doughnut',data:{labels:['Redeemed/Used','Outstanding'],
+datasets:[{data:[redeemed,totalBalance],backgroundColor:[COLORS.success,COLORS.warning],borderWidth:0}]},
+options:{responsive:true,plugins:{legend:{position:'bottom',labels:{padding:12,boxWidth:10,font:{size:11}}}},cutout:'55%'}
+});
+
+// === Academy vs Fusion Revenue by Month ===
+destroyQPChart('chart-platform-rev');
+qpCharts['chart-platform-rev']=new Chart(document.getElementById('chart-platform-rev'),{
+type:'bar',data:{labels:sm.map(function(m){var p2=m.split('-');return new Date(p2[0],p2[1]-1).toLocaleDateString('en-US',{month:'short',year:'2-digit'})}),
+datasets:[{label:'Academy',data:sm.map(function(m){return revByMonth[m].academy}),backgroundColor:COLORS.tealA,borderColor:COLORS.teal,borderWidth:1},
+{label:'Fusion',data:sm.map(function(m){return revByMonth[m].fusion}),backgroundColor:COLORS.purpleA,borderColor:COLORS.purple,borderWidth:1}]},
+options:{responsive:true,plugins:{legend:{labels:{boxWidth:10,font:{size:11}}}},scales:{y:{beginAtZero:true,ticks:{callback:function(v){return '$'+v}}}}}
+});
+
+// === Campaign Performance Charts ===
+if(campaigns.length>0){
+document.getElementById('no-campaigns-msg').style.display='none';
+var recent=campaigns.slice(0,8).reverse();
+var campLabels=recent.map(function(c){var d=c.sent_at?new Date(c.sent_at):null;return d?(d.getMonth()+1)+'/'+d.getDate():'?'});
+destroyQPChart('chart-camp-overview');
+qpCharts['chart-camp-overview']=new Chart(document.getElementById('chart-camp-overview'),{
+type:'bar',data:{labels:campLabels,
+datasets:[{label:'Sent',data:recent.map(function(c){return c.sent_count||0}),backgroundColor:COLORS.tealA,borderRadius:4},
+{label:'Opens',data:recent.map(function(c){return c.open_count||0}),backgroundColor:COLORS.purpleA,borderRadius:4},
+{label:'Clicks',data:recent.map(function(c){return c.click_count||0}),backgroundColor:COLORS.warningA,borderRadius:4},
+{label:'Conversions',data:recent.map(function(c){return c.conversion_count||0}),backgroundColor:COLORS.successA,borderRadius:4}]},
+options:{responsive:true,plugins:{legend:{labels:{boxWidth:10,font:{size:11}}}},scales:{y:{beginAtZero:true}}}
+});
+destroyQPChart('chart-camp-rates');
+qpCharts['chart-camp-rates']=new Chart(document.getElementById('chart-camp-rates'),{
+type:'bar',data:{labels:campLabels,
+datasets:[{label:'Open %',data:recent.map(function(c){return c.sent_count>0?((c.open_count/c.sent_count)*100).toFixed(1):0}),backgroundColor:COLORS.purpleA,borderRadius:4},
+{label:'Click %',data:recent.map(function(c){return c.open_count>0?((c.click_count/c.open_count)*100).toFixed(1):0}),backgroundColor:COLORS.warningA,borderRadius:4},
+{label:'Conv %',data:recent.map(function(c){return c.click_count>0?((c.conversion_count/c.click_count)*100).toFixed(1):0}),backgroundColor:COLORS.successA,borderRadius:4}]},
+options:{responsive:true,plugins:{legend:{labels:{boxWidth:10,font:{size:11}}}},scales:{y:{beginAtZero:true,ticks:{callback:function(v){return v+'%'}}}}}
+});
+}else{
+document.getElementById('no-campaigns-msg').style.display='';
+document.getElementById('campaign-charts-grid').style.display='none';
+}
+
+// === Key Metrics Summary ===
+var paid=p.filter(function(x){return x.amount_paid>0});
+var totalRev=paid.reduce(function(s,x){return s+(x.amount_paid||0)},0);
+var avgOrder=paid.length>0?(totalRev/paid.length).toFixed(2):'0';
+var refPurch=p.filter(function(x){return x.referral_code_used}).length;
+var withCredits=r.filter(function(x){return(x.credit_balance||0)>0}).length;
+var topRef=r.slice().sort(function(a,b){return(b.successful_referrals||0)-(a.successful_referrals||0)})[0];
+var thisMonth=new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0');
+var thisMonthRev=0;p.filter(function(x){return x.purchased_at&&x.amount_paid>0}).forEach(function(x){var d=new Date(x.purchased_at);var k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');if(k===thisMonth)thisMonthRev+=x.amount_paid});
+
+document.getElementById('analytics-key-metrics').innerHTML='<div class="analytics-kpi-grid">'
++'<div class="kpi-item"><div class="kpi-val" style="color:var(--success)">$'+totalRev.toLocaleString()+'</div><div class="kpi-lbl">Lifetime Revenue</div></div>'
++'<div class="kpi-item"><div class="kpi-val" style="color:var(--teal)">$'+thisMonthRev.toLocaleString()+'</div><div class="kpi-lbl">This Month</div></div>'
++'<div class="kpi-item"><div class="kpi-val">$'+avgOrder+'</div><div class="kpi-lbl">Avg Order Value</div></div>'
++'<div class="kpi-item"><div class="kpi-val" style="color:var(--purple)">'+refPurch+'</div><div class="kpi-lbl">Referred Purchases</div></div>'
++'<div class="kpi-item"><div class="kpi-val" style="color:var(--warning)">'+withCredits+'</div><div class="kpi-lbl">Users With Credit</div></div>'
++'<div class="kpi-item"><div class="kpi-val">'+paid.length+'</div><div class="kpi-lbl">Paid Transactions</div></div>'
++(topRef?'<div class="kpi-item"><div class="kpi-val" style="color:var(--success);font-size:13px">'+esc(topRef.email||'').split('@')[0]+'</div><div class="kpi-lbl">Top Referrer ('+((topRef.successful_referrals||0))+' referrals)</div></div>':'')
++'</div>';
+}
+
+var campaignChartExpanded=false;
+function toggleCampaignExpand(){
+campaignChartExpanded=!campaignChartExpanded;
+var grid=document.getElementById('campaign-charts-grid');
+var btn=document.getElementById('expand-camp-btn');
+grid.style.gridTemplateColumns=campaignChartExpanded?'1fr':'1fr 1fr';
+btn.textContent=campaignChartExpanded?'Collapse':'Expand';
+setTimeout(function(){renderAnalyticsCharts()},50);
+}
+
+// ============================================================
+// SESSION 7: EDIT PROMOTION (Dynamic Modal)
+// ============================================================
+function editPromotion(promoId){
+var promo=promotionsData.find(function(p){return p.id===promoId});
+if(!promo){showToast('Promotion not found','error');return}
+
+var overlay=document.createElement('div');
+overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .2s ease';
+overlay.id='edit-promo-overlay';
+overlay.onclick=function(e){if(e.target===overlay)overlay.remove()};
+
+var dt=promo.discount_type||'percent';
+var expVal=promo.expires_at?new Date(promo.expires_at).toISOString().slice(0,10):'';
+
+var box=document.createElement('div');
+box.style.cssText='background:var(--navy-card);border:1px solid var(--border);border-radius:16px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;padding:28px';
+box.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px"><h3 style="font-family:Playfair Display,serif;font-size:20px;margin:0">Edit Promotion</h3><button onclick="document.getElementById(\'edit-promo-overlay\').remove()" style="background:none;border:none;color:var(--text-dim);font-size:22px;cursor:pointer;padding:4px">&times;</button></div>'
++'<div class="form-group" style="margin-bottom:14px"><label>Name</label><input class="input" id="ep-name" value="'+esc(promo.name||'')+'"></div>'
++'<div class="form-group" style="margin-bottom:14px"><label>Promo Code</label><input class="input" id="ep-code" value="'+esc(promo.coupon_id||'')+'" disabled style="opacity:0.5" title="Code cannot be changed"></div>'
++'<div class="form-row"><div class="form-group"><label>Discount Type</label><select class="input" id="ep-dtype" onchange="toggleEPFields()"><option value="percent"'+(dt==='percent'?' selected':'')+'>Percent Off</option><option value="fixed"'+(dt==='fixed'?' selected':'')+'>Dollar Off</option><option value="set_price"'+(dt==='set_price'?' selected':'')+'>Set Price</option></select></div>'
++'<div class="form-group" id="ep-pct-grp"><label>Percent</label><input class="input" type="number" id="ep-pct" min="1" max="100" value="'+(promo.discount_percent||10)+'"></div>'
++'<div class="form-group" id="ep-fix-grp" style="display:none"><label>Amount ($)</label><input class="input" type="number" id="ep-fix" min="1" value="'+(promo.discount_fixed||0)+'"></div>'
++'<div class="form-group" id="ep-set-grp" style="display:none"><label>Set Price ($)</label><input class="input" type="number" id="ep-set" min="1" value="'+(promo.discount_set_price||0)+'"></div></div>'
++'<div class="form-row"><div class="form-group"><label>Applies To</label><select class="input" id="ep-product"><option value="any"'+(promo.applies_to==='any'?' selected':'')+'>Site-wide</option><option value="bundle-all"'+(promo.applies_to==='bundle-all'?' selected':'')+'>Bundle Only</option><option value="sessions-only"'+(promo.applies_to==='sessions-only'?' selected':'')+'>Sessions Only</option></select></div>'
++'<div class="form-group"><label>Expires</label><input class="input" type="date" id="ep-expires" value="'+expVal+'"></div></div>'
++'<div class="form-row"><div class="form-group"><label>Max Uses (0=unlimited)</label><input class="input" type="number" id="ep-max" min="0" value="'+(promo.max_uses||0)+'"></div>'
++'<div class="form-group"><label>Min Purchase ($)</label><input class="input" type="number" id="ep-min" min="0" value="'+(promo.min_purchase||0)+'"></div></div>'
++'<div class="form-row"><div class="form-group"><label>Restrictions</label><select class="input" id="ep-restrict"><option value="none"'+(promo.restrictions==='none'||!promo.restrictions?' selected':'')+'>None</option><option value="first_purchase"'+(promo.restrictions==='first_purchase'?' selected':'')+'>First Purchase Only</option><option value="no_bundle_owners"'+(promo.restrictions==='no_bundle_owners'?' selected':'')+'>No Bundle Owners</option></select></div>'
++'<div class="form-group"><label>Distribution</label><select class="input" id="ep-method"><option value="both"'+(promo.distribution_method==='both'||!promo.distribution_method?' selected':'')+'>Link + Code</option><option value="link"'+(promo.distribution_method==='link'?' selected':'')+'>Link Only</option><option value="code"'+(promo.distribution_method==='code'?' selected':'')+'>Code Only</option></select></div></div>'
++'<div style="display:flex;gap:12px;margin-bottom:14px"><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="ep-stack"'+(promo.stackable_with_credits?' checked':'')+'>Stackable with credits</label>'
++'<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="ep-once"'+(promo.one_per_user?' checked':'')+'>One per user</label></div>'
++'<div class="form-group" style="margin-bottom:20px"><label>Notes</label><textarea class="input" id="ep-notes" rows="2">'+esc(promo.notes||'')+'</textarea></div>'
++'<div style="display:flex;gap:10px;justify-content:flex-end"><button class="btn btn-ghost" onclick="document.getElementById(\'edit-promo-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="saveEditPromotion(\''+promoId+'\')">Save Changes</button></div>';
+
+overlay.appendChild(box);
+document.body.appendChild(overlay);
+toggleEPFields();
+}
+
+function toggleEPFields(){
+var dt=document.getElementById('ep-dtype');if(!dt)return;
+var v=dt.value;
+var pct=document.getElementById('ep-pct-grp'),fix=document.getElementById('ep-fix-grp'),sp=document.getElementById('ep-set-grp');
+if(pct)pct.style.display=v==='percent'?'':'none';
+if(fix)fix.style.display=v==='fixed'?'':'none';
+if(sp)sp.style.display=v==='set_price'?'':'none';
+}
+
+async function saveEditPromotion(promoId){
+var name=document.getElementById('ep-name').value.trim();
+if(!name){showToast('Name is required','error');return}
+var dt=document.getElementById('ep-dtype').value;
+var dp=0,df=0,ds=0;
+if(dt==='percent')dp=parseInt(document.getElementById('ep-pct').value)||10;
+else if(dt==='fixed'){df=parseInt(document.getElementById('ep-fix').value)||0;if(!df){showToast('Enter dollar amount','error');return}}
+else if(dt==='set_price'){ds=parseInt(document.getElementById('ep-set').value)||0;if(!ds){showToast('Enter set price','error');return}}
+var exp=document.getElementById('ep-expires').value;
+var updates={
+name:name,discount_type:dt,discount_percent:dp,discount_fixed:df,discount_set_price:ds,
+applies_to:document.getElementById('ep-product').value,
+expires_at:exp?new Date(exp+'T23:59:59Z').toISOString():null,
+max_uses:parseInt(document.getElementById('ep-max').value)||0,
+min_purchase:parseInt(document.getElementById('ep-min').value)||0,
+restrictions:document.getElementById('ep-restrict').value,
+distribution_method:document.getElementById('ep-method').value,
+stackable_with_credits:document.getElementById('ep-stack').checked,
+one_per_user:document.getElementById('ep-once').checked,
+notes:document.getElementById('ep-notes').value.trim(),
+updated_at:new Date().toISOString()
+};
+try{
+var res=await sbAdmin.from('promotions').update(updates).eq('id',promoId);
+if(res.error)throw new Error(res.error.message);
+await logAudit('edit_promo',null,'Edited promotion: '+name,{promo_id:promoId});
+document.getElementById('edit-promo-overlay').remove();
+await loadAllData();loadPromotionsPage();
+showToast('Promotion updated','success');
+}catch(e){showToast('Error: '+e.message,'error')}
+}
+
+// ============================================================
+// SESSION 7: REFUND FROM ADMIN
+// ============================================================
+async function refundPurchase(stripeSessionId, email, amount){
+if(!stripeSessionId||stripeSessionId.startsWith('credit-')||stripeSessionId.startsWith('admin-grant')){
+showToast('This purchase cannot be refunded (no Stripe payment)','error');return;
+}
+if(!await qpConfirm('Process Refund','Refund $'+(amount||0).toFixed(2)+' to '+email+'?\\n\\nThis will refund via Stripe. The purchase record will remain.',{danger:true,okText:'Refund'}))return;
+try{
+showToast('Processing refund...','');
+var resp=await fetch('/.netlify/functions/stripe-refund',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({stripe_session_id:stripeSessionId,email:email})});
+var data=await resp.json();
+if(!resp.ok||data.error)throw new Error(data.error||'Refund failed');
+await logAudit('refund',email,'Refunded $'+(data.amount_refunded||amount||0).toFixed(2)+' for session '+stripeSessionId,{stripe_session_id:stripeSessionId,amount:data.amount_refunded});
+await loadAllData();loadOrdersPage();
+showToast('Refund of $'+(data.amount_refunded||amount||0).toFixed(2)+' processed','success');
+}catch(e){showToast('Refund error: '+e.message,'error')}
+}
+
+// ============================================================
+// SESSION 7: CREATE SCHEDULED EMAIL
+// ============================================================
+async function createScheduledEmail(){
+var overlay=document.createElement('div');
+overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .2s ease';
+overlay.id='create-sched-overlay';
+overlay.onclick=function(e){if(e.target===overlay)overlay.remove()};
+
+var box=document.createElement('div');
+box.style.cssText='background:var(--navy-card);border:1px solid var(--border);border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;padding:28px';
+box.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px"><h3 style="font-family:Playfair Display,serif;font-size:20px;margin:0">Create Scheduled Email</h3><button onclick="document.getElementById(\'create-sched-overlay\').remove()" style="background:none;border:none;color:var(--text-dim);font-size:22px;cursor:pointer;padding:4px">&times;</button></div>'
++'<div class="form-group" style="margin-bottom:14px"><label>Subject</label><input class="input" id="cse-subject" placeholder="Email subject line"></div>'
++'<div class="form-group" style="margin-bottom:14px"><label>Body</label><textarea class="input" id="cse-body" rows="5" placeholder="Email body text..."></textarea></div>'
++'<div class="form-row"><div class="form-group"><label>Email Type</label><select class="input" id="cse-type"><option value="reminder">Reminder</option><option value="welcome">Welcome</option><option value="followup">Follow Up</option><option value="promo">Promotional</option><option value="custom">Custom</option></select></div>'
++'<div class="form-group"><label>Audience</label><select class="input" id="cse-audience"><option value="all_customers">All Customers</option><option value="bundle_owners">Bundle Owners</option><option value="session_buyers">Session Buyers</option><option value="no_purchase">Registered (No Purchase)</option></select></div></div>'
++'<div class="form-row"><div class="form-group"><label>Scheduled Date & Time</label><input class="input" type="datetime-local" id="cse-datetime"></div></div>'
++'<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px"><button class="btn btn-ghost" onclick="document.getElementById(\'create-sched-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="saveScheduledEmail()">Schedule Email</button></div>';
+
+overlay.appendChild(box);
+document.body.appendChild(overlay);
+
+// Default datetime to tomorrow at 10am
+var tm=new Date();tm.setDate(tm.getDate()+1);tm.setHours(10,0,0,0);
+document.getElementById('cse-datetime').value=tm.toISOString().slice(0,16);
+}
+
+async function saveScheduledEmail(){
+var subject=document.getElementById('cse-subject').value.trim();
+var body=document.getElementById('cse-body').value.trim();
+var type=document.getElementById('cse-type').value;
+var audience=document.getElementById('cse-audience').value;
+var datetime=document.getElementById('cse-datetime').value;
+if(!subject||!body){showToast('Subject and body are required','error');return}
+if(!datetime){showToast('Select a date and time','error');return}
+try{
+var res=await sbAdmin.from('scheduled_emails').insert({
+subject:subject,body:body,email_type:type,audience:audience,
+scheduled_for:new Date(datetime).toISOString(),
+status:'pending',created_at:new Date().toISOString()
+});
+if(res.error)throw new Error(res.error.message);
+await logAudit('create_scheduled_email',null,'Created scheduled email: '+subject,{type:type,audience:audience});
+document.getElementById('create-sched-overlay').remove();
+await loadAllData();loadAutomationPage();
+showToast('Email scheduled','success');
+}catch(e){showToast('Error: '+e.message,'error')}
+}
+
+// ============================================================
+// SESSION 7: EDIT SESSION SCHEDULE
+// ============================================================
+function editSessionSchedule(sessionId){
+var sess=(sessionScheduleData||[]).find(function(s){return s.id===sessionId});
+if(!sess){showToast('Session not found','error');return}
+
+var overlay=document.createElement('div');
+overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .2s ease';
+overlay.id='edit-sess-overlay';
+overlay.onclick=function(e){if(e.target===overlay)overlay.remove()};
+
+var dt=sess.air_date?new Date(sess.air_date).toISOString().slice(0,16):'';
+
+var box=document.createElement('div');
+box.style.cssText='background:var(--navy-card);border:1px solid var(--border);border-radius:16px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;padding:28px';
+box.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px"><h3 style="font-family:Playfair Display,serif;font-size:20px;margin:0">Edit Session '+((sess.session_number||''))+'</h3><button onclick="document.getElementById(\'edit-sess-overlay\').remove()" style="background:none;border:none;color:var(--text-dim);font-size:22px;cursor:pointer;padding:4px">&times;</button></div>'
++'<div class="form-group" style="margin-bottom:14px"><label>Title</label><input class="input" id="ess-title" value="'+esc(sess.title||'')+'"></div>'
++'<div class="form-group" style="margin-bottom:14px"><label>Topic</label><input class="input" id="ess-topic" value="'+esc(sess.topic||'')+'"></div>'
++'<div class="form-group" style="margin-bottom:14px"><label>Date & Time</label><input class="input" type="datetime-local" id="ess-date" value="'+dt+'"></div>'
++'<div class="form-group" style="margin-bottom:14px"><label>Zoom Link</label><input class="input" id="ess-zoom" value="'+esc(sess.zoom_link||'')+'"></div>'
++'<div class="form-row"><div class="form-group"><label>Zoom Meeting ID</label><input class="input" id="ess-meetid" value="'+esc(sess.zoom_meeting_id||'')+'"></div><div class="form-group"><label>Zoom Passcode</label><input class="input" id="ess-passcode" value="'+esc(sess.zoom_passcode||'')+'"></div></div>'
++'<div style="display:flex;gap:10px;justify-content:flex-end"><button class="btn btn-ghost" onclick="document.getElementById(\'edit-sess-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="saveSessionSchedule(\''+sessionId+'\')">Save</button></div>';
+
+overlay.appendChild(box);
+document.body.appendChild(overlay);
+}
+
+async function saveSessionSchedule(sessionId){
+var title=document.getElementById('ess-title').value.trim();
+var topic=document.getElementById('ess-topic').value.trim();
+var date=document.getElementById('ess-date').value;
+var zoom=document.getElementById('ess-zoom').value.trim();
+var meetId=document.getElementById('ess-meetid').value.trim();
+var passcode=document.getElementById('ess-passcode').value.trim();
+var updates={updated_at:new Date().toISOString()};
+if(title)updates.title=title;
+if(topic!==undefined)updates.topic=topic;
+if(date)updates.air_date=new Date(date).toISOString();
+updates.zoom_link=zoom;
+updates.zoom_meeting_id=meetId;
+updates.zoom_passcode=passcode;
+try{
+var res=await sbAdmin.from('session_schedule').update(updates).eq('id',sessionId);
+if(res.error)throw new Error(res.error.message);
+await logAudit('edit_session_schedule',null,'Updated session schedule: '+(title||topic||'#'+sessionId),{topic:topic});
+document.getElementById('edit-sess-overlay').remove();
+await loadAllData();loadAutomationPage();
+showToast('Session schedule updated','success');
+}catch(e){showToast('Error: '+e.message,'error')}
+}
+
 </script>
 
 </body>
