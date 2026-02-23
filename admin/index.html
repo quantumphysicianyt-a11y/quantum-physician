@@ -418,6 +418,68 @@
 <!-- Key Metrics Summary -->
 <div class="card"><div class="card-header"><div class="card-title">Key Metrics</div></div><div class="card-body" id="analytics-key-metrics"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div>
 
+<!-- Custom Analytics Query Builder -->
+<div class="card" style="margin-top:20px"><div class="card-header"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>Custom Analytics Query</div></div>
+<div class="card-body">
+<p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">Build custom queries to explore your data. Select a data source, choose what to measure, and optionally filter and group.</p>
+<div class="form-row">
+<div class="form-group"><label>Data Source</label>
+<select class="input" id="caq-source" onchange="updateCaqFields()">
+<option value="purchases">Purchases</option>
+<option value="referrals">Referral Codes</option>
+<option value="credits">Credit History</option>
+<option value="enrollments">Academy Enrollments</option>
+<option value="campaigns">Email Campaigns</option>
+</select></div>
+<div class="form-group"><label>Measure</label>
+<select class="input" id="caq-measure">
+<option value="count">Count</option>
+<option value="sum_amount">Sum of Amount</option>
+<option value="avg_amount">Average Amount</option>
+<option value="unique_emails">Unique Emails</option>
+</select></div>
+<div class="form-group"><label>Group By</label>
+<select class="input" id="caq-group">
+<option value="none">No Grouping</option>
+<option value="month">Month</option>
+<option value="week">Week</option>
+<option value="product">Product</option>
+<option value="email">Email</option>
+</select></div>
+</div>
+<div class="form-row">
+<div class="form-group"><label>Filter Field</label>
+<select class="input" id="caq-filter-field">
+<option value="none">No Filter</option>
+<option value="product_id">Product</option>
+<option value="email">Email (contains)</option>
+<option value="referral_code_used">Has Referral Code</option>
+<option value="amount_paid_gt">Amount > $</option>
+<option value="amount_paid_eq">Amount = $0 (Free)</option>
+<option value="date_after">Date After</option>
+<option value="date_before">Date Before</option>
+</select></div>
+<div class="form-group" id="caq-filter-val-grp"><label>Filter Value</label>
+<input class="input" id="caq-filter-val" placeholder="e.g. bundle-all, or 50"></div>
+<div class="form-group"><label>Chart Type</label>
+<select class="input" id="caq-chart-type">
+<option value="bar">Bar</option>
+<option value="line">Line</option>
+<option value="doughnut">Doughnut</option>
+<option value="table">Table Only</option>
+</select></div>
+</div>
+<div style="display:flex;gap:10px;margin-bottom:16px">
+<button class="btn btn-primary" onclick="runCustomQuery()">Run Query</button>
+<button class="btn btn-ghost" onclick="clearCustomQuery()">Clear</button>
+</div>
+<div id="caq-result" style="display:none">
+<canvas id="caq-chart" height="220" style="margin-bottom:16px"></canvas>
+<div id="caq-table" style="max-height:300px;overflow-y:auto"></div>
+</div>
+<div id="caq-empty" class="empty" style="display:none"><p>No data matches your query.</p></div>
+</div></div>
+
 </div>
 
 
@@ -472,7 +534,7 @@ const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 const SUPABASE_SERVICE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpaGxyZmlxb2txcmxtempqeXhqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODUxNTY0NiwiZXhwIjoyMDg0MDkxNjQ2fQ.WUn_BCkEWWfRFun1d_LDmLj6SXHQpm8mhNAjYBixGY4';
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 const sbAdmin=window.supabase.createClient(SUPABASE_URL,SUPABASE_SERVICE_KEY);
-function toggleTheme(){var c=document.documentElement.getAttribute('data-theme')||'dark',n=c==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',n);localStorage.setItem('qa-theme',n);var l=document.getElementById('themeLabel');if(l)l.textContent=n==='dark'?'Light':'Dark'}
+function toggleTheme(){var c=document.documentElement.getAttribute('data-theme')||'dark',n=c==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',n);localStorage.setItem('qa-theme',n);var l=document.getElementById('themeLabel');if(l)l.textContent=n==='dark'?'Light':'Dark';applyChartTheme();if(typeof renderAnalyticsCharts==='function'&&currentPage==='analytics')renderAnalyticsCharts()}
 (function(){var s=localStorage.getItem('qa-theme');if(s){document.documentElement.setAttribute('data-theme',s);var l=document.getElementById('themeLabel');if(l)l.textContent=s==='dark'?'Light':'Dark'}})();
 const FUSION_NAMES={'bundle-all':'Complete Bundle','session-01':'S1: Intolerance & Sensitivity','session-02':'S2: Anxiety & Overwhelm','session-03':'S3: Pain & Tension','session-04':'S4: Sleep & Reset','session-05':'S5: Digestion & Integration','session-06':'S6: Immune Balance','session-07':'S7: Hormonal Harmony','session-08':'S8: Phobias & Fear','session-09':'S9: Fatigue & Vitality','session-10':'S10: Weight & Self-Perception','session-11':'S11: Relationships & Boundaries','session-12':'S12: Purpose & Alignment'};
 const ACADEMY_NAMES={'quantum-vision-boards':'Quantum Vision Boards','becoming-present':'Becoming Present','breaking-up-with-your-beliefs':'Breaking Up with Your Beliefs','creative-mind-mapping':'Creative Mind Mapping','power-of-the-question':'The Power of The Question','transformational-mastery':'Transformational Mastery'};
@@ -1149,9 +1211,27 @@ if(sessionStorage.getItem('qp_admin_auth')==='true'){document.getElementById('au
 // SESSION 7: ANALYTICS DASHBOARD + CHART SYSTEM
 // ============================================================
 var qpCharts={};
-var COLORS={teal:'#5ba8b2',tealA:'rgba(91,168,178,0.3)',purple:'#a78bfa',purpleA:'rgba(167,139,250,0.3)',success:'#3dd68c',successA:'rgba(61,214,140,0.3)',danger:'#ef5350',dangerA:'rgba(239,83,80,0.3)',taupe:'#ad9b84',taupeA:'rgba(173,155,132,0.3)',warning:'#f0b429',warningA:'rgba(240,180,41,0.3)',white15:'rgba(255,255,255,0.15)'};
+function getChartColors(){
+var isLight=document.documentElement.getAttribute('data-theme')==='light';
+return {
+teal:isLight?'#3d8a93':'#5ba8b2',tealA:isLight?'rgba(61,138,147,0.4)':'rgba(91,168,178,0.3)',
+purple:isLight?'#7c3aed':'#a78bfa',purpleA:isLight?'rgba(124,58,237,0.4)':'rgba(167,139,250,0.3)',
+success:isLight?'#16a34a':'#3dd68c',successA:isLight?'rgba(22,163,74,0.35)':'rgba(61,214,140,0.3)',
+danger:isLight?'#dc2626':'#ef5350',dangerA:isLight?'rgba(220,38,38,0.3)':'rgba(239,83,80,0.3)',
+taupe:isLight?'#8b7355':'#ad9b84',taupeA:isLight?'rgba(139,115,85,0.4)':'rgba(173,155,132,0.3)',
+warning:isLight?'#d97706':'#f0b429',warningA:isLight?'rgba(217,119,6,0.35)':'rgba(240,180,41,0.3)',
+white15:isLight?'rgba(0,0,0,0.1)':'rgba(255,255,255,0.15)'
+}}
+var COLORS=getChartColors();
 
-if(typeof Chart!=='undefined'){Chart.defaults.color='rgba(255,255,255,0.5)';Chart.defaults.borderColor='rgba(255,255,255,0.06)'}
+function applyChartTheme(){
+if(typeof Chart==='undefined')return;
+var isLight=document.documentElement.getAttribute('data-theme')==='light';
+Chart.defaults.color=isLight?'rgba(0,0,0,0.55)':'rgba(255,255,255,0.5)';
+Chart.defaults.borderColor=isLight?'rgba(0,0,0,0.08)':'rgba(255,255,255,0.06)';
+COLORS=getChartColors();
+}
+applyChartTheme()
 
 function destroyQPChart(id){if(qpCharts[id]){qpCharts[id].destroy();delete qpCharts[id]}}
 
@@ -1205,7 +1285,7 @@ destroyQPChart('chart-rev-time');
 qpCharts['chart-rev-time']=new Chart(document.getElementById('chart-rev-time'),{
 type:'line',data:{labels:sm.map(function(m){var p2=m.split('-');return new Date(p2[0],p2[1]-1).toLocaleDateString('en-US',{month:'short',year:'2-digit'})}),
 datasets:[{label:'Monthly Revenue',data:sm.map(function(m){return revByMonth[m].total}),borderColor:COLORS.teal,backgroundColor:COLORS.tealA,fill:true,tension:0.4,pointRadius:4},
-{label:'Cumulative',data:cumData,borderColor:COLORS.taupe,borderDash:[5,5],fill:false,tension:0.4,pointRadius:2,yAxisID:'y1'}]},
+{label:'Cumulative',data:cumData,borderColor:COLORS.purple,borderWidth:2,borderDash:[5,5],fill:false,tension:0.4,pointRadius:2,yAxisID:'y1'}]},
 options:{responsive:true,plugins:{legend:{labels:{boxWidth:10,font:{size:11}}}},scales:{y:{ticks:{callback:function(v){return '$'+v}}},y1:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:function(v){return '$'+v}}}}}
 });
 
@@ -1560,6 +1640,166 @@ if(!key){document.getElementById('cse-subject').value='';document.getElementById
 var t=EMAIL_TEMPLATES[key];
 if(t){document.getElementById('cse-subject').value=t.subject||'';document.getElementById('cse-body').value=t.body||''}
 }
+
+
+// ============================================================
+// SESSION 7: CUSTOM ANALYTICS QUERY BUILDER
+// ============================================================
+function updateCaqFields(){
+var src=document.getElementById('caq-source').value;
+var measure=document.getElementById('caq-measure');
+var group=document.getElementById('caq-group');
+var filter=document.getElementById('caq-filter-field');
+// Reset options based on source
+measure.innerHTML='<option value="count">Count</option>';
+if(src==='purchases'){
+measure.innerHTML+='<option value="sum_amount">Sum of Amount</option><option value="avg_amount">Average Amount</option><option value="unique_emails">Unique Emails</option>';
+group.innerHTML='<option value="none">No Grouping</option><option value="month">Month</option><option value="week">Week</option><option value="product">Product</option><option value="email">Email</option>';
+filter.innerHTML='<option value="none">No Filter</option><option value="product_id">Product</option><option value="email">Email (contains)</option><option value="referral_code_used">Has Referral Code</option><option value="amount_paid_gt">Amount > $</option><option value="amount_paid_eq">Amount = $0 (Free)</option><option value="date_after">Date After</option><option value="date_before">Date Before</option>';
+}else if(src==='referrals'){
+measure.innerHTML+='<option value="sum_credits">Sum of Credits</option><option value="sum_earned">Sum Total Earned</option><option value="avg_referrals">Avg Referrals</option>';
+group.innerHTML='<option value="none">No Grouping</option><option value="has_balance">Has Balance vs Not</option><option value="referral_count">By Referral Count</option>';
+filter.innerHTML='<option value="none">No Filter</option><option value="has_referrals">Has Referrals</option><option value="has_balance">Has Balance > 0</option><option value="email">Email (contains)</option>';
+}else if(src==='credits'){
+measure.innerHTML+='<option value="sum_amount">Sum of Amount</option>';
+group.innerHTML='<option value="none">No Grouping</option><option value="month">Month</option><option value="type">Credit Type</option><option value="email">Email</option>';
+filter.innerHTML='<option value="none">No Filter</option><option value="type">Credit Type</option><option value="email">Email (contains)</option><option value="date_after">Date After</option>';
+}else if(src==='enrollments'){
+measure.innerHTML+='<option value="unique_emails">Unique Students</option>';
+group.innerHTML='<option value="none">No Grouping</option><option value="course">Course</option><option value="status">Status</option><option value="month">Month</option>';
+filter.innerHTML='<option value="none">No Filter</option><option value="status">Status</option><option value="course">Course</option>';
+}else if(src==='campaigns'){
+measure.innerHTML+='<option value="sum_sent">Total Sent</option><option value="sum_opens">Total Opens</option><option value="sum_clicks">Total Clicks</option><option value="avg_open_rate">Avg Open Rate</option>';
+group.innerHTML='<option value="none">No Grouping</option><option value="month">Month</option><option value="type">Campaign Type</option>';
+filter.innerHTML='<option value="none">No Filter</option><option value="type">Campaign Type</option><option value="date_after">Date After</option>';
+}
+}
+
+function runCustomQuery(){
+var src=document.getElementById('caq-source').value;
+var measure=document.getElementById('caq-measure').value;
+var groupBy=document.getElementById('caq-group').value;
+var filterField=document.getElementById('caq-filter-field').value;
+var filterVal=(document.getElementById('caq-filter-val').value||'').trim().toLowerCase();
+var chartType=document.getElementById('caq-chart-type').value;
+
+// Get source data
+var data=[];
+if(src==='purchases')data=(purchasesData||[]).slice();
+else if(src==='referrals')data=(referralData||[]).slice();
+else if(src==='credits')data=(creditHistory||[]).slice();
+else if(src==='enrollments')data=(academyEnrollments||[]).slice();
+else if(src==='campaigns')data=(emailCampaignsData||[]).slice();
+
+// Apply filter
+if(filterField!=='none'&&filterField){
+data=data.filter(function(d){
+if(filterField==='product_id')return(d.product_id||'').toLowerCase().indexOf(filterVal)!==-1;
+if(filterField==='email')return(d.email||d.recipient_email||'').toLowerCase().indexOf(filterVal)!==-1;
+if(filterField==='referral_code_used')return!!d.referral_code_used;
+if(filterField==='amount_paid_gt')return(Number(d.amount_paid)||0)>Number(filterVal);
+if(filterField==='amount_paid_eq')return!d.amount_paid||Number(d.amount_paid)===0;
+if(filterField==='date_after'){var df=d.purchased_at||d.created_at||d.enrolled_at||d.sent_at;return df&&new Date(df)>=new Date(filterVal)}
+if(filterField==='date_before'){var df2=d.purchased_at||d.created_at||d.enrolled_at||d.sent_at;return df2&&new Date(df2)<=new Date(filterVal)}
+if(filterField==='has_referrals')return(d.successful_referrals||0)>0;
+if(filterField==='has_balance')return(d.credit_balance||0)>0;
+if(filterField==='type')return(d.type||d.campaign_type||d.email_type||'').toLowerCase().indexOf(filterVal)!==-1;
+if(filterField==='status')return(d.status||'').toLowerCase()===filterVal;
+if(filterField==='course'){var cname=(d.qa_courses&&d.qa_courses.slug)||d.course_id||'';return cname.toLowerCase().indexOf(filterVal)!==-1}
+return true;
+});
+}
+
+if(!data.length){
+document.getElementById('caq-result').style.display='none';
+document.getElementById('caq-empty').style.display='';
+return;
+}
+
+// Group
+var groups={};
+if(groupBy==='none'){groups['Total']=data}
+else{
+data.forEach(function(d){
+var key='Unknown';
+if(groupBy==='month'){var dt=d.purchased_at||d.created_at||d.enrolled_at||d.sent_at;if(dt){var dd=new Date(dt);key=dd.getFullYear()+'-'+String(dd.getMonth()+1).padStart(2,'0')}else key='No Date'}
+else if(groupBy==='week'){var dt2=d.purchased_at||d.created_at||d.enrolled_at||d.sent_at;if(dt2){var dd2=new Date(dt2);var ws=new Date(dd2);ws.setDate(dd2.getDate()-dd2.getDay());key=ws.toISOString().slice(0,10)}else key='No Date'}
+else if(groupBy==='product')key=d.product_id||'unknown';
+else if(groupBy==='email')key=(d.email||d.recipient_email||'unknown').toLowerCase();
+else if(groupBy==='type')key=d.type||d.campaign_type||d.email_type||'unknown';
+else if(groupBy==='course')key=(d.qa_courses&&d.qa_courses.title)||d.course_id||'unknown';
+else if(groupBy==='status')key=d.status||'unknown';
+else if(groupBy==='has_balance')key=(d.credit_balance||0)>0?'Has Balance':'No Balance';
+else if(groupBy==='referral_count'){var rc=d.successful_referrals||0;key=rc===0?'0 referrals':rc<=3?'1-3 referrals':'4+ referrals'}
+if(!groups[key])groups[key]=[];
+groups[key].push(d);
+});
+}
+
+// Measure
+var labels=Object.keys(groups).sort();
+var values=labels.map(function(k){
+var items=groups[k];
+if(measure==='count')return items.length;
+if(measure==='sum_amount')return items.reduce(function(s,d){return s+(Number(d.amount_paid)||Number(d.amount)||0)},0);
+if(measure==='avg_amount'){var paid=items.filter(function(d){return(Number(d.amount_paid)||0)>0});return paid.length?(paid.reduce(function(s,d){return s+(Number(d.amount_paid)||0)},0)/paid.length):0}
+if(measure==='unique_emails')return new Set(items.map(function(d){return(d.email||d.recipient_email||d.user_email||'').toLowerCase()}).filter(Boolean)).size;
+if(measure==='sum_credits')return items.reduce(function(s,d){return s+(Number(d.credit_balance)||0)},0);
+if(measure==='sum_earned')return items.reduce(function(s,d){return s+(Number(d.total_earned)||0)},0);
+if(measure==='avg_referrals'){var total=items.reduce(function(s,d){return s+(Number(d.successful_referrals)||0)},0);return items.length?(total/items.length):0}
+if(measure==='sum_sent')return items.reduce(function(s,d){return s+(Number(d.sent_count)||0)},0);
+if(measure==='sum_opens')return items.reduce(function(s,d){return s+(Number(d.open_count)||0)},0);
+if(measure==='sum_clicks')return items.reduce(function(s,d){return s+(Number(d.click_count)||0)},0);
+if(measure==='avg_open_rate'){var rates=items.filter(function(d){return(d.sent_count||0)>0}).map(function(d){return(d.open_count||0)/(d.sent_count||1)*100});return rates.length?(rates.reduce(function(a,b){return a+b},0)/rates.length):0}
+return items.length;
+});
+
+// Round values
+values=values.map(function(v){return Math.round(v*100)/100});
+
+// Render
+document.getElementById('caq-empty').style.display='none';
+document.getElementById('caq-result').style.display='';
+
+// Chart
+var canvas=document.getElementById('caq-chart');
+if(chartType==='table'){canvas.style.display='none'}
+else{
+canvas.style.display='';
+destroyQPChart('caq-chart');
+var bgColors=labels.map(function(_,i){var palette=[COLORS.teal,COLORS.purple,COLORS.taupe,COLORS.success,COLORS.warning,COLORS.danger,'#60a5fa','#c084fc','#f472b6','#34d399','#fbbf24','#fb923c'];return palette[i%palette.length]});
+var bgAlphas=labels.map(function(_,i){var palette=[COLORS.tealA,COLORS.purpleA,COLORS.taupeA,COLORS.successA,COLORS.warningA,COLORS.dangerA,'rgba(96,165,250,.3)','rgba(192,132,252,.3)','rgba(244,114,182,.3)','rgba(52,211,153,.3)','rgba(251,191,36,.3)','rgba(251,146,60,.3)'];return palette[i%palette.length]});
+qpCharts['caq-chart']=new Chart(canvas,{
+type:chartType,
+data:{labels:labels,datasets:[{label:document.getElementById('caq-measure').options[document.getElementById('caq-measure').selectedIndex].text,data:values,backgroundColor:chartType==='doughnut'?bgColors:bgAlphas,borderColor:bgColors,borderWidth:chartType==='doughnut'?0:1,borderRadius:chartType==='bar'?4:0,tension:0.4,fill:chartType==='line'}]},
+options:{responsive:true,plugins:{legend:{display:chartType==='doughnut',position:'bottom',labels:{boxWidth:10,font:{size:11}}}},scales:chartType==='doughnut'?{}:{y:{beginAtZero:true}}}
+});
+}
+
+// Table
+var isMoney=measure.indexOf('amount')!==-1||measure.indexOf('credits')!==-1||measure.indexOf('earned')!==-1;
+var thtml='<table class="tbl"><thead><tr><th>'+groupBy.charAt(0).toUpperCase()+groupBy.slice(1)+'</th><th style="text-align:right">'+document.getElementById('caq-measure').options[document.getElementById('caq-measure').selectedIndex].text+'</th></tr></thead><tbody>';
+labels.forEach(function(k,i){
+var displayVal=isMoney?'$'+values[i].toLocaleString():measure.indexOf('rate')!==-1?values[i].toFixed(1)+'%':values[i].toLocaleString();
+thtml+='<tr><td>'+esc(k)+'</td><td style="text-align:right;font-weight:600;color:var(--teal)">'+displayVal+'</td></tr>';
+});
+thtml+='</tbody></table>';
+if(labels.length>1){
+var totalVal=values.reduce(function(a,b){return a+b},0);
+var displayTotal=isMoney?'$'+totalVal.toLocaleString():totalVal.toLocaleString();
+thtml+='<div style="text-align:right;margin-top:8px;font-size:12px;color:var(--text-muted)">Total: <strong style="color:var(--text)">'+displayTotal+'</strong> across '+labels.length+' groups</div>';
+}
+document.getElementById('caq-table').innerHTML=thtml;
+}
+
+function clearCustomQuery(){
+document.getElementById('caq-filter-val').value='';
+document.getElementById('caq-result').style.display='none';
+document.getElementById('caq-empty').style.display='none';
+destroyQPChart('caq-chart');
+document.getElementById('caq-table').innerHTML='';
+}
+
 </script>
 
 </body>
