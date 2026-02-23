@@ -1167,7 +1167,7 @@ function isFusionProduct(pid){return pid&&(pid.startsWith('session-')||pid==='bu
 
 function loadAnalyticsPage(){
 if(!dataLoaded)return;
-var p=purchasesData,r=referralData,cr=creditHistoryData,prof=profilesData;
+var p=purchasesData,r=referralData,cr=creditHistory,prof=profilesData;
 var totalRev=p.reduce(function(s,x){return s+(Number(x.amount_paid)||0)},0);
 var acadRev=p.filter(function(x){return isAcademyProduct(x.product_id)}).reduce(function(s,x){return s+(Number(x.amount_paid)||0)},0);
 var fusionRev=p.filter(function(x){return isFusionProduct(x.product_id)}).reduce(function(s,x){return s+(Number(x.amount_paid)||0)},0);
@@ -1183,8 +1183,8 @@ renderAnalyticsCharts();
 
 function renderAnalyticsCharts(){
 if(typeof Chart==='undefined')return;
-var p=purchasesData||[],r=referralData||[],cr=creditHistoryData||[],prof=profilesData||[];
-var campaigns=campaignsData||[];
+var p=purchasesData||[],r=referralData||[],cr=creditHistory||[],prof=profilesData||[];
+var campaigns=emailCampaignsData||[];
 
 // --- PRODUCT PRICES for fallback ---
 var PP={'bundle-all':500,'session-01':50,'session-02':50,'session-03':50,'session-04':50,'session-05':50,'session-06':50,'session-07':50,'session-08':50,'session-09':50,'session-10':50,'session-11':50,'session-12':50,'quantum-vision-boards':90,'becoming-present':90,'breaking-up-with-your-beliefs':90,'creative-mind-mapping':90,'power-of-the-question':90,'transformational-mastery':360};
@@ -1464,10 +1464,10 @@ overlay.onclick=function(e){if(e.target===overlay)overlay.remove()};
 var box=document.createElement('div');
 box.style.cssText='background:var(--navy-card);border:1px solid var(--border);border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;padding:28px';
 box.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px"><h3 style="font-family:Playfair Display,serif;font-size:20px;margin:0">Create Scheduled Email</h3><button onclick="document.getElementById(\'create-sched-overlay\').remove()" style="background:none;border:none;color:var(--text-dim);font-size:22px;cursor:pointer;padding:4px">&times;</button></div>'
-+'<div class="form-group" style="margin-bottom:14px"><label>Subject</label><input class="input" id="cse-subject" placeholder="Email subject line"></div>'
++'<div class="form-group" style="margin-bottom:14px"><label>Quick Template</label><select class="input" id="cse-template" onchange="applyCseTemplate()"><option value="">— Start from scratch —</option><option value="welcome">Welcome</option><option value="newSession">New Session Available</option><option value="reminder">Session Reminder</option><option value="referral">Referral Promo</option><option value="thankYou">Thank You</option><option value="academyWelcome">Academy Welcome</option></select></div><div class="form-group" style="margin-bottom:14px"><label>Subject</label><input class="input" id="cse-subject" placeholder="Email subject line"></div>'
 +'<div class="form-group" style="margin-bottom:14px"><label>Body</label><textarea class="input" id="cse-body" rows="5" placeholder="Email body text..."></textarea></div>'
 +'<div class="form-row"><div class="form-group"><label>Email Type</label><select class="input" id="cse-type"><option value="reminder">Reminder</option><option value="welcome">Welcome</option><option value="followup">Follow Up</option><option value="promo">Promotional</option><option value="custom">Custom</option></select></div>'
-+'<div class="form-group"><label>Audience</label><select class="input" id="cse-audience"><option value="all_customers">All Customers</option><option value="bundle_owners">Bundle Owners</option><option value="session_buyers">Session Buyers</option><option value="no_purchase">Registered (No Purchase)</option></select></div></div>'
++'<div class="form-group"><label>Audience</label><select class="input" id="cse-audience"><optgroup label="General"><option value="all_customers">All Opted-In Subscribers</option><option value="bundle_owners">Bundle Owners</option><option value="session_buyers">Single Session Buyers (No Bundle)</option><option value="no_purchase">Registered (No Purchase)</option></optgroup><optgroup label="Fusion Sessions"><option value="session-01">S1 - Intolerance &amp; Sensitivity</option><option value="session-02">S2 - Anxiety &amp; Overwhelm</option><option value="session-03">S3 - Pain &amp; Tension</option><option value="session-04">S4 - Sleep &amp; Reset</option><option value="session-05">S5 - Digestion &amp; Integration</option><option value="session-06">S6 - Immune Balance</option><option value="session-07">S7 - Hormonal Harmony</option><option value="session-08">S8 - Phobias &amp; Fear</option><option value="session-09">S9 - Fatigue &amp; Vitality</option><option value="session-10">S10 - Weight &amp; Self-Perception</option><option value="session-11">S11 - Relationships &amp; Boundaries</option><option value="session-12">S12 - Purpose &amp; Alignment</option></optgroup><optgroup label="Academy"><option value="academy-all">All Academy Students</option><option value="academy-transformational-mastery">Transformational Mastery</option><option value="academy-quantum-vision-boards">Quantum Vision Boards</option><option value="academy-becoming-present">Becoming Present</option><option value="academy-breaking-up-with-your-beliefs">Breaking Up with Your Beliefs</option><option value="academy-creative-mind-mapping">Creative Mind Mapping</option><option value="academy-power-of-the-question">The Power of The Question</option></optgroup></select></div></div>'
 +'<div class="form-row"><div class="form-group"><label>Scheduled Date & Time</label><input class="input" type="datetime-local" id="cse-datetime"></div></div>'
 +'<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px"><button class="btn btn-ghost" onclick="document.getElementById(\'create-sched-overlay\').remove()">Cancel</button><button class="btn btn-primary" onclick="saveScheduledEmail()">Schedule Email</button></div>';
 
@@ -1553,6 +1553,13 @@ showToast('Session schedule updated','success');
 }catch(e){showToast('Error: '+e.message,'error')}
 }
 
+
+function applyCseTemplate(){
+var key=document.getElementById('cse-template').value;
+if(!key){document.getElementById('cse-subject').value='';document.getElementById('cse-body').value='';return}
+var t=EMAIL_TEMPLATES[key];
+if(t){document.getElementById('cse-subject').value=t.subject||'';document.getElementById('cse-body').value=t.body||''}
+}
 </script>
 
 </body>
