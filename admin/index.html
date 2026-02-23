@@ -1285,7 +1285,7 @@ destroyQPChart('chart-rev-time');
 qpCharts['chart-rev-time']=new Chart(document.getElementById('chart-rev-time'),{
 type:'line',data:{labels:sm.map(function(m){var p2=m.split('-');return new Date(p2[0],p2[1]-1).toLocaleDateString('en-US',{month:'short',year:'2-digit'})}),
 datasets:[{label:'Monthly Revenue',data:sm.map(function(m){return revByMonth[m].total}),borderColor:COLORS.teal,backgroundColor:COLORS.tealA,fill:true,tension:0.4,pointRadius:4},
-{label:'Cumulative',data:cumData,borderColor:COLORS.purple,borderWidth:2,borderDash:[5,5],fill:false,tension:0.4,pointRadius:2,yAxisID:'y1'}]},
+{label:'Cumulative',type:'line',data:cumData,borderColor:COLORS.purple,borderWidth:2,borderDash:[5,5],fill:false,tension:0.4,pointRadius:3,yAxisID:'y1'}]},
 options:{responsive:true,plugins:{legend:{labels:{boxWidth:10,font:{size:11}}}},scales:{y:{ticks:{callback:function(v){return '$'+v}}},y1:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:function(v){return '$'+v}}}}}
 });
 
