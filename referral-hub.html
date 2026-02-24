@@ -359,6 +359,50 @@
     let referralData = null;
     let refLink = '';
     let qrCodeUrl = '';
+    let userEmail = '';
+
+    // Generate a referral code for users who don't have one
+    window.generateCode = async function() {
+      const btn = document.getElementById('generateBtn');
+      btn.disabled = true;
+      btn.textContent = 'Generating...';
+
+      try {
+        // Generate 8-char code
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let code = '';
+        for (let i = 0; i < 8; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+
+        const { data, error } = await supabase.from('referral_codes').insert([{
+          email: userEmail,
+          code: code,
+          credit_balance: 0,
+          total_earned: 0,
+          successful_referrals: 0,
+          created_at: new Date().toISOString()
+        }]).select().single();
+
+        if (error) {
+          // Might be duplicate code, try once more
+          if (error.code === '23505') {
+            btn.textContent = 'Code conflict — try again';
+            btn.disabled = false;
+            return;
+          }
+          throw error;
+        }
+
+        referralData = data;
+        const cfg = BRAND_CONFIG[currentBrand];
+        refLink = cfg.refBase + data.code;
+        qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(refLink)}`;
+        render();
+      } catch(err) {
+        btn.textContent = 'Error — try again';
+        btn.disabled = false;
+        console.error('Generate code error:', err);
+      }
+    };
 
     function applyTheme(brand) {
       currentBrand = brand;
@@ -388,7 +432,19 @@
 
     function render() {
       if (!referralData?.code) {
-        app.innerHTML = `<div class="loading">No referral code found. <a href="${BRAND_CONFIG[currentBrand].backUrl}" style="color:#5ba8b2">Return to dashboard</a></div>`;
+        const cfg = BRAND_CONFIG[currentBrand];
+        app.innerHTML = `
+          <h1 class="page-title">Share & Earn</h1>
+          <p class="page-subtitle">You don't have a referral code yet — generate one to start earning!</p>
+          <div style="text-align:center;margin-top:30px">
+            <button class="copy-btn" id="generateBtn" onclick="generateCode()" style="font-size:16px;padding:18px 40px">
+              ✨ Generate My Referral Code
+            </button>
+          </div>
+          <div style="text-align:center;margin-top:20px">
+            <a href="${cfg.backUrl}" style="color:rgba(255,255,255,.5);font-size:14px">← Back to dashboard</a>
+          </div>
+        `;
         return;
       }
 
@@ -561,6 +617,7 @@
       }
 
       const email = data.session.user.email.toLowerCase();
+      userEmail = email;
       const { data: refData } = await supabase
         .from('referral_codes')
         .select('*')
