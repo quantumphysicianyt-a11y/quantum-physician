@@ -459,13 +459,13 @@ function dismissSuggestion(id){sgDismissed.push(id);localStorage.setItem('qp_sg_
 // SESSION 11: WEEKLY MARKETING GOALS
 // ============================================================
 var WEEKLY_GOALS=[
-{id:'no_purchase',label:'Welcome Email',campaignType:'no_purchase'},
-{id:'upsell_bundle',label:'Upgrade Offer',campaignType:'upsell_bundle'},
-{id:'credit_reminder',label:'Credit Reminder',campaignType:'credit_reminder'},
-{id:'referral_nudge',label:'Referral Nudge',campaignType:'referral_nudge'},
-{id:'promote_session',label:'Session Promo',campaignType:'promote_session'},
-{id:'promo_create',label:'New Promotion',manual:true},
-{id:'review_analytics',label:'Review Analytics',manual:true}
+{id:'no_purchase',label:'Welcome Email',campaignType:'no_purchase',nav:function(){go('email');setTimeout(function(){var s=document.getElementById('email-audience');if(s){s.value='no_purchase';updateAudiencePreview()}},200)}},
+{id:'upsell_bundle',label:'Upgrade Offer',campaignType:'upsell_bundle',nav:function(){go('email');setTimeout(function(){var s=document.getElementById('email-audience');if(s){s.value='session_buyers';updateAudiencePreview()}},200)}},
+{id:'credit_reminder',label:'Credit Reminder',campaignType:'credit_reminder',nav:function(){go('email');setTimeout(function(){var s=document.getElementById('email-audience');if(s){s.value='has_credits';updateAudiencePreview()}},200)}},
+{id:'referral_nudge',label:'Referral Nudge',campaignType:'referral_nudge',nav:function(){go('email');setTimeout(function(){var s=document.getElementById('email-audience');if(s){s.value='has_referral';updateAudiencePreview()}},200)}},
+{id:'promote_session',label:'Session Promo',campaignType:'promote_session',nav:function(){go('email');setTimeout(function(){var t=document.getElementById('email-type-select');if(t){t.value='promotional';updateEmailTypeHint()}},200)}},
+{id:'promo_create',label:'New Promotion',manual:true,nav:function(){go('promotions')}},
+{id:'review_analytics',label:'Review Analytics',manual:true,nav:function(){go('analytics')}}
 ];
 
 function getWeekStart(){var d=new Date();var day=d.getDay();var diff=d.getDate()-day+(day===0?-6:1);return new Date(d.getFullYear(),d.getMonth(),diff,0,0,0,0)}
@@ -493,12 +493,19 @@ countEl.textContent=completedCount+'/'+WEEKLY_GOALS.length;
 countEl.style.color=progressPct===100?'var(--success)':'var(--text-muted)';
 document.getElementById('weekly-date-range').textContent='Week of '+weekStart.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' \u2014 resets Mon';
 var chipsEl=document.getElementById('weekly-goal-chips');
-chipsEl.innerHTML=WEEKLY_GOALS.map(function(g){
+chipsEl.innerHTML=WEEKLY_GOALS.map(function(g,i){
 var done=g.manual?manual[g.id]:sentTypes.has(g.campaignType);
-var clickAttr=g.manual&&!done?' onclick="completeManualGoal(\''+g.id+'\')"':'';
-return'<span class="goal-chip'+(done?' done':'')+(g.manual?' manual':'')+'"'+clickAttr+' title="'+(done?'Completed!':(g.manual?'Click to complete':'Send a '+g.label+' campaign'))+'"><span class="goal-check">'+(done?'\u2713':'')+'</span>'+g.label+'</span>'
+var clickFn=done?'':'weeklyGoalAction('+i+')';
+var clickAttr=clickFn?' onclick="'+clickFn+'" style="cursor:pointer"':'';
+return'<span class="goal-chip'+(done?' done':'')+(g.manual?' manual':'')+'"'+clickAttr+' title="'+(done?'Completed!':(g.manual?'Click to complete':'Click to start'))+'"><span class="goal-check">'+(done?'\u2713':'')+'</span>'+g.label+'</span>'
 }).join('');
 panel.style.display='block';
+}
+
+function weeklyGoalAction(idx){
+var g=WEEKLY_GOALS[idx];
+if(g.manual){completeManualGoal(g.id)}
+if(g.nav)g.nav();
 }
 
 function completeManualGoal(goalId){
