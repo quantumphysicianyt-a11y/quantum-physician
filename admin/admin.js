@@ -805,9 +805,9 @@ discountCardHtml='<table role="presentation" cellspacing="0" cellpadding="0" bor
 if(cleanBody.indexOf('community')>=0||cleanBody.indexOf('/community')>=0){
 discountCardHtml+='<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:15px 0 0;"><tr><td align="center"><a href="'+wrapLink(siteUrl+'/community')+'" target="_blank" style="color:#8338ec;font-size:14px;font-weight:600;text-decoration:none;">Join the Community &rarr;</a></td></tr></table>'
 }}
-/* Second card (parts[2]) - discount or referral */
-if(parts[2]){
-var card2Body=parts[2].trim();
+/* Additional cards */
+for(var cx=2;cx<parts.length;cx++){
+var card2Body=parts[cx].trim();
 var card2Inner=card2Body
 .replace(/\*\*([^*]+)\*\*/g,'<strong style="color:#00f5ff;">$1</strong>')
 .replace(/\n/g,'<br>').replace(/(<br>){3,}/g,'<br><br>').replace(/^(<br>)+/,'').replace(/(<br>)+$/,'');
@@ -873,9 +873,9 @@ var ctaLabel2=discountInner.indexOf('referral')>=0||discountInner.indexOf('Refer
 var ctaUrl2=ctaLabel2==='GO TO REFERRAL HUB'?siteUrl+'/referral-hub.html':(discountConfig&&discountConfig.couponId?'https://fusionsessions.com/?coupon='+discountConfig.couponId:'https://academy.quantumphysician.com');
 discountCardHtml='<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:25px 0 5px;"><tr><td style="background:linear-gradient(135deg,rgba(91,168,178,0.08),rgba(173,155,132,0.08));border:2px solid rgba(91,168,178,0.3);border-radius:12px;padding:28px 25px;text-align:center;"><p style="margin:0;font-size:15px;color:rgba(255,255,255,0.85);line-height:1.5;font-family:Georgia,serif;">'+discountInner+'</p>'+qrHtml+'<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:20px auto 0;"><tr><td style="background:linear-gradient(135deg,#5ba8b2,#4a97a1);border-radius:50px;"><a href="'+wrapLink(ctaUrl2)+'" target="_blank" style="display:inline-block;padding:14px 40px;color:#fff;text-decoration:none;font-weight:700;font-size:14px;letter-spacing:2px;text-transform:uppercase;font-family:Arial,sans-serif;">'+ctaLabel2+'</a></td></tr></table><p style="margin:10px 0 0;font-size:11px;color:rgba(255,255,255,0.4);">'+(ctaLabel2==='GO TO REFERRAL HUB'?'Share your code and start earning':'Applied automatically at checkout')+'</p></td></tr></table>'
 }
-/* Second card (parts[2]) - discount or referral */
-if(parts[2]){
-var card2Body=parts[2].trim();
+/* Additional cards */
+for(var cx=2;cx<parts.length;cx++){
+var card2Body=parts[cx].trim();
 var card2Inner=card2Body
 .replace(/\*\*([^*]+)\*\*/g,'<strong style="color:#5ba8b2;">$1</strong>')
 .replace(/\n/g,'<br>').replace(/(<br>){3,}/g,'<br><br>').replace(/^(<br>)+/,'').replace(/(<br>)+$/,'');
