@@ -576,37 +576,43 @@ function getWeekKey(){return getWeekStart().toISOString().split('T')[0]}
 
 /* Filter emails: remove opted-out users and those at weekly promo limit */
 async function filterGoalRecipients(rawEmails){
-/* 1. Remove opted-out */
-var optedOut={};var optedOutCount=0;var optedInCount=0;var noFieldCount=0;authUsersMap.forEach(function(u){
-if(u.raw_user_meta_data&&u.raw_user_meta_data.marketing_opt_in===false){optedOut[u.email.toLowerCase()]=true;optedOutCount++}
-else if(u.raw_user_meta_data&&u.raw_user_meta_data.marketing_opt_in===true){optedInCount++}
-else{noFieldCount++;console.log('[Filter] No opt-in field for:', u.email)}});
-console.log('[Filter] Total opted-out users in system:', optedOutCount, 'opted-in:', optedInCount, 'no field:', noFieldCount);
-console.log('[Filter] Input emails:', rawEmails.length);
-var emails=rawEmails.map(function(e){return e.toLowerCase()}).filter(function(e){return!optedOut[e]});
-var notInAuth=rawEmails.filter(function(e){return!authUsersMap.has(e.toLowerCase())});
-if(notInAuth.length)console.log('[Filter] Emails NOT in authUsersMap ('+notInAuth.length+'):', notInAuth.slice(0,5));
-console.log('[Filter] After opt-out removal:', emails.length, '(removed', rawEmails.length-emails.length, ')');
+/* 1. Remove opted-out — ONLY raw_user_meta_data.marketing_opt_in===false (matches Fusion admin) */
+var optedOut={};
+authUsersMap.forEach(function(u){
+var meta=u.raw_user_meta_data||{};
+if(meta.marketing_opt_in===false)optedOut[u.email.toLowerCase()]=true;
+});
+console.log('[Filter] Input:',rawEmails.length,'| Opted-out in auth:',Object.keys(optedOut).length);
+var emails=[];var optOutRemoved=0;var notInAuth=0;
+rawEmails.forEach(function(e){
+var el=e.trim().toLowerCase();if(!el)return;
+if(optedOut[el]){optOutRemoved++;console.log('[Filter] Removed (opted out):',el);return}
+if(!authUsersMap.has(el))notInAuth++;
+emails.push(el);
+});
+console.log('[Filter] Kept:',emails.length,'| Removed opted-out:',optOutRemoved,'| Not in auth (kept):',notInAuth);
 /* 2. Deduplicate */
 emails=Array.from(new Set(emails));
-console.log('[Filter] After dedup:', emails.length);
 if(!emails.length)return emails;
 /* 3. Check weekly promo limit */
 var weeklyLimit=getWeeklyEmailLimit();
-console.log('[Filter] Weekly promo limit:', weeklyLimit);
 var sevenDaysAgo=new Date(Date.now()-7*24*60*60*1000).toISOString();
+var limitRemoved=0;
 try{
-var rt=await sb.from('email_tracking').select('recipient_email,email_type,sent_at').in('recipient_email',emails).eq('email_type','promotional').gte('sent_at',sevenDaysAgo);
-console.log('[Filter] Promo tracking rows found:', rt.data?rt.data.length:0, rt.error?'ERROR: '+rt.error.message:'');
+var rt=await sb.from('email_tracking').select('recipient_email').in('recipient_email',emails).eq('email_type','promotional').gte('sent_at',sevenDaysAgo);
 var counts={};(rt.data||[]).forEach(function(t){var e=t.recipient_email.toLowerCase();counts[e]=(counts[e]||0)+1});
-var overLimit=Object.keys(counts).filter(function(e){return counts[e]>=weeklyLimit});
-console.log('[Filter] Users at/over weekly limit:', overLimit.length, overLimit.slice(0,5));
 var before=emails.length;
 emails=emails.filter(function(e){return(counts[e]||0)<weeklyLimit});
-var skipped=before-emails.length;
-console.log('[Filter] Final result:', emails.length, 'of', before, '(skipped', skipped, ')');
-if(skipped>0)showToast(skipped+' recipient'+(skipped>1?'s':'')+' skipped (weekly limit '+weeklyLimit+')','info');
-}catch(e){console.log('[Filter] Error checking weekly limits:',e)}
+limitRemoved=before-emails.length;
+console.log('[Filter] Weekly limit removed:',limitRemoved);
+}catch(e){console.log('[Filter] Weekly limit error:',e)}
+var totalSkipped=optOutRemoved+limitRemoved;
+if(totalSkipped>0){
+var parts=[];
+if(optOutRemoved>0)parts.push(optOutRemoved+' opted out');
+if(limitRemoved>0)parts.push(limitRemoved+' at weekly limit');
+showToast(totalSkipped+' skipped ('+parts.join(', ')+')','info')}
+console.log('[Filter] Final:',emails.length);
 return emails;
 }
 
