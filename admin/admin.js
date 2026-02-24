@@ -91,9 +91,10 @@ h+='<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 8px" 
 h+='<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 8px" onclick="sgInsertVar(\u0027{{email}}\u0027)">Email</button>';
 h+='<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 8px" onclick="sgInsertVar(\u0027{{referral_code}}\u0027)">Referral Code</button>';
 h+='<span style="flex:1"></span>';
-h+='<div id="sg-section-controls" style="display:none;margin-bottom:8px"><div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">Cards <span style="opacity:.5">(drag to reorder)</span></div><div id="sg-card-pills" style="display:flex;flex-wrap:wrap;gap:6px"></div></div>';
 h+='</div>';
-h+='<textarea id="sg-body" class="input" rows="10" style="width:100%;font-size:13px;line-height:1.6" oninput="sgAutoPreview()">'+esc(opts.body||'')+'</textarea></div>';
+h+='<textarea id="sg-body" class="input" rows="10" style="width:100%;font-size:13px;line-height:1.6" oninput="sgAutoPreview()">'+esc(opts.body||'')+'</textarea>';
+h+='<div id="sg-section-controls" style="display:none;margin-top:8px;margin-bottom:8px"><div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">Cards <span style="opacity:.5">(drag to reorder)</span></div><div id="sg-card-pills" style="display:flex;flex-wrap:wrap;gap:6px"></div></div>';
+h+='</div>';
 h+='<div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap">';
 h+='<div style="flex:1;min-width:140px"><label style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:4px;display:block">Brand</label><select id="sg-brand" class="input" style="width:100%;font-size:12px" onchange="sgAutoPreview()"><option value="fusion"'+(opts.brand==='fusion'?' selected':'')+'>Fusion (Neon)</option><option value="academy"'+(opts.brand==='academy'?' selected':'')+'>Academy (Teal)</option></select></div>';
 h+='<div style="flex:1;min-width:140px"><label style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:4px;display:block">From</label><select id="sg-from" class="input" style="width:100%;font-size:12px"><option value="tracey@quantumphysician.com"'+(opts.from==='tracey@quantumphysician.com'?' selected':'')+'>Dr. Tracey (Personal)</option><option value="hello@quantumphysician.com"'+(opts.from==='hello@quantumphysician.com'?' selected':'')+'>Hello (Marketing)</option></select></div>';
@@ -271,7 +272,7 @@ return brand==='academy'?buildAcademyEmail(cleanBody,null,siteUrl,discCfg):build
 }
 
 var _sgPreviewTimer=null;
-function sgAutoPreview(){
+function sgAutoPreview(){sgUpdateSectionControls();
 clearTimeout(_sgPreviewTimer);
 _sgPreviewTimer=setTimeout(function(){
 var area=document.getElementById('sg-preview-area');
