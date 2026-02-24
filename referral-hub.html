@@ -681,11 +681,13 @@
     };
 
     async function boot() {
-      const { data } = await supabase.auth.getSession();
-      if (!data?.session) {
-        showLoginForm();
-        return;
-      }
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!data?.session) {
+          applyTheme(currentBrand);
+          showLoginForm();
+          return;
+        }
 
       const email = data.session.user.email.toLowerCase();
       userEmail = email;
@@ -704,6 +706,11 @@
 
       showSignOut(); applyTheme(currentBrand);
       render();
+    } catch(err) {
+      console.error('Boot error:', err);
+      applyTheme(currentBrand);
+      showLoginForm();
+    }
     }
 
     boot();
