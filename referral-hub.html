@@ -427,6 +427,8 @@
       }
     }
 
+    window.showSignOut = function() { var b=document.getElementById('signOutBtn'); if(b) b.style.display=''; };
+    window.doSignOut = async function() { await supabase.auth.signOut(); referralData=null; refLink=''; userEmail=''; var b=document.getElementById('signOutBtn'); if(b) b.style.display='none'; showLoginForm(); };
     window.toggleTheme = function() {
       applyTheme(currentBrand === 'fusion' ? 'academy' : 'fusion');
     };
