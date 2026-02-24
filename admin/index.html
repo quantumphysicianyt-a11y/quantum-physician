@@ -702,10 +702,9 @@ box.style.cssText='background:var(--navy-card,#112a42);border:1px solid rgba(91,
 var promoOpts='';
 promotionsData.filter(function(p){return p.status==='active'}).forEach(function(p){
 var sel=(opts.promoCode&&p.coupon_id===opts.promoCode)?' selected':'';
-promoOpts+='<option value="'+esc(p.coupon_id)+'"'+sel+'>'+esc(p.coupon_id)+' \u2014 '+esc(p.name||((p.discount_value||'')+'% off'))+'</option>'});
+var disc=p.discount_type==='percent'?(p.discount_percent||0)+'% off':(p.discount_type==='fixed'?'$'+(p.discount_fixed||0)+' off':'$'+(p.discount_set_price||0));
+promoOpts+='<option value="'+esc(p.coupon_id)+'"'+sel+'>'+esc(p.coupon_id)+' \u2014 '+esc(p.name)+' ('+disc+')</option>'});
 var recipList=recipients.map(function(r){return '<div style="display:inline-flex;align-items:center;gap:4px;background:rgba(91,168,178,.1);border:1px solid rgba(91,168,178,.2);border-radius:20px;padding:3px 10px;margin:2px;font-size:11px;color:var(--teal)">'+esc(r.email)+'<button style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:13px;padding:0 2px" onclick="sgRemoveRecipient(this,\u0027'+esc(r.email)+'\u0027)">\u00d7</button></div>'}).join('');
-var subjectVal=esc(opts.subject||'').replace(/"/g,'&quot;');
-var bodyVal=esc(opts.body||'');
 var h='';
 h+='<button class="sg-modal-close" onclick="document.getElementById(\u0027sg-email-modal\u0027).remove()">&times;</button>';
 h+='<h3 style="margin:0 0 6px;font-size:17px;color:var(--text)">Compose Email</h3>';
@@ -713,16 +712,16 @@ h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-
 h+='<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 10px" onclick="var el=document.getElementById(\u0027sg-recipient-list\u0027);el.style.display=el.style.display===\u0027block\u0027?\u0027none\u0027:\u0027block\u0027">View/Edit List</button></div>';
 h+='<div id="sg-recipient-list" style="display:none;background:rgba(0,0,0,.2);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:14px"><div style="display:flex;gap:6px;margin-bottom:8px"><input type="email" id="sg-add-email" class="input" placeholder="Add email..." style="flex:1;font-size:12px" onkeydown="if(event.key===\u0027Enter\u0027)sgAddRecipient()"><button class="btn btn-ghost btn-sm" style="font-size:11px" onclick="sgAddRecipient()">+ Add</button></div><div id="sg-recip-chips" style="display:flex;flex-wrap:wrap;gap:2px;max-height:100px;overflow-y:auto">'+recipList+'</div></div>';
 h+='<div style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:4px;display:block">Subject</label>';
-h+='<input type="text" id="sg-subject" class="input" value="'+subjectVal+'" style="width:100%"></div>';
+h+='<input type="text" id="sg-subject" class="input" value="'+esc(opts.subject||'').replace(/"/g,'&quot;')+'" style="width:100%"></div>';
 h+='<div style="margin-bottom:6px"><label style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:4px;display:block">Body</label>';
 h+='<div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">';
 h+='<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 8px" onclick="sgInsertVar(\u0027{{name}}\u0027)">Name</button>';
 h+='<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 8px" onclick="sgInsertVar(\u0027{{email}}\u0027)">Email</button>';
 h+='<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 8px" onclick="sgInsertVar(\u0027{{referral_code}}\u0027)">Referral Code</button>';
 h+='</div>';
-h+='<textarea id="sg-body" class="input" rows="10" style="width:100%;font-size:13px;line-height:1.6">'+bodyVal+'</textarea></div>';
+h+='<textarea id="sg-body" class="input" rows="10" style="width:100%;font-size:13px;line-height:1.6" oninput="sgAutoPreview()">'+esc(opts.body||'')+'</textarea></div>';
 h+='<div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap">';
-h+='<div style="flex:1;min-width:140px"><label style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:4px;display:block">Brand</label><select id="sg-brand" class="input" style="width:100%;font-size:12px"><option value="fusion"'+(opts.brand==='fusion'?' selected':'')+'>Fusion (Neon)</option><option value="academy"'+(opts.brand==='academy'?' selected':'')+'>Academy (Teal)</option></select></div>';
+h+='<div style="flex:1;min-width:140px"><label style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:4px;display:block">Brand</label><select id="sg-brand" class="input" style="width:100%;font-size:12px" onchange="sgAutoPreview()"><option value="fusion"'+(opts.brand==='fusion'?' selected':'')+'>Fusion (Neon)</option><option value="academy"'+(opts.brand==='academy'?' selected':'')+'>Academy (Teal)</option></select></div>';
 h+='<div style="flex:1;min-width:140px"><label style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:4px;display:block">From</label><select id="sg-from" class="input" style="width:100%;font-size:12px"><option value="tracey@quantumphysician.com"'+(opts.from==='tracey@quantumphysician.com'?' selected':'')+'>Dr. Tracey (Personal)</option><option value="hello@quantumphysician.com"'+(opts.from==='hello@quantumphysician.com'?' selected':'')+'>Hello (Marketing)</option></select></div>';
 h+='</div>';
 h+='<div style="background:rgba(255,215,0,.04);border:1px solid rgba(255,215,0,.15);border-radius:10px;padding:14px;margin-bottom:16px">';
@@ -730,9 +729,9 @@ h+='<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-si
 h+='<div id="sg-discount-opts" style="display:'+(opts.discount?'flex':'none')+';flex-direction:column;gap:10px;margin-top:10px">';
 h+='<select id="sg-promo-select" class="input" style="width:100%;font-size:12px"><option value="">Select promotion...</option>'+promoOpts+'</select>';
 h+='<button class="btn btn-sm" style="background:var(--warning);color:#000;font-weight:700;letter-spacing:1px;align-self:flex-start" onclick="sgInsertDiscountPitch()">ADD DISCOUNT PITCH &amp; LINK TO EMAIL</button>';
-h+='<div style="font-size:11px;color:var(--text-dim)">This will append a discount section with a direct checkout link to the end of your email body. The CTA button will also update.</div>';
+h+='<div style="font-size:11px;color:var(--text-dim)">Appends a discount section with checkout link to your email body.</div>';
 h+='</div></div>';
-h+='<div id="sg-preview-area" style="display:none;margin-bottom:16px"></div>';
+h+='<div id="sg-preview-area" style="margin-bottom:16px"></div>';
 h+='<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;padding-top:8px;border-top:1px solid var(--border)">';
 h+='<button class="btn btn-ghost btn-sm" onclick="document.getElementById(\u0027sg-email-modal\u0027).remove()">Cancel</button>';
 h+='<button class="btn btn-primary btn-sm" onclick="sgPreview()">Preview</button>';
@@ -741,6 +740,8 @@ h+='<button class="btn btn-success btn-sm" onclick="sgSendAll()">Send to All</bu
 h+='</div>';
 box.innerHTML=h;
 ov.appendChild(box);document.body.appendChild(ov);
+/* Auto-show preview on open */
+setTimeout(function(){sgPreview()},100);
 }
 
 function sgRemoveRecipient(btn,email){
@@ -765,31 +766,34 @@ if(countEl)countEl.textContent=window._sgRecipients.length;
 inp.value='';
 }
 
-
 function sgInsertDiscountPitch(){
 var code=document.getElementById('sg-promo-select').value;
 if(!code){showToast('Select a promotion first','error');return}
 var promo=promotionsData.find(function(p){return p.coupon_id===code});
-var discountText='';
-if(promo){
-if(promo.discount_type==='percent')discountText='**'+promo.discount_percent+'% off** your next purchase!';
-else if(promo.discount_type==='fixed')discountText='**$'+promo.discount_fixed+' off** your next purchase!';
-else if(promo.discount_type==='set_price')discountText='Special price: **$'+promo.discount_set_price+'**!';
-}else{discountText='Special discount on your next purchase!'}
-var discBlock=discountText+'\n\nYour code: **'+code+'**\nThis offer is applied automatically when you use the link below.';
+if(!promo){showToast('Promo not found for: '+code,'error');console.log('Available promos:',promotionsData.map(function(p){return p.coupon_id}));return}
+var discountText='Special discount on your next purchase!';
+if(promo.discount_type==='percent')discountText=(promo.discount_percent||0)+'% off your next purchase!';
+else if(promo.discount_type==='fixed')discountText='$'+(promo.discount_fixed||0)+' off your next purchase!';
+else if(promo.discount_type==='set_price')discountText='Special price: $'+(promo.discount_set_price||0)+'!';
+var brand=document.getElementById('sg-brand').value;
+var siteUrl=brand==='academy'?'https://academy.quantumphysician.com':'https://fusionsessions.com';
+var checkoutUrl=siteUrl+'/?coupon='+code;
+var pitch='**'+discountText+'**\n\nYour code: **'+code+'**\n\nGrab your discount here:\n'+checkoutUrl;
 var textarea=document.getElementById('sg-body');
 var body=textarea.value;
-var dividerIdx=body.indexOf('\n---\n');
-if(dividerIdx>=0){
-var before=body.substring(0,dividerIdx);
-var existing=body.substring(dividerIdx+5);
-textarea.value=before+'\n---\n'+discBlock+'\n\n'+existing;
+var idx=body.indexOf('\n---\n');
+if(idx>=0){
+var before=body.substring(0,idx);
+var after=body.substring(idx+5);
+textarea.value=before+'\n---\n'+pitch+'\n\n'+after;
 }else{
-textarea.value=body.trimEnd()+'\n---\n'+discBlock;
+textarea.value=body.trimEnd()+'\n---\n'+pitch;
 }
 textarea.scrollTop=textarea.scrollHeight;
-showToast('Discount pitch added to email body','success');
+showToast('Discount pitch added: '+code,'success');
+sgAutoPreview();
 }
+
 function sgInsertVar(v){var ta=document.getElementById('sg-body');if(!ta)return;var s=ta.selectionStart,e=ta.selectionEnd,t=ta.value;ta.value=t.substring(0,s)+v+t.substring(e);ta.focus();ta.selectionStart=ta.selectionEnd=s+v.length}
 
 function sgGetDiscountConfig(){
@@ -799,7 +803,7 @@ var code=document.getElementById('sg-promo-select').value;
 if(!code)return null;
 var promo=promotionsData.find(function(p){return p.coupon_id===code});
 if(!promo)return null;
-return{couponId:code,percent:promo.discount_percent||promo.discount_value||0,product:promo.applies_to||'any'};
+return{couponId:code,percent:promo.discount_percent||0,product:promo.applies_to||'any'};
 }
 
 function sgBuildHtml(bodyText){
@@ -809,23 +813,30 @@ var siteUrl=brand==='academy'?'https://academy.quantumphysician.com':'https://fu
 return brand==='academy'?buildAcademyEmail(bodyText,null,siteUrl,discCfg):buildRichEmail(bodyText,null,siteUrl,discCfg);
 }
 
+var _sgPreviewTimer=null;
+function sgAutoPreview(){
+clearTimeout(_sgPreviewTimer);
+_sgPreviewTimer=setTimeout(function(){
+var area=document.getElementById('sg-preview-area');
+if(area)sgPreview();
+},300);
+}
+
 function sgPreview(){
 var subject=document.getElementById('sg-subject').value;
 var body=document.getElementById('sg-body').value;
 var from=document.getElementById('sg-from').value;
-if(!subject||!body){showToast('Fill in subject and body first','error');return}
+if(!body)return;
 var s=window._sgRecipients&&window._sgRecipients[0]?window._sgRecipients[0]:{email:'preview@example.com',name:'Friend',referral_code:'XXXXXX'};
 var pb=body.replace(/\{\{name\}\}/g,s.name||'Friend').replace(/\{\{email\}\}/g,s.email).replace(/\{\{referral_code\}\}/g,s.referral_code||'XXXXXX');
 var richHtml=sgBuildHtml(pb);
 if(s.referral_code)richHtml=richHtml.replace(/REFCODE/g,s.referral_code);
 var area=document.getElementById('sg-preview-area');
-area.style.display='block';
-area.innerHTML='<div style="border-top:2px solid rgba(91,168,178,.3);padding-top:14px"><div style="font-size:12px;color:var(--text-muted);margin-bottom:8px"><strong>From:</strong> '+esc(from)+' &nbsp; <strong>Subject:</strong> <span style="color:var(--teal)">'+esc(subject)+'</span></div><iframe id="sg-preview-iframe" style="width:100%;min-height:500px;border:none;border-radius:8px;background:#1a1a2e"></iframe></div>';
+area.innerHTML='<div style="border-top:2px solid rgba(91,168,178,.3);padding-top:14px"><div style="font-size:12px;color:var(--text-muted);margin-bottom:8px"><strong>From:</strong> '+esc(from)+' &nbsp; <strong>Subject:</strong> <span style="color:var(--teal)">'+esc(subject||'(no subject)')+'</span></div><iframe id="sg-preview-iframe" style="width:100%;min-height:500px;border:none;border-radius:8px;background:#1a1a2e"></iframe></div>';
 var fr=document.getElementById('sg-preview-iframe');
 var iDoc=fr.contentDocument||fr.contentWindow.document;
 iDoc.open();iDoc.write(richHtml);iDoc.close();
-setTimeout(function(){try{fr.style.height=iDoc.body.scrollHeight+20+'px'}catch(e){}},400);
-area.scrollIntoView({behavior:'smooth',block:'nearest'});
+setTimeout(function(){try{fr.style.height=Math.max(500,iDoc.body.scrollHeight+20)+'px'}catch(e){}},400);
 }
 
 async function sgTestEmail(){
@@ -858,6 +869,8 @@ async function sgSendAll(){
 var subject=document.getElementById('sg-subject').value;
 var body=document.getElementById('sg-body').value;
 var from=document.getElementById('sg-from').value;
+var brand=document.getElementById('sg-brand').value;
+var discCfg=sgGetDiscountConfig();
 var recipients=window._sgRecipients||[];
 if(!subject||!body){showToast('Fill in subject and body first','error');return}
 if(!recipients.length){showToast('No recipients','error');return}
@@ -866,8 +879,6 @@ if(!ok)return;
 document.getElementById('sg-email-modal').remove();
 showToast('Sending to '+recipients.length+' recipients...','info');
 var sent=0,failed=0;
-var brand=(document.getElementById('sg-brand')||{}).value||'fusion';
-var discCfg=sgGetDiscountConfig();
 try{
 var campRes=await sbAdmin.from('email_campaigns').insert([{campaign_type:'suggestion',campaign_name:subject,subject:subject,from_email:from,recipient_count:recipients.length,status:'sending'}]).select().single();
 var campaignId=campRes.data?campRes.data.id:null;
