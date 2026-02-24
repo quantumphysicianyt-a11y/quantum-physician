@@ -777,27 +777,40 @@ else if(promo.discount_type==='fixed')discLabel='$'+(promo.discount_fixed||0)+' 
 else if(promo.discount_type==='set_price')discLabel='Only $'+(promo.discount_set_price||0);
 var textarea=document.getElementById('sg-body');
 var body=textarea.value;
-/* Remove existing [PROMO] block if present */
-body=body.replace(/\n\[PROMO:.*?\][\s\S]*?\[END_PROMO\]/,'');
-/* Build promo block - goes at TOP of the --- section */
-var promoBlock='\n[PROMO:'+code+']\n**Exclusive Offer: '+discLabel+'**\nUse code: **'+code+'**\nApplied automatically at checkout\n[END_PROMO]';
-var idx=body.indexOf('\n---\n');
-if(idx>=0){
-/* Insert right after --- */
-textarea.value=body.substring(0,idx+5)+promoBlock+'\n'+body.substring(idx+5);
-}else{
-/* No --- section, create one */
-textarea.value=body.trimEnd()+'\n---'+promoBlock;
-}
+/* Remove existing discount section if present */
+body=sgStripDiscount(body);
+/* Build discount section - always its own --- block at the very end */
+var discSection='\n---\n**Limited Time: '+discLabel+'**\n\nYour code: **'+code+'**\nYour discount applies automatically at checkout';
+textarea.value=body.trimEnd()+discSection;
 textarea.scrollTop=textarea.scrollHeight;
-showToast('Discount added to card: '+code,'success');
+showToast('Discount card added: '+code,'success');
 sgAutoPreview();
+}
+
+function sgStripDiscount(body){
+/* Remove discount --- section added by us (identified by LAST --- section containing "code:") */
+var parts=body.split('\n---\n');
+if(parts.length>2){
+/* 3+ sections - check if last one is our discount */
+var last=parts[parts.length-1];
+if(last.match(/Your code:|Limited Time:|Exclusive Offer:/i)){
+parts.pop();
+return parts.join('\n---\n');
+}
+}else if(parts.length===2){
+var sec=parts[1];
+if(sec.match(/Your code:/i)&&!sec.match(/Share.*Earn|qr_code|referral/i)){
+/* Only section and it's just a discount (no referral content) */
+return parts[0];
+}
+}
+return body;
 }
 
 function sgRemoveDiscountPitch(){
 var textarea=document.getElementById('sg-body');
 if(!textarea)return;
-textarea.value=textarea.value.replace(/\n\[PROMO:.*?\][\s\S]*?\[END_PROMO\]\n?/,'');
+textarea.value=sgStripDiscount(textarea.value);
 sgAutoPreview();
 }
 
@@ -821,8 +834,7 @@ if(!discCfg){
 var dm=bodyText.match(/\[PROMO:([^\]]+)\]/);
 if(dm){var mp=promotionsData.find(function(p){return p.coupon_id===dm[1]});
 if(mp)discCfg={couponId:dm[1],percent:mp.discount_percent||0,product:mp.applies_to||'any'}}}
-/* Strip [PROMO] markers from visible text */
-var cleanBody=bodyText.replace(/\[PROMO:[^\]]+\]\n/g,'').replace(/\[END_PROMO\]\n?/g,'');
+var cleanBody=bodyText;
 var siteUrl=brand==='academy'?'https://academy.quantumphysician.com':'https://fusionsessions.com';
 return brand==='academy'?buildAcademyEmail(cleanBody,null,siteUrl,discCfg):buildRichEmail(cleanBody,null,siteUrl,discCfg);
 }
@@ -900,7 +912,7 @@ for(var i=0;i<recipients.length;i++){
 var r=recipients[i];
 var pb=body.replace(/\{\{name\}\}/g,r.name||'Friend').replace(/\{\{email\}\}/g,r.email).replace(/\{\{referral_code\}\}/g,r.referral_code||'');
 var siteUrl=brand==='academy'?'https://academy.quantumphysician.com':'https://fusionsessions.com';
-var dm2=pb.match(/\[PROMO:([^\]]+)\]/);if(!discCfg&&dm2){var mp2=promotionsData.find(function(p){return p.coupon_id===dm2[1]});if(mp2)discCfg={couponId:dm2[1],percent:mp2.discount_percent||0,product:mp2.applies_to||'any'}}pb=pb.replace(/\[PROMO:[^\]]+\]\n/g,'').replace(/\[END_PROMO\]\n?/g,'');var richHtml=brand==='academy'?buildAcademyEmail(pb,null,siteUrl,discCfg):buildRichEmail(pb,null,siteUrl,discCfg);
+var richHtml=brand==='academy'?buildAcademyEmail(pb,null,siteUrl,discCfg):buildRichEmail(pb,null,siteUrl,discCfg);
 if(r.referral_code)richHtml=richHtml.replace(/REFCODE/g,r.referral_code);
 try{
 await fetch(APPS_SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},
@@ -1360,6 +1372,17 @@ discountCardHtml='<table role="presentation" cellspacing="0" cellpadding="0" bor
 if(cleanBody.indexOf('community')>=0||cleanBody.indexOf('/community')>=0){
 discountCardHtml+='<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:15px 0 0;"><tr><td align="center"><a href="'+wrapLink(siteUrl+'/community')+'" target="_blank" style="color:#8338ec;font-size:14px;font-weight:600;text-decoration:none;">Join the Community &rarr;</a></td></tr></table>'
 }}
+/* Second card (parts[2]) - discount or referral */
+if(parts[2]){
+var card2Body=parts[2].trim();
+var card2Inner=card2Body
+.replace(/\*\*([^*]+)\*\*/g,'<strong style="color:#00f5ff;">$1</strong>')
+.replace(/\n/g,'<br>').replace(/(<br>){3,}/g,'<br><br>').replace(/^(<br>)+/,'').replace(/(<br>)+$/,'');
+card2Inner=card2Inner.replace(/Your code:\s*<strong[^>]*>([^<]+)<\/strong>/i,'Your code: <span style="font-family:monospace;font-size:20px;letter-spacing:1px;color:#00f5ff;background:rgba(0,245,255,0.1);padding:5px 15px;border-radius:8px;">$1</span>');
+var card2Cta=card2Inner.indexOf('code')>=0?'CLAIM YOUR DISCOUNT':'EXPLORE SESSIONS';
+var card2Url=discountConfig&&discountConfig.couponId?siteUrl+'/?coupon='+discountConfig.couponId:siteUrl;
+discountCardHtml+='<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:20px 0 5px;"><tr><td style="background:linear-gradient(135deg,#1a0533,#0f0f23);border:2px solid #8338ec;border-radius:16px;padding:25px 20px;text-align:center;"><p style="margin:0;font-size:15px;color:#fff;line-height:1.6;">'+card2Inner+'</p><table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:18px auto 0;"><tr><td style="background:linear-gradient(45deg,#8338ec,#00f5ff);border-radius:50px;"><a href="'+wrapLink(card2Url)+'" target="_blank" style="display:inline-block;padding:14px 40px;color:#fff;text-decoration:none;font-weight:700;font-size:14px;letter-spacing:2px;text-transform:uppercase;">'+card2Cta+'</a></td></tr></table><p style="margin:10px 0 0;font-size:11px;color:#666;">Applied automatically at checkout</p></td></tr></table>'
+}
 /* Main CTA (only if no discount card) */
 var ctaUrl=discountConfig&&discountConfig.couponId?siteUrl+'/?coupon='+discountConfig.couponId:siteUrl;
 var ctaHtml='';
@@ -1411,6 +1434,17 @@ qrHtml='<table role="presentation" cellspacing="0" cellpadding="0" border="0" st
 var ctaLabel2=discountInner.indexOf('referral')>=0||discountInner.indexOf('Referral')>=0||discountInner.indexOf('Share')>=0?'GO TO REFERRAL HUB':'CLAIM YOUR DISCOUNT';
 var ctaUrl2=ctaLabel2==='GO TO REFERRAL HUB'?siteUrl+'/referral-hub.html':(discountConfig&&discountConfig.couponId?'https://fusionsessions.com/?coupon='+discountConfig.couponId:'https://academy.quantumphysician.com');
 discountCardHtml='<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:25px 0 5px;"><tr><td style="background:linear-gradient(135deg,rgba(91,168,178,0.08),rgba(173,155,132,0.08));border:2px solid rgba(91,168,178,0.3);border-radius:12px;padding:28px 25px;text-align:center;"><p style="margin:0;font-size:15px;color:rgba(255,255,255,0.85);line-height:1.5;font-family:Georgia,serif;">'+discountInner+'</p>'+qrHtml+'<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:20px auto 0;"><tr><td style="background:linear-gradient(135deg,#5ba8b2,#4a97a1);border-radius:50px;"><a href="'+wrapLink(ctaUrl2)+'" target="_blank" style="display:inline-block;padding:14px 40px;color:#fff;text-decoration:none;font-weight:700;font-size:14px;letter-spacing:2px;text-transform:uppercase;font-family:Arial,sans-serif;">'+ctaLabel2+'</a></td></tr></table><p style="margin:10px 0 0;font-size:11px;color:rgba(255,255,255,0.4);">'+(ctaLabel2==='GO TO REFERRAL HUB'?'Share your code and start earning':'Applied automatically at checkout')+'</p></td></tr></table>'
+}
+/* Second card (parts[2]) - discount or referral */
+if(parts[2]){
+var card2Body=parts[2].trim();
+var card2Inner=card2Body
+.replace(/\*\*([^*]+)\*\*/g,'<strong style="color:#5ba8b2;">$1</strong>')
+.replace(/\n/g,'<br>').replace(/(<br>){3,}/g,'<br><br>').replace(/^(<br>)+/,'').replace(/(<br>)+$/,'');
+card2Inner=card2Inner.replace(/Your code:\s*<strong[^>]*>([^<]+)<\/strong>/i,'Your code: <span style="font-family:monospace;font-size:20px;letter-spacing:1px;color:#5ba8b2;background:rgba(91,168,178,0.1);padding:5px 15px;border-radius:8px;">$1</span>');
+var card2Cta2=card2Inner.indexOf('code')>=0?'CLAIM YOUR DISCOUNT':'VISIT ACADEMY';
+var card2Url2=discountConfig&&discountConfig.couponId?siteUrl+'/?coupon='+discountConfig.couponId:siteUrl;
+discountCardHtml+='<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:20px 0 5px;"><tr><td style="background:linear-gradient(135deg,rgba(91,168,178,0.08),rgba(173,155,132,0.08));border:2px solid rgba(91,168,178,0.3);border-radius:12px;padding:24px 20px;text-align:center;"><p style="margin:0;font-size:15px;color:rgba(255,255,255,0.85);line-height:1.6;font-family:Georgia,serif;">'+card2Inner+'</p><table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:18px auto 0;"><tr><td style="background:linear-gradient(135deg,#5ba8b2,#4a97a1);border-radius:50px;"><a href="'+wrapLink(card2Url2)+'" target="_blank" style="display:inline-block;padding:14px 40px;color:#fff;text-decoration:none;font-weight:700;font-size:14px;letter-spacing:2px;text-transform:uppercase;font-family:Arial,sans-serif;">'+card2Cta2+'</a></td></tr></table><p style="margin:10px 0 0;font-size:11px;color:rgba(255,255,255,0.4);">Applied automatically at checkout</p></td></tr></table>'
 }
 var ctaUrl=discountConfig&&discountConfig.couponId?'https://fusionsessions.com/?coupon='+discountConfig.couponId:'https://academy.quantumphysician.com';
 var ctaHtml='';
