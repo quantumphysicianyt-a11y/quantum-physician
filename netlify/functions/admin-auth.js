@@ -19,13 +19,17 @@ exports.handler = async (event) => {
   }
 
   const SUPABASE_URL = process.env.SUPABASE_URL;
+  const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
   const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
 
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY || !SUPABASE_ANON_KEY) {
     return { statusCode: 500, headers, body: JSON.stringify({ error: "Missing env vars" }) };
   }
 
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+  // CRITICAL: Use anon client for signInWithPassword (service role bypasses auth!)
+  const sbAnon = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  // Use service role for admin data operations
+  const sbAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
   try {
     const { action, email, password } = JSON.parse(event.body || "{}");
@@ -36,7 +40,7 @@ exports.handler = async (event) => {
       }
 
       // Step 1: Verify Supabase auth credentials
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      const { data: authData, error: authError } = await sbAnon.auth.signInWithPassword({
         email: email.toLowerCase(),
         password,
       });
@@ -46,7 +50,7 @@ exports.handler = async (event) => {
       }
 
       // Step 2: Check admin_users table for this email
-      const { data: adminUser, error: adminError } = await supabase
+      const { data: adminUser, error: adminError } = await sbAdmin
         .from("admin_users")
         .select("*")
         .eq("email", email.toLowerCase())
@@ -58,7 +62,7 @@ exports.handler = async (event) => {
       }
 
       // Step 3: Update last_login
-      await supabase
+      await sbAdmin
         .from("admin_users")
         .update({ last_login: new Date().toISOString() })
         .eq("id", adminUser.id);
@@ -102,12 +106,12 @@ exports.handler = async (event) => {
         return { statusCode: 401, headers, body: JSON.stringify({ error: "No token" }) };
       }
 
-      const { data: { user }, error } = await supabase.auth.getUser(token);
+      const { data: { user }, error } = await sbAnon.auth.getUser(token);
       if (error || !user) {
         return { statusCode: 401, headers, body: JSON.stringify({ error: "Invalid token" }) };
       }
 
-      const { data: adminUser } = await supabase
+      const { data: adminUser } = await sbAdmin
         .from("admin_users")
         .select("*")
         .eq("email", user.email.toLowerCase())
