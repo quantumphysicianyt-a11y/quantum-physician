@@ -3,638 +3,213 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Referral Hub — Quantum Physician</title>
+  <title>Referral Hub</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Righteous&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
-
   <style>
-    /* ===== SHARED BASE ===== */
-    *{box-sizing:border-box;margin:0;padding:0}
-    html,body{height:100%}
-    body{min-height:100vh;transition:background .4s,color .4s}
-
-    .wrap{position:relative;z-index:2;width:100%;min-height:100vh}
-    .container{max-width:900px;margin:0 auto;padding:30px 20px 60px}
-
-    /* ===== FUSION THEME (retro neon 80s) ===== */
-    body.fusion{
-      font-family:'Roboto',system-ui,sans-serif;
-      color:#e9f3ff;
-      background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);
-      background-attachment:fixed;
-    }
-    body.fusion::before{
-      content:'';position:fixed;top:0;left:0;width:100%;height:100%;
-      background:repeating-linear-gradient(0deg,rgba(255,0,255,.03) 0px,transparent 2px,transparent 4px,rgba(255,0,255,.03) 6px);
-      pointer-events:none;z-index:1;
-    }
-    body.fusion .header{
-      background:linear-gradient(90deg,#ff006e 0%,#8338ec 50%,#3a86ff 100%);
-      padding:20px;box-shadow:0 4px 30px rgba(255,0,110,.5);
-      border-bottom:3px solid #00f5ff;
-    }
-    body.fusion .brand-title{
-      font-family:'Righteous',cursive;font-size:28px;
-      background:linear-gradient(90deg,#fff,#00f5ff);
-      -webkit-background-clip:text;background-clip:text;color:transparent;
-    }
-    body.fusion .back-btn{
-      padding:10px 20px;border-radius:25px;text-decoration:none;
-      background:rgba(0,0,0,.3);border:2px solid #00f5ff;
-      color:#00f5ff;font-weight:700;font-size:13px;transition:all .3s;
-    }
+    *{box-sizing:border-box;margin:0;padding:0}html,body{height:100%}body{min-height:100vh;transition:background .4s,color .4s}
+    .wrap{position:relative;z-index:2;width:100%;min-height:100vh}.container{max-width:900px;margin:0 auto;padding:30px 20px 60px}
+    body.fusion{font-family:'Roboto',system-ui,sans-serif;color:#e9f3ff;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);background-attachment:fixed}
+    body.fusion::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background:repeating-linear-gradient(0deg,rgba(255,0,255,.03) 0px,transparent 2px,transparent 4px,rgba(255,0,255,.03) 6px);pointer-events:none;z-index:1}
+    body.fusion .header{background:linear-gradient(90deg,#ff006e 0%,#8338ec 50%,#3a86ff 100%);padding:20px;box-shadow:0 4px 30px rgba(255,0,110,.5);border-bottom:3px solid #00f5ff}
+    body.fusion .brand-title{font-family:'Righteous',cursive;font-size:28px;background:linear-gradient(90deg,#fff,#00f5ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+    body.fusion .back-btn{padding:10px 20px;border-radius:25px;text-decoration:none;background:rgba(0,0,0,.3);border:2px solid #00f5ff;color:#00f5ff;font-weight:700;font-size:13px;transition:all .3s}
     body.fusion .back-btn:hover{background:#00f5ff;color:#1a1a2e}
-    body.fusion .page-title{
-      font-family:'Righteous',cursive;font-size:36px;color:#00f5ff;
-      text-align:center;margin:0 0 10px;text-shadow:0 0 30px rgba(0,245,255,.5);
-    }
+    body.fusion .page-title{font-family:'Righteous',cursive;font-size:36px;color:#00f5ff;text-align:center;margin:0 0 10px;text-shadow:0 0 30px rgba(0,245,255,.5)}
     body.fusion .page-subtitle{text-align:center;color:rgba(255,255,255,.7);font-size:16px;margin-bottom:30px}
-    body.fusion .stat-card{
-      flex:1;background:rgba(0,0,0,.3);border-radius:15px;padding:25px 20px;
-      text-align:center;border:2px solid rgba(255,255,255,.1);
-    }
+    body.fusion .stat-card{flex:1;background:rgba(0,0,0,.3);border-radius:15px;padding:25px 20px;text-align:center;border:2px solid rgba(255,255,255,.1)}
     body.fusion .stat-value{font-family:'Righteous',cursive;font-size:36px;color:#ff006e}
     body.fusion .stat-label{font-size:13px;color:rgba(255,255,255,.6);text-transform:uppercase;margin-top:5px}
-    body.fusion .section-card{
-      background:linear-gradient(135deg,rgba(20,10,40,.6),rgba(10,20,50,.6));
-      border:2px solid #8338ec;border-radius:20px;padding:25px 30px;margin-bottom:25px;
-    }
-    body.fusion .section-title{
-      font-family:'Righteous',cursive;font-size:22px;color:#00f5ff;
-      margin:0 0 20px;display:flex;align-items:center;gap:10px;
-    }
-    body.fusion .link-input{
-      flex:1;padding:15px;border-radius:12px;
-      border:2px solid rgba(255,255,255,.2);background:rgba(0,0,0,.3);
-      color:#e9f3ff;font-size:15px;
-    }
-    body.fusion .copy-btn{
-      padding:15px 30px;border-radius:12px;border:none;
-      background:linear-gradient(45deg,#ff006e,#8338ec);
-      color:white;font-weight:700;font-size:14px;cursor:pointer;
-    }
+    body.fusion .section-card{background:linear-gradient(135deg,rgba(20,10,40,.6),rgba(10,20,50,.6));border:2px solid #8338ec;border-radius:20px;padding:25px 30px;margin-bottom:25px}
+    body.fusion .section-title{font-family:'Righteous',cursive;font-size:22px;color:#00f5ff;margin:0 0 20px;display:flex;align-items:center;gap:10px}
+    body.fusion .link-input{flex:1;padding:15px;border-radius:12px;border:2px solid rgba(255,255,255,.2);background:rgba(0,0,0,.3);color:#e9f3ff;font-size:15px}
+    body.fusion .copy-btn{padding:15px 30px;border-radius:12px;border:none;background:linear-gradient(45deg,#ff006e,#8338ec);color:white;font-weight:700;font-size:14px;cursor:pointer}
     body.fusion .copy-btn:hover{box-shadow:0 0 25px rgba(255,0,110,.5)}
-    body.fusion .code-display span{
-      font-family:'Righteous',cursive;color:#00f5ff;font-size:18px;
-      background:rgba(0,245,255,.1);padding:5px 15px;border-radius:8px;
-      margin-left:10px;letter-spacing:2px;
-    }
-    body.fusion .qr-box{
-      background:white;border-radius:15px;padding:15px;
-      box-shadow:0 0 30px rgba(0,245,255,.3);
-    }
-    body.fusion .qr-download{
-      padding:12px 25px;border-radius:25px;border:none;
-      background:linear-gradient(45deg,#00e676,#00f5ff);
-      color:#1a1a2e;font-weight:700;font-size:14px;cursor:pointer;
-    }
+    body.fusion .code-display span{font-family:'Righteous',cursive;color:#00f5ff;font-size:18px;background:rgba(0,245,255,.1);padding:5px 15px;border-radius:8px;margin-left:10px;letter-spacing:2px}
+    body.fusion .qr-box{background:white;border-radius:15px;padding:15px;box-shadow:0 0 30px rgba(0,245,255,.3)}
+    body.fusion .qr-download{padding:12px 25px;border-radius:25px;border:none;background:linear-gradient(45deg,#00e676,#00f5ff);color:#1a1a2e;font-weight:700;font-size:14px;cursor:pointer}
     body.fusion .qr-download:hover{box-shadow:0 0 25px rgba(0,230,118,.5);transform:translateY(-2px)}
-    body.fusion .template-card{
-      background:rgba(0,0,0,.3);border-radius:12px;padding:20px;margin-bottom:15px;
-      border:2px solid rgba(255,255,255,.1);
-    }
-    body.fusion .template-label{
-      font-size:13px;color:#ffd700;text-transform:uppercase;font-weight:700;
-      margin-bottom:12px;letter-spacing:1px;
-    }
-    body.fusion .template-text{
-      font-size:14px;color:rgba(255,255,255,.85);line-height:1.7;
-      margin:0 0 18px;white-space:pre-wrap;
-      background:rgba(0,0,0,.2);padding:15px;border-radius:8px;
-    }
-    body.fusion .share-btn{
-      padding:10px 18px;border-radius:20px;font-weight:700;font-size:12px;
-      cursor:pointer;transition:all .3s;border:none;color:white;
-    }
-    body.fusion .share-btn.copy-tpl{background:transparent;border:2px solid #00f5ff;color:#00f5ff}
-    body.fusion .share-btn.copy-tpl:hover{background:#00f5ff;color:#1a1a2e}
-    body.fusion .share-btn.whatsapp{background:#25D366}
-    body.fusion .share-btn.sms{background:#00e676;color:#1a1a2e}
-    body.fusion .share-btn.email-share{background:#8338ec}
-    body.fusion .share-btn.facebook{background:#1877F2}
-    body.fusion .share-btn.twitter{background:#000}
-    body.fusion .step-num{
-      width:40px;height:40px;border-radius:50%;
-      background:linear-gradient(45deg,#ff006e,#8338ec);
-      color:white;font-weight:700;font-size:18px;
-      display:grid;place-items:center;margin:0 auto 15px;
-    }
-    body.fusion .step{
-      flex:1;min-width:200px;background:rgba(0,0,0,.3);
-      border-radius:12px;padding:20px;text-align:center;
-    }
-    body.fusion .step-title{font-weight:700;font-size:15px;margin-bottom:8px}
-    body.fusion .step-desc{font-size:13px;color:rgba(255,255,255,.6);line-height:1.5}
-    body.fusion .theme-toggle{
-      padding:8px 16px;border-radius:20px;border:2px solid rgba(255,255,255,.2);
-      background:rgba(0,0,0,.3);color:rgba(255,255,255,.7);font-size:12px;
-      font-weight:600;cursor:pointer;transition:all .3s;
-    }
+    body.fusion .template-card{background:rgba(0,0,0,.3);border-radius:12px;padding:20px;margin-bottom:15px;border:2px solid rgba(255,255,255,.1)}
+    body.fusion .template-label{font-size:13px;color:#ffd700;text-transform:uppercase;font-weight:700;margin-bottom:12px;letter-spacing:1px}
+    body.fusion .template-text{font-size:14px;color:rgba(255,255,255,.85);line-height:1.7;margin:0 0 18px;white-space:pre-wrap;background:rgba(0,0,0,.2);padding:15px;border-radius:8px}
+    body.fusion .share-btn{padding:10px 18px;border-radius:20px;font-weight:700;font-size:12px;cursor:pointer;transition:all .3s;border:none;color:white}
+    body.fusion .share-btn.copy-tpl{background:transparent;border:2px solid #00f5ff;color:#00f5ff}body.fusion .share-btn.copy-tpl:hover{background:#00f5ff;color:#1a1a2e}
+    body.fusion .share-btn.whatsapp{background:#25D366}body.fusion .share-btn.sms{background:#00e676;color:#1a1a2e}body.fusion .share-btn.email-share{background:#8338ec}body.fusion .share-btn.facebook{background:#1877F2}body.fusion .share-btn.twitter{background:#000}
+    body.fusion .step-num{width:40px;height:40px;border-radius:50%;background:linear-gradient(45deg,#ff006e,#8338ec);color:white;font-weight:700;font-size:18px;display:grid;place-items:center;margin:0 auto 15px}
+    body.fusion .step{flex:1;min-width:200px;background:rgba(0,0,0,.3);border-radius:12px;padding:20px;text-align:center}
+    body.fusion .step-title{font-weight:700;font-size:15px;margin-bottom:8px}body.fusion .step-desc{font-size:13px;color:rgba(255,255,255,.6);line-height:1.5}
+    body.fusion .theme-toggle{padding:8px 16px;border-radius:20px;border:2px solid rgba(255,255,255,.2);background:rgba(0,0,0,.3);color:rgba(255,255,255,.7);font-size:12px;font-weight:600;cursor:pointer;transition:all .3s}
     body.fusion .theme-toggle:hover{border-color:#00f5ff;color:#00f5ff}
-
-    /* ===== ACADEMY THEME (clean modern) ===== */
-    body.academy{
-      font-family:'Inter',sans-serif;
-      color:rgba(255,255,255,.85);
-      background:#0a1e33;
-    }
+    body.academy{font-family:'Inter',sans-serif;color:rgba(255,255,255,.85);background:#0a1e33}
     body.academy::before{display:none}
-    body.academy .header{
-      background:linear-gradient(135deg,#081a2e,#0f2942 50%,#123554);
-      padding:20px;border-bottom:1px solid rgba(91,168,178,.15);
-    }
-    body.academy .brand-title{
-      font-family:'Playfair Display',serif;font-size:24px;font-weight:600;
-      color:rgba(255,255,255,.9);
-    }
-    body.academy .back-btn{
-      padding:10px 20px;border-radius:999px;text-decoration:none;
-      background:linear-gradient(135deg,#5ba8b2,#4a97a1);
-      color:#fff;font-weight:600;font-size:12px;letter-spacing:.06em;
-      text-transform:uppercase;transition:all .2s;
-    }
+    body.academy .header{background:linear-gradient(135deg,#081a2e,#0f2942 50%,#123554);padding:20px;border-bottom:1px solid rgba(91,168,178,.15)}
+    body.academy .brand-title{font-family:'Playfair Display',serif;font-size:24px;font-weight:600;color:rgba(255,255,255,.9)}
+    body.academy .back-btn{padding:10px 20px;border-radius:999px;text-decoration:none;background:linear-gradient(135deg,#5ba8b2,#4a97a1);color:#fff;font-weight:600;font-size:12px;letter-spacing:.06em;text-transform:uppercase;transition:all .2s}
     body.academy .back-btn:hover{box-shadow:0 4px 20px rgba(91,168,178,.4)}
-    body.academy .page-title{
-      font-family:'Playfair Display',serif;font-size:clamp(28px,4vw,40px);
-      font-weight:600;text-align:center;margin:0 0 10px;
-      background:linear-gradient(135deg,rgba(255,255,255,.88),#5ba8b2);
-      -webkit-background-clip:text;background-clip:text;color:transparent;
-    }
-    body.academy .page-subtitle{
-      text-align:center;color:rgba(255,255,255,.55);font-size:16px;margin-bottom:30px;
-    }
-    body.academy .stat-card{
-      flex:1;background:#112a42;border-radius:12px;padding:25px 20px;
-      text-align:center;border:1px solid rgba(91,168,178,.15);
-      transition:all .2s;
-    }
+    body.academy .page-title{font-family:'Playfair Display',serif;font-size:clamp(28px,4vw,40px);font-weight:600;text-align:center;margin:0 0 10px;background:linear-gradient(135deg,rgba(255,255,255,.88),#5ba8b2);-webkit-background-clip:text;background-clip:text;color:transparent}
+    body.academy .page-subtitle{text-align:center;color:rgba(255,255,255,.55);font-size:16px;margin-bottom:30px}
+    body.academy .stat-card{flex:1;background:#112a42;border-radius:12px;padding:25px 20px;text-align:center;border:1px solid rgba(91,168,178,.15);transition:all .2s}
     body.academy .stat-card:hover{border-color:rgba(91,168,178,.35);transform:translateY(-2px)}
-    body.academy .stat-value{
-      font-family:'Playfair Display',serif;font-size:36px;font-weight:700;
-      color:#5ba8b2;
-    }
-    body.academy .stat-label{
-      font-size:11px;color:rgba(255,255,255,.5);text-transform:uppercase;
-      letter-spacing:.08em;margin-top:5px;
-    }
-    body.academy .section-card{
-      background:#112a42;border:1px solid rgba(91,168,178,.15);
-      border-radius:12px;padding:25px 30px;margin-bottom:20px;
-    }
-    body.academy .section-title{
-      font-family:'Playfair Display',serif;font-size:20px;font-weight:600;
-      color:rgba(255,255,255,.88);margin:0 0 20px;
-      display:flex;align-items:center;gap:10px;
-    }
-    body.academy .link-input{
-      flex:1;padding:12px 14px;border-radius:8px;
-      border:1px solid rgba(91,168,178,.15);background:rgba(255,255,255,.04);
-      color:rgba(255,255,255,.85);font-size:14px;font-family:'Inter',sans-serif;
-      transition:all .2s;
-    }
+    body.academy .stat-value{font-family:'Playfair Display',serif;font-size:36px;font-weight:700;color:#5ba8b2}
+    body.academy .stat-label{font-size:11px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.08em;margin-top:5px}
+    body.academy .section-card{background:#112a42;border:1px solid rgba(91,168,178,.15);border-radius:12px;padding:25px 30px;margin-bottom:20px}
+    body.academy .section-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:600;color:rgba(255,255,255,.88);margin:0 0 20px;display:flex;align-items:center;gap:10px}
+    body.academy .link-input{flex:1;padding:12px 14px;border-radius:8px;border:1px solid rgba(91,168,178,.15);background:rgba(255,255,255,.04);color:rgba(255,255,255,.85);font-size:14px;font-family:'Inter',sans-serif;transition:all .2s}
     body.academy .link-input:focus{border-color:#5ba8b2;outline:none;box-shadow:0 0 0 3px rgba(91,168,178,.15)}
-    body.academy .copy-btn{
-      padding:12px 24px;border-radius:8px;border:none;
-      background:linear-gradient(135deg,#5ba8b2,#4a97a1);
-      color:#fff;font-weight:600;font-size:12px;cursor:pointer;
-      letter-spacing:.04em;text-transform:uppercase;
-      box-shadow:0 2px 8px rgba(91,168,178,.2);
-    }
+    body.academy .copy-btn{padding:12px 24px;border-radius:8px;border:none;background:linear-gradient(135deg,#5ba8b2,#4a97a1);color:#fff;font-weight:600;font-size:12px;cursor:pointer;letter-spacing:.04em;text-transform:uppercase;box-shadow:0 2px 8px rgba(91,168,178,.2)}
     body.academy .copy-btn:hover{box-shadow:0 4px 16px rgba(91,168,178,.4);transform:translateY(-1px)}
-    body.academy .code-display span{
-      font-family:'Playfair Display',serif;color:#5ba8b2;font-size:18px;font-weight:600;
-      background:rgba(91,168,178,.1);padding:5px 15px;border-radius:8px;
-      margin-left:10px;letter-spacing:2px;
-    }
-    body.academy .qr-box{
-      background:white;border-radius:12px;padding:15px;
-      box-shadow:0 4px 24px rgba(0,0,0,.3);
-    }
-    body.academy .qr-download{
-      padding:12px 25px;border-radius:999px;border:none;
-      background:linear-gradient(135deg,#5ba8b2,#4a97a1);
-      color:#fff;font-weight:600;font-size:13px;cursor:pointer;
-      letter-spacing:.06em;text-transform:uppercase;
-    }
+    body.academy .code-display span{font-family:'Playfair Display',serif;color:#5ba8b2;font-size:18px;font-weight:600;background:rgba(91,168,178,.1);padding:5px 15px;border-radius:8px;margin-left:10px;letter-spacing:2px}
+    body.academy .qr-box{background:white;border-radius:12px;padding:15px;box-shadow:0 4px 24px rgba(0,0,0,.3)}
+    body.academy .qr-download{padding:12px 25px;border-radius:999px;border:none;background:linear-gradient(135deg,#5ba8b2,#4a97a1);color:#fff;font-weight:600;font-size:13px;cursor:pointer;letter-spacing:.06em;text-transform:uppercase}
     body.academy .qr-download:hover{box-shadow:0 4px 20px rgba(91,168,178,.4);transform:translateY(-2px)}
-    body.academy .template-card{
-      background:rgba(0,0,0,.15);border-radius:10px;padding:20px;margin-bottom:15px;
-      border:1px solid rgba(91,168,178,.1);
-    }
-    body.academy .template-label{
-      font-size:11px;color:#ad9b84;text-transform:uppercase;font-weight:600;
-      margin-bottom:12px;letter-spacing:.12em;
-    }
-    body.academy .template-text{
-      font-size:14px;color:rgba(255,255,255,.75);line-height:1.7;
-      margin:0 0 18px;white-space:pre-wrap;
-      background:rgba(0,0,0,.2);padding:15px;border-radius:8px;
-    }
-    body.academy .share-btn{
-      padding:10px 18px;border-radius:999px;font-weight:600;font-size:11px;
-      cursor:pointer;transition:all .2s;border:none;color:white;
-      letter-spacing:.04em;text-transform:uppercase;
-    }
-    body.academy .share-btn.copy-tpl{background:transparent;border:1px solid rgba(91,168,178,.3);color:#5ba8b2}
-    body.academy .share-btn.copy-tpl:hover{background:rgba(91,168,178,.1)}
-    body.academy .share-btn.whatsapp{background:#25D366}
-    body.academy .share-btn.sms{background:#5ba8b2}
-    body.academy .share-btn.email-share{background:#ad9b84}
-    body.academy .share-btn.facebook{background:#1877F2}
-    body.academy .share-btn.twitter{background:#000}
-    body.academy .step-num{
-      width:40px;height:40px;border-radius:50%;
-      background:linear-gradient(135deg,#5ba8b2,#4a97a1);
-      color:#fff;font-weight:700;font-size:18px;
-      display:grid;place-items:center;margin:0 auto 15px;
-    }
-    body.academy .step{
-      flex:1;min-width:200px;background:rgba(0,0,0,.15);
-      border-radius:10px;padding:20px;text-align:center;
-    }
-    body.academy .step-title{font-weight:600;font-size:14px;margin-bottom:8px}
-    body.academy .step-desc{font-size:13px;color:rgba(255,255,255,.55);line-height:1.5}
-    body.academy .theme-toggle{
-      padding:8px 16px;border-radius:999px;
-      border:1px solid rgba(91,168,178,.2);
-      background:rgba(0,0,0,.2);color:rgba(255,255,255,.5);font-size:11px;
-      font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.04em;
-      text-transform:uppercase;
-    }
+    body.academy .template-card{background:rgba(0,0,0,.15);border-radius:10px;padding:20px;margin-bottom:15px;border:1px solid rgba(91,168,178,.1)}
+    body.academy .template-label{font-size:11px;color:#ad9b84;text-transform:uppercase;font-weight:600;margin-bottom:12px;letter-spacing:.12em}
+    body.academy .template-text{font-size:14px;color:rgba(255,255,255,.75);line-height:1.7;margin:0 0 18px;white-space:pre-wrap;background:rgba(0,0,0,.2);padding:15px;border-radius:8px}
+    body.academy .share-btn{padding:10px 18px;border-radius:999px;font-weight:600;font-size:11px;cursor:pointer;transition:all .2s;border:none;color:white;letter-spacing:.04em;text-transform:uppercase}
+    body.academy .share-btn.copy-tpl{background:transparent;border:1px solid rgba(91,168,178,.3);color:#5ba8b2}body.academy .share-btn.copy-tpl:hover{background:rgba(91,168,178,.1)}
+    body.academy .share-btn.whatsapp{background:#25D366}body.academy .share-btn.sms{background:#5ba8b2}body.academy .share-btn.email-share{background:#ad9b84}body.academy .share-btn.facebook{background:#1877F2}body.academy .share-btn.twitter{background:#000}
+    body.academy .step-num{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#5ba8b2,#4a97a1);color:#fff;font-weight:700;font-size:18px;display:grid;place-items:center;margin:0 auto 15px}
+    body.academy .step{flex:1;min-width:200px;background:rgba(0,0,0,.15);border-radius:10px;padding:20px;text-align:center}
+    body.academy .step-title{font-weight:600;font-size:14px;margin-bottom:8px}body.academy .step-desc{font-size:13px;color:rgba(255,255,255,.55);line-height:1.5}
+    body.academy .theme-toggle{padding:8px 16px;border-radius:999px;border:1px solid rgba(91,168,178,.2);background:rgba(0,0,0,.2);color:rgba(255,255,255,.5);font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.04em;text-transform:uppercase}
     body.academy .theme-toggle:hover{border-color:#5ba8b2;color:#5ba8b2}
-
-    /* ===== SHARED LAYOUT ===== */
-    .header-content{
-      max-width:900px;margin:0 auto;display:flex;
-      justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;
-    }
+    .header-content{max-width:900px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}
     .header-left{display:flex;align-items:center;gap:12px}
-    .stats-row{display:flex;gap:15px;margin-bottom:30px}
-    @media(max-width:500px){.stats-row{flex-direction:column}}
-    .link-row{display:flex;gap:12px;margin-bottom:15px}
-    .code-display{font-size:14px;color:rgba(255,255,255,.6)}
-    .qr-section{display:flex;gap:30px;align-items:center;flex-wrap:wrap}
-    @media(max-width:550px){.qr-section{flex-direction:column;text-align:center}}
-    .qr-box img{width:180px;height:180px;display:block}
-    .qr-info{flex:1}
-    .qr-info h4{margin:0 0 10px;font-size:18px}
-    .qr-info p{margin:0 0 15px;color:rgba(255,255,255,.7);font-size:14px;line-height:1.6}
-    .template-actions{display:flex;gap:10px;flex-wrap:wrap}
-    .steps{display:flex;gap:20px;flex-wrap:wrap}
+    .stats-row{display:flex;gap:15px;margin-bottom:30px}@media(max-width:500px){.stats-row{flex-direction:column}}
+    .link-row{display:flex;gap:12px;margin-bottom:15px}.code-display{font-size:14px;color:rgba(255,255,255,.6)}
+    .qr-section{display:flex;gap:30px;align-items:center;flex-wrap:wrap}@media(max-width:550px){.qr-section{flex-direction:column;text-align:center}}
+    .qr-box img{width:180px;height:180px;display:block}.qr-info{flex:1}.qr-info h4{margin:0 0 10px;font-size:18px}.qr-info p{margin:0 0 15px;color:rgba(255,255,255,.7);font-size:14px;line-height:1.6}
+    .template-actions{display:flex;gap:10px;flex-wrap:wrap}.steps{display:flex;gap:20px;flex-wrap:wrap}
     .loading{text-align:center;padding:60px;font-size:18px}
-
-    /* ===== BRAND TOGGLE ===== */
-    .brand-switcher{
-      display:flex;gap:8px;align-items:center;
-      justify-content:center;margin-bottom:20px;
-    }
-    .brand-switcher label{
-      font-size:12px;color:rgba(255,255,255,.5);
-      text-transform:uppercase;letter-spacing:.08em;font-weight:600;
-    }
+    .brand-switcher{display:flex;gap:8px;align-items:center;justify-content:center;margin-bottom:20px}
+    .brand-switcher label{font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
   </style>
 </head>
-
 <body class="fusion">
   <div class="wrap">
     <header class="header">
       <div class="header-content">
-        <div class="header-left">
-          <div class="brand-title" id="brandTitle">Referral Hub</div>
-        </div>
+        <div class="header-left"><div class="brand-title" id="brandTitle">Referral Hub</div></div>
         <div style="display:flex;gap:10px;align-items:center">
           <button class="theme-toggle" onclick="toggleTheme()" id="themeToggle">Switch to Academy</button>
           <a href="#" class="back-btn" id="backBtn">← Back</a>
         </div>
       </div>
     </header>
-
-    <div class="container" id="app">
-      <div class="loading" id="loadingMsg">Loading your referral info...</div>
-    </div>
+    <div class="container" id="app"><div class="loading" id="loadingMsg">Loading your referral info...</div></div>
   </div>
-
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/+esm";
-
     const SUPABASE_URL = "https://rihlrfiqokqrlmzjjyxj.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpaGxyZmlxb2txcmxtempqeXhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1MTU2NDYsImV4cCI6MjA4NDA5MTY0Nn0.G2TQKSmQpPYb8Cyzo7R833G7xkr0855faLRjrJ9ov-4";
-
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const app = document.getElementById("app");
-
-    // Brand detection from URL param
     const params = new URLSearchParams(window.location.search);
-    let currentBrand = params.get('brand') || 'fusion'; // default to fusion
+    let currentBrand = params.get('brand') || 'fusion';
     if (!['fusion','academy'].includes(currentBrand)) currentBrand = 'fusion';
-
     const BRAND_CONFIG = {
-      fusion: {
-        name: 'Fusion Sessions',
-        title: '🎁 Referral Hub',
-        backUrl: 'https://fusionsessions.com/dashboard.html',
-        refBase: 'https://fusionsessions.com/?ref=',
-        qrFilename: 'fusion-sessions-referral-qr.png',
-        shareSubject: 'Check out Fusion Sessions!',
-        shareIntro: "monthly healing sessions called Fusion Sessions",
-        shareDesc: "amazing for stress and sleep",
-        toggleLabel: 'Switch to Academy',
-        pageTitle: 'document.title = "Referral Hub — Fusion Sessions"'
-      },
-      academy: {
-        name: 'Quantum Academy',
-        title: 'Referral Hub',
-        backUrl: '/academy/dashboard.html',
-        refBase: 'https://qp-homepage.netlify.app/?ref=',
-        qrFilename: 'quantum-academy-referral-qr.png',
-        shareSubject: 'Check out Quantum Academy!',
-        shareIntro: "self-development courses at Quantum Academy",
-        shareDesc: "incredible for personal growth and transformation",
-        toggleLabel: 'Switch to Fusion',
-        pageTitle: 'document.title = "Referral Hub — Quantum Academy"'
-      }
+      fusion: { name:'Fusion Sessions', title:'\ud83c\udf81 Referral Hub', backUrl:'https://fusionsessions.com/dashboard.html', refBase:'https://fusionsessions.com/?ref=', qrFilename:'fusion-sessions-referral-qr.png', shareSubject:'Check out Fusion Sessions!', shareIntro:"monthly healing sessions called Fusion Sessions", shareDesc:"amazing for stress and sleep", toggleLabel:'Switch to Academy' },
+      academy: { name:'Quantum Academy', title:'Referral Hub', backUrl:'/academy/dashboard.html', refBase:'https://qp-homepage.netlify.app/?ref=', qrFilename:'quantum-academy-referral-qr.png', shareSubject:'Check out Quantum Academy!', shareIntro:"self-development courses at Quantum Academy", shareDesc:"incredible for personal growth and transformation", toggleLabel:'Switch to Fusion' }
     };
+    let referralData = null, refLink = '', qrCodeUrl = '', userEmail = '';
 
-    let referralData = null;
-    let refLink = '';
-    let qrCodeUrl = '';
-    let userEmail = '';
-
-    // Generate a referral code for users who don't have one
     window.generateCode = async function() {
       const btn = document.getElementById('generateBtn');
-      btn.disabled = true;
-      btn.textContent = 'Generating...';
-
+      btn.disabled = true; btn.textContent = 'Generating...';
       try {
-        // Generate 8-char code
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        let code = '';
-        for (let i = 0; i < 8; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
-
-        const { data, error } = await supabase.from('referral_codes').insert([{
-          email: userEmail,
-          code: code,
-          credit_balance: 0,
-          total_earned: 0,
-          successful_referrals: 0,
-          created_at: new Date().toISOString()
-        }]).select().single();
-
-        if (error) {
-          // Might be duplicate code, try once more
-          if (error.code === '23505') {
-            btn.textContent = 'Code conflict — try again';
-            btn.disabled = false;
-            return;
-          }
-          throw error;
-        }
-
-        referralData = data;
-        const cfg = BRAND_CONFIG[currentBrand];
-        refLink = cfg.refBase + data.code;
-        qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(refLink)}`;
-        render();
-      } catch(err) {
-        btn.textContent = 'Error — try again';
-        btn.disabled = false;
-        console.error('Generate code error:', err);
-      }
+        let code = ''; for (let i = 0; i < 8; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+        const { data, error } = await supabase.from('referral_codes').insert([{ email: userEmail, code, credit_balance: 0, total_earned: 0, successful_referrals: 0, created_at: new Date().toISOString() }]).select().single();
+        if (error) { if (error.code === '23505') { btn.textContent = 'Code conflict \u2014 try again'; btn.disabled = false; return; } throw error; }
+        referralData = data; const cfg = BRAND_CONFIG[currentBrand]; refLink = cfg.refBase + data.code;
+        qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(refLink)}`; render();
+      } catch(err) { btn.textContent = 'Error \u2014 try again'; btn.disabled = false; console.error(err); }
     };
 
     function applyTheme(brand) {
-      currentBrand = brand;
-      document.body.className = brand;
-      const cfg = BRAND_CONFIG[brand];
+      currentBrand = brand; document.body.className = brand; const cfg = BRAND_CONFIG[brand];
       document.getElementById('brandTitle').textContent = cfg.title;
       document.getElementById('backBtn').href = cfg.backUrl;
       document.getElementById('themeToggle').textContent = cfg.toggleLabel;
-      document.title = `Referral Hub — ${cfg.name}`;
-
-      // Update URL without reload
-      const url = new URL(window.location);
-      url.searchParams.set('brand', brand);
-      history.replaceState({}, '', url);
-
-      // Re-render with new brand links
-      if (referralData?.code) {
-        refLink = cfg.refBase + referralData.code;
-        qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(refLink)}`;
-        render();
-      }
+      document.title = `Referral Hub \u2014 ${cfg.name}`;
+      const url = new URL(window.location); url.searchParams.set('brand', brand); history.replaceState({}, '', url);
+      if (referralData?.code) { refLink = cfg.refBase + referralData.code; qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(refLink)}`; render(); }
     }
-
-    window.toggleTheme = function() {
-      applyTheme(currentBrand === 'fusion' ? 'academy' : 'fusion');
-    };
+    window.toggleTheme = function() { applyTheme(currentBrand === 'fusion' ? 'academy' : 'fusion'); };
 
     function render() {
       if (!referralData?.code) {
         const cfg = BRAND_CONFIG[currentBrand];
-        app.innerHTML = `
-          <h1 class="page-title">Share & Earn</h1>
-          <p class="page-subtitle">You don't have a referral code yet — generate one to start earning!</p>
-          <div style="text-align:center;margin-top:30px">
-            <button class="copy-btn" id="generateBtn" onclick="generateCode()" style="font-size:16px;padding:18px 40px">
-              ✨ Generate My Referral Code
-            </button>
-          </div>
-          <div style="text-align:center;margin-top:20px">
-            <a href="${cfg.backUrl}" style="color:rgba(255,255,255,.5);font-size:14px">← Back to dashboard</a>
-          </div>
-        `;
+        app.innerHTML = `<h1 class="page-title">Share & Earn</h1><p class="page-subtitle">You don\u2019t have a referral code yet \u2014 generate one to start earning!</p><div style="text-align:center;margin-top:30px"><button class="copy-btn" id="generateBtn" onclick="generateCode()" style="font-size:16px;padding:18px 40px">\u2728 Generate My Referral Code</button></div><div style="text-align:center;margin-top:20px"><a href="${cfg.backUrl}" style="color:rgba(255,255,255,.5);font-size:14px">\u2190 Back to dashboard</a></div>`;
         return;
       }
-
       const cfg = BRAND_CONFIG[currentBrand];
       const creditBal = Number(referralData.credit_balance || 0).toFixed(2);
       const totalEarned = Number(referralData.total_earned || 0).toFixed(2);
       const refCount = referralData.successful_referrals || 0;
-
       const casualMsg = `Hey! I've been doing these ${cfg.shareIntro} and they're ${cfg.shareDesc}. You'd love it! Use my link to get 10% off: ${refLink}`;
-      const socialMsg = `🌟 Been checking out ${cfg.shareIntro} and honestly feeling so much better! If you're into wellness, self-care, or personal growth — check it out. Use my link for 10% off ✨ ${refLink}`;
+      const socialMsg = `\ud83c\udf1f Been checking out ${cfg.shareIntro} and honestly feeling so much better! If you're into wellness, self-care, or personal growth \u2014 check it out. Use my link for 10% off \u2728 ${refLink}`;
       const emailMsg = `I wanted to share something with you!\n\nI've been doing these ${cfg.shareIntro} and they're ${cfg.shareDesc}.\n\nUse my personal link to get 10% off:\n${refLink}\n\nLet me know what you think!`;
-
       app.innerHTML = `
-        <div class="brand-switcher">
-          <label>Viewing as:</label>
-          <button class="theme-toggle" onclick="toggleTheme()" style="padding:5px 12px;font-size:11px">${cfg.name} ↔</button>
-        </div>
-
+        <div class="brand-switcher"><label>Viewing as:</label><button class="theme-toggle" onclick="toggleTheme()" style="padding:5px 12px;font-size:11px">${cfg.name} \u21c4</button></div>
         <h1 class="page-title">Share & Earn</h1>
-        <p class="page-subtitle">Every friend who signs up with your link gets 10% off — and you earn $10–$25!</p>
-
+        <p class="page-subtitle">Every friend who signs up with your link gets 10% off \u2014 and you earn $10\u2013$25!</p>
         <div class="stats-row">
           <div class="stat-card"><div class="stat-value">$${creditBal}</div><div class="stat-label">Credit Balance</div></div>
           <div class="stat-card"><div class="stat-value">$${totalEarned}</div><div class="stat-label">Total Earned</div></div>
           <div class="stat-card"><div class="stat-value">${refCount}</div><div class="stat-label">Successful Referrals</div></div>
         </div>
-
-        <div class="section-card">
-          <h3 class="section-title">🔗 Your Referral Link</h3>
-          <div class="link-row">
-            <input type="text" class="link-input" id="refLinkInput" value="${refLink}" readonly>
-            <button class="copy-btn" onclick="copyLink()">Copy Link</button>
-          </div>
-          <div class="code-display">Your code: <span>${referralData.code}</span></div>
-        </div>
-
-        <div class="section-card">
-          <h3 class="section-title">💡 How It Works</h3>
-          <div class="steps">
-            <div class="step">
-              <div class="step-num">1</div>
-              <div class="step-title">Share Your Link</div>
-              <div class="step-desc">Send your unique link or show your QR code to friends</div>
-            </div>
-            <div class="step">
-              <div class="step-num">2</div>
-              <div class="step-title">Friend Gets 10% Off</div>
-              <div class="step-desc">They save money on their purchase</div>
-            </div>
-            <div class="step">
-              <div class="step-num">3</div>
-              <div class="step-title">You Earn Credit</div>
-              <div class="step-desc">$10 per session/course, $25 per bundle — use toward your next purchase!</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="section-card">
-          <h3 class="section-title">📱 Your QR Code</h3>
-          <div class="qr-section">
-            <div class="qr-box">
-              <img src="${qrCodeUrl}" alt="Your Referral QR Code" id="qrImg">
-            </div>
-            <div class="qr-info">
-              <h4>Perfect for in-person sharing!</h4>
-              <p>Show this QR code to friends at events, classes, or meetups. They scan it with their phone camera and go straight to your referral link.</p>
-              <button class="qr-download" onclick="downloadQR()">⬇ Save QR Code</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="section-card">
-          <h3 class="section-title">📋 Ready-to-Share Messages</h3>
-
-          <div class="template-card">
-            <div class="template-label">📱 Quick & Casual</div>
-            <div class="template-text" id="tpl0">${casualMsg}</div>
-            <div class="template-actions">
-              <button class="share-btn copy-tpl" onclick="copyTpl(0)">📋 Copy</button>
-              <button class="share-btn whatsapp" onclick="shareTpl(0,'whatsapp')">💬 WhatsApp</button>
-              <button class="share-btn sms" onclick="shareTpl(0,'sms')">📱 Text</button>
-              <button class="share-btn email-share" onclick="shareTpl(0,'email')">✉️ Email</button>
-            </div>
-          </div>
-
-          <div class="template-card">
-            <div class="template-label">📸 Social Media Post</div>
-            <div class="template-text" id="tpl1">${socialMsg}</div>
-            <div class="template-actions">
-              <button class="share-btn copy-tpl" onclick="copyTpl(1)">📋 Copy</button>
-              <button class="share-btn facebook" onclick="shareTpl(1,'facebook')">👍 Facebook</button>
-              <button class="share-btn twitter" onclick="shareTpl(1,'twitter')">𝕏 Twitter</button>
-            </div>
-          </div>
-
-          <div class="template-card">
-            <div class="template-label">✉️ Detailed Email</div>
-            <div class="template-text" id="tpl2">${emailMsg}</div>
-            <div class="template-actions">
-              <button class="share-btn copy-tpl" onclick="copyTpl(2)">📋 Copy</button>
-              <button class="share-btn email-share" onclick="shareTpl(2,'email')">✉️ Send Email</button>
-            </div>
-          </div>
-        </div>
-      `;
+        <div class="section-card"><h3 class="section-title">\ud83d\udd17 Your Referral Link</h3><div class="link-row"><input type="text" class="link-input" id="refLinkInput" value="${refLink}" readonly><button class="copy-btn" onclick="copyLink()">Copy Link</button></div><div class="code-display">Your code: <span>${referralData.code}</span></div></div>
+        <div class="section-card"><h3 class="section-title">\ud83d\udca1 How It Works</h3><div class="steps"><div class="step"><div class="step-num">1</div><div class="step-title">Share Your Link</div><div class="step-desc">Send your unique link or show your QR code to friends</div></div><div class="step"><div class="step-num">2</div><div class="step-title">Friend Gets 10% Off</div><div class="step-desc">They save money on their purchase</div></div><div class="step"><div class="step-num">3</div><div class="step-title">You Earn Credit</div><div class="step-desc">$10 per session/course, $25 per bundle \u2014 use toward your next purchase!</div></div></div></div>
+        <div class="section-card"><h3 class="section-title">\ud83d\udcf1 Your QR Code</h3><div class="qr-section"><div class="qr-box"><img src="${qrCodeUrl}" alt="Your Referral QR Code" id="qrImg"></div><div class="qr-info"><h4>Perfect for in-person sharing!</h4><p>Show this QR code to friends at events, classes, or meetups. They scan it with their phone camera and go straight to your referral link.</p><button class="qr-download" onclick="downloadQR()">\u2b07 Save QR Code</button></div></div></div>
+        <div class="section-card"><h3 class="section-title">\ud83d\udccb Ready-to-Share Messages</h3>
+          <div class="template-card"><div class="template-label">\ud83d\udcf1 Quick & Casual</div><div class="template-text" id="tpl0">${casualMsg}</div><div class="template-actions"><button class="share-btn copy-tpl" onclick="copyTpl(0)">\ud83d\udccb Copy</button><button class="share-btn whatsapp" onclick="shareTpl(0,'whatsapp')">\ud83d\udcac WhatsApp</button><button class="share-btn sms" onclick="shareTpl(0,'sms')">\ud83d\udcf1 Text</button><button class="share-btn email-share" onclick="shareTpl(0,'email')">\u2709\ufe0f Email</button></div></div>
+          <div class="template-card"><div class="template-label">\ud83d\udcf8 Social Media Post</div><div class="template-text" id="tpl1">${socialMsg}</div><div class="template-actions"><button class="share-btn copy-tpl" onclick="copyTpl(1)">\ud83d\udccb Copy</button><button class="share-btn facebook" onclick="shareTpl(1,'facebook')">\ud83d\udc4d Facebook</button><button class="share-btn twitter" onclick="shareTpl(1,'twitter')">\ud835\udd4f Twitter</button></div></div>
+          <div class="template-card"><div class="template-label">\u2709\ufe0f Detailed Email</div><div class="template-text" id="tpl2">${emailMsg}</div><div class="template-actions"><button class="share-btn copy-tpl" onclick="copyTpl(2)">\ud83d\udccb Copy</button><button class="share-btn email-share" onclick="shareTpl(2,'email')">\u2709\ufe0f Send Email</button></div></div>
+        </div>`;
     }
 
-    window.copyLink = function() {
-      navigator.clipboard.writeText(refLink).then(() => {
-        const btn = document.querySelector('.link-row .copy-btn');
-        btn.textContent = '✓ Copied!';
-        setTimeout(() => btn.textContent = 'Copy Link', 2000);
-      });
-    };
+    window.copyLink = function() { navigator.clipboard.writeText(refLink).then(() => { const btn = document.querySelector('.link-row .copy-btn'); btn.textContent = '\u2713 Copied!'; setTimeout(() => btn.textContent = 'Copy Link', 2000); }); };
+    window.copyTpl = function(i) { const el = document.getElementById('tpl'+i); const btns = document.querySelectorAll('.share-btn.copy-tpl'); if(el) navigator.clipboard.writeText(el.textContent.trim()).then(() => { btns[i].textContent = '\u2713 Copied!'; setTimeout(() => btns[i].textContent = '\ud83d\udccb Copy', 2000); }); };
+    window.shareTpl = function(i, p) { const el = document.getElementById('tpl'+i); if(!el) return; const t = encodeURIComponent(el.textContent.trim()); const cfg = BRAND_CONFIG[currentBrand]; let u = ''; switch(p) { case 'whatsapp': u=`https://wa.me/?text=${t}`; break; case 'sms': u=`sms:?body=${t}`; break; case 'email': u=`mailto:?subject=${encodeURIComponent(cfg.shareSubject)}&body=${t}`; break; case 'facebook': u=`https://www.facebook.com/sharer/sharer.php?quote=${t}&u=${encodeURIComponent(refLink)}`; break; case 'twitter': u=`https://twitter.com/intent/tweet?text=${t}`; break; } if(u) window.open(u,'_blank'); };
+    window.downloadQR = async function() { const cfg = BRAND_CONFIG[currentBrand]; try { const r = await fetch(qrCodeUrl); const b = await r.blob(); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = cfg.qrFilename; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(u); } catch(e) { window.open(qrCodeUrl,'_blank'); } };
 
-    window.copyTpl = function(index) {
-      const el = document.getElementById('tpl' + index);
-      const btns = document.querySelectorAll('.share-btn.copy-tpl');
-      if (el) {
-        navigator.clipboard.writeText(el.textContent.trim()).then(() => {
-          btns[index].textContent = '✓ Copied!';
-          setTimeout(() => btns[index].textContent = '📋 Copy', 2000);
-        });
-      }
-    };
-
-    window.shareTpl = function(index, platform) {
-      const el = document.getElementById('tpl' + index);
-      if (!el) return;
-      const text = encodeURIComponent(el.textContent.trim());
+    function showLoginForm() {
       const cfg = BRAND_CONFIG[currentBrand];
-      let url = '';
-      switch(platform) {
-        case 'whatsapp': url = `https://wa.me/?text=${text}`; break;
-        case 'sms': url = `sms:?body=${text}`; break;
-        case 'email': url = `mailto:?subject=${encodeURIComponent(cfg.shareSubject)}&body=${text}`; break;
-        case 'facebook': url = `https://www.facebook.com/sharer/sharer.php?quote=${text}&u=${encodeURIComponent(refLink)}`; break;
-        case 'twitter': url = `https://twitter.com/intent/tweet?text=${text}`; break;
-      }
-      if (url) window.open(url, '_blank');
-    };
+      app.innerHTML = `<div style="max-width:400px;margin:40px auto;text-align:center"><h1 class="page-title" style="font-size:28px">Sign In</h1><p class="page-subtitle" style="margin-bottom:24px">Sign in to access your Referral Hub</p><div class="section-card" style="text-align:left"><div id="loginError" style="display:none;color:#ef5350;font-size:13px;margin-bottom:14px;padding:10px;border-radius:8px;background:rgba(239,83,80,.1)"></div><div style="margin-bottom:14px"><label style="display:block;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:6px">Email</label><input type="email" id="loginEmail" class="link-input" placeholder="your@email.com" style="width:100%"></div><div style="margin-bottom:20px"><label style="display:block;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:6px">Password</label><input type="password" id="loginPass" class="link-input" placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" style="width:100%"></div><button class="copy-btn" id="loginBtn" onclick="handleLogin()" style="width:100%;text-align:center;display:block">Sign In</button><p style="text-align:center;margin-top:16px;font-size:13px;color:rgba(255,255,255,.5)">Same account you use for ${cfg.name}</p></div></div>`;
+      setTimeout(() => { const p = document.getElementById('loginPass'); if(p) p.addEventListener('keydown', e => { if(e.key==='Enter') handleLogin(); }); const em = document.getElementById('loginEmail'); if(em) em.addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('loginPass').focus(); }); }, 50);
+    }
 
-    window.downloadQR = async function() {
-      const cfg = BRAND_CONFIG[currentBrand];
+    window.handleLogin = async function() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const pass = document.getElementById('loginPass').value;
+      const errEl = document.getElementById('loginError');
+      const btn = document.getElementById('loginBtn');
+      errEl.style.display = 'none';
+      if (!email || !pass) { errEl.textContent = 'Please enter email and password'; errEl.style.display = 'block'; return; }
+      btn.disabled = true; btn.textContent = 'Signing in...';
       try {
-        const response = await fetch(qrCodeUrl);
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = cfg.qrFilename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      } catch(err) {
-        window.open(qrCodeUrl, '_blank');
-      }
+        const { data: authData, error } = await supabase.auth.signInWithPassword({ email: email.toLowerCase(), password: pass });
+        if (error) throw error;
+        userEmail = authData.user.email.toLowerCase();
+        const { data: refData } = await supabase.from('referral_codes').select('*').eq('email', userEmail).maybeSingle();
+        referralData = refData;
+        if (refData?.code) { const cfg = BRAND_CONFIG[currentBrand]; refLink = cfg.refBase + refData.code; qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(refLink)}`; }
+        render();
+      } catch(err) { errEl.textContent = err.message || 'Invalid email or password'; errEl.style.display = 'block'; btn.disabled = false; btn.textContent = 'Sign In'; }
     };
 
     async function boot() {
       const { data } = await supabase.auth.getSession();
-      if (!data?.session) {
-        // Try to redirect to appropriate login
-        const loginUrl = currentBrand === 'academy'
-          ? '/academy/login.html?redirect=/referral-hub.html?brand=academy'
-          : 'https://fusionsessions.com/login.html';
-        location.href = loginUrl;
-        return;
-      }
-
+      if (!data?.session) { showLoginForm(); applyTheme(currentBrand); return; }
       const email = data.session.user.email.toLowerCase();
       userEmail = email;
-      const { data: refData } = await supabase
-        .from('referral_codes')
-        .select('*')
-        .eq('email', email)
-        .maybeSingle();
-
+      const { data: refData } = await supabase.from('referral_codes').select('*').eq('email', email).maybeSingle();
       referralData = refData;
-      if (refData?.code) {
-        const cfg = BRAND_CONFIG[currentBrand];
-        refLink = cfg.refBase + refData.code;
-        qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(refLink)}`;
-      }
-
-      applyTheme(currentBrand);
-      render();
+      if (refData?.code) { const cfg = BRAND_CONFIG[currentBrand]; refLink = cfg.refBase + refData.code; qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(refLink)}`; }
+      applyTheme(currentBrand); render();
     }
-
     boot();
   </script>
 </body>
