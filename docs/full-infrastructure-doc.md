@@ -1,3 +1,406 @@
+# QP Admin Panel — Full Infrastructure Documentation
+
+## 📋 SESSION HANDOFF PROTOCOL
+This doc is 1 of 3 that must be updated at the end of every build session. These documents are a shared collaboration between Todd and Claude — they capture the accumulated knowledge of 9 build sessions. Keep them accurate and thorough.
+
+**Last updated:** Session 9 Continuation (Feb 23, 2026)
+
+---
+
+## System Architecture Overview
+
+### Hosting
+- **QP Admin**: `qp-homepage.netlify.app/admin/` — Single `index.html` file (~405KB, minified)
+- **Fusion Admin**: `fusionsessions.com/admin.html` — Separate file, stays untouched until QP has full parity
+- **Academy**: `academy.quantumphysician.com` — Student-facing course platform
+- **Fusion Sessions**: `fusionsessions.com` — Healing session platform with community
+
+### Backend Services
+- **Supabase** — Database (PostgreSQL), Auth, Storage, Realtime
+- **Stripe** — Payments, checkout sessions
+- **Netlify Functions** — Serverless endpoints for sensitive operations
+- **Google Apps Script** — Email sending (3 scripts — see below)
+
+### CDN Libraries
+- **Supabase JS SDK** — loaded from CDN
+- **Chart.js** — `https://cdn.jsdelivr.net/npm/chart.js` (added Session 7)
+
+---
+
+## Supabase Configuration
+
+### Two Client Instances in QP Admin:
+```javascript
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);      // reads + signInWithPassword
+const sbAdmin = supabase.createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY); // ALL writes + admin data ops
+```
+
+**CRITICAL RULES**:
+- Always use `sbAdmin` for writes. `sb` will silently fail on inserts/updates due to RLS policies.
+- Always use `sb` for `signInWithPassword()`. `sbAdmin` (service role) bypasses auth entirely and CANNOT authenticate individual users.
+
+### Auth Users Access
+```javascript
+// Direct REST API call (not SDK)
+const res = await fetch(SUPABASE_URL + '/auth/v1/admin/users?page=' + page + '&per_page=500', {
+  headers: { 'apikey': SUPABASE_SERVICE_KEY, 'Authorization': 'Bearer ' + SUPABASE_SERVICE_KEY }
+});
+```
+Stored in `authUsersMap` (keyed by email).
+
+---
+
+## Admin Authentication System (Session 9)
+
+### Login Flow
+1. Check for legacy credentials ("QPadmin" / "QPfs#2026") FIRST — if match, grant super_admin immediately
+2. If not legacy: `sb.auth.signInWithPassword()` verifies email+password against Supabase Auth
+3. Query `admin_users` table for matching email with `is_active = true`
+4. If found: store full admin object in `sessionStorage`, apply permissions, show admin layout
+5. If not found in `admin_users`: show "No admin access" error
+6. Session persists via `sessionStorage` — survives page refreshes, cleared on logout or tab close
+
+### CRITICAL: Auth Client Selection
+- **`sb` (anon client)** → for `signInWithPassword()` — authenticates as a specific user
+- **`sbAdmin` (service role)** → for data reads/writes — bypasses RLS, has full DB access
+- Using `sbAdmin.auth.signInWithPassword()` will FAIL because service role bypasses the auth system entirely
+
+### CRITICAL: Legacy Fallback Order
+- Legacy credentials MUST be checked BEFORE any Supabase async call
+- If legacy check is inside a `try` block after `signInWithPassword()`, it becomes unreachable when Supabase throws
+- This caused a total lockout bug in Session 9
+
+### Admin Account Requirements
+An admin needs BOTH:
+1. A Supabase Auth account (in `auth.users`) with a password set
+2. A row in the `admin_users` table with `is_active = true`
+
+To create a new admin auth account: sign up through fusionsessions.com/login.html (or any site using the same Supabase project). Note: `auth.create_user()` SQL function is NOT available on Supabase free tier.
+
+### Permission System
+```javascript
+currentAdmin = {
+  id: '...',
+  email: 'admin@example.com',
+  name: 'Todd',
+  role: 'super_admin',  // or 'admin', 'assistant'
+  permissions: {
+    customers: true,     // Customers, Academy, Fusion, Sessions, Memberships, Referrals
+    email: true,         // Email Campaigns
+    promotions: true,    // Promotions page
+    orders: true,        // Orders page
+    community: true,     // Community page + moderators
+    analytics: true,     // Analytics page
+    suggestions: true,   // Smart Suggestions (dashboard)
+    automation: true,    // Email Automation
+    audit: true,         // Audit Log
+    system: true,        // Admin Users (super_admin only)
+    refund: true,        // Refund button in orders
+    delete: true,        // Destructive actions
+  }
+};
+```
+
+### Role Defaults
+| Permission | Super Admin | Admin | Assistant |
+|------------|:-----------:|:-----:|:---------:|
+| customers | ✅ | ✅ | ✅ |
+| email | ✅ | ✅ | ✅ |
+| promotions | ✅ | ✅ | ❌ |
+| orders | ✅ | ✅ | ✅ |
+| community | ✅ | ✅ | ✅ |
+| analytics | ✅ | ✅ | ❌ |
+| suggestions | ✅ | ✅ | ✅ |
+| automation | ✅ | ✅ | ❌ |
+| audit | ✅ | ✅ | ❌ |
+| system | ✅ | ❌ | ❌ |
+| refund | ✅ | ✅ | ❌ |
+| delete | ✅ | ❌ | ❌ |
+
+### Legacy Auth (TEMPORARY — remove in Session 10)
+Old username "QPadmin" / password "QPfs#2026" still works as fallback. Grants super_admin. Checked BEFORE Supabase auth.
+
+---
+
+## Database Tables
+
+### Core Tables (Read/Write)
+| Table | Read Client | Write Client | RLS | Notes |
+|-------|------------|-------------|-----|-------|
+| `purchases` | sb | sbAdmin | Yes | Revoke uses `revoked__` prefix, refund uses `refunded__` |
+| `referral_codes` | sb | sbAdmin | Yes | |
+| `profiles` | sb | sbAdmin | Yes | `community_role` field for moderators |
+| `credit_history` | sb | sbAdmin | Yes | |
+| `qa_enrollments` | sb | sbAdmin | Yes | |
+| `qa_courses` | sb | — | Yes | Read-only in admin |
+| `qa_lesson_progress` | sb | sbAdmin | Yes | DELETE for reset |
+| `admin_notes` | sb | sbAdmin | Yes | |
+| `discussion_posts` | sb | sbAdmin | Yes | Pin/hide/delete |
+| `qa_discussions` | sb | sbAdmin | Yes | |
+| `email_campaigns` | sb | sbAdmin | Yes | |
+| `email_tracking` | sb | sbAdmin | Yes | |
+| `promotions` | sb | sbAdmin | Yes | **Use `coupon_id` for code** |
+| `admin_audit_log` | sb | sbAdmin | Yes | `admin_user` column stores admin name |
+| `admin_users` | sbAdmin | sbAdmin | Yes | **SESSION 9** — roles + permissions |
+| `scheduled_emails` | sb | sbAdmin | Yes | **RLS applied SESSION 9** |
+| `email_log` | sb | sbAdmin | Yes | **RLS applied SESSION 9** |
+| `session_schedule` | sb | — | Yes | **RLS applied SESSION 9** Read-only |
+
+### `admin_users` Table (Session 9)
+```sql
+CREATE TABLE admin_users (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL DEFAULT '',
+  role TEXT NOT NULL DEFAULT 'assistant' CHECK (role IN ('super_admin', 'admin', 'assistant')),
+  can_customers BOOLEAN DEFAULT true,
+  can_email BOOLEAN DEFAULT true,
+  can_promotions BOOLEAN DEFAULT false,
+  can_orders BOOLEAN DEFAULT true,
+  can_community BOOLEAN DEFAULT true,
+  can_analytics BOOLEAN DEFAULT false,
+  can_suggestions BOOLEAN DEFAULT true,
+  can_automation BOOLEAN DEFAULT false,
+  can_audit BOOLEAN DEFAULT false,
+  can_system BOOLEAN DEFAULT false,
+  can_refund BOOLEAN DEFAULT false,
+  can_delete BOOLEAN DEFAULT false,
+  is_active BOOLEAN DEFAULT true,
+  last_login TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+### IMPORTANT: Promotions Table Field Names
+- `coupon_id` — The actual promo code (e.g., "TEST50"). Use this for lookups.
+- `name` — Display name
+- `discount_type` — "percent", "fixed", or "set_price"
+- Do NOT use `p.code` — this field does not exist.
+
+### RLS Policies Applied in Session 9
+```sql
+ALTER TABLE scheduled_emails ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all" ON scheduled_emails FOR ALL USING (true) WITH CHECK (true);
+
+ALTER TABLE email_log ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all" ON email_log FOR ALL USING (true) WITH CHECK (true);
+
+ALTER TABLE session_schedule ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all" ON session_schedule FOR ALL USING (true) WITH CHECK (true);
+
+ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Service role full access" ON admin_users FOR ALL USING (true) WITH CHECK (true);
+```
+
+---
+
+## Audit Log System (Redesigned Session 9 Continuation)
+
+### Architecture
+- `logAudit(action, targetEmail, details, metadata)` — stores clean details (no admin name prefix)
+- Admin name stored in `admin_user` column of `admin_audit_log` table
+- `auditSvg(name, col)` — renders inline SVG icons from a path dictionary
+
+### Display Features
+- Grouped by date headers
+- Human-readable sentences: "Todd granted access to user@email.com"
+- Color-coded badges by category: `grant` (green), `revoke` (red), `info` (teal), `neutral` (taupe)
+- SVG feather-style icons in circular containers
+- Search covers `target_email`, `details`, and `admin_user` fields
+
+### Action Types
+| Action | Category | Icon | Verb |
+|--------|----------|------|------|
+| grant_access | grant | check | granted access to |
+| revoke_access | revoke | x-circle | revoked access for |
+| block_user | revoke | lock | blocked/unblocked |
+| adjust_credit | info | dollar | adjusted credits for |
+| enroll_student | grant | grad | enrolled |
+| assign_mod | grant | users | assigned moderator role to |
+| remove_mod | revoke | users | removed moderator role from |
+| add_admin | grant | shield | added as admin |
+| send_email | info | mail | sent email campaign |
+| create_promo | grant | tag | created promotion |
+| suggestion_action | info | bulb | acted on suggestion |
+| *(and more — see auditSvg function for full list)* |
+
+---
+
+## loadAllData() — Central Data Pipeline
+
+Fetches 16 tables in a single `Promise.all()` call:
+```
+// 0: purchases → purchasesData
+// 1: referral_codes → referralData
+// 2: profiles → profilesData
+// 3: credit_history → creditData
+// 4: qa_enrollments → academyEnrollments
+// 5: qa_courses → academyCourses
+// 6: qa_lesson_progress → lessonProgress
+// 7: admin_notes → adminNotesData
+// 8: discussion_posts → allFusionPosts
+// 9: qa_discussions → allAcadPosts
+// 10: email_campaigns → emailCampaignsData (last 50)
+// 11: email_tracking → emailTrackingData (last 500)
+// 12: promotions → promotionsData (all, desc)
+// 13: scheduled_emails → scheduledEmailsData (limit 100)
+// 14: email_log → emailLogData (limit 200)
+// 15: session_schedule → sessionScheduleData (all)
+```
+
+Plus `authUsersMap` from Supabase Admin API.
+
+**Note:** `admin_users` is NOT in `loadAllData()` — it's fetched separately by `loadAdminUsers()` only when the Admin Users page is viewed (super_admin only).
+
+---
+
+## Moderator Management (Session 9)
+
+### Location
+Community page → "Moderators" tab (third tab after Academy Discussions and Fusion Community)
+
+### Mechanism
+- Uses `profiles.community_role` field (values: `member`, `moderator`, `admin`)
+- Same field as Fusion admin — full compatibility
+- Search uses `allCustomers` array (same as customer search)
+- Assign: `sbAdmin.from('profiles').update({community_role: role}).eq('id', profileId)`
+- Remove: sets `community_role` back to `'member'`
+- Role selector has descriptions: "Moderator — Can moderate posts" / "Community Admin — Full community control"
+- All actions audit-logged with admin name
+
+---
+
+## Email System Details (Sessions 6 + 8)
+
+### Two Email Brands:
+1. **Fusion Sessions** (`buildRichEmail()`) — Neon pink/purple/cyan
+2. **Academy** (`buildAcademyEmail()`) — Teal/navy/Georgia serif, background #2f5f7f
+
+### Multi-Card Rendering (Session 8):
+- `parts[1]` = first card, `parts[2]` = second card
+- Both positions handle: `{{qr_code}}`, bold markdown, code styling, smart CTA labels
+
+---
+
+## Netlify Functions
+
+| Function | Purpose | Status |
+|----------|---------|--------|
+| `create-checkout.js` | Creates Stripe checkout session, validates promos | ✅ Live |
+| `reset-password.js` | Sends password reset email | ✅ Live |
+| `get-admin-users.js` | Fetches auth users list | ✅ Live |
+| `admin-actions.js` | Referral code creation, magic links | ✅ Live |
+| `email-track.js` | Open/click/conversion tracking | ✅ Live |
+| `stripe-webhook.js` | Fusion purchase processing | ✅ Live |
+| `stripe-refund.js` | Stripe refund processing | ✅ Live |
+| `academy-checkout.js` | Academy checkout with prorated bundles | ✅ Live |
+| `academy-webhook.js` | Academy purchase processing | ✅ Live |
+| `admin-auth.js` | Optional server-side admin auth | Created Session 9, not deployed |
+
+---
+
+## Google Apps Script Architecture
+
+### Script 1: Stripe Webhook Handler
+- Trigger: Stripe webhook on `checkout.session.completed`
+- Routes to Fusion vs Academy, sends thank-you emails
+
+### Script 2: Fusion Sessions Email Automation
+- Trigger: Time-driven, every 15 minutes
+- Reads `scheduled_emails`, processes pending, writes `email_log`
+
+### Script 3: Bulk Email Sender v3
+- Trigger: HTTP POST from QP Admin
+- `{body: htmlContent, isHtml: true}` → sends as complete HTML
+- **No changes needed for Sessions 6–9**
+
+---
+
+## Sidebar Navigation (Current — Session 9)
+
+```
+OVERVIEW
+├── Dashboard
+├── Customers
+PRODUCTS
+├── Academy
+├── Fusion Sessions
+├── 1-on-1 Sessions
+├── Memberships
+ENGAGE
+├── Community (tabs: Academy | Fusion | Moderators)  ← Moderators added Session 9
+├── Referrals & Credits
+├── Email Campaigns
+├── Email Automation
+├── Promotions
+├── Orders
+├── Analytics
+SYSTEM
+├── Audit Log
+├── Admin Users (super_admin only, hidden for others)  ← Session 9
+└── Light/Dark toggle
+```
+
+---
+
+## CSS Variables & Theming
+
+```css
+:root {
+  --bg: #0c1824; --navy-card: #112a42; --text: #e8e8e8;
+  --text-muted: #8899aa; --text-dim: #667788; --teal: #5ba8b2;
+  --teal-glow: #4acfd9; --purple: #a78bfa; --pink: #ff006e;
+  --success: #3dd68c; --danger: #ef5350; --taupe: #ad9b84;
+  --warning: #f0b429;
+}
+```
+
+### Session 9 CSS Additions:
+- `.badge-success`, `.badge-danger`, `.badge-primary`, `.badge-purple`, `.badge-default` — Named badge variants
+- `.avatar-sm` — Small avatar circle (32px) for tables
+- `.label-sm` — Tiny label for form fields
+- `.audit-date-group`, `.audit-date-label` — Date grouping headers
+- `.audit-row`, `.audit-icon`, `.audit-body`, `.audit-sentence`, `.audit-admin`, `.audit-target` — Redesigned audit log layout
+- `.audit-detail`, `.audit-meta`, `.audit-badge`, `.audit-time` — Audit entry metadata
+
+---
+
+## File Structure
+
+```
+quantum-physician/
+├── admin/
+│   └── index.html          ← THE admin panel (~405KB, everything in one file)
+├── netlify/functions/
+│   ├── create-checkout.js
+│   ├── reset-password.js
+│   ├── get-admin-users.js
+│   ├── admin-actions.js
+│   ├── email-track.js
+│   ├── stripe-refund.js
+│   ├── academy-checkout.js
+│   ├── academy-webhook.js
+│   └── admin-auth.js       ← Session 9 (optional, not deployed)
+├── academy/                ← Academy student-facing pages
+├── fusion/                 ← Fusion Sessions pages
+└── netlify.toml
+```
+
+---
+
+## Known Technical Debt
+
+1. **File size (~405KB)** — Grew from 378KB → ~405KB in Session 9. Code splitting strongly recommended.
+2. **`showCustomerDetail()` is one massive line** — causes file truncation on upload
+3. **Legacy auth fallback** — "QPadmin"/"QPfs#2026" still works. Remove once Supabase auth confirmed.
+4. **Custom templates + query presets in localStorage** — not shared across admin users
+5. **No Stripe Coupon sync** — promos are Supabase-only
+6. **Auth user fetch** — `listUsers` pagination works but untested past 1000 users
+7. **Academy referral hub page doesn't exist** — will 404
+8. **Card Library not built** — Todd wants pre-built email card blocks (future session)
+9. **`admin-auth.js` not deployed** — Optional server-side auth for enhanced security
+10. **Brave browser autofill** — Ignores autocomplete=off. Decided not to fight it.
 
 ## Session 10B Updates
 - **Card Library uses own SVG helper** (`clSvg()`) — independent of `auditSvg()` scope, has 7 icons: link, users, calendar, star, zap, grad, key
