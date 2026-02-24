@@ -459,11 +459,31 @@ function dismissSuggestion(id){sgDismissed.push(id);localStorage.setItem('qp_sg_
 // SESSION 11: WEEKLY MARKETING GOALS
 // ============================================================
 var WEEKLY_GOALS=[
-{id:'no_purchase',label:'Welcome Email',campaignType:'no_purchase',nav:function(){go('email');setTimeout(function(){var s=document.getElementById('email-audience');if(s){s.value='no_purchase';updateAudiencePreview()}},200)}},
-{id:'upsell_bundle',label:'Upgrade Offer',campaignType:'upsell_bundle',nav:function(){go('email');setTimeout(function(){var s=document.getElementById('email-audience');if(s){s.value='session_buyers';updateAudiencePreview()}},200)}},
-{id:'credit_reminder',label:'Credit Reminder',campaignType:'credit_reminder',nav:function(){go('email');setTimeout(function(){var s=document.getElementById('email-audience');if(s){s.value='has_credits';updateAudiencePreview()}},200)}},
-{id:'referral_nudge',label:'Referral Nudge',campaignType:'referral_nudge',nav:function(){go('email');setTimeout(function(){var s=document.getElementById('email-audience');if(s){s.value='has_referral';updateAudiencePreview()}},200)}},
-{id:'promote_session',label:'Session Promo',campaignType:'promote_session',nav:function(){go('email');setTimeout(function(){var t=document.getElementById('email-type-select');if(t){t.value='promotional';updateEmailTypeHint()}},200)}},
+{id:'no_purchase',label:'Welcome Email',campaignType:'no_purchase',sgId:'new-no-purchase',fallback:function(){
+var noPurch=allCustomers.filter(function(c){return c.hasAccount&&c.purchases.length===0});
+if(!noPurch.length){showToast('No signup-without-purchase users found','info');return}
+var emails=noPurch.map(function(c){return c.email}).join('\n');
+var promo=promotionsData.find(function(p){return p.status==='active'});
+sgSetupEmail({customEmails:emails,brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',discount:!!promo,promoCode:promo?promo.coupon_id:'',subject:'Welcome to Quantum Physician — A gift to get you started',body:'Hi {{name}},\n\nYou signed up — that means something. **You are ready.**\n\n**Fusion Sessions** are 60-minute online group healing experiences led by Dr. Tracey Clark. Each one works on a specific area of your health: anxiety, pain, sleep, energy, and more.\n\nPeople tell us they feel different after just one session.\n\n**Ready to find out for yourself?**'+(promo?'\n\nUse code **'+promo.coupon_id+'** for a special discount!':'')+'\n\nI am here for you,\nDr. Tracey Clark'})}},
+{id:'upsell_bundle',label:'Upgrade Offer',campaignType:'upsell_bundle',sgId:'bundle-upsell',fallback:function(){
+var indivBuyers=allCustomers.filter(function(c){return!c.hasBundle&&c.fusionPurchases.length>=1&&c.fusionPurchases.length<12});
+if(!indivBuyers.length){showToast('No individual session buyers to upsell','info');return}
+var emails=indivBuyers.map(function(c){return c.email}).join('\n');
+var promo=promotionsData.find(function(p){return p.status==='active'});
+sgSetupEmail({customEmails:emails,brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',discount:!!promo,promoCode:promo?promo.coupon_id:'',subject:'Complete Your Fusion Journey — Upgrade to the Full Bundle',body:'Hi {{name}},\n\nYou have already experienced Fusion Sessions and I love seeing your commitment to healing!\n\nThe **Complete Fusion Bundle** gives you access to all 12 sessions at a significant savings compared to buying individually.\n\n**Complete your journey today.**'+(promo?'\n\nUse code **'+promo.coupon_id+'** for an extra discount!':'')+'\n\nWith love and healing,\nDr. Tracey Clark'})}},
+{id:'credit_reminder',label:'Credit Reminder',campaignType:'credit_reminder',sgId:'unused-credits',fallback:function(){
+var withCredits=referralData.filter(function(r){return r.credit_balance>0});
+if(!withCredits.length){showToast('No users with unused credits','info');return}
+var emails=withCredits.map(function(r){return r.email}).join('\n');
+sgSetupEmail({customEmails:emails,brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',subject:'You have credits waiting to be used!',body:'Hi {{name}},\n\nYou have **credits** in your account — real money you earned by sharing the healing.\n\nThey apply automatically at checkout. Just pick a session and your balance does the rest.\n\n**Do not let them go to waste!**\n\nWith gratitude,\nDr. Tracey Clark'})}},
+{id:'referral_nudge',label:'Referral Nudge',campaignType:'referral_nudge',sgId:'unused-refs',fallback:function(){
+var dormant=referralData.filter(function(r){return r.successful_referrals===0});
+if(!dormant.length){showToast('No dormant referral codes to nudge','info');return}
+var emails=dormant.map(function(r){return r.email}).join('\n');
+sgSetupEmail({customEmails:emails,brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',subject:'Did you know you have a referral code? Share it and earn!',body:'Hi {{name}},\n\nYou signed up for our referral program but have not shared yet. That means there is free money waiting.\n\n**Think of one person:** a friend who cannot sleep, a coworker who is always stressed, or a family member dealing with pain.\n\nYour code gives them 10% off. You earn **$10-$25** per referral. **Just text your link to one person today.**\n\n---\n**Share & Earn**\nYour code: **REFCODE**\nYour link: fusionsessions.com/?ref=REFCODE\n{{qr_code}}'})}},
+{id:'promote_session',label:'Session Promo',campaignType:'promote_session',sgId:'expiring-promos',fallback:function(){
+var promo=promotionsData.find(function(p){return p.status==='active'});
+sgSetupEmail({audience:'all-opted-in',brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',discount:!!promo,promoCode:promo?promo.coupon_id:'',subject:'This Month\'s Fusion Session Is Here!',body:'Hi {{name}},\n\nA new Fusion Session is available and I do not want you to miss it.\n\nEach session is a **unique 60-minute quantum healing experience** that works on a specific area of your health and wellbeing.\n\n**Space fills up — book your spot today.**'+(promo?'\n\nUse code **'+promo.coupon_id+'** for a special discount!':'')+'\n\nWith healing energy,\nDr. Tracey Clark'})}},
 {id:'promo_create',label:'New Promotion',manual:true,nav:function(){go('promotions')}},
 {id:'review_analytics',label:'Review Analytics',manual:true,nav:function(){go('analytics')}}
 ];
@@ -497,15 +517,22 @@ chipsEl.innerHTML=WEEKLY_GOALS.map(function(g,i){
 var done=g.manual?manual[g.id]:sentTypes.has(g.campaignType);
 var clickFn=done?'':'weeklyGoalAction('+i+')';
 var clickAttr=clickFn?' onclick="'+clickFn+'" style="cursor:pointer"':'';
-return'<span class="goal-chip'+(done?' done':'')+(g.manual?' manual':'')+'"'+clickAttr+' title="'+(done?'Completed!':(g.manual?'Click to complete':'Click to start'))+'"><span class="goal-check">'+(done?'\u2713':'')+'</span>'+g.label+'</span>'
+return'<span class="goal-chip'+(done?' done':'')+(g.manual?' manual':'')+'"'+clickAttr+' title="'+(done?'Completed!':(g.manual?'Click to complete':'Click to compose'))+'"><span class="goal-check">'+(done?'\u2713':'')+'</span>'+g.label+'</span>'
 }).join('');
 panel.style.display='block';
 }
 
 function weeklyGoalAction(idx){
 var g=WEEKLY_GOALS[idx];
-if(g.manual){completeManualGoal(g.id)}
-if(g.nav)g.nav();
+if(g.manual){completeManualGoal(g.id);if(g.nav)g.nav();return}
+/* Try to find matching active suggestion and trigger its action */
+var suggestions=generateSuggestions();
+var match=suggestions.find(function(s){return s.id===g.sgId});
+if(match&&match.actions&&match.actions[0]&&match.actions[0].action){
+match.actions[0].action();
+}else if(g.fallback){
+g.fallback();
+}
 }
 
 function completeManualGoal(goalId){
