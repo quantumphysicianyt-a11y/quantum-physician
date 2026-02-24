@@ -777,25 +777,27 @@ else if(promo.discount_type==='fixed')discLabel='$'+(promo.discount_fixed||0)+' 
 else if(promo.discount_type==='set_price')discLabel='Only $'+(promo.discount_set_price||0);
 var textarea=document.getElementById('sg-body');
 var body=textarea.value;
-/* Remove any existing discount marker */
-body=body.replace(/\n\n\[DISCOUNT:.*?\]\n[\s\S]*?(?=\n---\n|$)/,'');
-/* Build the discount pitch - goes into the main body before --- */
-var pitch='\n\n[DISCOUNT:'+code+']\nAs a special thank you, here is an exclusive offer just for you:\n\n**'+discLabel+'** with code **'+code+'**\n\nThis discount is applied automatically when you click the button below \u2014 no code needed at checkout.';
+/* Remove existing [PROMO] block if present */
+body=body.replace(/\n\[PROMO:.*?\][\s\S]*?\[END_PROMO\]/,'');
+/* Build promo block - goes at TOP of the --- section */
+var promoBlock='\n[PROMO:'+code+']\n**Exclusive Offer: '+discLabel+'**\nUse code: **'+code+'**\nApplied automatically at checkout\n[END_PROMO]';
 var idx=body.indexOf('\n---\n');
 if(idx>=0){
-textarea.value=body.substring(0,idx)+pitch+body.substring(idx);
+/* Insert right after --- */
+textarea.value=body.substring(0,idx+5)+promoBlock+'\n'+body.substring(idx+5);
 }else{
-textarea.value=body.trimEnd()+pitch;
+/* No --- section, create one */
+textarea.value=body.trimEnd()+'\n---'+promoBlock;
 }
 textarea.scrollTop=textarea.scrollHeight;
-showToast('Discount pitch added: '+code,'success');
+showToast('Discount added to card: '+code,'success');
 sgAutoPreview();
 }
 
 function sgRemoveDiscountPitch(){
 var textarea=document.getElementById('sg-body');
 if(!textarea)return;
-textarea.value=textarea.value.replace(/\n\n\[DISCOUNT:.*?\]\n[\s\S]*?(?=\n---\n|$)/,'');
+textarea.value=textarea.value.replace(/\n\[PROMO:.*?\][\s\S]*?\[END_PROMO\]\n?/,'');
 sgAutoPreview();
 }
 
@@ -816,11 +818,11 @@ var brand=document.getElementById('sg-brand').value;
 var discCfg=sgGetDiscountConfig();
 /* Also check for [DISCOUNT:CODE] marker to build discCfg if toggle is off */
 if(!discCfg){
-var dm=bodyText.match(/\[DISCOUNT:([^\]]+)\]/);
+var dm=bodyText.match(/\[PROMO:([^\]]+)\]/);
 if(dm){var mp=promotionsData.find(function(p){return p.coupon_id===dm[1]});
 if(mp)discCfg={couponId:dm[1],percent:mp.discount_percent||0,product:mp.applies_to||'any'}}}
-/* Strip [DISCOUNT:xxx] marker from visible text */
-var cleanBody=bodyText.replace(/\[DISCOUNT:[^\]]+\]\n/g,'');
+/* Strip [PROMO] markers from visible text */
+var cleanBody=bodyText.replace(/\[PROMO:[^\]]+\]\n/g,'').replace(/\[END_PROMO\]\n?/g,'');
 var siteUrl=brand==='academy'?'https://academy.quantumphysician.com':'https://fusionsessions.com';
 return brand==='academy'?buildAcademyEmail(cleanBody,null,siteUrl,discCfg):buildRichEmail(cleanBody,null,siteUrl,discCfg);
 }
@@ -898,7 +900,7 @@ for(var i=0;i<recipients.length;i++){
 var r=recipients[i];
 var pb=body.replace(/\{\{name\}\}/g,r.name||'Friend').replace(/\{\{email\}\}/g,r.email).replace(/\{\{referral_code\}\}/g,r.referral_code||'');
 var siteUrl=brand==='academy'?'https://academy.quantumphysician.com':'https://fusionsessions.com';
-var dm2=pb.match(/\[DISCOUNT:([^\]]+)\]/);if(!discCfg&&dm2){var mp2=promotionsData.find(function(p){return p.coupon_id===dm2[1]});if(mp2)discCfg={couponId:dm2[1],percent:mp2.discount_percent||0,product:mp2.applies_to||'any'}}pb=pb.replace(/\[DISCOUNT:[^\]]+\]\n/g,'');var richHtml=brand==='academy'?buildAcademyEmail(pb,null,siteUrl,discCfg):buildRichEmail(pb,null,siteUrl,discCfg);
+var dm2=pb.match(/\[PROMO:([^\]]+)\]/);if(!discCfg&&dm2){var mp2=promotionsData.find(function(p){return p.coupon_id===dm2[1]});if(mp2)discCfg={couponId:dm2[1],percent:mp2.discount_percent||0,product:mp2.applies_to||'any'}}pb=pb.replace(/\[PROMO:[^\]]+\]\n/g,'').replace(/\[END_PROMO\]\n?/g,'');var richHtml=brand==='academy'?buildAcademyEmail(pb,null,siteUrl,discCfg):buildRichEmail(pb,null,siteUrl,discCfg);
 if(r.referral_code)richHtml=richHtml.replace(/REFCODE/g,r.referral_code);
 try{
 await fetch(APPS_SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},
