@@ -8,6 +8,8 @@ function toggleTheme(){var c=document.documentElement.getAttribute('data-theme')
 const FUSION_NAMES={'bundle-all':'Complete Bundle','session-01':'S1: Intolerance & Sensitivity','session-02':'S2: Anxiety & Overwhelm','session-03':'S3: Pain & Tension','session-04':'S4: Sleep & Reset','session-05':'S5: Digestion & Integration','session-06':'S6: Immune Balance','session-07':'S7: Hormonal Harmony','session-08':'S8: Phobias & Fear','session-09':'S9: Fatigue & Vitality','session-10':'S10: Weight & Self-Perception','session-11':'S11: Relationships & Boundaries','session-12':'S12: Purpose & Alignment'};
 const ACADEMY_NAMES={'quantum-vision-boards':'Quantum Vision Boards','becoming-present':'Becoming Present','breaking-up-with-your-beliefs':'Breaking Up with Your Beliefs','creative-mind-mapping':'Creative Mind Mapping','power-of-the-question':'The Power of The Question','transformational-mastery':'Transformational Mastery'};
 const ACADEMY_SLUGS=['breaking-up-with-your-beliefs','power-of-the-question','creative-mind-mapping','quantum-vision-boards','becoming-present'];
+const FUSION_IMAGES={'bundle-all':'https://fusionsessions.netlify.app/13.png','session-01':'https://static.wixstatic.com/media/11062b_ba3825500c114d35830c1d21a475bf6c~mv2.jpeg/v1/crop/x_913,y_0,w_2160,h_2160/fill/w_350,h_250,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/Dog%20and%20Woman%20Interaction.jpeg','session-02':'https://static.wixstatic.com/media/599d5afdcec7458e9a131b2189cfd232.jpg/v1/fill/w_350,h_250,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/Stressed%20Office%20Woman.jpg','session-03':'https://static.wixstatic.com/media/a14ce9_f33fd5ad910f4a99a15806fcf88a0c37~mv2.png/v1/fill/w_350,h_250,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Pain.png','session-04':'https://static.wixstatic.com/media/11062b_657f8863f1e84a50b1f861b25c5994c8~mv2_d_4032_3024_s_4_2.jpg/v1/crop/x_0,y_0,w_3024,h_3024/fill/w_350,h_250,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/Mother%20And%20Baby%20Sleeping.jpg','session-05':'https://static.wixstatic.com/media/11062b_0da56823899b498ca4a4e0232b376d02~mv2.jpg/v1/fill/w_350,h_250,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/Hands%20on%20Stomach.jpg','session-06':'https://static.wixstatic.com/media/a14ce9_f92d3422950448a59f8b86d32a8cffea~mv2.png/v1/fill/w_350,h_250,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Pain%20(1).png','session-07':'https://static.wixstatic.com/media/a14ce9_dc31bff5630b40e8be5ac61034f7745d~mv2.png/v1/fill/w_350,h_250,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Pain%20(2).png','session-08':'https://static.wixstatic.com/media/11062b_ceec3ad4b11a4c729588bba99f4542b1~mv2.jpg/v1/fill/w_350,h_250,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/Creepy%20Hands%20Grasping.jpg','session-09':'https://static.wixstatic.com/media/06e12c8d86854b9985febcf2635ba0c4.jpg/v1/fill/w_350,h_250,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/Couple%20At%20Beach.jpg','session-10':'https://static.wixstatic.com/media/a14ce9_b5308f884fd84a39a32771d36eb9309b~mv2.png/v1/fill/w_350,h_250,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Pain%20(3).png','session-11':'https://static.wixstatic.com/media/c58e0be6086a4f0e87c23d7a36cd03fc.jpg/v1/fill/w_350,h_250,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/Shadow%20Silhouettes%20Holding.jpg','session-12':'https://static.wixstatic.com/media/nsplsh_6b5f4479315a6d59335f6b~mv2_d_4000_2667_s_4_2.jpg/v1/fill/w_350,h_250,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/Image%20by%20Arijit%20M.jpg'};
+const FUSION_SHORT={'session-01':'Intolerance & Sensitivity','session-02':'Anxiety & Overwhelm','session-03':'Pain & Tension','session-04':'Sleep & Reset','session-05':'Digestion & Integration','session-06':'Immune Balance','session-07':'Hormonal Harmony','session-08':'Phobias & Fear Patterns','session-09':'Fatigue & Vitality','session-10':'Weight & Self-Perception','session-11':'Relationships & Boundaries','session-12':'Purpose & Alignment'};
 function isFusion(p){return p&&(p.startsWith('session-')||p==='bundle-all')}
 function isAcademy(p){return p&&ACADEMY_NAMES[p]}
 function productName(p){if(p&&p.startsWith('revoked__'))return productName(p.replace('revoked__',''))+' (REVOKED)';return FUSION_NAMES[p]||ACADEMY_NAMES[p]||p}
@@ -458,8 +460,46 @@ function dismissSuggestion(id){sgDismissed.push(id);localStorage.setItem('qp_sg_
 // ============================================================
 // SESSION 11: WEEKLY MARKETING GOALS
 // ============================================================
+
+/* Auto-generate a promo code for a goal if none exists */
+async function autoCreatePromo(prefix,discount,appliesTo){
+var code=(prefix+Math.floor(Math.random()*900+100)).toUpperCase();
+var existing=await sbAdmin.from('promotions').select('id').eq('coupon_id',code).maybeSingle();
+if(existing.data)code=(prefix+Math.floor(Math.random()*9000+1000)).toUpperCase();
+var expires=new Date();expires.setDate(expires.getDate()+7);
+try{
+var res=await sbAdmin.from('promotions').insert({
+name:prefix+' Auto (Weekly Goal)',coupon_id:code,
+discount_type:'percent',discount_percent:discount,discount_fixed:0,discount_set_price:0,
+applies_to:appliesTo||'any',distribution_method:'both',
+max_uses:0,min_purchase:0,restrictions:'',stackable_with_credits:true,one_per_user:true,
+notes:'Auto-generated by Weekly Goals',expires_at:expires.toISOString(),status:'active'
+}).select();
+if(res.error)throw new Error(res.error.message);
+await logAudit('create_promo',null,'Auto-created promo: '+code+' ('+discount+'% off, Weekly Goal)',{coupon_id:code});
+promotionsData.unshift(res.data[0]);
+showToast('Created promo code: '+code+' ('+discount+'% off, expires in 7 days)','success');
+return res.data[0];
+}catch(e){console.error('Auto-promo error:',e);return null}
+}
+
+/* Get a session image tag for rich emails (used in card blocks) */
+function getSessionImageBlock(sessionId){
+var img=FUSION_IMAGES[sessionId];
+if(!img)return'';
+return'<img src="'+img+'" width="350" height="250" alt="'+(FUSION_SHORT[sessionId]||'')+'" style="display:block;margin:0 auto 15px;border-radius:12px;border:2px solid #8338ec;max-width:100%;">';
+}
+
+/* Find the next upcoming session's product ID from schedule */
+function getNextSessionProductId(){
+var now=new Date().toISOString();
+var next=sessionScheduleData.filter(function(s){return s.air_date>=now}).sort(function(a,b){return a.air_date>b.air_date?1:-1})[0];
+if(!next||!next.session_number)return null;
+var num=String(next.session_number).padStart(2,'0');
+return'session-'+num;
+}
 var WEEKLY_GOALS=[
-{id:'no_purchase',label:'Welcome Email',campaignType:'no_purchase',sgId:'new-no-purchase',
+{id:'no_purchase',label:'Welcome Email',campaignType:'no_purchase',sgId:'new-no-purchase',autoPromo:{prefix:'WELCOME',discount:15,appliesTo:'any'},
 buildAudience:function(){
 var purchaserEmails={};purchasesData.forEach(function(p){purchaserEmails[p.email.toLowerCase()]=true});
 return allCustomers.filter(function(c){return c.hasAccount&&!purchaserEmails[c.email.toLowerCase()]}).map(function(c){return c.email})},
@@ -467,12 +507,12 @@ buildTemplate:function(){
 var promo=promotionsData.find(function(p){return p.status==='active'});
 var promoCard=promo?'\n\n---\n**Special Offer**\nUse code **'+promo.coupon_id+'** for a special discount on your first session!\n\nYour discount applies automatically at checkout.':'';
 var next=sessionScheduleData.filter(function(s){return s.air_date>=new Date().toISOString()}).sort(function(a,b){return a.air_date>b.air_date?1:-1})[0];
-var nextCard=next?'\n\n---\n**Next Live Session**\n**'+next.title+'**\n'+new Date(next.air_date).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})+'\n\nJoin Dr. Tracey Clark for this transformative 60-minute quantum healing experience.':'';
+var pid2=getNextSessionProductId();var nextCard=next?'\n\n---\n'+(pid2?'{{session_image:'+pid2+'}}\n':'')+'**Next Live Session**\n**'+next.title+'**\n'+new Date(next.air_date).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})+'\n\nJoin Dr. Tracey Clark for this transformative 60-minute quantum healing experience.':'';
 return{brand:'fusion',discount:!!promo,promoCode:promo?promo.coupon_id:'',
 subject:'Welcome to Quantum Physician \u2014 A gift to get you started',
 body:'Hi {{name}},\n\nYou signed up \u2014 that means something. **You are ready.**\n\n**Fusion Sessions** are 60-minute online group healing experiences led by Dr. Tracey Clark. Each one works on a specific area of your health: anxiety, pain, sleep, energy, and more.\n\nPeople tell us they feel different after just one session.\n\n**Ready to find out for yourself?**'+promoCard+nextCard}}},
 
-{id:'upsell_bundle',label:'Upgrade Offer',campaignType:'upsell_bundle',sgId:'bundle-upsell',
+{id:'upsell_bundle',label:'Upgrade Offer',campaignType:'upsell_bundle',sgId:'bundle-upsell',autoPromo:{prefix:'BUNDLE',discount:20,appliesTo:'bundle-all'},
 buildAudience:function(){
 return allCustomers.filter(function(c){return!c.hasBundle&&c.fusionPurchases.length>=1&&c.fusionPurchases.length<12}).map(function(c){return c.email})},
 buildTemplate:function(){
@@ -503,7 +543,7 @@ return{brand:'fusion',
 subject:'Did you know you have a referral code? Share it and earn!',
 body:'Hi {{name}},\n\nYou signed up for our referral program but have not shared yet. That means there is free money waiting.\n\n**Think of one person:** a friend who cannot sleep, a coworker who is always stressed, or a family member dealing with pain.\n\nYour code gives them 10% off. You earn **$10-$25** per referral. **Just text your link to one person today.**\n\n---\n**Share & Earn**\nYour friend gets **10% off**\nYou earn **$10**/session or **$25**/bundle\n\nYour code: **REFCODE**\nYour link: fusionsessions.com/?ref=REFCODE\n{{qr_code}}\nShare your code and start earning'}}},
 
-{id:'promote_session',label:'Session Promo',campaignType:'promote_session',sgId:'expiring-promos',
+{id:'promote_session',label:'Session Promo',campaignType:'promote_session',sgId:'expiring-promos',autoPromo:{prefix:'SESSION',discount:10,appliesTo:'sessions-only'},
 buildAudience:function(){
 var emails=[];authUsersMap.forEach(function(u){
 var oi=true;if(u.raw_user_meta_data&&u.raw_user_meta_data.marketing_opt_in===false)oi=false;
@@ -512,7 +552,7 @@ buildTemplate:function(){
 var promo=promotionsData.find(function(p){return p.status==='active'});
 var next=sessionScheduleData.filter(function(s){return s.air_date>=new Date().toISOString()}).sort(function(a,b){return a.air_date>b.air_date?1:-1})[0];
 var sessionCard='';
-if(next){sessionCard='\n\n---\n**'+next.title+'**\n'+new Date(next.air_date).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})+(next.time?' at '+next.time:'')+'\n\nA 60-minute live quantum healing experience with Dr. Tracey Clark.\n\n**Seats are limited \u2014 reserve yours now.**'+(promo?'\n\nUse code **'+promo.coupon_id+'** for a discount!':'');}
+if(next){var pid=getNextSessionProductId();sessionCard='\n\n---\n'+(pid?'{{session_image:'+pid+'}}\n':'')+'**'+next.title+'**\n'+new Date(next.air_date).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})+(next.time?' at '+next.time:'')+'\n\nA 60-minute live quantum healing experience with Dr. Tracey Clark.\n\n**Seats are limited \u2014 reserve yours now.**'+(promo?'\n\nUse code **'+promo.coupon_id+'** for a discount!':'');}
 else{sessionCard=promo?'\n\n---\n**Limited Time Offer**\nUse code **'+promo.coupon_id+'** and save on any session!\n\nYour discount applies automatically at checkout.':'';}
 var refBlock='\n\n---\n**Share & Earn**\nYour friend gets **10% off**\nYou earn **$10**/session or **$25**/bundle\n\nYour code: **REFCODE**\nYour link: fusionsessions.com/?ref=REFCODE\n{{qr_code}}';
 return{brand:'fusion',discount:!!promo,promoCode:promo?promo.coupon_id:'',
@@ -594,6 +634,10 @@ var rawEmails=g.buildAudience();
 if(!rawEmails.length){showToast('No eligible recipients for '+g.label,'info');return}
 var filtered=await filterGoalRecipients(rawEmails);
 if(!filtered.length){showToast('All recipients at weekly promo limit','info');return}
+/* Auto-create promo if goal wants one and none exists */
+if(g.autoPromo&&!promotionsData.find(function(p){return p.status==='active'})){
+var newPromo=await autoCreatePromo(g.autoPromo.prefix,g.autoPromo.discount,g.autoPromo.appliesTo);
+}
 var tpl=g.buildTemplate();
 sgSetupEmail({customEmails:filtered.join('\n'),brand:tpl.brand,type:'promotional',from:'tracey@quantumphysician.com',discount:!!tpl.discount,promoCode:tpl.promoCode||'',subject:tpl.subject,body:tpl.body});
 }
@@ -926,6 +970,13 @@ var mainHtml=mainBody
 .replace(/\*\*([^*]+)\*\*/g,'<strong style="color:#00f5ff;">$1</strong>')
 .replace(/~~([^~]+)~~/g,'<span style="text-decoration:line-through;color:#ff4466;">$1</span>')
 .replace(/\n/g,'<br>').replace(/(<br>){3,}/g,'<br><br>').replace(/^(<br>)+/,'').replace(/(<br>)+$/,'');
+/* Session image tokens: {{session_image:session-XX}} */
+var imgTokenReplace=function(html){return html.replace(/\{\{session_image:([^}]+)\}\}/g,function(_,sid){
+var img=typeof FUSION_IMAGES!=='undefined'&&FUSION_IMAGES[sid];
+if(!img)return'';
+return'<img src="'+img+'" width="350" height="250" alt="'+(typeof FUSION_SHORT!=='undefined'&&FUSION_SHORT[sid]||'')+'" style="display:block;margin:10px auto 15px;border-radius:12px;border:2px solid #8338ec;max-width:100%;">';
+})};
+mainHtml=imgTokenReplace(mainHtml);
 /* Build discount card */
 var discountCardHtml='';
 if(discountBody){
@@ -949,6 +1000,7 @@ qrHtml='<table role="presentation" cellspacing="0" cellpadding="0" border="0" st
 }
 /* Style code display */
 discountInner=discountInner.replace(/Your code:\s*<strong>([^<]+)<\/strong>/i,'Your code: <span style="font-family:monospace;font-size:20px;letter-spacing:1px;color:#00f5ff;background:rgba(0,245,255,0.1);padding:5px 15px;border-radius:8px;">$1</span>');
+discountInner=imgTokenReplace(discountInner);
 var ctaLabel=discountInner.indexOf('Collection')>=0||discountInner.indexOf('Upgrade')>=0?'COMPLETE YOUR BUNDLE':(discountInner.indexOf('code')>=0||discountInner.indexOf('Share')>=0||discountInner.indexOf('referral')>=0||discountInner.indexOf('Referral')>=0?'GO TO REFERRAL HUB':'CLAIM YOUR DISCOUNT');
 var ctaUrl2=ctaLabel==='GO TO REFERRAL HUB'?siteUrl+'/referral-hub.html':(discountConfig&&discountConfig.couponId?siteUrl+'/?coupon='+discountConfig.couponId:siteUrl);
 discountCardHtml='<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:25px 0 5px;"><tr><td style="background:linear-gradient(135deg,#1a0533,#0f0f23);border:2px solid #ff006e;border-radius:16px;padding:30px 25px;text-align:center;"><p style="margin:0;font-size:16px;color:#fff;line-height:1.5;">'+discountInner+'</p>'+qrHtml+'<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:20px auto 0;"><tr><td style="background:linear-gradient(45deg,#ff006e,#8338ec);border-radius:50px;"><a href="'+wrapLink(ctaUrl2)+'" target="_blank" style="display:inline-block;padding:16px 45px;color:#fff;text-decoration:none;font-weight:700;font-size:16px;letter-spacing:2px;text-transform:uppercase;">'+ctaLabel+'</a></td></tr></table><p style="margin:12px 0 0;font-size:11px;color:#666;">'+(ctaLabel==='GO TO REFERRAL HUB'?'Share your code and start earning':'Applied automatically at checkout')+'</p></td></tr></table>';
@@ -962,6 +1014,7 @@ var card2Inner=card2Body
 .replace(/\*\*([^*]+)\*\*/g,'<strong style="color:#00f5ff;">$1</strong>')
 .replace(/\n/g,'<br>').replace(/(<br>){3,}/g,'<br><br>').replace(/^(<br>)+/,'').replace(/(<br>)+$/,'');
 card2Inner=card2Inner.replace(/Your code:\s*<strong[^>]*>([^<]+)<\/strong>/i,'Your code: <span style="font-family:monospace;font-size:20px;letter-spacing:1px;color:#00f5ff;background:rgba(0,245,255,0.1);padding:5px 15px;border-radius:8px;">$1</span>');
+card2Inner=imgTokenReplace(card2Inner);
 var qr2Html='';
 if(card2Inner.indexOf('{{qr_code}}')>=0){
 card2Inner=card2Inner.replace(/\{\{qr_code\}\}/g,'');
