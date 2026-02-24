@@ -10,7 +10,7 @@
 ## 📋 SESSION HANDOFF PROTOCOL — READ THIS FIRST
 This doc is 1 of 3 that must be updated at the end of every build session and uploaded at the start of every new chat. These documents represent a shared collaboration between Todd and Claude across 9 sessions — treat them with care and keep them accurate.
 
-**Last updated:** Session 9 Continuation (Feb 23, 2026)
+**Last updated:** Session 10 (Feb 24, 2026)
 
 ---
 
@@ -80,16 +80,34 @@ This doc is 1 of 3 that must be updated at the end of every build session and up
 | **Permission-based sidebar** | ❌ | ✅ SESSION 9 | QP-only: auto-hide unauthorized sections |
 | **Admin name on audit** | ❌ | ✅ SESSION 9 | QP-only: admin_user column + metadata |
 | **Audit log redesign** | ❌ | ✅ SESSION 9 | Grouped by date, SVG icons, human-readable, color-coded |
+| **Legacy auth removed** | N/A | ✅ SESSION 10 | Supabase auth only, no more QPadmin/QPfs#2026 |
+| **Unified Referral Hub** | ✅ Fusion-only page | ✅ SESSION 10 | One page, two themes (Fusion neon / Academy modern), cross-domain auth |
+| **Referral hub login** | ❌ (same domain) | ✅ SESSION 10 | Inline login for cross-domain sessions |
 
 ### ❌ In Fusion Admin but MISSING from QP Admin
 | Feature | What Fusion Has | Priority | Session |
 |---------|----------------|----------|---------|
-| **Create Scheduled Email** | UI to create new scheduled emails from admin | LOW | Session 10+ |
-| **Edit Session Schedule** | Modify session dates/Zoom links from admin | LOW | Session 10+ |
-| **Weekly Goals** | Configurable weekly targets | LOW | Session 10+ |
+| **Create Scheduled Email** | UI to create new scheduled emails from admin | ✅ DONE | Session 7 (undocumented) |
+| **Edit Session Schedule** | Modify session dates/Zoom links from admin | ✅ DONE | Session 7 (undocumented) |
+| **Weekly Goals** | Clickable weekly marketing targets with rich email templates | ✅ DONE | Session 11 |
 
-### 🎉 FUSION PARITY STATUS: ESSENTIALLY COMPLETE
-All major features from Fusion admin are now in QP admin. The remaining 3 items are low-priority edge features. **The QP admin is ready to replace the Fusion admin** once Todd confirms all features work correctly.
+### 🎉 FUSION PARITY STATUS: COMPLETE ✅
+All features from Fusion admin are now in QP admin. Zero gaps remain. **The QP admin is ready to replace the Fusion admin.**
+
+### Session 11 Additions (Beyond Parity)
+- Weekly Goals widget with auto-check from email_campaigns table
+- Rich email templates with `---` card blocks, session thumbnails, strikethrough pricing
+- `{{session_image:session-XX}}` token rendering in buildRichEmail
+- Auto-promo generation (WELCOME/BUNDLE/SESSION prefixes, unique per click, 7-day expiry)
+- filterGoalRecipients() — opt-out + weekly promo limit pre-filtering
+- sgSetupEmail wrapper auto-filters promotional emails globally
+- "Auto" badge on auto-generated promos in Promotions list
+- FUSION_IMAGES + FUSION_SHORT constants for all 12 session thumbnails
+
+### Critical Bug Fixes (Session 11B)
+- var hoisting: unique variable names per suggestion card closure
+- marketing_opt_in: check `user_metadata` first (Supabase Auth API quirk), `raw_user_meta_data` as fallback
+- 12 opt-in checks across admin.js updated
 
 ---
 
@@ -135,10 +153,9 @@ All major features from Fusion admin are now in QP admin. The remaining 3 items 
 
 ## Updated Session Roadmap (Post-Session 9)
 
-### Session 3–9 — ALL COMPLETED ✅
+### Session 3–11 — ALL COMPLETED ✅
 
-### Session 10 — Polish + Card Library + Code Split ← NEXT
-### Session 11+ — Course Builder, AI Copilot, Memberships, Assessments, Ecommerce
+### Session 12+ — Course Builder, AI Copilot, Memberships, Assessments, Ecommerce
 
 ---
 
@@ -146,7 +163,7 @@ All major features from Fusion admin are now in QP admin. The remaining 3 items 
 
 **Service Role Key**: All writes use `sbAdmin`. Reads use `sb` where RLS allows.
 **Auth Login**: Use `sb.auth.signInWithPassword()` (anon client). NEVER use `sbAdmin` for auth — it bypasses authentication.
-**Legacy Fallback**: Check "QPadmin"/"QPfs#2026" BEFORE any Supabase async call to prevent lockout.
+**Legacy Fallback**: REMOVED in Session 10. All admins must use Supabase auth.
 **Admin Account Setup**: Must exist in both `auth.users` (with password) AND `admin_users` table.
 **Permission Enforcement**: `applyPermissions()` hides sidebar links. `canDo(perm)` helper for inline checks.
 **Soft Delete Pattern**: Revoke prefixes product_id with `revoked__`. Refund prefixes with `refunded__`. Archive bans auth + blocks profile.
@@ -162,3 +179,12 @@ All major features from Fusion admin are now in QP admin. The remaining 3 items 
 - **Email composer now supports unlimited cards** — was hardcoded to 2, now loops all
 - **Card management UX** — drag reorder pills, delete buttons, multi-insert from library
 - No new Fusion gaps identified this session
+
+## Session 10 Updates
+- **Legacy auth removed** — QPadmin/QPfs#2026 credentials completely removed from admin.js
+- **Unified Referral Hub built** — `referral-hub.html` at QP repo root, replaces Fusion's separate page
+- **Fusion referral-hub.html** now redirects to unified hub with `?brand=fusion`
+- **Academy dashboard** linked to unified hub with `?brand=academy`
+- **Cross-domain auth solved** with inline login form on referral hub
+- **Referral hub file**: `referral-hub.html` (root of QP repo, ~31KB)
+- **Academy dashboard file**: `Academy/dashboard.html` (note: capital A on Mac filesystem)

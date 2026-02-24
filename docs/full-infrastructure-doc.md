@@ -3,16 +3,18 @@
 ## 📋 SESSION HANDOFF PROTOCOL
 This doc is 1 of 3 that must be updated at the end of every build session. These documents are a shared collaboration between Todd and Claude — they capture the accumulated knowledge of 9 build sessions. Keep them accurate and thorough.
 
-**Last updated:** Session 9 Continuation (Feb 23, 2026)
+**Last updated:** Session 11 (Feb 24, 2026)
 
 ---
 
 ## System Architecture Overview
 
 ### Hosting
-- **QP Admin**: `qp-homepage.netlify.app/admin/` — Single `index.html` file (~405KB, minified)
+- **QP Admin**: `qp-homepage.netlify.app/admin/` — Split into index.html + admin.css + admin.js
+- **QP Referral Hub**: `qp-homepage.netlify.app/referral-hub.html` — Unified referral page (auto-themes via `?brand=fusion|academy`)
 - **Fusion Admin**: `fusionsessions.com/admin.html` — Separate file, stays untouched until QP has full parity
-- **Academy**: `academy.quantumphysician.com` — Student-facing course platform
+- **Fusion Referral Hub**: `fusionsessions.com/referral-hub.html` — Now redirects to QP unified hub with `?brand=fusion`
+- **Academy**: `qp-homepage.netlify.app/academy/` — Student-facing course platform
 - **Fusion Sessions**: `fusionsessions.com` — Healing session platform with community
 
 ### Backend Services
@@ -53,22 +55,23 @@ Stored in `authUsersMap` (keyed by email).
 ## Admin Authentication System (Session 9)
 
 ### Login Flow
-1. Check for legacy credentials ("QPadmin" / "QPfs#2026") FIRST — if match, grant super_admin immediately
-2. If not legacy: `sb.auth.signInWithPassword()` verifies email+password against Supabase Auth
-3. Query `admin_users` table for matching email with `is_active = true`
-4. If found: store full admin object in `sessionStorage`, apply permissions, show admin layout
-5. If not found in `admin_users`: show "No admin access" error
-6. Session persists via `sessionStorage` — survives page refreshes, cleared on logout or tab close
+1. `sb.auth.signInWithPassword()` verifies email+password against Supabase Auth
+2. Query `admin_users` table for matching email with `is_active = true`
+3. If found: store full admin object in `sessionStorage`, apply permissions, show admin layout
+4. If not found in `admin_users`: show "No admin access" error
+5. Session persists via `sessionStorage` — survives page refreshes, cleared on logout or tab close
+
+**NOTE (Session 10):** Legacy auth fallback (QPadmin/QPfs#2026) has been completely removed. All admins must have Supabase Auth accounts.
 
 ### CRITICAL: Auth Client Selection
 - **`sb` (anon client)** → for `signInWithPassword()` — authenticates as a specific user
 - **`sbAdmin` (service role)** → for data reads/writes — bypasses RLS, has full DB access
 - Using `sbAdmin.auth.signInWithPassword()` will FAIL because service role bypasses the auth system entirely
 
-### CRITICAL: Legacy Fallback Order
-- Legacy credentials MUST be checked BEFORE any Supabase async call
-- If legacy check is inside a `try` block after `signInWithPassword()`, it becomes unreachable when Supabase throws
-- This caused a total lockout bug in Session 9
+### REMOVED: Legacy Fallback (Session 10)
+- Legacy credentials (QPadmin/QPfs#2026) were completely removed in Session 10
+- All admins must now authenticate via Supabase Auth
+- Admin accounts require: (1) entry in `auth.users` with password, (2) row in `admin_users` with `is_active = true`
 
 ### Admin Account Requirements
 An admin needs BOTH:
@@ -300,6 +303,44 @@ Community page → "Moderators" tab (third tab after Academy Discussions and Fus
 
 ---
 
+## Unified Referral Hub Architecture (Session 10)
+
+### File: `referral-hub.html` (QP repo root, ~31KB)
+Single-page application with dual theming. Uses ES module pattern with Supabase JS SDK from CDN.
+
+### Theming System
+- URL param `?brand=fusion` or `?brand=academy` sets the theme
+- CSS classes on `<body>`: `body.fusion` (retro neon) or `body.academy` (clean modern)
+- `BRAND_CONFIG` object holds per-brand: name, title, back URL, referral base URL, QR filename, share messages
+- `applyTheme(brand)` swaps body class, updates header, updates URL without reload
+- Toggle button in header switches between brands
+
+### Auth Flow (Cross-Domain)
+- On load: `supabase.auth.getSession()` — if session exists, load referral data immediately
+- If no session: show inline login form (email + password)
+- After login: query `referral_codes` table, render full hub
+- Sign Out button clears session and shows login form for account switching
+- All functions use `window.functionName` pattern (required for ES modules)
+
+### Supabase Client
+```javascript
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/+esm";
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+```
+Uses anon client only (reads from `referral_codes` with user's own session).
+
+### Referral Code Generation
+- Users without a code see "Generate My Referral Code" button
+- Generates 8-char alphanumeric code, inserts via anon client
+- Requires RLS INSERT policy on `referral_codes` for authenticated users
+
+### Integration Points
+- **Fusion dashboard** (`fusionsessions.com/dashboard.html`): "Open Sharing Tools" → redirects through `fusionsessions.com/referral-hub.html` → unified hub with `?brand=fusion`
+- **Academy dashboard** (`/Academy/dashboard.html`): "Open Referral Hub →" link in sidebar → `/referral-hub.html?brand=academy`
+- **Admin email composer**: Can include referral hub links in email templates
+
+---
+
 ## Google Apps Script Architecture
 
 ### Script 1: Stripe Webhook Handler
@@ -406,3 +447,47 @@ quantum-physician/
 - **Card Library uses own SVG helper** (`clSvg()`) — independent of `auditSvg()` scope, has 7 icons: link, users, calendar, star, zap, grad, key
 - **Email renderers** (`buildRichEmail`, `buildAcademyEmail`) — card loop uses `for(cx=2;cx<parts.length;cx++)` pattern, border colors cycle via array
 - **Terminal workflow confirmed** — all edits via Python scripts + git push, no file downloads
+
+## Session 11 Updates — Weekly Goals + Rich Email + Auto-Promo
+
+### Weekly Goals System
+- **Panel location**: Between Smart Suggestions and Recent Purchases on dashboard
+- **7 goals**: 5 auto-checked from `email_campaigns.campaign_type` (current week Mon-Mon), 2 manual
+- **Goal types**: no_purchase, upsell_bundle, credit_reminder, referral_nudge, promote_session + promo_create (manual), review_analytics (manual)
+- **Auto-check logic**: Queries `email_campaigns` for current week's sent types
+- **Manual goals**: Stored in `localStorage` key `qp_weekly_goals_YYYY-MM-DD`, auto-resets weekly
+- **Click behavior**: Opens `sgSetupEmail` compose modal with pre-built rich template
+
+### Rich Email Templates
+- Each goal has `buildTemplate(goalPromo)` that generates dynamic body text with `---` card blocks
+- `---` separators create neon-bordered card sections in `buildRichEmail()`
+- `{{session_image:session-XX}}` tokens render as `<img>` tags via `imgTokenReplace()` function
+- `{{qr_code}}` tokens render QR code images for referral links
+- Templates pull live data: next session from `session_schedule`, active promos, customer stats
+
+### FUSION_IMAGES + FUSION_SHORT Constants
+- `FUSION_IMAGES` — maps all 12 session IDs + bundle-all to Wix thumbnail URLs (350x250)
+- `FUSION_SHORT` — short session names without "S1:" prefix for image alt text
+
+### Auto-Promo Generation
+- `autoCreatePromo(prefix, discount, appliesTo)` — creates unique promo in `promotions` table via `sbAdmin`
+- Codes: `WELCOME###` (15% any), `BUNDLE###` (20% bundle-only), `SESSION###` (10% sessions-only)
+- Each code: unique per click, 7-day expiry, one-per-user, stackable with credits
+- Logged to audit as `create_promo`, saved to `promotionsData` in-memory
+- "Auto" badge shown on auto-generated promos in Promotions list (checks `notes.indexOf('Weekly Goal')`)
+
+### Recipient Filtering
+- `filterGoalRecipients(rawEmails)` — removes opted-out users + those at weekly promo limit
+- Checks `email_tracking` table for `email_type='promotional'` in last 7 days
+- Uses `getWeeklyEmailLimit()` (default 3, configurable in System settings)
+- `sgSetupEmail` wrapper auto-filters all promotional emails (suggestions + goals)
+
+### File Size
+- `admin.js` ~2370 lines (up from ~2150)
+
+### Critical Bug Fixes (Session 11B)
+- **var hoisting in generateSuggestions()**: All suggestion cards used `var emails=` in same function scope. JavaScript `var` hoisting meant all closures captured the LAST assignment (top referrers). Fixed by giving each card a unique variable: `unusedRefEmails`, `bundleEmails2`, `creditEmails`, `inactiveEmails`, `noPurchEmails`, `absentEmails`, `topRefEmails`.
+- **marketing_opt_in field location**: Supabase Auth Admin API returns `marketing_opt_in` in `user_metadata` field, NOT `raw_user_meta_data` (even though the DB column is `raw_user_meta_data`). The API synthesizes `user_metadata` from `raw_user_meta_data` but they can diverge. All 12 opt-in checks in admin.js updated to: `(u.user_metadata||u.raw_user_meta_data||{}).marketing_opt_in===false`
+- **DB truth**: In `auth.users` table, `raw_user_meta_data` DOES contain `marketing_opt_in` — but the JS Auth API may return it differently. Always check `user_metadata` first in JavaScript.
+- New constants: FUSION_IMAGES, FUSION_SHORT (~12 lines)
+- New functions: autoCreatePromo, filterGoalRecipients, getSessionImageBlock, getNextSessionProductId, imgTokenReplace, weeklyGoalAction, loadWeeklyGoals, completeManualGoal, getWeekStart, getWeekKey (~120 lines)
