@@ -701,8 +701,8 @@ var box=document.createElement('div');
 box.style.cssText='background:var(--navy-card,#112a42);border:1px solid rgba(91,168,178,.25);border-radius:16px;padding:28px;width:95%;max-width:720px;max-height:90vh;overflow-y:auto;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.5)';
 var promoOpts='';
 promotionsData.filter(function(p){return p.status==='active'}).forEach(function(p){
-var sel=(opts.promoCode&&p.code===opts.promoCode)?' selected':'';
-promoOpts+='<option value="'+esc(p.code)+'"'+sel+'>'+esc(p.code)+' \u2014 '+esc(p.name||((p.discount_value||'')+'% off'))+'</option>'});
+var sel=(opts.promoCode&&p.coupon_id===opts.promoCode)?' selected':'';
+promoOpts+='<option value="'+esc(p.coupon_id)+'"'+sel+'>'+esc(p.coupon_id)+' \u2014 '+esc(p.name||((p.discount_value||'')+'% off'))+'</option>'});
 var recipList=recipients.map(function(r){return '<div style="display:inline-flex;align-items:center;gap:4px;background:rgba(91,168,178,.1);border:1px solid rgba(91,168,178,.2);border-radius:20px;padding:3px 10px;margin:2px;font-size:11px;color:var(--teal)">'+esc(r.email)+'<button style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:13px;padding:0 2px" onclick="sgRemoveRecipient(this,\u0027'+esc(r.email)+'\u0027)">\u00d7</button></div>'}).join('');
 var subjectVal=esc(opts.subject||'').replace(/"/g,'&quot;');
 var bodyVal=esc(opts.body||'');
@@ -768,9 +768,9 @@ var tog=document.getElementById('sg-discount-toggle');
 if(!tog||!tog.checked)return null;
 var code=document.getElementById('sg-promo-select').value;
 if(!code)return null;
-var promo=promotionsData.find(function(p){return p.code===code});
+var promo=promotionsData.find(function(p){return p.coupon_id===code});
 if(!promo)return null;
-return{couponId:code,percent:promo.discount_value,product:promo.applies_to||'any'};
+return{couponId:code,percent:promo.discount_percent||promo.discount_value||0,product:promo.applies_to||'any'};
 }
 
 function sgBuildHtml(bodyText){
@@ -779,10 +779,10 @@ var discCfg=sgGetDiscountConfig();
 var siteUrl=brand==='academy'?'https://academy.quantumphysician.com':'https://fusionsessions.com';
 var finalBody=bodyText;
 if(discCfg){
-var promo=promotionsData.find(function(p){return p.code===discCfg.couponId});
+var promo=promotionsData.find(function(p){return p.coupon_id===discCfg.couponId});
 if(promo){
-var discType=promo.discount_type==='percent'?promo.discount_value+'% off':'$'+promo.discount_value+' off';
-var discSection='\n---\n**Special Offer**\nUse code **'+promo.code+'** for **'+discType+'**';
+var discType=promo.discount_type==='percent'?(promo.discount_percent||promo.discount_value)+'% off':'$'+(promo.discount_fixed||promo.discount_value)+' off';
+var discSection='\n---\n**Special Offer**\nUse code **'+promo.coupon_id+'** for **'+discType+'**';
 if(promo.applies_to&&promo.applies_to!=='any')discSection+='\nApplies to: '+promo.applies_to;
 discSection+='\nYour discount applies automatically with this link';
 if(finalBody.indexOf('\n---\n')<0)finalBody+=discSection;
@@ -857,10 +857,10 @@ var r=recipients[i];
 var pb=body.replace(/\{\{name\}\}/g,r.name||'Friend').replace(/\{\{email\}\}/g,r.email).replace(/\{\{referral_code\}\}/g,r.referral_code||'');
 var siteUrl=brand==='academy'?'https://academy.quantumphysician.com':'https://fusionsessions.com';
 if(discCfg){
-var promo=promotionsData.find(function(p){return p.code===discCfg.couponId});
+var promo=promotionsData.find(function(p){return p.coupon_id===discCfg.couponId});
 if(promo&&pb.indexOf('\n---\n')<0){
-var discType=promo.discount_type==='percent'?promo.discount_value+'% off':'$'+promo.discount_value+' off';
-pb+='\n---\n**Special Offer**\nUse code **'+promo.code+'** for **'+discType+'**\nYour discount applies automatically with this link';
+var discType=promo.discount_type==='percent'?(promo.discount_percent||promo.discount_value)+'% off':'$'+(promo.discount_fixed||promo.discount_value)+' off';
+pb+='\n---\n**Special Offer**\nUse code **'+promo.coupon_id+'** for **'+discType+'**\nYour discount applies automatically with this link';
 }}
 var richHtml=brand==='academy'?buildAcademyEmail(pb,null,siteUrl,discCfg):buildRichEmail(pb,null,siteUrl,discCfg);
 if(r.referral_code)richHtml=richHtml.replace(/REFCODE/g,r.referral_code);
@@ -898,7 +898,7 @@ if(indivBuyers.length>=1){
 var avgOwned=Math.round(indivBuyers.reduce(function(s,c){return s+c.fusionPurchases.length},0)/indivBuyers.length);
 var emails=indivBuyers.map(function(c){return c.email}).join('\n');
 var activePromo=promotionsData.find(function(p){return p.status==='active'});
-sg.push({id:'bundle-upsell',cat:'revenue',priority:'high',title:indivBuyers.length+' customer'+(indivBuyers.length>1?'s':'')+' ready for bundle upsell',detail:'These users own <strong>'+avgOwned+' sessions avg</strong> but not the bundle.',metrics:[indivBuyers.length+' prospects','~'+avgOwned+' sessions avg'],actions:[{label:'\u2709 Compose Upsell',action:function(){sgSetupEmail({customEmails:emails,brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',discount:!!activePromo,promoCode:activePromo?activePromo.code:'',subject:'Complete Your Fusion Journey \u2014 Upgrade to the Full Bundle',body:'Hi {{name}},\n\nYou have already experienced **'+avgOwned+' Fusion Sessions** and I love seeing your commitment to healing!\n\nThe **Complete Fusion Bundle** gives you access to all 12 sessions at a significant savings compared to buying individually.\n\nSince you already own several sessions, this is the perfect time to **complete your journey**.'+(activePromo?'\n\nUse code **'+activePromo.code+'** for an extra discount!':'')+'\n\nWith love and healing,\nDr. Tracey Clark'})}}]})}
+sg.push({id:'bundle-upsell',cat:'revenue',priority:'high',title:indivBuyers.length+' customer'+(indivBuyers.length>1?'s':'')+' ready for bundle upsell',detail:'These users own <strong>'+avgOwned+' sessions avg</strong> but not the bundle.',metrics:[indivBuyers.length+' prospects','~'+avgOwned+' sessions avg'],actions:[{label:'\u2709 Compose Upsell',action:function(){sgSetupEmail({customEmails:emails,brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',discount:!!activePromo,promoCode:activePromo?activePromo.coupon_id:'',subject:'Complete Your Fusion Journey \u2014 Upgrade to the Full Bundle',body:'Hi {{name}},\n\nYou have already experienced **'+avgOwned+' Fusion Sessions** and I love seeing your commitment to healing!\n\nThe **Complete Fusion Bundle** gives you access to all 12 sessions at a significant savings compared to buying individually.\n\nSince you already own several sessions, this is the perfect time to **complete your journey**.'+(activePromo?'\n\nUse code **'+activePromo.coupon_id+'** for an extra discount!':'')+'\n\nWith love and healing,\nDr. Tracey Clark'})}}]})}
 
 var highCredit=referralData.filter(function(r){return r.credit_balance>=1000});
 if(highCredit.length>=1){
@@ -909,7 +909,7 @@ sg.push({id:'unused-credits',cat:'revenue',priority:'low',title:fmtMoney(totalUn
 var expiringPromos=promotionsData.filter(function(p){if(p.status!=='active'||!p.expires_at)return false;var exp=new Date(p.expires_at);return exp>now&&exp<new Date(now.getTime()+7*864e5)});
 if(expiringPromos.length>0){
 var firstPromo=expiringPromos[0];
-sg.push({id:'expiring-promos',cat:'revenue',priority:'high',title:expiringPromos.length+' promo'+(expiringPromos.length>1?'s':'')+' expiring this week',detail:'Active promotions expiring within 7 days: <strong>'+expiringPromos.map(function(p){return p.code}).join(', ')+'</strong>',metrics:expiringPromos.map(function(p){return p.code}),actions:[{label:'\u2709 Last-Chance Email',action:function(){sgSetupEmail({audience:'all-opted-in',brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',discount:true,promoCode:firstPromo.code,subject:'Last Chance \u2014 '+firstPromo.code+' expires soon!',body:'Hi {{name}},\n\nOur special offer with code **'+firstPromo.code+'** is expiring very soon!\n\nIf you have been thinking about taking the next step in your healing journey, **now is the time**. This discount will not be available again.\n\n**Do not miss out!**\n\nWith love,\nDr. Tracey Clark'})}},{label:'View Promos',action:function(){go('promotions',document.querySelector('[onclick*="promotions"]'))}}]})}
+sg.push({id:'expiring-promos',cat:'revenue',priority:'high',title:expiringPromos.length+' promo'+(expiringPromos.length>1?'s':'')+' expiring this week',detail:'Active promotions expiring within 7 days: <strong>'+expiringPromos.map(function(p){return p.coupon_id}).join(', ')+'</strong>',metrics:expiringPromos.map(function(p){return p.coupon_id}),actions:[{label:'\u2709 Last-Chance Email',action:function(){sgSetupEmail({audience:'all-opted-in',brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',discount:true,promoCode:firstPromo.coupon_id,subject:'Last Chance \u2014 '+firstPromo.coupon_id+' expires soon!',body:'Hi {{name}},\n\nOur special offer with code **'+firstPromo.coupon_id+'** is expiring very soon!\n\nIf you have been thinking about taking the next step in your healing journey, **now is the time**. This discount will not be available again.\n\n**Do not miss out!**\n\nWith love,\nDr. Tracey Clark'})}},{label:'View Promos',action:function(){go('promotions',document.querySelector('[onclick*="promotions"]'))}}]})}
 
 var enrolledUsers={};academyEnrollments.filter(function(e){return e.status==='active'}).forEach(function(e){enrolledUsers[e.user_id]=true});
 var inactiveStudents=allCustomers.filter(function(c){if(!c.userId||!enrolledUsers[c.userId])return false;var lastAct=null;lessonProgress.filter(function(lp){return lp.user_id===c.userId}).forEach(function(lp){var d=lp.completed_at||lp.updated_at;if(d&&(!lastAct||d>lastAct))lastAct=d});return lastAct&&new Date(lastAct)<d14});
@@ -921,7 +921,7 @@ var newNoPurchase=allCustomers.filter(function(c){if(!c.hasAccount||c.purchases.
 if(newNoPurchase.length>=1){
 var emails=newNoPurchase.map(function(c){return c.email}).join('\n');
 var welcomePromo=promotionsData.find(function(p){return p.status==='active'});
-sg.push({id:'new-no-purchase',cat:'engagement',priority:'high',title:newNoPurchase.length+' new signup'+(newNoPurchase.length>1?'s':'')+' with no purchase',detail:'Warm leads who created accounts in the last 7 days but have not bought anything.',metrics:[newNoPurchase.length+' signups'],actions:[{label:'\u2709 Welcome Offer',action:function(){sgSetupEmail({customEmails:emails,brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',discount:!!welcomePromo,promoCode:welcomePromo?welcomePromo.code:'',subject:'Welcome to Quantum Physician \u2014 A gift to get you started',body:'Hi {{name}},\n\nYou signed up \u2014 that means something. **You are ready.**\n\n**Fusion Sessions** are 60-minute online group healing experiences led by Dr. Tracey Clark. Each one works on a specific area of your health: anxiety, pain, sleep, energy, and more.\n\nPeople tell us they feel different after just one session.\n\n**Ready to find out for yourself?**'+(welcomePromo?'\n\nUse code **'+welcomePromo.code+'** for a special discount!':'')+'\n\nI am here for you,\nDr. Tracey Clark'})}}]})}
+sg.push({id:'new-no-purchase',cat:'engagement',priority:'high',title:newNoPurchase.length+' new signup'+(newNoPurchase.length>1?'s':'')+' with no purchase',detail:'Warm leads who created accounts in the last 7 days but have not bought anything.',metrics:[newNoPurchase.length+' signups'],actions:[{label:'\u2709 Welcome Offer',action:function(){sgSetupEmail({customEmails:emails,brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',discount:!!welcomePromo,promoCode:welcomePromo?welcomePromo.coupon_id:'',subject:'Welcome to Quantum Physician \u2014 A gift to get you started',body:'Hi {{name}},\n\nYou signed up \u2014 that means something. **You are ready.**\n\n**Fusion Sessions** are 60-minute online group healing experiences led by Dr. Tracey Clark. Each one works on a specific area of your health: anxiety, pain, sleep, energy, and more.\n\nPeople tell us they feel different after just one session.\n\n**Ready to find out for yourself?**'+(welcomePromo?'\n\nUse code **'+welcomePromo.coupon_id+'** for a special discount!':'')+'\n\nI am here for you,\nDr. Tracey Clark'})}}]})}
 
 var boughtNoReturn=allCustomers.filter(function(c){if(!c.hasAccount||c.purchases.length===0)return false;var auth=authUsersMap.get(c.email.toLowerCase());if(!auth||!auth.last_sign_in_at)return false;return new Date(auth.last_sign_in_at)<d30});
 if(boughtNoReturn.length>=1){
