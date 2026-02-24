@@ -381,7 +381,7 @@ var refBlock='\n---\n**Share & Earn**\nYour friend gets **10% off**\nYou earn **
 var unusedCodes=referralData.filter(function(r){return r.successful_referrals===0&&r.credit_balance===0});
 if(unusedCodes.length>=3){
 var unusedRefEmails=unusedCodes.map(function(r){return r.email}).join('\n');
-sg.push({id:'unused-refs',cat:'revenue',priority:'med',title:unusedCodes.length+' referral codes never shared',detail:'These users have referral codes but zero referrals. A nudge could activate word-of-mouth.',metrics:[unusedCodes.length+' dormant codes'],actions:[{label:'\u2709 Compose Email',action:function(){console.log('[SG-RefNudge] emails var length:',unusedRefEmails.split('\n').length,'first 5:',unusedRefEmails.split('\n').slice(0,5));sgSetupEmail({customEmails:unusedRefEmails,brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',subject:'Did you know you have a referral code? Share it and earn!',body:'Hi {{name}},\n\nYou signed up for our referral program but have not shared yet. That means there is free money waiting.\n\n**Think of one person:** a friend who cannot sleep, a coworker who is always stressed, or a family member dealing with pain.\n\nYour code gives them 10% off. You earn **$10-$25** per referral. **Just text your link to one person today.**'+refBlock})}}]})}
+sg.push({id:'unused-refs',cat:'revenue',priority:'med',title:unusedCodes.length+' referral codes never shared',detail:'These users have referral codes but zero referrals. A nudge could activate word-of-mouth.',metrics:[unusedCodes.length+' dormant codes'],actions:[{label:'\u2709 Compose Email',action:function(){sgSetupEmail({customEmails:unusedRefEmails,brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',subject:'Did you know you have a referral code? Share it and earn!',body:'Hi {{name}},\n\nYou signed up for our referral program but have not shared yet. That means there is free money waiting.\n\n**Think of one person:** a friend who cannot sleep, a coworker who is always stressed, or a family member dealing with pain.\n\nYour code gives them 10% off. You earn **$10-$25** per referral. **Just text your link to one person today.**'+refBlock})}}]})}
 
 var indivBuyers=allCustomers.filter(function(c){return!c.hasBundle&&c.fusionPurchases.length>=2&&c.fusionPurchases.length<12});
 if(indivBuyers.length>=1){
@@ -582,15 +582,12 @@ authUsersMap.forEach(function(u){
 var oi=(u.user_metadata&&u.user_metadata.marketing_opt_in!==undefined)?u.user_metadata.marketing_opt_in:((u.raw_user_meta_data||{}).marketing_opt_in);
 if(oi===false)optedOut[u.email.toLowerCase()]=true;
 });
-console.log('[Filter] Input:',rawEmails.length,'| Opted-out in auth:',Object.keys(optedOut).length);
-var emails=[];var optOutRemoved=0;var notInAuth=0;
+var emails=[];var optOutRemoved=0;
 rawEmails.forEach(function(e){
 var el=e.trim().toLowerCase();if(!el)return;
-if(optedOut[el]){optOutRemoved++;console.log('[Filter] Removed (opted out):',el);return}
-if(!authUsersMap.has(el))notInAuth++;
+if(optedOut[el]){optOutRemoved++;return}
 emails.push(el);
 });
-console.log('[Filter] Kept:',emails.length,'| Removed opted-out:',optOutRemoved,'| Not in auth (kept):',notInAuth);
 /* 2. Deduplicate */
 emails=Array.from(new Set(emails));
 if(!emails.length)return emails;
@@ -604,15 +601,13 @@ var counts={};(rt.data||[]).forEach(function(t){var e=t.recipient_email.toLowerC
 var before=emails.length;
 emails=emails.filter(function(e){return(counts[e]||0)<weeklyLimit});
 limitRemoved=before-emails.length;
-console.log('[Filter] Weekly limit removed:',limitRemoved);
-}catch(e){console.log('[Filter] Weekly limit error:',e)}
+}catch(e){}
 var totalSkipped=optOutRemoved+limitRemoved;
 if(totalSkipped>0){
 var parts=[];
 if(optOutRemoved>0)parts.push(optOutRemoved+' opted out');
 if(limitRemoved>0)parts.push(limitRemoved+' at weekly limit');
 showToast(totalSkipped+' skipped ('+parts.join(', ')+')','info')}
-console.log('[Filter] Final:',emails.length);
 return emails;
 }
 
