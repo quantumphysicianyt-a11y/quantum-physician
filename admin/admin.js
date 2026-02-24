@@ -91,7 +91,7 @@ h+='<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 8px" 
 h+='<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 8px" onclick="sgInsertVar(\u0027{{email}}\u0027)">Email</button>';
 h+='<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 8px" onclick="sgInsertVar(\u0027{{referral_code}}\u0027)">Referral Code</button>';
 h+='<span style="flex:1"></span>';
-h+='<span id="sg-section-controls" style="display:none;font-size:11px;color:var(--text-dim);display:flex;align-items:center;gap:4px">Cards: <button class="btn btn-ghost btn-sm" style="font-size:11px;padding:2px 8px" onclick="sgSwapSections()" title="Swap card order">\u2195 Swap</button></span>';
+h+='<div id="sg-section-controls" style="display:none;margin-bottom:8px"><div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">Cards <span style="opacity:.5">(drag to reorder)</span></div><div id="sg-card-pills" style="display:flex;flex-wrap:wrap;gap:6px"></div></div>';
 h+='</div>';
 h+='<textarea id="sg-body" class="input" rows="10" style="width:100%;font-size:13px;line-height:1.6" oninput="sgAutoPreview()">'+esc(opts.body||'')+'</textarea></div>';
 h+='<div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap">';
@@ -187,27 +187,63 @@ sgAutoPreview();
 }
 
 
-function sgSwapSections(){
+function sgDeleteCard(idx){
 var textarea=document.getElementById('sg-body');
 if(!textarea)return;
-var body=textarea.value;
-var parts=body.split('\n---\n');
-if(parts.length<3)return;
-/* Swap parts[1] and parts[2] (and any further sections) */
-var main=parts[0];
-var sections=parts.slice(1);
-sections.reverse();
-textarea.value=main+'\n---\n'+sections.join('\n---\n');
+var parts=textarea.value.split('\n---\n');
+if(idx<1||idx>=parts.length)return;
+parts.splice(idx,1);
+textarea.value=parts.join('\n---\n');
 sgAutoPreview();
-showToast('Cards swapped','success');
+sgUpdateSectionControls();
+showToast('Card removed','success');
 }
-
+function sgCardLabel(text){
+var first=text.trim().split('\n')[0]||'';
+first=first.replace(/\*\*/g,'').replace(/^#+\s*/,'').trim();
+if(first.length>28)first=first.substring(0,25)+'...';
+return first||'Card';
+}
+var sgDragFrom=null;
+function sgStartDrag(e){
+sgDragFrom=parseInt(e.target.getAttribute('data-idx'));
+e.target.style.opacity='0.5';
+e.dataTransfer.effectAllowed='move';
+}
+function sgOverDrag(e){e.preventDefault();e.dataTransfer.dropEffect='move';e.currentTarget.style.borderColor='var(--teal)'}
+function sgLeaveDrag(e){e.currentTarget.style.borderColor='var(--border)'}
+function sgDropCard(e){
+e.preventDefault();
+e.currentTarget.style.borderColor='var(--border)';
+var to=parseInt(e.currentTarget.getAttribute('data-idx'));
+if(sgDragFrom===null||sgDragFrom===to)return;
+var textarea=document.getElementById('sg-body');
+if(!textarea)return;
+var parts=textarea.value.split('\n---\n');
+var cards=parts.slice(1);
+var moved=cards.splice(sgDragFrom-1,1)[0];
+cards.splice(to-1,0,moved);
+textarea.value=parts[0]+'\n---\n'+cards.join('\n---\n');
+sgDragFrom=null;
+sgAutoPreview();
+sgUpdateSectionControls();
+showToast('Cards reordered','success');
+}
 function sgUpdateSectionControls(){
 var textarea=document.getElementById('sg-body');
 var ctrl=document.getElementById('sg-section-controls');
 if(!textarea||!ctrl)return;
 var parts=textarea.value.split('\n---\n');
-ctrl.style.display=parts.length>=3?'flex':'none';
+if(parts.length<2){ctrl.style.display='none';return}
+ctrl.style.display='block';
+var pills=document.getElementById('sg-card-pills');
+if(!pills)return;
+var h='';
+for(var i=1;i<parts.length;i++){
+var label=sgCardLabel(parts[i]);
+h+='<div draggable="true" data-idx="'+i+'" ondragstart="sgStartDrag(event)" ondragover="sgOverDrag(event)" ondragleave="sgLeaveDrag(event)" ondrop="sgDropCard(event)" style="display:inline-flex;align-items:center;gap:4px;background:var(--navy-card);border:1px solid var(--border);border-radius:8px;padding:4px 8px 4px 10px;font-size:11px;color:var(--text);cursor:grab;user-select:none;transition:border-color .2s"><span style="opacity:.4;font-size:10px;margin-right:2px">\u2630</span>'+label+'<button onclick="sgDeleteCard('+i+')" style="background:none;border:none;color:var(--text-dim);cursor:pointer;padding:0 0 0 4px;font-size:14px;line-height:1;opacity:.5" onmouseover="this.style.opacity=1;this.style.color=\'#ff4d6a\'" onmouseout="this.style.opacity=.5;this.style.color=\'var(--text-dim)\'" title="Remove card">&times;</button></div>';
+}
+pills.innerHTML=h;
 }
 function sgInsertVar(v){var ta=document.getElementById('sg-body');if(!ta)return;var s=ta.selectionStart,e=ta.selectionEnd,t=ta.value;ta.value=t.substring(0,s)+v+t.substring(e);ta.focus();ta.selectionStart=ta.selectionEnd=s+v.length}
 
@@ -2108,6 +2144,4 @@ textarea.scrollTop=textarea.scrollHeight;
 sgAutoPreview();
 sgUpdateSectionControls();
 showToast("Added: "+card.name,"success");
-var panel=document.getElementById("card-library-panel");
-if(panel)panel.remove();
 }
