@@ -47,7 +47,7 @@ async function logAudit(action,targetEmail,details,metadata){try{var m=metadata|
 function loadDashboard(){if(!dataLoaded)return;var tr=purchasesData.reduce(function(s,p){return s+(Number(p.amount_paid)||0)},0);var ar=purchasesData.filter(function(p){return isAcademy(p.product_id)}).reduce(function(s,p){return s+(Number(p.amount_paid)||0)},0);var fr=purchasesData.filter(function(p){return isFusion(p.product_id)}).reduce(function(s,p){return s+(Number(p.amount_paid)||0)},0);var ae=academyEnrollments.filter(function(e){return e.status==='active'}).length;var rr=referralData.filter(function(r){return r.successful_referrals>0}).length;
 document.getElementById('dash-stats').innerHTML='<div class="stat-card"><div class="stat-ico green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div><div class="stat-val">'+fmtMoney(tr)+'</div><div class="stat-lbl">Total Revenue</div></div></div><div class="stat-card"><div class="stat-ico teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/></svg></div><div><div class="stat-val">'+fmtMoney(ar)+'</div><div class="stat-lbl">Academy Sales</div></div></div><div class="stat-card"><div class="stat-ico purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg></div><div><div class="stat-val">'+fmtMoney(fr)+'</div><div class="stat-lbl">Fusion Sales</div></div></div><div class="stat-card"><div class="stat-ico warm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div><div class="stat-val">'+allCustomers.length+'</div><div class="stat-lbl">Total Customers</div></div></div><div class="stat-card"><div class="stat-ico teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/></svg></div><div><div class="stat-val">'+ae+'</div><div class="stat-lbl">Enrollments</div></div></div><div class="stat-card"><div class="stat-ico warm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/></svg></div><div><div class="stat-val">'+rr+'</div><div class="stat-lbl">Active Referrers</div></div></div>';
 var rp=purchasesData.slice(0,10);document.getElementById('dash-purchases').innerHTML=rp.length?rp.map(function(p){return'<div class="feed-item"><div class="feed-dot" style="background:'+(isFusion(p.product_id)?'var(--purple)':'var(--teal)')+'"></div><div class="feed-content"><div class="feed-text"><strong>'+esc(p.email)+'</strong> purchased '+productName(p.product_id)+'</div><div class="feed-time">'+fmtMoney(p.amount_paid)+' \u00b7 '+timeAgo(p.purchased_at)+'</div></div>'+productBadge(p.product_id)+'</div>'}).join(''):'<div class="empty"><p>No purchases</p></div>';
-var rc=creditHistory.slice(0,10);document.getElementById('dash-activity').innerHTML=rc.length?rc.map(function(c){return'<div class="feed-item"><div class="feed-dot" style="background:'+(c.amount>0?'var(--success)':'var(--warning)')+'"></div><div class="feed-content"><div class="feed-text"><strong>'+esc(c.email)+'</strong> '+(c.amount>0?'+':'')+fmtMoney(c.amount)+'</div><div class="feed-time">'+esc(c.description||c.type)+' \u00b7 '+timeAgo(c.created_at)+'</div></div></div>'}).join(''):'<div class="empty"><p>No activity</p></div>';renderSuggestions()}
+var rc=creditHistory.slice(0,10);document.getElementById('dash-activity').innerHTML=rc.length?rc.map(function(c){return'<div class="feed-item"><div class="feed-dot" style="background:'+(c.amount>0?'var(--success)':'var(--warning)')+'"></div><div class="feed-content"><div class="feed-text"><strong>'+esc(c.email)+'</strong> '+(c.amount>0?'+':'')+fmtMoney(c.amount)+'</div><div class="feed-time">'+esc(c.description||c.type)+' \u00b7 '+timeAgo(c.created_at)+'</div></div></div>'}).join(''):'<div class="empty"><p>No activity</p></div>';renderSuggestions();loadWeeklyGoals()}
 
 var cbFiltered=[],cbPage=1,cbPS=20;
 /* ===== SMART SUGGESTIONS - EMAIL MODAL ===== */
@@ -454,6 +454,60 @@ panel.innerHTML=html;
 function sgAction(id,idx){var sg=generateSuggestions();var s=sg.find(function(x){return x.id===id});if(s&&s.actions&&s.actions[idx]&&s.actions[idx].action){logAudit('suggestion_action','Acted on: '+s.title);s.actions[idx].action()}}
 
 function dismissSuggestion(id){sgDismissed.push(id);localStorage.setItem('qp_sg_dismissed',JSON.stringify(sgDismissed));var card=document.querySelector('[data-sg-id="'+id+'"]');if(card){card.style.opacity='0';card.style.transform='scale(0.95)';card.style.transition='all 0.3s';setTimeout(function(){renderSuggestions()},300)}else renderSuggestions()}
+
+// ============================================================
+// SESSION 11: WEEKLY MARKETING GOALS
+// ============================================================
+var WEEKLY_GOALS=[
+{id:'no_purchase',label:'Welcome Email',campaignType:'no_purchase'},
+{id:'upsell_bundle',label:'Upgrade Offer',campaignType:'upsell_bundle'},
+{id:'credit_reminder',label:'Credit Reminder',campaignType:'credit_reminder'},
+{id:'referral_nudge',label:'Referral Nudge',campaignType:'referral_nudge'},
+{id:'promote_session',label:'Session Promo',campaignType:'promote_session'},
+{id:'promo_create',label:'New Promotion',manual:true},
+{id:'review_analytics',label:'Review Analytics',manual:true}
+];
+
+function getWeekStart(){var d=new Date();var day=d.getDay();var diff=d.getDate()-day+(day===0?-6:1);return new Date(d.getFullYear(),d.getMonth(),diff,0,0,0,0)}
+function getWeekKey(){return getWeekStart().toISOString().split('T')[0]}
+
+async function loadWeeklyGoals(){
+var panel=document.getElementById('weekly-goals-panel');
+if(!panel)return;
+var weekStart=getWeekStart();
+var weekEnd=new Date(weekStart);weekEnd.setDate(weekEnd.getDate()+7);
+var sentTypes=new Set();
+try{
+var res=await sb.from('email_campaigns').select('campaign_type,sent_at').gte('sent_at',weekStart.toISOString()).lt('sent_at',weekEnd.toISOString());
+if(res.data)res.data.forEach(function(c){sentTypes.add(c.campaign_type)});
+}catch(e){}
+var weekKey=getWeekKey();
+var manual=JSON.parse(localStorage.getItem('qp_weekly_goals_'+weekKey)||'{}');
+manual['review_analytics']=true;
+localStorage.setItem('qp_weekly_goals_'+weekKey,JSON.stringify(manual));
+var completedCount=WEEKLY_GOALS.filter(function(g){return g.manual?manual[g.id]:sentTypes.has(g.campaignType)}).length;
+var progressPct=Math.round((completedCount/WEEKLY_GOALS.length)*100);
+document.getElementById('weekly-progress-fill').style.width=progressPct+'%';
+var countEl=document.getElementById('weekly-count');
+countEl.textContent=completedCount+'/'+WEEKLY_GOALS.length;
+countEl.style.color=progressPct===100?'var(--success)':'var(--text-muted)';
+document.getElementById('weekly-date-range').textContent='Week of '+weekStart.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' \u2014 resets Mon';
+var chipsEl=document.getElementById('weekly-goal-chips');
+chipsEl.innerHTML=WEEKLY_GOALS.map(function(g){
+var done=g.manual?manual[g.id]:sentTypes.has(g.campaignType);
+var clickAttr=g.manual&&!done?' onclick="completeManualGoal(\''+g.id+'\')"':'';
+return'<span class="goal-chip'+(done?' done':'')+(g.manual?' manual':'')+'"'+clickAttr+' title="'+(done?'Completed!':(g.manual?'Click to complete':'Send a '+g.label+' campaign'))+'"><span class="goal-check">'+(done?'\u2713':'')+'</span>'+g.label+'</span>'
+}).join('');
+panel.style.display='block';
+}
+
+function completeManualGoal(goalId){
+var weekKey=getWeekKey();
+var saved=JSON.parse(localStorage.getItem('qp_weekly_goals_'+weekKey)||'{}');
+saved[goalId]=true;
+localStorage.setItem('qp_weekly_goals_'+weekKey,JSON.stringify(saved));
+loadWeeklyGoals();
+}
 
 function loadCustomerBrowser(){cbPage=1;applyCBFilter();updateBrowserStats()}
 function updateBrowserStats(){var ac=allCustomers.filter(function(c){return c.academyPurchases.length>0}).length;var fc=allCustomers.filter(function(c){return c.fusionPurchases.length>0}).length;var cr=allCustomers.filter(function(c){return c.creditBalance>0}).length;var np=allCustomers.filter(function(c){return c.purchases.length===0}).length;document.getElementById('cust-browser-stats').innerHTML='<div class="bs"><div class="bs-val" style="color:var(--text)">'+allCustomers.length+'</div><div class="bs-label">Total</div></div><div class="bs"><div class="bs-val" style="color:var(--teal)">'+ac+'</div><div class="bs-label">Academy</div></div><div class="bs"><div class="bs-val" style="color:var(--purple)">'+fc+'</div><div class="bs-label">Fusion</div></div><div class="bs"><div class="bs-val" style="color:var(--success)">'+cr+'</div><div class="bs-label">Credits</div></div><div class="bs"><div class="bs-val" style="color:var(--text-dim)">'+np+'</div><div class="bs-label">No Purchase</div></div>'}
