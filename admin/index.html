@@ -726,8 +726,12 @@ h+='<div style="flex:1;min-width:140px"><label style="font-size:11px;font-weight
 h+='<div style="flex:1;min-width:140px"><label style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:4px;display:block">From</label><select id="sg-from" class="input" style="width:100%;font-size:12px"><option value="tracey@quantumphysician.com"'+(opts.from==='tracey@quantumphysician.com'?' selected':'')+'>Dr. Tracey (Personal)</option><option value="hello@quantumphysician.com"'+(opts.from==='hello@quantumphysician.com'?' selected':'')+'>Hello (Marketing)</option></select></div>';
 h+='</div>';
 h+='<div style="background:rgba(255,215,0,.04);border:1px solid rgba(255,215,0,.15);border-radius:10px;padding:14px;margin-bottom:16px">';
-h+='<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;color:var(--warning)"><input type="checkbox" id="sg-discount-toggle" '+(opts.discount?'checked':'')+' onchange="document.getElementById(\u0027sg-discount-opts\u0027).style.display=this.checked?\u0027block\u0027:\u0027none\u0027" style="accent-color:#ffd700"> Include Discount Card</label>';
-h+='<div id="sg-discount-opts" style="display:'+(opts.discount?'block':'none')+';margin-top:10px"><select id="sg-promo-select" class="input" style="width:100%;font-size:12px"><option value="">Select promotion...</option>'+promoOpts+'</select></div></div>';
+h+='<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;color:var(--warning)"><input type="checkbox" id="sg-discount-toggle" '+(opts.discount?'checked':'')+' onchange="document.getElementById(\u0027sg-discount-opts\u0027).style.display=this.checked?\u0027flex\u0027:\u0027none\u0027" style="accent-color:#ffd700"> Include Discount Offer</label>';
+h+='<div id="sg-discount-opts" style="display:'+(opts.discount?'flex':'none')+';flex-direction:column;gap:10px;margin-top:10px">';
+h+='<select id="sg-promo-select" class="input" style="width:100%;font-size:12px"><option value="">Select promotion...</option>'+promoOpts+'</select>';
+h+='<button class="btn btn-sm" style="background:var(--warning);color:#000;font-weight:700;letter-spacing:1px;align-self:flex-start" onclick="sgInsertDiscountPitch()">ADD DISCOUNT PITCH &amp; LINK TO EMAIL</button>';
+h+='<div style="font-size:11px;color:var(--text-dim)">This will append a discount section with a direct checkout link to the end of your email body. The CTA button will also update.</div>';
+h+='</div></div>';
 h+='<div id="sg-preview-area" style="display:none;margin-bottom:16px"></div>';
 h+='<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;padding-top:8px;border-top:1px solid var(--border)">';
 h+='<button class="btn btn-ghost btn-sm" onclick="document.getElementById(\u0027sg-email-modal\u0027).remove()">Cancel</button>';
@@ -761,6 +765,23 @@ if(countEl)countEl.textContent=window._sgRecipients.length;
 inp.value='';
 }
 
+
+function sgInsertDiscountPitch(){
+var code=document.getElementById('sg-promo-select').value;
+if(!code){showToast('Select a promotion first','error');return}
+var promo=promotionsData.find(function(p){return p.coupon_id===code});
+var discountText='';
+if(promo){
+if(promo.discount_type==='percent')discountText='**'+promo.discount_percent+'% off** your next purchase!';
+else if(promo.discount_type==='fixed')discountText='**$'+promo.discount_fixed+' off** your next purchase!';
+else if(promo.discount_type==='set_price')discountText='Special price: **$'+promo.discount_set_price+'**!';
+}else{discountText='Special discount on your next purchase!'}
+var block='\n---\n'+discountText+'\n\nYour code: **'+code+'**\n\nThis offer is applied automatically when you use the link below.';
+var textarea=document.getElementById('sg-body');
+textarea.value=textarea.value.trimEnd()+'\n'+block;
+textarea.scrollTop=textarea.scrollHeight;
+showToast('Discount pitch added to email body','success');
+}
 function sgInsertVar(v){var ta=document.getElementById('sg-body');if(!ta)return;var s=ta.selectionStart,e=ta.selectionEnd,t=ta.value;ta.value=t.substring(0,s)+v+t.substring(e);ta.focus();ta.selectionStart=ta.selectionEnd=s+v.length}
 
 function sgGetDiscountConfig(){
@@ -777,17 +798,7 @@ function sgBuildHtml(bodyText){
 var brand=document.getElementById('sg-brand').value;
 var discCfg=sgGetDiscountConfig();
 var siteUrl=brand==='academy'?'https://academy.quantumphysician.com':'https://fusionsessions.com';
-var finalBody=bodyText;
-if(discCfg){
-var promo=promotionsData.find(function(p){return p.coupon_id===discCfg.couponId});
-if(promo){
-var discType=promo.discount_type==='percent'?(promo.discount_percent||promo.discount_value)+'% off':'$'+(promo.discount_fixed||promo.discount_value)+' off';
-var discSection='\n---\n**Special Offer**\nUse code **'+promo.coupon_id+'** for **'+discType+'**';
-if(promo.applies_to&&promo.applies_to!=='any')discSection+='\nApplies to: '+promo.applies_to;
-discSection+='\nYour discount applies automatically with this link';
-if(finalBody.indexOf('\n---\n')<0)finalBody+=discSection;
-}}
-return brand==='academy'?buildAcademyEmail(finalBody,null,siteUrl,discCfg):buildRichEmail(finalBody,null,siteUrl,discCfg);
+return brand==='academy'?buildAcademyEmail(bodyText,null,siteUrl,discCfg):buildRichEmail(bodyText,null,siteUrl,discCfg);
 }
 
 function sgPreview(){
@@ -856,12 +867,6 @@ for(var i=0;i<recipients.length;i++){
 var r=recipients[i];
 var pb=body.replace(/\{\{name\}\}/g,r.name||'Friend').replace(/\{\{email\}\}/g,r.email).replace(/\{\{referral_code\}\}/g,r.referral_code||'');
 var siteUrl=brand==='academy'?'https://academy.quantumphysician.com':'https://fusionsessions.com';
-if(discCfg){
-var promo=promotionsData.find(function(p){return p.coupon_id===discCfg.couponId});
-if(promo&&pb.indexOf('\n---\n')<0){
-var discType=promo.discount_type==='percent'?(promo.discount_percent||promo.discount_value)+'% off':'$'+(promo.discount_fixed||promo.discount_value)+' off';
-pb+='\n---\n**Special Offer**\nUse code **'+promo.coupon_id+'** for **'+discType+'**\nYour discount applies automatically with this link';
-}}
 var richHtml=brand==='academy'?buildAcademyEmail(pb,null,siteUrl,discCfg):buildRichEmail(pb,null,siteUrl,discCfg);
 if(r.referral_code)richHtml=richHtml.replace(/REFCODE/g,r.referral_code);
 try{
