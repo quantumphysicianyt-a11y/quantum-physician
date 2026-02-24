@@ -76,12 +76,12 @@
 .kpi-lbl{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-top:4px}
 /* Smart Suggestions */
 .suggestions-panel{margin-bottom:20px}
-.suggestions-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.suggestions-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px}
 .suggestions-header h3{font-size:16px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:8px}
 .suggestions-header h3 .sg-icon{width:20px;height:20px;background:linear-gradient(135deg,var(--teal),var(--purple));border-radius:6px;display:flex;align-items:center;justify-content:center}
 .suggestions-header h3 .sg-icon svg{width:12px;height:12px;stroke:#fff}
 .suggestions-header .sg-count{font-size:12px;color:var(--text-dim);font-weight:400}
-.sg-filters{display:flex;gap:6px;align-items:center}
+.sg-filters{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .sg-filter-btn{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:500;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;transition:all .2s}
 .sg-filter-btn:hover{border-color:var(--teal);color:var(--teal)}
 .sg-filter-btn.active{background:var(--teal);color:#fff;border-color:var(--teal)}
@@ -679,258 +679,6 @@ var rp=purchasesData.slice(0,10);document.getElementById('dash-purchases').inner
 var rc=creditHistory.slice(0,10);document.getElementById('dash-activity').innerHTML=rc.length?rc.map(function(c){return'<div class="feed-item"><div class="feed-dot" style="background:'+(c.amount>0?'var(--success)':'var(--warning)')+'"></div><div class="feed-content"><div class="feed-text"><strong>'+esc(c.email)+'</strong> '+(c.amount>0?'+':'')+fmtMoney(c.amount)+'</div><div class="feed-time">'+esc(c.description||c.type)+' \u00b7 '+timeAgo(c.created_at)+'</div></div></div>'}).join(''):'<div class="empty"><p>No activity</p></div>';renderSuggestions()}
 
 var cbFiltered=[],cbPage=1,cbPS=20;
-/* ===== SMART SUGGESTIONS ENGINE ===== */
-var sgDismissed=JSON.parse(localStorage.getItem('qp_sg_dismissed')||'[]');
-var sgActiveFilter='all';
-
-function sgSetupEmail(opts){
-var old=document.getElementById('sg-email-modal');if(old)old.remove();
-var recipients=[];
-if(opts.customEmails){
-opts.customEmails.split('\n').filter(function(e){return e.trim()}).forEach(function(email){
-var e=email.trim().toLowerCase();
-var prof=profilesData.find(function(p){return p.email&&p.email.toLowerCase()===e});
-var ref=referralData.find(function(r){return r.email&&r.email.toLowerCase()===e});
-recipients.push({email:e,name:prof?(prof.full_name||''):'',referral_code:ref?(ref.code||''):''})});
-}
-window._sgRecipients=recipients;window._sgOpts=opts;
-var ov=document.createElement('div');ov.id='sg-email-modal';
-ov.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';
-ov.onclick=function(e){if(e.target===ov)ov.remove()};
-var box=document.createElement('div');
-box.style.cssText='background:var(--navy-card,#112a42);border:1px solid rgba(91,168,178,.25);border-radius:16px;padding:28px;width:95%;max-width:720px;max-height:90vh;overflow-y:auto;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.5)';
-var promoOpts='';
-promotionsData.filter(function(p){return p.status==='active'}).forEach(function(p){
-var sel=(opts.promoCode&&p.code===opts.promoCode)?' selected':'';
-promoOpts+='<option value="'+p.code+'"'+sel+'>'+esc(p.code)+'</option>'});
-var recipList=recipients.map(function(r){return esc(r.email)}).join('<br>');
-var subjectVal=esc(opts.subject||'').replace(/"/g,'&quot;');
-var bodyVal=esc(opts.body||'');
-var h='';
-h+='<button class="sg-modal-close" onclick="document.getElementById(\u0027sg-email-modal\u0027).remove()">&times;</button>';
-h+='<h3 style="margin:0 0 6px;font-size:17px;color:var(--text)">Compose Email</h3>';
-h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;font-size:12px;color:var(--text-muted)">Sending to <span style="color:var(--teal);font-weight:600">'+recipients.length+'</span> recipient'+(recipients.length!==1?'s':'')+' ';
-h+='<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 10px" onclick="var el=document.getElementById(\u0027sg-recipient-list\u0027);el.style.display=el.style.display===\u0027block\u0027?\u0027none\u0027:\u0027block\u0027">View List</button></div>';
-h+='<div id="sg-recipient-list" style="display:none;background:rgba(0,0,0,.2);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:14px;max-height:120px;overflow-y:auto;font-size:11px;color:var(--text-dim)">'+recipList+'</div>';
-h+='<div style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:4px;display:block">Subject</label>';
-h+='<input type="text" id="sg-subject" class="input" value="'+subjectVal+'" style="width:100%"></div>';
-h+='<div style="margin-bottom:6px"><label style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:4px;display:block">Body</label>';
-h+='<div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">';
-h+='<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 8px" onclick="sgInsertVar(\u0027{{name}}\u0027)">Name</button>';
-h+='<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 8px" onclick="sgInsertVar(\u0027{{email}}\u0027)">Email</button>';
-h+='<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 8px" onclick="sgInsertVar(\u0027{{referral_code}}\u0027)">Referral Code</button>';
-h+='</div>';
-h+='<textarea id="sg-body" class="input" rows="10" style="width:100%;font-size:13px;line-height:1.6">'+bodyVal+'</textarea></div>';
-h+='<div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap">';
-h+='<div style="flex:1;min-width:140px"><label style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:4px;display:block">Brand</label><select id="sg-brand" class="input" style="width:100%;font-size:12px"><option value="fusion"'+(opts.brand==='fusion'?' selected':'')+'>Fusion (Neon)</option><option value="academy"'+(opts.brand==='academy'?' selected':'')+'>Academy (Teal)</option></select></div>';
-h+='<div style="flex:1;min-width:140px"><label style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:4px;display:block">From</label><select id="sg-from" class="input" style="width:100%;font-size:12px"><option value="tracey@quantumphysician.com"'+(opts.from==='tracey@quantumphysician.com'?' selected':'')+'>Dr. Tracey (Personal)</option><option value="hello@quantumphysician.com"'+(opts.from==='hello@quantumphysician.com'?' selected':'')+'>Hello (Marketing)</option></select></div>';
-h+='</div>';
-h+='<div style="background:rgba(255,215,0,.04);border:1px solid rgba(255,215,0,.15);border-radius:10px;padding:14px;margin-bottom:16px">';
-h+='<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;color:var(--warning)"><input type="checkbox" id="sg-discount-toggle" '+(opts.discount?'checked':'')+' onchange="document.getElementById(\u0027sg-discount-opts\u0027).style.display=this.checked?\u0027block\u0027:\u0027none\u0027" style="accent-color:#ffd700"> Include Discount Card</label>';
-h+='<div id="sg-discount-opts" style="display:'+(opts.discount?'block':'none')+';margin-top:10px"><select id="sg-promo-select" class="input" style="width:100%;font-size:12px"><option value="">Select promotion...</option>'+promoOpts+'</select></div></div>';
-h+='<div id="sg-preview-area" style="display:none;margin-bottom:16px"></div>';
-h+='<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;padding-top:8px;border-top:1px solid var(--border)">';
-h+='<button class="btn btn-ghost btn-sm" onclick="document.getElementById(\u0027sg-email-modal\u0027).remove()">Cancel</button>';
-h+='<button class="btn btn-sm" style="background:var(--teal);color:#fff" onclick="sgPreview()">Preview</button>';
-h+='<button class="btn btn-sm" style="background:var(--warning);color:#000" onclick="sgTestEmail()">Send Test</button>';
-h+='<button class="btn btn-sm" style="background:var(--success);color:#000;font-weight:600" onclick="sgSendAll()">Send to All</button>';
-h+='</div>';
-box.innerHTML=h;
-ov.appendChild(box);document.body.appendChild(ov);
-}
-
-function sgInsertVar(v){var ta=document.getElementById('sg-body');if(!ta)return;var s=ta.selectionStart,e=ta.selectionEnd,t=ta.value;ta.value=t.substring(0,s)+v+t.substring(e);ta.focus();ta.selectionStart=ta.selectionEnd=s+v.length}
-
-function sgGetDiscountConfig(){
-var tog=document.getElementById('sg-discount-toggle');
-if(!tog||!tog.checked)return null;
-var code=document.getElementById('sg-promo-select').value;
-if(!code)return null;
-var promo=promotionsData.find(function(p){return p.code===code});
-if(!promo)return null;
-return{couponId:code,percent:promo.discount_value,product:promo.applies_to||'any'};
-}
-
-function sgBuildHtml(bodyText){
-var brand=document.getElementById('sg-brand').value;
-var discCfg=sgGetDiscountConfig();
-var siteUrl=brand==='academy'?'https://academy.quantumphysician.com':'https://fusionsessions.com';
-return brand==='academy'?buildAcademyEmail(bodyText,null,siteUrl,discCfg):buildRichEmail(bodyText,null,siteUrl,discCfg);
-}
-
-function sgPreview(){
-var subject=document.getElementById('sg-subject').value;
-var body=document.getElementById('sg-body').value;
-var from=document.getElementById('sg-from').value;
-if(!subject||!body){showToast('Fill in subject and body first','error');return}
-var s=window._sgRecipients&&window._sgRecipients[0]?window._sgRecipients[0]:{email:'preview@example.com',name:'Friend',referral_code:'XXXXXX'};
-var pb=body.replace(/\{\{name\}\}/g,s.name||'Friend').replace(/\{\{email\}\}/g,s.email).replace(/\{\{referral_code\}\}/g,s.referral_code||'XXXXXX');
-var richHtml=sgBuildHtml(pb);
-if(s.referral_code)richHtml=richHtml.replace(/REFCODE/g,s.referral_code);
-var area=document.getElementById('sg-preview-area');
-area.style.display='block';
-area.innerHTML='<div style="border-top:2px solid rgba(91,168,178,.3);padding-top:14px"><div style="font-size:12px;color:var(--text-muted);margin-bottom:8px"><strong>From:</strong> '+esc(from)+' &nbsp; <strong>Subject:</strong> <span style="color:var(--teal)">'+esc(subject)+'</span></div><iframe id="sg-preview-iframe" style="width:100%;min-height:500px;border:none;border-radius:8px;background:#1a1a2e"></iframe></div>';
-var fr=document.getElementById('sg-preview-iframe');
-var iDoc=fr.contentDocument||fr.contentWindow.document;
-iDoc.open();iDoc.write(richHtml);iDoc.close();
-setTimeout(function(){try{fr.style.height=iDoc.body.scrollHeight+20+'px'}catch(e){}},400);
-area.scrollIntoView({behavior:'smooth',block:'nearest'});
-}
-
-async function sgTestEmail(){
-var subject=document.getElementById('sg-subject').value;
-var body=document.getElementById('sg-body').value;
-var from=document.getElementById('sg-from').value;
-if(!subject||!body){showToast('Fill in subject and body first','error');return}
-var testAddr=prompt('Send test email to:','');
-if(!testAddr)return;
-showToast('Sending test...','info');
-var testName='Friend',testRef='TESTCODE';
-try{
-var prof=profilesData.find(function(p){return p.email&&p.email.toLowerCase()===testAddr.toLowerCase()});
-if(prof&&prof.full_name)testName=prof.full_name.split(' ')[0];
-var ref=referralData.find(function(r){return r.email&&r.email.toLowerCase()===testAddr.toLowerCase()});
-if(ref&&ref.code)testRef=ref.code;
-}catch(e){}
-var pb=body.replace(/\{\{name\}\}/g,testName).replace(/\{\{email\}\}/g,testAddr).replace(/\{\{referral_code\}\}/g,testRef);
-var richHtml=sgBuildHtml(pb);
-richHtml=richHtml.replace(/REFCODE/g,testRef);
-try{
-await fetch(APPS_SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},
-body:JSON.stringify({to:testAddr,from:from,subject:'[TEST] '+subject.replace(/\{\{name\}\}/g,testName),body:richHtml,isHtml:true})});
-showToast('Test email sent to '+testAddr+'!','success');
-logAudit('suggestion_test_email','Test to '+testAddr+': '+subject);
-}catch(e){showToast('Error: '+e.message,'error')}
-}
-
-async function sgSendAll(){
-var subject=document.getElementById('sg-subject').value;
-var body=document.getElementById('sg-body').value;
-var from=document.getElementById('sg-from').value;
-var recipients=window._sgRecipients||[];
-if(!subject||!body){showToast('Fill in subject and body first','error');return}
-if(!recipients.length){showToast('No recipients','error');return}
-if(!confirm('Send this email to '+recipients.length+' recipients?\n\nSubject: '+subject+'\nFrom: '+from))return;
-document.getElementById('sg-email-modal').remove();
-showToast('Sending to '+recipients.length+' recipients...','info');
-var sent=0,failed=0;
-var brand=(document.getElementById('sg-brand')||{}).value||'fusion';
-var discCfg=sgGetDiscountConfig();
-try{
-var campRes=await sbAdmin.from('email_campaigns').insert([{campaign_type:'suggestion',campaign_name:subject,subject:subject,from_email:from,recipient_count:recipients.length,status:'sending'}]).select().single();
-var campaignId=campRes.data?campRes.data.id:null;
-for(var i=0;i<recipients.length;i++){
-var r=recipients[i];
-var pb=body.replace(/\{\{name\}\}/g,r.name||'Friend').replace(/\{\{email\}\}/g,r.email).replace(/\{\{referral_code\}\}/g,r.referral_code||'');
-var siteUrl=brand==='academy'?'https://academy.quantumphysician.com':'https://fusionsessions.com';
-var richHtml=brand==='academy'?buildAcademyEmail(pb,null,siteUrl,discCfg):buildRichEmail(pb,null,siteUrl,discCfg);
-if(r.referral_code)richHtml=richHtml.replace(/REFCODE/g,r.referral_code);
-try{
-await fetch(APPS_SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},
-body:JSON.stringify({to:r.email,from:from,subject:subject.replace(/\{\{name\}\}/g,r.name||'Friend'),body:richHtml,isHtml:true})});
-sent++;
-if(campaignId)await sbAdmin.from('email_tracking').insert([{campaign_id:campaignId,recipient_email:r.email,sent_at:new Date().toISOString()}]);
-}catch(e){failed++}}
-if(campaignId)await sbAdmin.from('email_campaigns').update({status:'sent',sent_count:sent,failed_count:failed}).eq('id',campaignId);
-logAudit('suggestion_send','Sent "'+subject+'" to '+sent+'/'+recipients.length);
-showToast('Sent '+sent+'/'+recipients.length+(failed?' ('+failed+' failed)':''),'success');
-await loadAllData();
-}catch(e){showToast('Error: '+e.message,'error')}
-}
-
-function generateSuggestions(){
-if(!dataLoaded)return[];
-var sg=[];
-var now=new Date();
-var d7=new Date(now-7*864e5);
-var d14=new Date(now-14*864e5);
-var d30=new Date(now-30*864e5);
-
-var unusedCodes=referralData.filter(function(r){return r.successful_referrals===0&&r.credit_balance===0});
-if(unusedCodes.length>=3){
-var emails=unusedCodes.map(function(r){return r.email}).join('\n');
-sg.push({id:'unused-refs',cat:'revenue',priority:'med',title:unusedCodes.length+' referral codes never shared',detail:'These users have referral codes but zero referrals. A nudge could activate word-of-mouth.',metrics:[unusedCodes.length+' dormant codes'],actions:[{label:'\u2709 Compose Email',action:function(){sgSetupEmail({customEmails:emails,brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',subject:'Did you know you have a referral code? Share it and earn!',body:'Hi {{name}},\n\nDid you know you have a personal referral code? Every friend who signs up using your code earns you credits toward future sessions and courses.\n\nYour referral code: {{referral_code}}\n\nShare it with anyone who could benefit from quantum healing. You both win!\n\nWarmly,\nDr. Tracey Clark'})}}]})}
-
-var indivBuyers=allCustomers.filter(function(c){return!c.hasBundle&&c.fusionPurchases.length>=2&&c.fusionPurchases.length<12});
-if(indivBuyers.length>=1){
-var avgOwned=Math.round(indivBuyers.reduce(function(s,c){return s+c.fusionPurchases.length},0)/indivBuyers.length);
-var emails=indivBuyers.map(function(c){return c.email}).join('\n');
-var activePromo=promotionsData.find(function(p){return p.status==='active'});
-sg.push({id:'bundle-upsell',cat:'revenue',priority:'high',title:indivBuyers.length+' customer'+(indivBuyers.length>1?'s':'')+' ready for bundle upsell',detail:'These users own <strong>'+avgOwned+' sessions avg</strong> but not the bundle.',metrics:[indivBuyers.length+' prospects','~'+avgOwned+' sessions avg'],actions:[{label:'\u2709 Compose Upsell',action:function(){sgSetupEmail({customEmails:emails,brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',discount:!!activePromo,promoCode:activePromo?activePromo.code:'',subject:'Complete Your Fusion Journey \u2014 Upgrade to the Full Bundle',body:'Hi {{name}},\n\nYou have already experienced '+avgOwned+' Fusion Sessions and I love seeing your commitment to healing!\n\nThe Complete Fusion Bundle gives you access to all 12 sessions at a significant savings.\n\nSince you already own several sessions, this is the perfect time to complete your journey.\n\nWith love and healing,\nDr. Tracey Clark'})}}]})}
-
-var highCredit=referralData.filter(function(r){return r.credit_balance>=1000});
-if(highCredit.length>=1){
-var totalUnused=highCredit.reduce(function(s,r){return s+r.credit_balance},0);
-var emails=highCredit.map(function(r){return r.email}).join('\n');
-sg.push({id:'unused-credits',cat:'revenue',priority:'low',title:fmtMoney(totalUnused)+' in credits sitting unused',detail:'<strong>'+highCredit.length+'</strong> user'+(highCredit.length>1?'s have':' has')+' $10+ in credits.',metrics:[fmtMoney(totalUnused)+' total',highCredit.length+' users'],actions:[{label:'\u2709 Send Reminder',action:function(){sgSetupEmail({customEmails:emails,brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',subject:'You have credits waiting to be used!',body:'Hi {{name}},\n\nJust a friendly reminder \u2014 you have referral credits in your account ready to use!\n\nApply them toward any Fusion Session or Academy course.\n\nLog in and check your balance anytime.\n\nWarmly,\nDr. Tracey Clark'})}}]})}
-
-var expiringPromos=promotionsData.filter(function(p){if(p.status!=='active'||!p.expires_at)return false;var exp=new Date(p.expires_at);return exp>now&&exp<new Date(now.getTime()+7*864e5)});
-if(expiringPromos.length>0){
-var firstPromo=expiringPromos[0];
-sg.push({id:'expiring-promos',cat:'revenue',priority:'high',title:expiringPromos.length+' promo'+(expiringPromos.length>1?'s':'')+' expiring this week',detail:'Active promotions expiring within 7 days: <strong>'+expiringPromos.map(function(p){return p.code}).join(', ')+'</strong>',metrics:expiringPromos.map(function(p){return p.code}),actions:[{label:'\u2709 Last-Chance Email',action:function(){sgSetupEmail({audience:'all-opted-in',brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',discount:true,promoCode:firstPromo.code,subject:'Last Chance \u2014 '+firstPromo.code+' expires soon!',body:'Hi {{name}},\n\nOur special offer with code '+firstPromo.code+' is expiring very soon!\n\nIf you have been thinking about taking the next step in your healing journey, now is the time.\n\nDo not miss out!\n\nWith love,\nDr. Tracey Clark'})}},{label:'View Promos',action:function(){go('promotions',document.querySelector('[onclick*="promotions"]'))}}]})}
-
-var enrolledUsers={};academyEnrollments.filter(function(e){return e.status==='active'}).forEach(function(e){enrolledUsers[e.user_id]=true});
-var inactiveStudents=allCustomers.filter(function(c){if(!c.userId||!enrolledUsers[c.userId])return false;var lastAct=null;lessonProgress.filter(function(lp){return lp.user_id===c.userId}).forEach(function(lp){var d=lp.completed_at||lp.updated_at;if(d&&(!lastAct||d>lastAct))lastAct=d});return lastAct&&new Date(lastAct)<d14});
-if(inactiveStudents.length>=1){
-var emails=inactiveStudents.map(function(c){return c.email}).join('\n');
-sg.push({id:'inactive-students',cat:'engagement',priority:'high',title:inactiveStudents.length+' student'+(inactiveStudents.length>1?'s':'')+' inactive for 14+ days',detail:'Enrolled students who stopped making progress.',metrics:[inactiveStudents.length+' inactive','14+ days'],actions:[{label:'\u2709 Re-engage',action:function(){sgSetupEmail({customEmails:emails,brand:'academy',type:'promotional',from:'tracey@quantumphysician.com',subject:'We miss you! Your courses are waiting',body:'Hi {{name}},\n\nI noticed you have not logged into the Academy recently.\n\nYour courses are still there, right where you left off. Even 10 minutes a day makes a difference.\n\nIs there anything I can help with?\n\nRooting for you,\nDr. Tracey Clark'})}}]})}
-
-var newNoPurchase=allCustomers.filter(function(c){if(!c.hasAccount||c.purchases.length>0)return false;var auth=authUsersMap.get(c.email.toLowerCase());if(!auth)return false;return new Date(auth.created_at)>d7});
-if(newNoPurchase.length>=1){
-var emails=newNoPurchase.map(function(c){return c.email}).join('\n');
-var welcomePromo=promotionsData.find(function(p){return p.status==='active'});
-sg.push({id:'new-no-purchase',cat:'engagement',priority:'high',title:newNoPurchase.length+' new signup'+(newNoPurchase.length>1?'s':'')+' with no purchase',detail:'Warm leads who created accounts in the last 7 days but have not bought anything.',metrics:[newNoPurchase.length+' signups'],actions:[{label:'\u2709 Welcome Offer',action:function(){sgSetupEmail({customEmails:emails,brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',discount:!!welcomePromo,promoCode:welcomePromo?welcomePromo.code:'',subject:'Welcome to Quantum Physician \u2014 A gift to get you started',body:'Hi {{name}},\n\nWelcome to the Quantum Physician family!\n\nI wanted to offer you something special to help you get started on your healing journey.'+(welcomePromo?'\n\nUse code '+welcomePromo.code+' on your first purchase!':'')+'\n\nI am here for you,\nDr. Tracey Clark'})}}]})}
-
-var boughtNoReturn=allCustomers.filter(function(c){if(!c.hasAccount||c.purchases.length===0)return false;var auth=authUsersMap.get(c.email.toLowerCase());if(!auth||!auth.last_sign_in_at)return false;return new Date(auth.last_sign_in_at)<d30});
-if(boughtNoReturn.length>=1){
-var emails=boughtNoReturn.map(function(c){return c.email}).join('\n');
-sg.push({id:'bought-no-return',cat:'retention',priority:'high',title:boughtNoReturn.length+' buyer'+(boughtNoReturn.length>1?'s':'')+' absent 30+ days',detail:'Paid customers who have not logged in for over a month.',metrics:[boughtNoReturn.length+' customers'],actions:[{label:'\u2709 Check-in',action:function(){sgSetupEmail({customEmails:emails,brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',subject:'Your healing content is waiting for you',body:'Hi {{name}},\n\nI noticed you have not visited in a while.\n\nYour sessions and courses are still there for you, ready whenever you are.\n\nIf you need help accessing your content, just reply to this email.\n\nWith care,\nDr. Tracey Clark'})}}]})}
-
-var optedOut=0;authUsersMap.forEach(function(u){if(u.raw_user_meta_data&&u.raw_user_meta_data.marketing_opt_in===false)optedOut++});
-if(optedOut>=5){sg.push({id:'opted-out',cat:'retention',priority:'low',title:optedOut+' users opted out of marketing emails',detail:'Consider improving email value or reducing frequency.',metrics:[optedOut+' opted out'],actions:[{label:'View Customers',action:function(){go('customers',document.querySelector('[onclick*="customers"]'))}}]})}
-
-var topRefs=referralData.filter(function(r){return r.successful_referrals>=2}).sort(function(a,b){return b.successful_referrals-a.successful_referrals}).slice(0,5);
-if(topRefs.length>=1){
-var emails=topRefs.map(function(r){return r.email}).join('\n');
-sg.push({id:'top-referrers',cat:'growth',priority:'med',title:'Top '+topRefs.length+' referrer'+(topRefs.length>1?'s':'')+' could be ambassadors',detail:'<strong>'+topRefs[0].email+'</strong> has '+topRefs[0].successful_referrals+' referrals.',metrics:topRefs.slice(0,3).map(function(r){return r.successful_referrals+' refs'}),actions:[{label:'\u2709 Thank Them',action:function(){sgSetupEmail({customEmails:emails,brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',subject:'Thank you for being an amazing ambassador!',body:'Hi {{name}},\n\nThank you for referring friends and family to Quantum Physician. It means the world to me.\n\nKeep spreading the word \u2014 together we are building something special.\n\nWith deep gratitude,\nDr. Tracey Clark'})}}]})}
-
-var lastCampaign=emailCampaignsData.length?new Date(emailCampaignsData[0].sent_at||emailCampaignsData[0].created_at):null;
-if(!lastCampaign||lastCampaign<d14){var daysSince=lastCampaign?Math.round((now-lastCampaign)/864e5):-1;sg.push({id:'no-recent-campaigns',cat:'growth',priority:'med',title:daysSince>0?'No campaigns in '+daysSince+' days':'No campaigns sent yet',detail:'Consistent outreach keeps your audience engaged.',metrics:daysSince>0?[daysSince+' days']:[],actions:[{label:'\u2709 Create Campaign',action:function(){go('email',document.querySelector('[onclick*="email"]'))}}]})}
-
-if(allFusionPosts&&allFusionPosts.length){var recentPosts=allFusionPosts.filter(function(p){return new Date(p.created_at)>d7&&!p.is_hidden});var unanswered=recentPosts.filter(function(p){return!p.reply_count||p.reply_count===0});if(unanswered.length>=1){sg.push({id:'unanswered-posts',cat:'community',priority:'high',title:unanswered.length+' community post'+(unanswered.length>1?'s':'')+' with no replies',detail:'Posts without responses make the community feel empty.',metrics:[unanswered.length+' unanswered'],actions:[{label:'Go to Community',action:function(){go('community',document.querySelector('[onclick*="community"]'))}}]})}}
-
-sg=sg.filter(function(s){return sgDismissed.indexOf(s.id)<0});
-var pOrder={high:0,med:1,low:2};
-sg.sort(function(a,b){return(pOrder[a.priority]||1)-(pOrder[b.priority]||1)});
-return sg;
-}
-
-function renderSuggestions(){
-var sg=generateSuggestions();
-var panel=document.getElementById('dash-suggestions');
-if(!sg.length){panel.style.display='none';return}
-panel.style.display='block';
-var filtered=sgActiveFilter==='all'?sg:sg.filter(function(s){return s.cat===sgActiveFilter});
-var cats={};sg.forEach(function(s){cats[s.cat]=(cats[s.cat]||0)+1});
-var html='<div class="suggestions-header"><h3><div class="sg-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>Smart Suggestions <span class="sg-count">'+sg.length+' insight'+(sg.length>1?'s':'')+'</span></h3><div class="sg-filters"><button class="sg-filter-btn'+(sgActiveFilter==='all'?' active':'')+'" onclick="sgActiveFilter=\u0027all\u0027;renderSuggestions()">All ('+sg.length+')</button>';
-['revenue','engagement','retention','growth','community'].forEach(function(c){if(cats[c])html+='<button class="sg-filter-btn'+(sgActiveFilter===c?' active':'')+'" onclick="sgActiveFilter=\u0027'+c+'\u0027;renderSuggestions()">'+c.charAt(0).toUpperCase()+c.slice(1)+' ('+cats[c]+')</button>'});
-html+='</div></div>';
-if(!filtered.length){html+='<div class="sg-empty">No suggestions in this category</div>'}else{
-html+='<div class="sg-grid">';
-filtered.forEach(function(s){
-var pLabel=s.priority==='high'?'High':s.priority==='med'?'Medium':'Low';
-html+='<div class="sg-card sg-'+s.cat+'" data-sg-id="'+s.id+'"><button class="sg-dismiss" onclick="event.stopPropagation();dismissSuggestion(\u0027'+s.id+'\u0027)" title="Dismiss">&times;</button><div class="sg-card-top"><span class="sg-badge '+s.cat+'">'+s.cat+'</span><span class="sg-priority"><span class="dot '+s.priority+'"></span>'+pLabel+'</span></div><div class="sg-title">'+s.title+'</div><div class="sg-detail">'+s.detail+'</div>';
-if(s.metrics&&s.metrics.length){html+='<div style="margin-bottom:10px">';s.metrics.forEach(function(m){html+='<span class="sg-metric">'+m+'</span>'});html+='</div>'}
-if(s.actions&&s.actions.length){html+='<div class="sg-actions">';s.actions.forEach(function(a,j){html+='<button class="btn '+(j===0?'btn-primary':'btn-ghost')+' btn-sm" onclick="sgAction(\u0027'+s.id+'\u0027,'+j+')">'+a.label+'</button>'});html+='</div>'}
-html+='</div>'});
-html+='</div>'}
-panel.innerHTML=html;
-}
-
-function sgAction(id,idx){var sg=generateSuggestions();var s=sg.find(function(x){return x.id===id});if(s&&s.actions&&s.actions[idx]&&s.actions[idx].action){logAudit('suggestion_action','Acted on: '+s.title);s.actions[idx].action()}}
-
-function dismissSuggestion(id){sgDismissed.push(id);localStorage.setItem('qp_sg_dismissed',JSON.stringify(sgDismissed));var card=document.querySelector('[data-sg-id="'+id+'"]');if(card){card.style.opacity='0';card.style.transform='scale(0.95)';card.style.transition='all 0.3s';setTimeout(function(){renderSuggestions()},300)}else renderSuggestions()}
-
 /* ===== SMART SUGGESTIONS - EMAIL MODAL ===== */
 var sgDismissed=JSON.parse(localStorage.getItem('qp_sg_dismissed')||'[]');
 var sgActiveFilter='all';
@@ -1121,45 +869,48 @@ var d7=new Date(now-7*864e5);
 var d14=new Date(now-14*864e5);
 var d30=new Date(now-30*864e5);
 
+/* Referral card block to append after --- */
+var refBlock='\n---\n**Share & Earn**\n\nYour friend gets **10% off**\nYou earn **$10**/session or **$25**/bundle\n\nYour code: **REFCODE**\nYour link: fusionsessions.com/?ref=REFCODE\n\n{{qr_code}}\n\nShare your code and start earning';
+
 var unusedCodes=referralData.filter(function(r){return r.successful_referrals===0&&r.credit_balance===0});
 if(unusedCodes.length>=3){
 var emails=unusedCodes.map(function(r){return r.email}).join('\n');
-sg.push({id:'unused-refs',cat:'revenue',priority:'med',title:unusedCodes.length+' referral codes never shared',detail:'These users have referral codes but zero referrals. A nudge could activate word-of-mouth.',metrics:[unusedCodes.length+' dormant codes'],actions:[{label:'\u2709 Compose Email',action:function(){sgSetupEmail({customEmails:emails,brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',subject:'Did you know you have a referral code? Share it and earn!',body:'Hi {{name}},\n\nDid you know you have a personal referral code? Every friend who signs up using your code earns you credits toward future sessions and courses.\n\nYour referral code: {{referral_code}}\n\nShare it with anyone who could benefit from quantum healing. You both win!\n\nWarmly,\nDr. Tracey Clark'})}}]})}
+sg.push({id:'unused-refs',cat:'revenue',priority:'med',title:unusedCodes.length+' referral codes never shared',detail:'These users have referral codes but zero referrals. A nudge could activate word-of-mouth.',metrics:[unusedCodes.length+' dormant codes'],actions:[{label:'\u2709 Compose Email',action:function(){sgSetupEmail({customEmails:emails,brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',subject:'Did you know you have a referral code? Share it and earn!',body:'Hi {{name}},\n\nYou signed up for our referral program but have not shared yet. That means there is free money waiting.\n\n**Think of one person:** a friend who cannot sleep, a coworker who is always stressed, or a family member dealing with pain.\n\nYour code gives them 10% off. You earn **$10-$25** per referral. **Just text your link to one person today.**'+refBlock})}}]})}
 
 var indivBuyers=allCustomers.filter(function(c){return!c.hasBundle&&c.fusionPurchases.length>=2&&c.fusionPurchases.length<12});
 if(indivBuyers.length>=1){
 var avgOwned=Math.round(indivBuyers.reduce(function(s,c){return s+c.fusionPurchases.length},0)/indivBuyers.length);
 var emails=indivBuyers.map(function(c){return c.email}).join('\n');
 var activePromo=promotionsData.find(function(p){return p.status==='active'});
-sg.push({id:'bundle-upsell',cat:'revenue',priority:'high',title:indivBuyers.length+' customer'+(indivBuyers.length>1?'s':'')+' ready for bundle upsell',detail:'These users own <strong>'+avgOwned+' sessions avg</strong> but not the bundle.',metrics:[indivBuyers.length+' prospects','~'+avgOwned+' sessions avg'],actions:[{label:'\u2709 Compose Upsell',action:function(){sgSetupEmail({customEmails:emails,brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',discount:!!activePromo,promoCode:activePromo?activePromo.code:'',subject:'Complete Your Fusion Journey \u2014 Upgrade to the Full Bundle',body:'Hi {{name}},\n\nYou have already experienced '+avgOwned+' Fusion Sessions and I love seeing your commitment to healing!\n\nThe Complete Fusion Bundle gives you access to all 12 sessions at a significant savings.\n\nSince you already own several sessions, this is the perfect time to complete your journey.\n\nWith love and healing,\nDr. Tracey Clark'})}}]})}
+sg.push({id:'bundle-upsell',cat:'revenue',priority:'high',title:indivBuyers.length+' customer'+(indivBuyers.length>1?'s':'')+' ready for bundle upsell',detail:'These users own <strong>'+avgOwned+' sessions avg</strong> but not the bundle.',metrics:[indivBuyers.length+' prospects','~'+avgOwned+' sessions avg'],actions:[{label:'\u2709 Compose Upsell',action:function(){sgSetupEmail({customEmails:emails,brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',discount:!!activePromo,promoCode:activePromo?activePromo.code:'',subject:'Complete Your Fusion Journey \u2014 Upgrade to the Full Bundle',body:'Hi {{name}},\n\nYou have already experienced **'+avgOwned+' Fusion Sessions** and I love seeing your commitment to healing!\n\nThe **Complete Fusion Bundle** gives you access to all 12 sessions at a significant savings compared to buying individually.\n\nSince you already own several sessions, this is the perfect time to **complete your journey**.'+(activePromo?'\n\nUse code **'+activePromo.code+'** for an extra discount!':'')+'\n\nWith love and healing,\nDr. Tracey Clark'})}}]})}
 
 var highCredit=referralData.filter(function(r){return r.credit_balance>=1000});
 if(highCredit.length>=1){
 var totalUnused=highCredit.reduce(function(s,r){return s+r.credit_balance},0);
 var emails=highCredit.map(function(r){return r.email}).join('\n');
-sg.push({id:'unused-credits',cat:'revenue',priority:'low',title:fmtMoney(totalUnused)+' in credits sitting unused',detail:'<strong>'+highCredit.length+'</strong> user'+(highCredit.length>1?'s have':' has')+' $10+ in credits.',metrics:[fmtMoney(totalUnused)+' total',highCredit.length+' users'],actions:[{label:'\u2709 Send Reminder',action:function(){sgSetupEmail({customEmails:emails,brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',subject:'You have credits waiting to be used!',body:'Hi {{name}},\n\nJust a friendly reminder \u2014 you have referral credits in your account ready to use!\n\nApply them toward any Fusion Session or Academy course.\n\nLog in and check your balance anytime.\n\nWarmly,\nDr. Tracey Clark'})}}]})}
+sg.push({id:'unused-credits',cat:'revenue',priority:'low',title:fmtMoney(totalUnused)+' in credits sitting unused',detail:'<strong>'+highCredit.length+'</strong> user'+(highCredit.length>1?'s have':' has')+' $10+ in credits.',metrics:[fmtMoney(totalUnused)+' total',highCredit.length+' users'],actions:[{label:'\u2709 Send Reminder',action:function(){sgSetupEmail({customEmails:emails,brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',subject:'You have credits waiting to be used!',body:'Hi {{name}},\n\nYou have **credits** in your account \u2014 real money you earned by sharing the healing.\n\nThey apply automatically at checkout. Just pick a session and your balance does the rest.'+refBlock})}}]})}
 
 var expiringPromos=promotionsData.filter(function(p){if(p.status!=='active'||!p.expires_at)return false;var exp=new Date(p.expires_at);return exp>now&&exp<new Date(now.getTime()+7*864e5)});
 if(expiringPromos.length>0){
 var firstPromo=expiringPromos[0];
-sg.push({id:'expiring-promos',cat:'revenue',priority:'high',title:expiringPromos.length+' promo'+(expiringPromos.length>1?'s':'')+' expiring this week',detail:'Active promotions expiring within 7 days: <strong>'+expiringPromos.map(function(p){return p.code}).join(', ')+'</strong>',metrics:expiringPromos.map(function(p){return p.code}),actions:[{label:'\u2709 Last-Chance Email',action:function(){sgSetupEmail({audience:'all-opted-in',brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',discount:true,promoCode:firstPromo.code,subject:'Last Chance \u2014 '+firstPromo.code+' expires soon!',body:'Hi {{name}},\n\nOur special offer with code '+firstPromo.code+' is expiring very soon!\n\nIf you have been thinking about taking the next step in your healing journey, now is the time.\n\nDo not miss out!\n\nWith love,\nDr. Tracey Clark'})}},{label:'View Promos',action:function(){go('promotions',document.querySelector('[onclick*="promotions"]'))}}]})}
+sg.push({id:'expiring-promos',cat:'revenue',priority:'high',title:expiringPromos.length+' promo'+(expiringPromos.length>1?'s':'')+' expiring this week',detail:'Active promotions expiring within 7 days: <strong>'+expiringPromos.map(function(p){return p.code}).join(', ')+'</strong>',metrics:expiringPromos.map(function(p){return p.code}),actions:[{label:'\u2709 Last-Chance Email',action:function(){sgSetupEmail({audience:'all-opted-in',brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',discount:true,promoCode:firstPromo.code,subject:'Last Chance \u2014 '+firstPromo.code+' expires soon!',body:'Hi {{name}},\n\nOur special offer with code **'+firstPromo.code+'** is expiring very soon!\n\nIf you have been thinking about taking the next step in your healing journey, **now is the time**. This discount will not be available again.\n\n**Do not miss out!**\n\nWith love,\nDr. Tracey Clark'})}},{label:'View Promos',action:function(){go('promotions',document.querySelector('[onclick*="promotions"]'))}}]})}
 
 var enrolledUsers={};academyEnrollments.filter(function(e){return e.status==='active'}).forEach(function(e){enrolledUsers[e.user_id]=true});
 var inactiveStudents=allCustomers.filter(function(c){if(!c.userId||!enrolledUsers[c.userId])return false;var lastAct=null;lessonProgress.filter(function(lp){return lp.user_id===c.userId}).forEach(function(lp){var d=lp.completed_at||lp.updated_at;if(d&&(!lastAct||d>lastAct))lastAct=d});return lastAct&&new Date(lastAct)<d14});
 if(inactiveStudents.length>=1){
 var emails=inactiveStudents.map(function(c){return c.email}).join('\n');
-sg.push({id:'inactive-students',cat:'engagement',priority:'high',title:inactiveStudents.length+' student'+(inactiveStudents.length>1?'s':'')+' inactive for 14+ days',detail:'Enrolled students who stopped making progress.',metrics:[inactiveStudents.length+' inactive','14+ days'],actions:[{label:'\u2709 Re-engage',action:function(){sgSetupEmail({customEmails:emails,brand:'academy',type:'promotional',from:'tracey@quantumphysician.com',subject:'We miss you! Your courses are waiting',body:'Hi {{name}},\n\nI noticed you have not logged into the Academy recently.\n\nYour courses are still there, right where you left off. Even 10 minutes a day makes a difference.\n\nIs there anything I can help with?\n\nRooting for you,\nDr. Tracey Clark'})}}]})}
+sg.push({id:'inactive-students',cat:'engagement',priority:'high',title:inactiveStudents.length+' student'+(inactiveStudents.length>1?'s':'')+' inactive for 14+ days',detail:'Enrolled students who stopped making progress.',metrics:[inactiveStudents.length+' inactive','14+ days'],actions:[{label:'\u2709 Re-engage',action:function(){sgSetupEmail({customEmails:emails,brand:'academy',type:'promotional',from:'tracey@quantumphysician.com',subject:'We miss you! Your courses are waiting',body:'Hi {{name}},\n\nI noticed you have not logged into the Academy recently.\n\nYour courses are still there, **right where you left off**. Even 10 minutes a day makes a real difference in your growth.\n\nIs there anything I can help with? Sometimes a **fresh perspective** is all it takes to get back on track.\n\nRooting for you,\nDr. Tracey Clark'})}}]})}
 
 var newNoPurchase=allCustomers.filter(function(c){if(!c.hasAccount||c.purchases.length>0)return false;var auth=authUsersMap.get(c.email.toLowerCase());if(!auth)return false;return new Date(auth.created_at)>d7});
 if(newNoPurchase.length>=1){
 var emails=newNoPurchase.map(function(c){return c.email}).join('\n');
 var welcomePromo=promotionsData.find(function(p){return p.status==='active'});
-sg.push({id:'new-no-purchase',cat:'engagement',priority:'high',title:newNoPurchase.length+' new signup'+(newNoPurchase.length>1?'s':'')+' with no purchase',detail:'Warm leads who created accounts in the last 7 days but have not bought anything.',metrics:[newNoPurchase.length+' signups'],actions:[{label:'\u2709 Welcome Offer',action:function(){sgSetupEmail({customEmails:emails,brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',discount:!!welcomePromo,promoCode:welcomePromo?welcomePromo.code:'',subject:'Welcome to Quantum Physician \u2014 A gift to get you started',body:'Hi {{name}},\n\nWelcome to the Quantum Physician family!\n\nI wanted to offer you something special to help you get started on your healing journey.'+(welcomePromo?'\n\nUse code '+welcomePromo.code+' on your first purchase!':'')+'\n\nI am here for you,\nDr. Tracey Clark'})}}]})}
+sg.push({id:'new-no-purchase',cat:'engagement',priority:'high',title:newNoPurchase.length+' new signup'+(newNoPurchase.length>1?'s':'')+' with no purchase',detail:'Warm leads who created accounts in the last 7 days but have not bought anything.',metrics:[newNoPurchase.length+' signups'],actions:[{label:'\u2709 Welcome Offer',action:function(){sgSetupEmail({customEmails:emails,brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',discount:!!welcomePromo,promoCode:welcomePromo?welcomePromo.code:'',subject:'Welcome to Quantum Physician \u2014 A gift to get you started',body:'Hi {{name}},\n\nYou signed up \u2014 that means something. **You are ready.**\n\n**Fusion Sessions** are 60-minute online group healing experiences led by Dr. Tracey Clark. Each one works on a specific area of your health: anxiety, pain, sleep, energy, and more.\n\nPeople tell us they feel different after just one session.\n\n**Ready to find out for yourself?**'+(welcomePromo?'\n\nUse code **'+welcomePromo.code+'** for a special discount!':'')+'\n\nI am here for you,\nDr. Tracey Clark'})}}]})}
 
 var boughtNoReturn=allCustomers.filter(function(c){if(!c.hasAccount||c.purchases.length===0)return false;var auth=authUsersMap.get(c.email.toLowerCase());if(!auth||!auth.last_sign_in_at)return false;return new Date(auth.last_sign_in_at)<d30});
 if(boughtNoReturn.length>=1){
 var emails=boughtNoReturn.map(function(c){return c.email}).join('\n');
-sg.push({id:'bought-no-return',cat:'retention',priority:'high',title:boughtNoReturn.length+' buyer'+(boughtNoReturn.length>1?'s':'')+' absent 30+ days',detail:'Paid customers who have not logged in for over a month.',metrics:[boughtNoReturn.length+' customers'],actions:[{label:'\u2709 Check-in',action:function(){sgSetupEmail({customEmails:emails,brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',subject:'Your healing content is waiting for you',body:'Hi {{name}},\n\nI noticed you have not visited in a while.\n\nYour sessions and courses are still there for you, ready whenever you are.\n\nIf you need help accessing your content, just reply to this email.\n\nWith care,\nDr. Tracey Clark'})}}]})}
+sg.push({id:'bought-no-return',cat:'retention',priority:'high',title:boughtNoReturn.length+' buyer'+(boughtNoReturn.length>1?'s':'')+' absent 30+ days',detail:'Paid customers who have not logged in for over a month.',metrics:[boughtNoReturn.length+' customers'],actions:[{label:'\u2709 Check-in',action:function(){sgSetupEmail({customEmails:emails,brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',subject:'Your healing content is waiting for you',body:'Hi {{name}},\n\nI noticed you have not visited in a while, and I wanted to **personally reach out**.\n\nYour sessions and courses are still there for you, ready whenever you are. Life gets busy \u2014 I understand. But your healing journey **does not have an expiration date**.\n\nIf you need help accessing your content, just **reply to this email** and I will help.\n\nWith care,\nDr. Tracey Clark'})}}]})}
 
 var optedOut=0;authUsersMap.forEach(function(u){if(u.raw_user_meta_data&&u.raw_user_meta_data.marketing_opt_in===false)optedOut++});
 if(optedOut>=5){sg.push({id:'opted-out',cat:'retention',priority:'low',title:optedOut+' users opted out of marketing emails',detail:'Consider improving email value or reducing frequency.',metrics:[optedOut+' opted out'],actions:[{label:'View Customers',action:function(){go('customers',document.querySelector('[onclick*="customers"]'))}}]})}
@@ -1167,7 +918,7 @@ if(optedOut>=5){sg.push({id:'opted-out',cat:'retention',priority:'low',title:opt
 var topRefs=referralData.filter(function(r){return r.successful_referrals>=2}).sort(function(a,b){return b.successful_referrals-a.successful_referrals}).slice(0,5);
 if(topRefs.length>=1){
 var emails=topRefs.map(function(r){return r.email}).join('\n');
-sg.push({id:'top-referrers',cat:'growth',priority:'med',title:'Top '+topRefs.length+' referrer'+(topRefs.length>1?'s':'')+' could be ambassadors',detail:'<strong>'+topRefs[0].email+'</strong> has '+topRefs[0].successful_referrals+' referrals.',metrics:topRefs.slice(0,3).map(function(r){return r.successful_referrals+' refs'}),actions:[{label:'\u2709 Thank Them',action:function(){sgSetupEmail({customEmails:emails,brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',subject:'Thank you for being an amazing ambassador!',body:'Hi {{name}},\n\nThank you for referring friends and family to Quantum Physician. It means the world to me.\n\nKeep spreading the word \u2014 together we are building something special.\n\nWith deep gratitude,\nDr. Tracey Clark'})}}]})}
+sg.push({id:'top-referrers',cat:'growth',priority:'med',title:'Top '+topRefs.length+' referrer'+(topRefs.length>1?'s':'')+' could be ambassadors',detail:'<strong>'+topRefs[0].email+'</strong> has '+topRefs[0].successful_referrals+' referrals.',metrics:topRefs.slice(0,3).map(function(r){return r.successful_referrals+' refs'}),actions:[{label:'\u2709 Thank Them',action:function(){sgSetupEmail({customEmails:emails,brand:'fusion',type:'promotional',from:'tracey@quantumphysician.com',subject:'Thank you for being an amazing ambassador!',body:'Hi {{name}},\n\nI wanted to take a moment to **personally thank you**. You have referred friends and family to Quantum Physician, and that means the world to me.\n\nYour word-of-mouth support helps more people discover the power of quantum healing. As a small token of my gratitude, I have **added a bonus to your referral credits**.\n\nKeep spreading the word \u2014 together we are building something special.'+refBlock})}}]})}
 
 var lastCampaign=emailCampaignsData.length?new Date(emailCampaignsData[0].sent_at||emailCampaignsData[0].created_at):null;
 if(!lastCampaign||lastCampaign<d14){var daysSince=lastCampaign?Math.round((now-lastCampaign)/864e5):-1;sg.push({id:'no-recent-campaigns',cat:'growth',priority:'med',title:daysSince>0?'No campaigns in '+daysSince+' days':'No campaigns sent yet',detail:'Consistent outreach keeps your audience engaged.',metrics:daysSince>0?[daysSince+' days']:[],actions:[{label:'\u2709 Create Campaign',action:function(){go('email',document.querySelector('[onclick*="email"]'))}}]})}
@@ -1329,7 +1080,7 @@ function loadReferralData(){if(!dataLoaded)return;var tco=referralData.reduce(fu
 document.getElementById('ref-stats').innerHTML='<div class="stat-card"><div class="stat-ico green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div><div class="stat-val">'+fmtMoney(tco)+'</div><div class="stat-lbl">Credits Outstanding</div></div></div><div class="stat-card"><div class="stat-ico warm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div><div><div class="stat-val">'+fmtMoney(te)+'</div><div class="stat-lbl">Total Earned</div></div></div><div class="stat-card"><div class="stat-ico teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></div><div><div class="stat-val">'+tr+'</div><div class="stat-lbl">Total Referrals</div></div></div><div class="stat-card"><div class="stat-ico purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div><div class="stat-val">'+ar+'</div><div class="stat-lbl">Active Referrers</div></div></div>';
 var top=referralData.filter(function(r){return r.successful_referrals>0}).sort(function(a,b){return b.successful_referrals-a.successful_referrals}).slice(0,10);
 document.getElementById('ref-leaderboard').innerHTML=top.length?'<table class="tbl"><thead><tr><th>Email</th><th>Code</th><th>Referrals</th><th>Balance</th><th>Earned</th></tr></thead><tbody>'+top.map(function(r){return'<tr><td class="email">'+esc(r.email)+'</td><td class="mono">'+r.code+'</td><td><strong style="color:var(--teal)">'+r.successful_referrals+'</strong></td><td>'+(Number(r.credit_balance)>0?'<span style="color:var(--success)">'+fmtMoney(r.credit_balance)+'</span>':'\u2014')+'</td><td style="color:var(--taupe)">'+fmtMoney(r.total_earned)+'</td></tr>'}).join('')+'</tbody></table>':'<div class="empty"><p>No referrals</p></div>';
-var rc=creditHistory.slice(0,15);document.getElementById('ref-activity').innerHTML=rc.length?rc.map(function(c){return'<div class="feed-item"><div class="feed-dot" style="background:'+(c.amount>0?'var(--success)':'var(--warning)')+'"></div><div class="feed-content"><div class="feed-text"><strong>'+esc(c.email)+'</strong> '+(c.amount>0?'+':'')+fmtMoney(c.amount)+'</div><div class="feed-time">'+esc(c.description||c.type)+' \u00b7 '+timeAgo(c.created_at)+'</div></div></div>'}).join(''):'<div class="empty"><p>No activity</p></div>';renderSuggestions()}
+var rc=creditHistory.slice(0,15);document.getElementById('ref-activity').innerHTML=rc.length?rc.map(function(c){return'<div class="feed-item"><div class="feed-dot" style="background:'+(c.amount>0?'var(--success)':'var(--warning)')+'"></div><div class="feed-content"><div class="feed-text"><strong>'+esc(c.email)+'</strong> '+(c.amount>0?'+':'')+fmtMoney(c.amount)+'</div><div class="feed-time">'+esc(c.description||c.type)+' \u00b7 '+timeAgo(c.created_at)+'</div></div></div>'}).join(''):'<div class="empty"><p>No activity</p></div>'}
 
 /* --- CREATE REFERRAL CODE --- */
 async function createReferralCode(email){if(!await qpConfirm('Create Referral Code','Create a new referral code for '+email+'?',{okText:'Create'}))return;try{var existing=await sbAdmin.from('referral_codes').select('code').eq('email',email.toLowerCase());if(existing.data&&existing.data.length){showToast('Already has code: '+existing.data[0].code,'info');await loadAllData();showCustomerDetail(email);return}var code='';var chars='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';for(var i=0;i<8;i++)code+=chars.charAt(Math.floor(Math.random()*chars.length));var codeCheck=await sbAdmin.from('referral_codes').select('code').eq('code',code);if(codeCheck.data&&codeCheck.data.length)code+=Math.floor(Math.random()*10);await sbAdmin.from('referral_codes').insert({email:email.toLowerCase(),code:code,credit_balance:0,total_earned:0,successful_referrals:0}).then(function(res){if(res.error){console.error('Insert error:',res.error);throw new Error(res.error.message)}});await logAudit('create_referral',email,'Created referral code: '+code,{code:code});await loadAllData();showCustomerDetail(email);showToast('Referral code created: '+code,'success')}catch(e){showToast('Error: '+e.message,'error')}}
