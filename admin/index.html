@@ -790,23 +790,20 @@ sgAutoPreview();
 }
 
 function sgStripDiscount(body){
-/* Remove discount --- section added by us (identified by LAST --- section containing "code:") */
+/* Remove ONLY the discount section - identified by "Limited Time:" which we always add */
 var parts=body.split('\n---\n');
-if(parts.length>2){
-/* 3+ sections - check if last one is our discount */
-var last=parts[parts.length-1];
-if(last.match(/Your code:|Limited Time:|Exclusive Offer:/i)){
-parts.pop();
-return parts.join('\n---\n');
-}
-}else if(parts.length===2){
-var sec=parts[1];
-if(sec.match(/Your code:/i)&&!sec.match(/Share.*Earn|qr_code|referral/i)){
-/* Only section and it's just a discount (no referral content) */
-return parts[0];
+if(parts.length<2)return body;
+/* Find and remove the section that contains our discount marker */
+var kept=[parts[0]];
+var removed=false;
+for(var i=1;i<parts.length;i++){
+if(!removed&&parts[i].match(/Limited Time:/i)){
+removed=true; /* skip this section */
+}else{
+kept.push(parts[i]);
 }
 }
-return body;
+return kept.join('\n---\n');
 }
 
 function sgRemoveDiscountPitch(){
