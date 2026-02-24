@@ -58,16 +58,15 @@ var sgActiveFilter='all';
 
 var _origSgSetupEmail=null;
 function sgSetupEmail(opts){
-/* Auto-filter promotional emails for opt-out + weekly limit */
 if(opts.customEmails&&opts.type==='promotional'){
 var rawEmails=opts.customEmails.split('\n').filter(function(e){return e.trim()});
 var originalCount=rawEmails.length;
 filterGoalRecipients(rawEmails).then(function(filtered){
 if(!filtered.length){showToast('All '+originalCount+' recipients filtered (opted out or at weekly limit)','info');return}
-if(filtered.length<originalCount){showToast('Sending to '+filtered.length+' of '+originalCount+' ('+(originalCount-filtered.length)+' at weekly limit or opted out)','info')}
 opts.customEmails=filtered.join('\n');
+opts._filterInfo=filtered.length<originalCount?{shown:filtered.length,total:originalCount,skipped:originalCount-filtered.length}:null;
 _sgSetupEmailInner(opts);
-});return}
+}).catch(function(err){console.error('Filter error:', err);_sgSetupEmailInner(opts)});return}
 _sgSetupEmailInner(opts);
 }
 function _sgSetupEmailInner(opts){
@@ -97,6 +96,7 @@ h+='<button class="sg-modal-close" onclick="document.getElementById(\u0027sg-ema
 h+='<h3 style="margin:0 0 6px;font-size:17px;color:var(--text)">Compose Email</h3>';
 h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:12px;color:var(--text-muted)">Sending to <span id="sg-recip-count" style="color:var(--teal);font-weight:600;cursor:pointer" onclick="var el=document.getElementById(\u0027sg-recipient-list\u0027);el.style.display=el.style.display===\u0027block\u0027?\u0027none\u0027:\u0027block\u0027">'+recipients.length+'</span> recipient'+(recipients.length!==1?'s':'')+' ';
 h+='<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 10px" onclick="var el=document.getElementById(\u0027sg-recipient-list\u0027);el.style.display=el.style.display===\u0027block\u0027?\u0027none\u0027:\u0027block\u0027">View/Edit List</button></div>';
+if(opts._filterInfo){h+='<div style="background:rgba(91,168,178,.1);border:1px solid rgba(91,168,178,.25);border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:12px;color:var(--teal)"><strong>'+opts._filterInfo.skipped+'</strong> of '+opts._filterInfo.total+' recipients filtered out (opted out or at weekly promo limit)</div>'}
 h+='<div id="sg-recipient-list" style="display:none;background:rgba(0,0,0,.2);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:14px"><div style="display:flex;gap:6px;margin-bottom:8px"><input type="email" id="sg-add-email" class="input" placeholder="Add email..." style="flex:1;font-size:12px" onkeydown="if(event.key===\u0027Enter\u0027)sgAddRecipient()"><button class="btn btn-ghost btn-sm" style="font-size:11px" onclick="sgAddRecipient()">+ Add</button></div><div id="sg-recip-chips" style="display:flex;flex-wrap:wrap;gap:2px;max-height:100px;overflow-y:auto">'+recipList+'</div></div>';
 h+='<div style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:4px;display:block">Subject</label>';
 h+='<input type="text" id="sg-subject" class="input" value="'+esc(opts.subject||'').replace(/"/g,'&quot;')+'" style="width:100%"></div>';
