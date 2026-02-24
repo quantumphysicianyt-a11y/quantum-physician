@@ -714,10 +714,12 @@ h+='<div id="sg-recipient-list" style="display:none;background:rgba(0,0,0,.2);bo
 h+='<div style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:4px;display:block">Subject</label>';
 h+='<input type="text" id="sg-subject" class="input" value="'+esc(opts.subject||'').replace(/"/g,'&quot;')+'" style="width:100%"></div>';
 h+='<div style="margin-bottom:6px"><label style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:4px;display:block">Body</label>';
-h+='<div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">';
+h+='<div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;align-items:center">';
 h+='<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 8px" onclick="sgInsertVar(\u0027{{name}}\u0027)">Name</button>';
 h+='<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 8px" onclick="sgInsertVar(\u0027{{email}}\u0027)">Email</button>';
 h+='<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 8px" onclick="sgInsertVar(\u0027{{referral_code}}\u0027)">Referral Code</button>';
+h+='<span style="flex:1"></span>';
+h+='<span id="sg-section-controls" style="display:none;font-size:11px;color:var(--text-dim);display:flex;align-items:center;gap:4px">Cards: <button class="btn btn-ghost btn-sm" style="font-size:11px;padding:2px 8px" onclick="sgSwapSections()" title="Swap card order">\u2195 Swap</button></span>';
 h+='</div>';
 h+='<textarea id="sg-body" class="input" rows="10" style="width:100%;font-size:13px;line-height:1.6" oninput="sgAutoPreview()">'+esc(opts.body||'')+'</textarea></div>';
 h+='<div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap">';
@@ -741,7 +743,7 @@ h+='</div>';
 box.innerHTML=h;
 ov.appendChild(box);document.body.appendChild(ov);
 /* Auto-show preview on open */
-setTimeout(function(){sgPreview()},100);
+setTimeout(function(){sgPreview();sgUpdateSectionControls()},100);
 }
 
 function sgRemoveRecipient(btn,email){
@@ -814,6 +816,29 @@ textarea.value=sgStripDiscount(textarea.value);
 sgAutoPreview();
 }
 
+
+function sgSwapSections(){
+var textarea=document.getElementById('sg-body');
+if(!textarea)return;
+var body=textarea.value;
+var parts=body.split('\n---\n');
+if(parts.length<3)return;
+/* Swap parts[1] and parts[2] (and any further sections) */
+var main=parts[0];
+var sections=parts.slice(1);
+sections.reverse();
+textarea.value=main+'\n---\n'+sections.join('\n---\n');
+sgAutoPreview();
+showToast('Cards swapped','success');
+}
+
+function sgUpdateSectionControls(){
+var textarea=document.getElementById('sg-body');
+var ctrl=document.getElementById('sg-section-controls');
+if(!textarea||!ctrl)return;
+var parts=textarea.value.split('\n---\n');
+ctrl.style.display=parts.length>=3?'flex':'none';
+}
 function sgInsertVar(v){var ta=document.getElementById('sg-body');if(!ta)return;var s=ta.selectionStart,e=ta.selectionEnd,t=ta.value;ta.value=t.substring(0,s)+v+t.substring(e);ta.focus();ta.selectionStart=ta.selectionEnd=s+v.length}
 
 function sgGetDiscountConfig(){
@@ -845,6 +870,7 @@ clearTimeout(_sgPreviewTimer);
 _sgPreviewTimer=setTimeout(function(){
 var area=document.getElementById('sg-preview-area');
 if(area)sgPreview();
+sgUpdateSectionControls();
 },300);
 }
 
