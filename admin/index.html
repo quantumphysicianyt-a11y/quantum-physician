@@ -776,9 +776,17 @@ if(promo.discount_type==='percent')discountText='**'+promo.discount_percent+'% o
 else if(promo.discount_type==='fixed')discountText='**$'+promo.discount_fixed+' off** your next purchase!';
 else if(promo.discount_type==='set_price')discountText='Special price: **$'+promo.discount_set_price+'**!';
 }else{discountText='Special discount on your next purchase!'}
-var block='\n---\n'+discountText+'\n\nYour code: **'+code+'**\n\nThis offer is applied automatically when you use the link below.';
+var discBlock=discountText+'\n\nYour code: **'+code+'**\nThis offer is applied automatically when you use the link below.';
 var textarea=document.getElementById('sg-body');
-textarea.value=textarea.value.trimEnd()+'\n'+block;
+var body=textarea.value;
+var dividerIdx=body.indexOf('\n---\n');
+if(dividerIdx>=0){
+var before=body.substring(0,dividerIdx);
+var existing=body.substring(dividerIdx+5);
+textarea.value=before+'\n---\n'+discBlock+'\n\n'+existing;
+}else{
+textarea.value=body.trimEnd()+'\n---\n'+discBlock;
+}
 textarea.scrollTop=textarea.scrollHeight;
 showToast('Discount pitch added to email body','success');
 }
