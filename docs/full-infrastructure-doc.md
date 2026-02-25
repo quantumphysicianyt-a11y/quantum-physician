@@ -299,7 +299,7 @@ Community page → "Moderators" tab (third tab after Academy Discussions and Fus
 | `stripe-refund.js` | Stripe refund processing | ✅ Live |
 | `academy-checkout.js` | Academy checkout with prorated bundles | ✅ Live |
 | `academy-webhook.js` | Academy purchase processing | ✅ Live |
-| `admin-auth.js` | Optional server-side admin auth | Created Session 9, not deployed |
+| `admin-auth.js` | Server-side admin auth (primary login path) | Created Session 9, deployed Session 12 |
 
 ---
 
@@ -422,7 +422,8 @@ quantum-physician/
 │   ├── stripe-refund.js
 │   ├── academy-checkout.js
 │   ├── academy-webhook.js
-│   └── admin-auth.js       ← Session 9 (optional, not deployed)
+│   ├── admin-auth.js       ← Session 9, deployed Session 12 (primary login)
+│   └── admin-proxy.js      ← Session 12 (proxies all admin Supabase ops server-side)
 ├── academy/                ← Academy student-facing pages
 ├── fusion/                 ← Fusion Sessions pages
 └── netlify.toml
@@ -440,7 +441,10 @@ quantum-physician/
 6. **Auth user fetch** — `listUsers` pagination works but untested past 1000 users
 7. **Academy referral hub page doesn't exist** — will 404
 8. **Card Library not built** — Todd wants pre-built email card blocks (future session)
-9. **`admin-auth.js` not deployed** — Optional server-side auth for enhanced security
+9. ~~`admin-auth.js` not deployed~~ — **DEPLOYED Session 12.** Primary admin login path.
+10. **`admin-proxy.js` deployed Session 12** — Proxies ALL admin Supabase operations server-side. Service key never touches browser.
+11. **Security headers deployed** — `_headers` file in root of both QP and Fusion repos.
+12. **Service key rotated** — Old exposed key invalidated. New key in Netlify env vars only.
 10. **Brave browser autofill** — Ignores autocomplete=off. Decided not to fight it.
 
 ## Session 10B Updates
@@ -491,3 +495,41 @@ quantum-physician/
 - **DB truth**: In `auth.users` table, `raw_user_meta_data` DOES contain `marketing_opt_in` — but the JS Auth API may return it differently. Always check `user_metadata` first in JavaScript.
 - New constants: FUSION_IMAGES, FUSION_SHORT (~12 lines)
 - New functions: autoCreatePromo, filterGoalRecipients, getSessionImageBlock, getNextSessionProductId, imgTokenReplace, weeklyGoalAction, loadWeeklyGoals, completeManualGoal, getWeekStart, getWeekKey (~120 lines)
+
+
+## Security Architecture (Session 12)
+
+### Authentication Flow
+1. User enters email/password on admin login page
+2. `admin-auth.js` Netlify function verifies credentials + checks `admin_users` table
+3. Returns Supabase session token, stored in `sessionStorage.qp_admin_token`
+4. Fallback: direct `sb.auth.signInWithPassword()` if function unavailable
+
+### Admin Operations Flow
+1. Client calls `proxyFrom('table_name').select('*')` (or insert/update/delete)
+2. `proxyFrom()` builds payload and sends to `/.netlify/functions/admin-proxy`
+3. Auth token sent in `Authorization: Bearer` header
+4. `admin-proxy.js` verifies token via `sbAnon.auth.getUser()`, checks `admin_users.is_active`
+5. Executes operation using service role key (server-side only)
+6. Returns `{data, error}` response
+
+### Auth Admin API Flow (user management)
+1. Client calls `authAdminAPI('list_users'|'generate_link'|'update_user', params)`
+2. Routed through same `admin-proxy.js` with `type: 'auth_admin'`
+3. Proxy makes direct REST calls to Supabase Auth API using service key
+
+### Allowed Tables (admin-proxy.js)
+`admin_audit_log`, `admin_notes`, `admin_users`, `email_campaigns`, `email_tracking`, `profiles`, `promotions`, `purchases`, `qa_enrollments`, `qa_profiles`, `referral_codes`, `scheduled_emails`, `session_schedule`
+
+### Security Headers (_headers file)
+Both QP and Fusion repos have `_headers` in root:
+- X-Frame-Options: SAMEORIGIN
+- X-Content-Type-Options: nosniff  
+- X-XSS-Protection: 1; mode=block
+- Referrer-Policy: strict-origin-when-cross-origin
+- Permissions-Policy: camera=(), microphone=(), geolocation=()
+- Content-Security-Policy: frame-ancestors 'self'; object-src 'none'; base-uri 'self'
+
+### Environment Variables
+**QP Netlify:** SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
+**Fusion Netlify:** SUPABASE_URL, SUPABASE_SERVICE_KEY, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_KEY, ADMIN_PASSWORD

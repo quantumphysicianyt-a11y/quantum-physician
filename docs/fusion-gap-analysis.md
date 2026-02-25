@@ -188,3 +188,24 @@ All features from Fusion admin are now in QP admin. Zero gaps remain. **The QP a
 - **Cross-domain auth solved** with inline login form on referral hub
 - **Referral hub file**: `referral-hub.html` (root of QP repo, ~31KB)
 - **Academy dashboard file**: `Academy/dashboard.html` (note: capital A on Mac filesystem)
+
+
+## Session 12 Updates — Security + Recovery
+
+### Security Parity
+- ✅ Both QP and Fusion now have `_headers` security files deployed
+- ✅ Fusion `admin-actions.js` hardcoded password removed (uses `ADMIN_PASSWORD` env var)
+- ✅ Fusion Netlify env vars updated with rotated service key (3 variables)
+- ✅ Fusion admin still live as safety net (redirect page ready but not deployed)
+
+### Webhook Recovery
+- ✅ Recovery tool built in QP admin — cross-references Stripe payments with database
+- ✅ 34 customers recovered from Dec 15–Jan 30 webhook outage
+- ⚠️ Recovery emails need redesign (using wrong template, no product images, no how-to instructions)
+- ⚠️ Recovery emails not logged to `email_log` table
+
+### Remaining Fusion Admin Status
+- Fusion admin still accessible at fusionsessions.com/admin.html
+- Redirect page ready to deploy when confident in QP admin stability
+- Both admins read/write same Supabase database — no conflicts
+- Decision: Keep both live during active development as safety net

@@ -47,72 +47,73 @@ Todd (the founder/developer of Quantum Physician) and Claude have built this adm
 
 ---
 
-## Session 12 Completion Summary — Fusion Decommission + Auth Hardening
+## Session 12 Completion Summary — Security Hardening + Webhook Recovery
 
-### What Was Built (Session 12)
+### Security Hardening
 
-#### 1. Fusion Admin Decommission ✅
-- **Replaced `fusionsessions.com/admin.html`** (7,932 lines) with a branded redirect page
-- Redirect page uses Fusion's retro neon aesthetic (Righteous font, scanline overlay, gradient text)
-- Auto-redirects to `qp-homepage.netlify.app/admin/` after 3 seconds (meta refresh + JS backup)
-- Manual "Go to QP Admin →" button for immediate navigation
-- Includes "bookmark the new URL" reminder
-- **Redirect page is READY but not yet deployed** — Fusion admin stays live as a safety net while QP admin is still in active development. Deploy the redirect when Todd is confident QP is solid.
+#### 1. Service Key Removed from Client-Side ✅
+- **CRITICAL FIX**: `SUPABASE_SERVICE_KEY` was exposed in browser source on line 3 of admin.js
+- Anyone visiting the admin page could copy the "god key" and bypass all RLS policies
+- **Solution**: Built `admin-proxy.js` Netlify function — single server-side endpoint for all admin operations
+- 55 operations migrated: 50 `sbAdmin.from()` calls → `proxyFrom()`, 5 REST API calls → `authAdminAPI()`
+- Every request requires valid Supabase auth token, verified against `admin_users` table
+- Allowlisted 13 tables, writes require filter conditions
 
-#### 2. Admin Auth Netlify Function Wired Up ✅
-- **`admin-auth.js` fixed and connected** — was created in Session 9 but never used
-- **Critical bug fixed**: original function used service role client for `signInWithPassword()` (bypasses auth!)
-  - Now uses `sbAnon` (anon client) for auth operations
-  - Uses `sbAdmin` (service role) for data queries only
-  - Requires `SUPABASE_ANON_KEY` env var in Netlify (in addition to existing vars)
-- **`doAuth()` in admin.js refactored** to call `/.netlify/functions/admin-auth` first
-  - Falls back to direct Supabase auth if Netlify function is unreachable (network error)
-  - Stores auth token from Netlify function in `sessionStorage` as `qp_admin_token`
-  - Login flow: client → Netlify function → Supabase auth (anon) → admin_users check → return permissions + token
+#### 2. Service Key Rotated ✅
+- Generated new secret key in Supabase dashboard ("Publishable and secret API keys" → "+ New secret key" → named "admin-proxy")
+- Updated env vars in QP Netlify: `SUPABASE_SERVICE_ROLE_KEY`
+- Updated env vars in Fusion Netlify: `SUPABASE_SERVICE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_KEY`
+- Deleted old default secret key in Supabase — previously exposed key now dead
+- Google Apps Scripts unaffected (all use anon key only)
 
-#### 3. Fusion admin-actions.js Hardened ✅
-- **Removed hardcoded `QPfs#2026` password** from admin-actions.js Netlify function
-- Now requires `ADMIN_PASSWORD` env var to be set in Netlify
-- No fallback to hardcoded credentials
+#### 3. Security Headers Deployed ✅
+- `_headers` file in root of both QP and Fusion repos
+- Headers: X-Frame-Options (SAMEORIGIN), X-Content-Type-Options (nosniff), CSP (frame-ancestors, object-src, base-uri), Referrer-Policy (strict-origin-when-cross-origin), Permissions-Policy (camera/mic/geo blocked), X-XSS-Protection
+- SecurityHeaders.com grade improved from D → should now be A/B
 
-#### 4. Final Fusion Admin Audit ✅
-- Cross-referenced all 160+ Fusion functions against QP admin's 238+ functions
-- Compared all 7 Fusion sections against QP's 15 sections
-- **Result: Complete parity confirmed, zero missing features**
-- QP admin has 8 additional sections beyond Fusion (analytics, orders, referrals, sessions, audit, admin-users, academy, memberships)
+#### 4. Admin Auth Deployed ✅
+- `admin-auth.js` Netlify function now primary login path
+- Dual-client pattern: verifies credentials, checks `admin_users` table, returns session token
+- Token stored in `sessionStorage.qp_admin_token`, sent with every proxy request
+- Fallback to direct Supabase `signInWithPassword()` if function fails
 
-### Bugs Found & Fixed (Session 12)
+### Webhook Recovery
 
-#### Bug: admin-auth.js Used Service Role for signInWithPassword
-- **Symptom**: Would have bypassed password verification entirely
-- **Cause**: Same Session 9 bug pattern — `supabase.auth.signInWithPassword()` on service role client
-- **Fix**: Added separate `sbAnon` and `sbAdmin` clients in admin-auth.js
-- **New env var required**: `SUPABASE_ANON_KEY` must be set in Netlify env vars
+#### 5. Webhook Recovery Tool ✅
+- Built into admin panel — red "⚠ Recovery" button on Customers page, also Ctrl+Shift+R
+- Accepts `email|amount|product` format, cross-references against database
+- Shows missing purchases with checkboxes, auth status, profile status
+- "Grant Access to Selected" creates purchase records + sends branded email
+- "Load Known Missing" pre-fills the 34 customers from Stripe data analysis
+- Audit log entries created for each recovery grant
 
-### Architecture Decisions (Session 12)
-- **Netlify function for auth, direct Supabase for data** — pragmatic approach. Moving all 51 `sbAdmin` calls server-side would require building a full proxy function and is deferred to a future session.
-- **Fallback pattern in doAuth()** — if Netlify function is unreachable (e.g., local dev, network issue), falls back to direct Supabase auth. This prevents lockout during the transition period.
-- **Fusion admin replaced, not deleted** — redirect page preserves the URL and guides users to the new location.
+#### 6. 34 Customers Recovered ✅
+- Webhook was down ~Dec 15, 2025 – Jan 30, 2026
+- 16 bundle buyers ($500) and 18 individual session buyers ($45-50) affected
+- All now have purchase records in Supabase
+- Confirmation emails sent (though template needs redesign — see Session 13)
 
-### Security Audit Results (Session 12)
-- ⚠️ **Known tech debt**: `SUPABASE_SERVICE_KEY` is still exposed in client-side `admin.js` (line 3). Moving it fully server-side requires a dedicated proxy Netlify function for all data operations (~51 `sbAdmin` calls). Deferred to future session.
-- ✅ **Login path now goes through server-side function** (service key not needed for auth)
-- ✅ **Hardcoded passwords removed** from all Netlify functions
-- ✅ **Fusion admin decommissioned** — no more legacy credentials in production
-
-### Files Changed (Session 12)
-
+### Files Modified (Session 12)
 **QP Repo:**
-- `admin/admin.js` — `doAuth()` refactored to use Netlify function
-- `netlify/functions/admin-auth.js` — Fixed dual-client pattern (sbAnon + sbAdmin)
+- `admin/admin.js` — SERVICE_KEY removed, proxy wrappers, recovery tool, range/count support (337KB)
+- `admin/index.html` — Recovery button added to Customers, orders HTML fixed
+- `netlify/functions/admin-auth.js` — Deployed (from Session 9, fixed dual-client pattern)
+- `netlify/functions/admin-proxy.js` — NEW: Server-side proxy for all admin operations
+- `_headers` — NEW: Security headers file
+- `index.html` — Accidentally overwritten then restored from git (homepage)
 
 **Fusion Repo:**
-- `admin.html` — Replaced with redirect page to QP admin
-- `netlify/functions/admin-actions.js` — Removed hardcoded QPfs#2026 password
+- `netlify/functions/admin-actions.js` — Hardcoded password removed (uses env var `ADMIN_PASSWORD`)
+- `_headers` — NEW: Security headers file
 
-### Netlify Env Vars Required (Session 12)
-- `SUPABASE_ANON_KEY` — Must be added to QP Netlify site for admin-auth.js to work
-- `ADMIN_PASSWORD` — Must be set in Fusion Netlify site for admin-actions.js (no more hardcoded fallback)
+### Bugs Found & Fixed (Session 12)
+1. **Service key exposure** — CRITICAL. Removed from client JS, rotated key.
+2. **Audit log "q.range is not a function"** — `proxyFrom()` was missing `.range()` method. Added to client wrapper and proxy handler.
+3. **Orders page raw HTML code** — Broken `setTimeout` fragment in index.html. Cleaned up.
+4. **Modal stacking** — Recovery tool opened duplicate modals. Added removal of existing modal before creating new.
+5. **SyntaxError: Unexpected token ':'** — Missing `}` brace in `proxyFrom.range()` function. Fixed.
+6. **Homepage overwritten** — `git add index.html` committed a modified root index.html. Restored from previous commit.
+7. **401 errors after deploy** — Old session tokens from pre-proxy auth. Fixed by clearing sessionStorage.
 
 ---
 
@@ -247,12 +248,17 @@ Todd (the founder/developer of Quantum Physician) and Claude have built this adm
 - **Browser autofill left enabled** — After multiple attempts to block (autocomplete=off, readonly trick, data-lpignore), decided to leave autofill working. Fields use `type="email"` where appropriate.
 
 ### Known Issues (Session 12)
-1. **Service key in client-side JS** — `SUPABASE_SERVICE_KEY` is still on line 3 of admin.js. All 51 `sbAdmin` calls need to be routed through a server-side proxy function. This is the #1 security priority for Session 13.
-2. **Card Library not yet built** — Deferred to future session (custom card templates, preview thumbnails)
-3. **Referral code generation via anon client** — May need RLS insert policy on `referral_codes` if users can't generate codes from the referral hub. Could route through Netlify function instead.
-4. **Fusion referral hub redirect** — Updated on GitHub directly. Fusion dashboard "Open Sharing Tools" button still points to old local referral-hub.html (now redirects). Works but could be updated to link directly.
-5. **`SUPABASE_ANON_KEY` env var needed** — Must be added to QP Netlify site environment variables for `admin-auth.js` to work.
-6. **`ADMIN_PASSWORD` env var needed** — Must be set in Fusion Netlify site for `admin-actions.js` (hardcoded fallback removed).
+1. ~~File size ~405KB~~ — Code splitting done Session 10B (admin.css, admin.js, index.html)
+2. ~~`admin-auth.js` not wired in~~ — **DEPLOYED Session 12.** Now the primary login path.
+3. **Card Library enhancements** — Custom templates (save your own cards), card preview thumbnails in grid. Deferred.
+4. **Referral code generation via anon client** — May need RLS insert policy or Netlify function routing.
+5. **Fusion referral hub redirect** — Dashboard "Open Sharing Tools" still points to old local page (works via redirect).
+6. ~~Service key in client-side JS~~ — **FIXED Session 12.** All admin ops go through `admin-proxy.js`.
+7. **Recovery email template needs redesign** — Currently uses promo template (ugly). Needs clean confirmation template with product images, how-to instructions, and preview pipeline through Email Center.
+8. **Recovery tool needs deduplication** — Can currently double-grant and double-email. Should check for existing `webhook-recovery` purchases before granting.
+9. **Recovery emails not logged** — Emails sent via recovery tool bypass `email_log` table. Should log like Email Center campaigns.
+10. **`email-decode.min.js` 404** — Cloudflare email obfuscation injecting broken script. Disable in Netlify Post Processing settings.
+11. **Missing favicon.ico** — Minor cosmetic 404 on admin page.
 
 ---
 
@@ -266,7 +272,7 @@ Todd (the founder/developer of Quantum Physician) and Claude have built this adm
 ### Session 3 ✅ — Audit, Notes, Danger Zone
 
 ### Lessons Learned (IMPORTANT FOR ALL FUTURE SESSIONS)
-1. **ALWAYS use `sbAdmin` (service role) for ANY write operation.**
+1. ~~ALWAYS use `sbAdmin`~~ — **Session 12: `sbAdmin` removed.** All writes now go through `proxyFrom()` → `admin-proxy.js` server-side.
 2. **ALWAYS use `sb` (anon client) for `signInWithPassword()`** — sbAdmin bypasses auth.
 3. **Check RLS policies BEFORE writing to any table for the first time.**
 4. **After admin actions, reload data AND re-render**: `await loadAllData(); showCustomerDetail(email);`
@@ -276,16 +282,21 @@ Todd (the founder/developer of Quantum Physician) and Claude have built this adm
 8. **In ES modules (`type="module"`), use `window.fn = function()` for globally accessible functions.** Local `function` declarations are module-scoped and invisible to inline `onclick` handlers.
 9. **Cross-domain Supabase sessions don't share cookies.** Each domain needs its own auth flow. Inline login forms are better than redirects for cross-domain UX.
 10. **Terminal heredoc with HTML/JS is fragile.** Quote escaping breaks with complex content. Use Python base64+zlib for large file writes, or upload+edit workflow.
-11. **Netlify functions need SUPABASE_ANON_KEY too.** If a function does `signInWithPassword()`, it needs the anon key — service role bypasses auth. Add both keys to env vars.
-12. **Decommissioning strategy**: Replace old pages with branded redirect pages, not instant redirects. Give users a moment to see the message and bookmark the new URL.
+11. **Service keys belong server-side ONLY.** Never in browser JS, even behind login screens. If exposed, rotate immediately.
+12. **Key rotation is non-negotiable.** If a key was ever in client-side code (even briefly), generate a new one and delete the old.
+13. **Security audits before deployment.** Todd's instinct to audit before going live caught the critical service key exposure.
+14. **Proxy pattern scales well.** One Netlify function handling 55+ operations is cleaner than 55 separate endpoints.
+15. **`_headers` file in repo root** is the Netlify-native way to add security headers. No netlify.toml needed.
+16. **`git add` specific files only.** Adding `index.html` when it had uncommitted changes from a previous session accidentally overwrote the homepage.
+17. **Always `sessionStorage.clear()` after deploying auth changes.** Old tokens from pre-proxy sessions cause 401 errors.
 
 ---
 
 ## Updated Session Roadmap
 
-**Session 3–11 — ALL COMPLETED ✅**
+**Session 3–9 — ALL COMPLETED ✅**
 
-**Session 10 — Polish + Referral Hub + Auth Cleanup** ✅ COMPLETED
+**Session 10 — Polish + Referral Hub + Auth Cleanup** ← CURRENT
 - ✅ Remove legacy auth fallback (QPadmin/QPfs#2026) — SESSION 10
 - ✅ Unified Referral Hub (auto-themed, cross-domain auth) — SESSION 10
 - ✅ Academy dashboard referral hub link — SESSION 10
@@ -295,21 +306,59 @@ Todd (the founder/developer of Quantum Physician) and Claude have built this adm
 - ✅ Edit Session Schedule UI — was already built Session 7 (undocumented)
 
 **Session 11 — Weekly Goals + Rich Email Templates + Auto-Promo** ✅ COMPLETED
+- ✅ Weekly Marketing Goals widget on dashboard — 7 goal chips, auto-check from email_campaigns
+- ✅ Clickable goal chips open email compose modals with pre-built templates
+- ✅ Rich email templates with `---` card blocks (session images, strikethrough pricing, bullet lists)
+- ✅ `{{session_image:session-XX}}` token system for session thumbnails in email cards
+- ✅ FUSION_IMAGES map with all 12 session thumbnail URLs
+- ✅ Auto-promo generation per goal (WELCOME###/BUNDLE###/SESSION### unique codes)
+- ✅ filterGoalRecipients() — opt-out + weekly promo limit pre-filtering
+- ✅ sgSetupEmail wrapper auto-filters promotional emails for suggestions too
+- ✅ "Auto" badge on auto-generated promos in Promotions list
+- ✅ Gap analysis audit: Create Scheduled Email + Edit Session Schedule already existed from Session 7
+- ✅ Full Fusion parity achieved — zero gaps remain
 
-**Session 12 — Fusion Decommission + Auth Hardening** ✅ COMPLETED
-- ✅ Final Fusion admin audit (160+ functions cross-referenced, zero gaps)
-- ✅ Fusion admin.html replaced with branded redirect to QP admin
-- ✅ admin-auth.js Netlify function fixed (dual-client pattern) and wired into doAuth()
-- ✅ Hardcoded QPfs#2026 removed from Fusion admin-actions.js
-- ✅ Security audit documented (service key exposure noted as tech debt)
+**Session 11B — Critical Bug Fixes**
+- ✅ var hoisting closure bug: all suggestion cards shared same `var emails` — each card now uses unique variable (unusedRefEmails, bundleEmails2, etc.)
+- ✅ marketing_opt_in field: Supabase Auth API returns opt-in in `user_metadata`, NOT `raw_user_meta_data` — all 12 opt-in checks updated to `(u.user_metadata||u.raw_user_meta_data||{}).marketing_opt_in`
+- ✅ filterGoalRecipients: removed `user_metadata` fallback check that was double-counting opt-outs
+- ✅ Debug logging cleaned up for production
 
-**Session 13+ — Course Builder, Service Key Migration, AI Copilot, Memberships, Assessments, Ecommerce**
-- Priority: Move SUPABASE_SERVICE_KEY server-side (build admin-proxy Netlify function)
-- Course Builder (Academy content management from admin)
-- AI Copilot for email/content generation
-- Membership tiers
-- Client assessments/intake forms
-- Ecommerce expansion (digital products beyond courses/sessions)
+**Session 12 — Security Hardening + Webhook Recovery** ✅ COMPLETED
+- ✅ Supabase SERVICE_ROLE_KEY removed from client-side admin.js entirely
+- ✅ New `admin-proxy.js` Netlify function — single endpoint proxying all 55 admin Supabase operations server-side
+- ✅ `proxyFrom()` client wrapper replaces all `sbAdmin.from()` calls
+- ✅ `authAdminAPI()` wrapper replaces all direct `/auth/v1/admin` REST API calls
+- ✅ Token-based auth — every proxy request verified against `admin_users`
+- ✅ Allowlisted tables (13) — proxy rejects operations on non-admin tables
+- ✅ Write operations require filters — no unfiltered bulk ops allowed
+- ✅ Service key rotated in Supabase — old exposed key deleted/invalidated
+- ✅ All Netlify env vars updated (QP + Fusion) with new rotated key
+- ✅ `admin-auth.js` Netlify function deployed and wired as primary login path
+- ✅ Hardcoded password removed from Fusion `admin-actions.js`
+- ✅ Security headers (`_headers` file) deployed to both repos: X-Frame-Options, X-Content-Type-Options, CSP, Referrer-Policy, Permissions-Policy
+- ✅ Security scans clean: Sucuri (no malware, not blacklisted), SecurityHeaders.com (headers applied)
+- ✅ Webhook Recovery Tool built — analyzes Stripe payments vs database, bulk-grants access with email
+- ✅ 34 customers recovered from webhook outage (Dec 15, 2025 – Feb 24, 2026)
+- ✅ Audit log fixed (proxy `.range()` and `.select({count})` support added)
+- ✅ Orders page HTML fixed (broken code fragment removed)
+
+**Session 13 — Recovery Email Redesign + Customer Onboarding** ← PRIORITY
+- 🔴 **Recovery email template redesign** — Replace ugly promo template with clean purchase confirmation
+  - Show actual product name and image (not "session-1")
+  - Step-by-step "How to access your purchase" instructions
+  - "Create account using the email you purchased with" guidance
+  - fusionsessions.com link, dashboard walkthrough
+  - Preview pipeline: Recovery tool → Email Center (pre-loaded template + recipients) → Review → Send
+  - Log all recovery emails to `email_log` table
+- 🔴 **Recovery tool deduplication** — Check for existing `webhook-recovery` purchases before granting
+- 🔴 **Recovery tool UX** — Add clear/reload button, prevent modal stacking (partially fixed)
+- 🟡 **Better name parsing** — Extract proper first name from email (not "Brucekruger")
+- 🟡 **Product display names in recovery** — "Session 1: Opening & Orientation" not "session-1"
+- 🟡 **Disable Netlify email obfuscation** — Fixes `email-decode.min.js` 404
+- 🟡 **Add favicon.ico** to QP repo
+
+**Session 14+ — Course Builder, AI Copilot, Memberships, Assessments, Ecommerce, Multi-Instructor**
 
 ---
 
