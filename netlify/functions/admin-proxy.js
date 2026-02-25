@@ -3,7 +3,7 @@ const { createClient } = require("@supabase/supabase-js");
 
 const ALLOWED_TABLES = [
   "admin_audit_log", "admin_notes", "admin_users",
-  "email_campaigns", "email_tracking", "profiles",
+  "email_campaigns", "email_log", "email_tracking", "profiles",
   "promotions", "purchases", "qa_enrollments", "qa_profiles",
   "referral_codes", "scheduled_emails", "session_schedule"
 ];

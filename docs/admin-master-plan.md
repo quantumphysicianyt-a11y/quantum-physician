@@ -43,7 +43,7 @@ Todd (the founder/developer of Quantum Physician) and Claude have built this adm
 - The truncation happens mid-function in `showCustomerDetail()` which is an extremely long single line
 - Future sessions should verify the file ending is intact after upload, and reconstruct if needed
 
-**Last updated:** Session 12 (Feb 24, 2026)
+**Last updated:** Session 13 (Feb 24, 2026)
 
 ---
 
@@ -254,9 +254,9 @@ Todd (the founder/developer of Quantum Physician) and Claude have built this adm
 4. **Referral code generation via anon client** — May need RLS insert policy or Netlify function routing.
 5. **Fusion referral hub redirect** — Dashboard "Open Sharing Tools" still points to old local page (works via redirect).
 6. ~~Service key in client-side JS~~ — **FIXED Session 12.** All admin ops go through `admin-proxy.js`.
-7. **Recovery email template needs redesign** — Currently uses promo template (ugly). Needs clean confirmation template with product images, how-to instructions, and preview pipeline through Email Center.
-8. **Recovery tool needs deduplication** — Can currently double-grant and double-email. Should check for existing `webhook-recovery` purchases before granting.
-9. **Recovery emails not logged** — Emails sent via recovery tool bypass `email_log` table. Should log like Email Center campaigns.
+7. ~~Recovery email template needs redesign~~ — **FIXED Session 13.** Clean confirmation template with product images, how-to instructions, auth-aware guidance.
+8. ~~Recovery tool needs deduplication~~ — **FIXED Session 13.** Checks for existing `webhook-recovery` purchases, shows "Already Recovered" badge, warns before re-granting.
+9. ~~Recovery emails not logged~~ — **FIXED Session 13.** All recovery emails logged to `email_log` table with `template_type: 'recovery'`.
 10. **`email-decode.min.js` 404** — Cloudflare email obfuscation injecting broken script. Disable in Netlify Post Processing settings.
 11. **Missing favicon.ico** — Minor cosmetic 404 on admin page.
 
@@ -265,6 +265,60 @@ Todd (the founder/developer of Quantum Physician) and Claude have built this adm
 ## Previous Session Summaries
 
 ### Session 8 ✅ — Smart Suggestions + Email Compose + Multi-Card Emails
+
+## Session 13 Completion Summary — Recovery Email Redesign + Dedup + Logging
+
+### What Was Built (Session 13)
+
+#### 1. Recovery Email Template Redesign ✅
+- **Complete rewrite of recovery email** — replaces ugly promo-style template with clean purchase confirmation
+- **Product images** via `{{session_image:session-XX}}` tokens rendered by `buildRichEmail()`
+- **How-to instructions** in a neon-bordered card block: visit site → login/signup → dashboard → start
+- **Auth-aware guidance**: checks `hasAuth` field — "Sign in" for existing users, "Create an account" for new users
+- **Bundle vs individual**: different subject lines and instructions ("all 12 sessions" vs "your session")
+- **Better subject lines**: "Your Fusion Sessions Bundle Is Ready!" / "Your Fusion Session Is Ready — S1: Intolerance & Sensitivity"
+
+#### 2. Recovery Tool Deduplication ✅
+- **`hasRecoveryPurchase` check** in `wrAnalyze()` — scans `purchasesData` for existing `webhook-recovery` stripe_event_ids
+- **"Already Recovered" badge** shown in analysis table (yellow warning style vs red "No Purchase Record")
+- **Duplicate warning dialog** — if any selected customers already have recovery records, shows confirmation prompt before proceeding
+- **Does not block re-granting** — just warns. Useful if a recovery failed and needs retry.
+
+#### 3. Recovery Email Logging ✅
+- **`email_log` table inserts** after each successful email send
+- Fields: `recipient_email`, `subject`, `status: 'sent'`, `sent_at`, `template_type: 'recovery'`
+- **`email_log` added to `admin-proxy.js` ALLOWED_TABLES** — was missing, would have caused proxy rejection
+
+#### 4. Product ID Normalization ✅
+- **`wrNormalizeProduct()` helper** — converts `session-1` → `session-01`, `session-2` → `session-02`, etc.
+- Applied in `wrAnalyze()` so all product IDs match `FUSION_NAMES` / `FUSION_IMAGES` keys
+- **All 34 hardcoded recovery entries** in `wrLoadStripeData()` fixed from `session-1` to `session-01`
+- **Placeholder text** in recovery tool textarea updated
+
+#### 5. Better Name Parsing ✅
+- **`wrParseName()` helper** — extracts first name from email address
+- Strips numbers, splits on dots/underscores/hyphens, capitalizes each word, returns first word
+- `brucekruger@sasktel.net` → "Brucekruger" (before) → "Bruce" (after, if "bruce.kruger" format)
+- Falls back to "Friend" if no alphabetic content
+
+#### 6. UX Improvements ✅
+- **Clear button** added to recovery tool modal (clears textarea + results)
+- **Progress counter** shows "(3/34)" during batch processing
+- **Email count in summary** — "Done: 3 granted, 0 failed, 3 emails sent"
+- **Purchases insert via `proxyFrom()`** — was using `sb.from()` directly (bypassing proxy security)
+
+### Files Modified (Session 13)
+**QP Repo:**
+- `admin/admin.js` — Recovery tool rewrite, helpers, dedup, email logging (346KB, up from 345KB)
+- `netlify/functions/admin-proxy.js` — Added `email_log` to ALLOWED_TABLES
+
+### Bugs Found & Fixed (Session 13)
+1. **Product ID mismatch** — Recovery tool used `session-1` format but `FUSION_NAMES`/`FUSION_IMAGES` use `session-01`. `productName()` returned raw ID "session-1" instead of display name. Fixed with `wrNormalizeProduct()`.
+2. **Recovery purchases used `sb.from()` directly** — Bypassed the proxy security layer added in Session 12. Changed to `proxyFrom('purchases').insert()`.
+3. **`email_log` not in proxy allowed tables** — Would have caused 400 error when trying to log recovery emails. Added to ALLOWED_TABLES.
+4. **Name parsing was naive** — `email.split('@')[0].replace(/[._]/g,' ')` produced "Brucekruger" from "brucekruger@". New `wrParseName()` is smarter about extracting first names.
+
+
 ### Session 7 ✅ — Analytics Dashboard + Reports + Custom Query
 ### Session 6 ✅ — Rich HTML Email + Automation + Academy Template
 ### Session 5 ✅ — Promotions & Orders (+ Edit Promotions + Refund UI)
@@ -343,20 +397,26 @@ Todd (the founder/developer of Quantum Physician) and Claude have built this adm
 - ✅ Audit log fixed (proxy `.range()` and `.select({count})` support added)
 - ✅ Orders page HTML fixed (broken code fragment removed)
 
-**Session 13 — Recovery Email Redesign + Customer Onboarding** ← PRIORITY
-- 🔴 **Recovery email template redesign** — Replace ugly promo template with clean purchase confirmation
-  - Show actual product name and image (not "session-1")
-  - Step-by-step "How to access your purchase" instructions
-  - "Create account using the email you purchased with" guidance
-  - fusionsessions.com link, dashboard walkthrough
-  - Preview pipeline: Recovery tool → Email Center (pre-loaded template + recipients) → Review → Send
-  - Log all recovery emails to `email_log` table
-- 🔴 **Recovery tool deduplication** — Check for existing `webhook-recovery` purchases before granting
-- 🔴 **Recovery tool UX** — Add clear/reload button, prevent modal stacking (partially fixed)
-- 🟡 **Better name parsing** — Extract proper first name from email (not "Brucekruger")
-- 🟡 **Product display names in recovery** — "Session 1: Opening & Orientation" not "session-1"
-- 🟡 **Disable Netlify email obfuscation** — Fixes `email-decode.min.js` 404
-- 🟡 **Add favicon.ico** to QP repo
+**Session 13 — Recovery Email Redesign + Dedup + Logging** ✅ COMPLETED
+- ✅ Recovery email template completely redesigned — clean confirmation with product images, how-to instructions, conditional auth guidance
+- ✅ `{{session_image:session-XX}}` tokens in recovery emails for product thumbnails
+- ✅ Step-by-step "How to access" instructions (visit site → login/create account → dashboard → start)
+- ✅ Smart auth detection: email says "Sign in" for existing users, "Create an account" for new users
+- ✅ Bundle vs individual session email variants (subject line + instructions differ)
+- ✅ Recovery tool deduplication — checks for existing `webhook-recovery` purchases, shows "Already Recovered" badge
+- ✅ Duplicate warning dialog before re-granting already-recovered customers
+- ✅ Recovery emails now logged to `email_log` table (template_type: 'recovery')
+- ✅ `email_log` added to admin-proxy.js ALLOWED_TABLES
+- ✅ `wrParseName()` — smart first-name extraction from email (strips numbers, splits on dots/underscores, takes first word)
+- ✅ `wrNormalizeProduct()` — normalizes `session-1` → `session-01` format for FUSION_NAMES compatibility
+- ✅ All hardcoded recovery data fixed (34 entries: session-1 → session-01)
+- ✅ Clear button added to recovery tool modal
+- ✅ Progress counter shows (N/M) during batch processing
+- ✅ Email count in completion summary ("3 granted, 0 failed, 3 emails sent")
+- ✅ Purchases now insert via `proxyFrom()` instead of direct `sb.from()` (security consistency)
+
+**Session 13 — Recovery Email Redesign + Customer Onboarding** ✅ COMPLETED
+- See completion summary above
 
 **Session 14+ — Course Builder, AI Copilot, Memberships, Assessments, Ecommerce, Multi-Instructor**
 
