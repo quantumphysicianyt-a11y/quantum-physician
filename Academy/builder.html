@@ -829,7 +829,7 @@ function slugify(text) {
 // --- Load Courses ---
 async function loadCourses() {
   try {
-    const res = await proxyFrom('qa_courses').select('*').order('sort_order');
+    const res = await sb.from('qa_courses').select('*').order('sort_order');
     allCourses = res.data || [];
     renderCourseList();
     if (!selectedCourseId && allCourses.length) {
@@ -875,7 +875,7 @@ function showEmptyState() {
 // --- Select Course ---
 async function selectCourse(id) {
   if (hasUnsavedChanges) {
-    if (!confirm('You have unsaved changes. Discard them?')) return;
+    if (!await qpConfirm('Unsaved Changes', 'You have unsaved changes. Discard them?', {okText: 'Discard', danger: true})) return;
   }
   selectedCourseId = id;
   hasUnsavedChanges = false;
@@ -886,7 +886,7 @@ async function selectCourse(id) {
 
   // Load modules + lessons
   try {
-    const modRes = await proxyFrom('qa_modules')
+    const modRes = await sb.from('qa_modules')
       .select('*, qa_lessons(*)')
       .eq('course_id', id)
       .order('sort_order');
@@ -1164,7 +1164,7 @@ async function saveCourse() {
 
 // --- Create Course ---
 async function createNewCourse() {
-  const title = prompt('Course title:');
+  const title = await qpPrompt('New Course', 'Enter a course title');
   if (!title) return;
 
   try {
@@ -1197,7 +1197,7 @@ async function createNewCourse() {
 // --- Delete Course ---
 async function deleteCourse(id) {
   const course = allCourses.find(c => c.id === id);
-  if (!confirm(`Delete "${course.title}"? This will also delete all modules and lessons. This cannot be undone.`)) return;
+  if (!await qpConfirm('Delete Course', `Delete "${course.title}"? This will also delete all modules and lessons. This cannot be undone.`, {okText: 'Delete Course', danger: true})) return;
 
   try {
     // Delete lessons first, then modules, then course
@@ -1220,7 +1220,7 @@ async function deleteCourse(id) {
 
 // --- Add Module ---
 async function addModule() {
-  const title = prompt('Module title:');
+  const title = await qpPrompt('New Module', 'Enter a module title');
   if (!title) return;
 
   try {
@@ -1243,7 +1243,7 @@ async function addModule() {
 async function editModule(moduleId) {
   const mod = courseModules.find(m => m.id === moduleId);
   if (!mod) return;
-  const title = prompt('Module title:', mod.title);
+  const title = await qpPrompt('Edit Module', 'Module title', mod.title);
   if (title === null) return;
 
   try {
@@ -1260,7 +1260,7 @@ async function deleteModule(moduleId) {
   const mod = courseModules.find(m => m.id === moduleId);
   if (!mod) return;
   const lessonCount = (mod.qa_lessons || []).length;
-  if (!confirm(`Delete module "${mod.title}"${lessonCount ? ' and its ' + lessonCount + ' lesson(s)' : ''}?`)) return;
+  if (!await qpConfirm('Delete Module', `Delete module "${mod.title}"${lessonCount ? ' and its ' + lessonCount + ' lesson(s)' : ''}?`, {okText: 'Delete', danger: true})) return;
 
   try {
     for (const l of (mod.qa_lessons || [])) {
@@ -1384,7 +1384,7 @@ async function saveLesson(moduleId, lessonId) {
 
 // --- Delete Lesson ---
 async function deleteLesson(lessonId, moduleId) {
-  if (!confirm('Delete this lesson?')) return;
+  if (!await qpConfirm('Delete Lesson', 'Delete this lesson?', {okText: 'Delete', danger: true})) return;
   try {
     await proxyFrom('qa_lessons').delete().eq('id', lessonId);
     await selectCourse(selectedCourseId);
@@ -1478,6 +1478,87 @@ async function dropLesson(e, targetLessonId, targetModuleId) {
   }
   dragLessonId = null;
   dragLessonModuleId = null;
+}
+
+// --- Themed Confirm Modal ---
+function qpConfirm(title, message, opts = {}) {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal" style="max-width:420px">
+        <div class="modal-head">
+          <h3>${title}</h3>
+          <button class="modal-close" data-action="cancel">${ICONS.x}</button>
+        </div>
+        <div class="modal-body">
+          <p style="font-size:14px;color:var(--text-muted);line-height:1.6">${message}</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" data-action="cancel">Cancel</button>
+          <button class="btn ${opts.danger ? 'btn-danger' : 'btn-primary'}" data-action="ok">${opts.okText || 'Confirm'}</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add('open'));
+
+    overlay.addEventListener('click', e => {
+      const action = e.target.dataset.action || e.target.closest('[data-action]')?.dataset.action;
+      if (action === 'cancel' || e.target === overlay) {
+        overlay.remove(); resolve(false);
+      } else if (action === 'ok') {
+        overlay.remove(); resolve(true);
+      }
+    });
+  });
+}
+
+// --- Themed Prompt Modal ---
+function qpPrompt(title, placeholder, defaultVal) {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal" style="max-width:420px">
+        <div class="modal-head">
+          <h3>${title}</h3>
+          <button class="modal-close" data-action="cancel">${ICONS.x}</button>
+        </div>
+        <div class="modal-body">
+          <div class="field-group">
+            <input type="text" id="qp-prompt-input" value="${esc(defaultVal || '')}" placeholder="${esc(placeholder || '')}">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" data-action="cancel">Cancel</button>
+          <button class="btn btn-primary" data-action="ok">OK</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => { overlay.classList.add('open'); document.getElementById('qp-prompt-input').focus(); });
+
+    const submit = () => {
+      const val = document.getElementById('qp-prompt-input').value.trim();
+      overlay.remove();
+      resolve(val || null);
+    };
+
+    document.getElementById('qp-prompt-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') submit();
+      if (e.key === 'Escape') { overlay.remove(); resolve(null); }
+    });
+
+    overlay.addEventListener('click', e => {
+      const action = e.target.dataset.action || e.target.closest('[data-action]')?.dataset.action;
+      if (action === 'cancel' || e.target === overlay) {
+        overlay.remove(); resolve(null);
+      } else if (action === 'ok') {
+        submit();
+      }
+    });
+  });
 }
 
 // Warn on page leave with unsaved changes

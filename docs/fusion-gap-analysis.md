@@ -10,7 +10,7 @@
 ## 📋 SESSION HANDOFF PROTOCOL — READ THIS FIRST
 This doc is 1 of 3 that must be updated at the end of every build session and uploaded at the start of every new chat. These documents represent a shared collaboration between Todd and Claude across 9 sessions — treat them with care and keep them accurate.
 
-**Last updated:** Session 13 (Feb 24, 2026)
+**Last updated:** Session 10 (Feb 24, 2026)
 
 ---
 
@@ -104,17 +104,6 @@ All features from Fusion admin are now in QP admin. Zero gaps remain. **The QP a
 - "Auto" badge on auto-generated promos in Promotions list
 - FUSION_IMAGES + FUSION_SHORT constants for all 12 session thumbnails
 
-### Session 13 Additions (Recovery Redesign)
-- `wrParseName()` — smart first-name extraction from email addresses
-- `wrNormalizeProduct()` — normalizes session-1 → session-01 for FUSION_NAMES compatibility
-- Recovery email template with product images, how-to instructions, auth-aware guidance
-- Recovery tool deduplication with "Already Recovered" badge and warning dialog
-- Recovery emails logged to `email_log` table (template_type: 'recovery')
-- `email_log` added to admin-proxy.js ALLOWED_TABLES
-- Clear button in recovery tool modal
-- Progress counter and email count in batch summary
-- Recovery purchases now insert via `proxyFrom()` (proxy security)
-
 ### Critical Bug Fixes (Session 11B)
 - var hoisting: unique variable names per suggestion card closure
 - marketing_opt_in: check `user_metadata` first (Supabase Auth API quirk), `raw_user_meta_data` as fallback
@@ -158,16 +147,15 @@ All features from Fusion admin are now in QP admin. Zero gaps remain. **The QP a
 | `email_tracking` | Session 4 | INSERT |
 | `promotions` | Session 5 | INSERT, UPDATE, DELETE |
 | `scheduled_emails` | Session 6 | UPDATE |
-| `email_log` | Session 13 | INSERT (recovery email logging) |
 | `admin_users` | Session 9 | SELECT, INSERT, UPDATE |
 
 ---
 
 ## Updated Session Roadmap (Post-Session 9)
 
-### Session 3–13 — ALL COMPLETED ✅
+### Session 3–11 — ALL COMPLETED ✅
 
-### Session 14+ — Course Builder, AI Copilot, Memberships, Assessments, Ecommerce
+### Session 12+ — Course Builder, AI Copilot, Memberships, Assessments, Ecommerce
 
 ---
 
@@ -221,3 +209,34 @@ All features from Fusion admin are now in QP admin. Zero gaps remain. **The QP a
 - Redirect page ready to deploy when confident in QP admin stability
 - Both admins read/write same Supabase database — no conflicts
 - Decision: Keep both live during active development as safety net
+
+## Session 13 Updates — Recovery Email Redesign + Onboarding
+
+### Recovery Tool → Email Center Integration
+- ✅ Recovery tool now routes through sgSetupEmail compose flow (no blind emails)
+- ✅ "Compose Email for All" button — sends how-to instructions to all listed customers
+- ✅ Dynamic Grant button text reflects compose vs grant-only mode
+- ✅ Deduplication: checks for existing webhook-recovery purchases, shows "Already Recovered" badge
+- ✅ wrParseName: smart first-name extraction from email addresses
+- ✅ wrNormalizeProduct: session-1 → session-01 normalization
+
+### buildRichEmail CTA Improvements
+- ✅ New CTA detection: "Dashboard", "Log In", "access your" → "GO TO DASHBOARD" button → /login.html
+- ✅ Subtitle: "Sign in to access your content" instead of "Applied automatically at checkout"
+- ✅ Works for both first card and additional cards in email renderer
+
+### Card Library Additions
+- ✅ Purchase Confirmation — 4-step how-to-access instructions
+- ✅ Getting Started Tips — actionable bullet points for new customers
+- ✅ Session Product — individual session with {{session_image:session-XX}} token
+- ✅ Bundle Product — full bundle with {{session_image:bundle-all}} token
+
+### Proxy Updates
+- ✅ email_log added to ALLOWED_TABLES in admin-proxy.js
+
+### Static Assets
+- ✅ favicon.ico — transparent lotus, multi-size (16/32/48/256px)
+- ✅ apple-touch-icon.png — 180px lotus
+- ✅ netlify.toml — build config + security headers
+
+### Sessions 3–13 Status: ALL COMPLETED

@@ -3,7 +3,7 @@
 ## 📋 SESSION HANDOFF PROTOCOL
 This doc is 1 of 3 that must be updated at the end of every build session. These documents are a shared collaboration between Todd and Claude — they capture the accumulated knowledge of 9 build sessions. Keep them accurate and thorough.
 
-**Last updated:** Session 13 (Feb 24, 2026)
+**Last updated:** Session 11 (Feb 24, 2026)
 
 ---
 
@@ -148,13 +148,6 @@ Old username "QPadmin" / password "QPfs#2026" still works as fallback. Grants su
 | `scheduled_emails` | sb | sbAdmin | Yes | **RLS applied SESSION 9** |
 | `email_log` | sb | sbAdmin | Yes | **RLS applied SESSION 9** |
 | `session_schedule` | sb | — | Yes | **RLS applied SESSION 9** Read-only |
-
-### `email_log` Table Writes (Session 13)
-Recovery emails are now logged to `email_log` via `proxyFrom('email_log').insert()` with fields:
-- `recipient_email`, `subject`, `status` ('sent'), `sent_at`, `template_type` ('recovery')
-
-### Allowed Tables in admin-proxy.js (Session 13 update)
-`admin_audit_log`, `admin_notes`, `admin_users`, `email_campaigns`, `email_log`, `email_tracking`, `profiles`, `promotions`, `purchases`, `qa_enrollments`, `qa_profiles`, `referral_codes`, `scheduled_emails`, `session_schedule`
 
 ### `admin_users` Table (Session 9)
 ```sql
@@ -504,33 +497,6 @@ quantum-physician/
 - New functions: autoCreatePromo, filterGoalRecipients, getSessionImageBlock, getNextSessionProductId, imgTokenReplace, weeklyGoalAction, loadWeeklyGoals, completeManualGoal, getWeekStart, getWeekKey (~120 lines)
 
 
-## Session 13 Updates — Recovery Email Redesign + Dedup + Logging
-
-### Recovery Tool Helpers
-- `wrParseName(email)` — Extracts first name from email (strips numbers, splits on delimiters, capitalizes, returns first word)
-- `wrNormalizeProduct(pid)` — Normalizes `session-1` → `session-01` format to match FUSION_NAMES keys
-
-### Recovery Email Template
-- Uses `buildRichEmail()` with `{{session_image:session-XX}}` tokens for product thumbnails
-- Two card sections via `---` separator: product info card + how-to-access instructions card
-- Auth-aware: checks `r.hasAuth` to show "Sign in" vs "Create an account" guidance
-- Bundle variant: different subject line, "all 12 sessions" messaging
-- Subject lines: "Your Fusion Sessions Bundle Is Ready!" / "Your Fusion Session Is Ready — {product name}"
-
-### Deduplication
-- `wrAnalyze()` checks for existing `webhook-recovery-*` stripe_event_ids in purchasesData
-- "Already Recovered" badge (yellow warning) shown for duplicates in analysis table
-- `wrGrantAll()` shows duplicate warning dialog before re-granting
-- Does not block re-granting — allows retry for failed recoveries
-
-### Email Logging
-- Recovery emails logged to `email_log` table after successful send
-- Fields: `recipient_email`, `subject`, `status`, `sent_at`, `template_type: 'recovery'`
-- `email_log` added to `admin-proxy.js` ALLOWED_TABLES (was missing)
-
-### File Size
-- `admin.js` ~347KB (up from ~345KB)
-
 ## Security Architecture (Session 12)
 
 ### Authentication Flow
@@ -552,8 +518,8 @@ quantum-physician/
 2. Routed through same `admin-proxy.js` with `type: 'auth_admin'`
 3. Proxy makes direct REST calls to Supabase Auth API using service key
 
-### Allowed Tables (admin-proxy.js — updated Session 13)
-`admin_audit_log`, `admin_notes`, `admin_users`, `email_campaigns`, `email_log`, `email_tracking`, `profiles`, `promotions`, `purchases`, `qa_enrollments`, `qa_profiles`, `referral_codes`, `scheduled_emails`, `session_schedule`
+### Allowed Tables (admin-proxy.js)
+`admin_audit_log`, `admin_notes`, `admin_users`, `email_campaigns`, `email_tracking`, `profiles`, `promotions`, `purchases`, `qa_enrollments`, `qa_profiles`, `referral_codes`, `scheduled_emails`, `session_schedule`
 
 ### Security Headers (_headers file)
 Both QP and Fusion repos have `_headers` in root:
@@ -567,3 +533,45 @@ Both QP and Fusion repos have `_headers` in root:
 ### Environment Variables
 **QP Netlify:** SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
 **Fusion Netlify:** SUPABASE_URL, SUPABASE_SERVICE_KEY, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_KEY, ADMIN_PASSWORD
+
+## Session 13 Updates
+
+### Recovery Tool → Email Center Flow
+The recovery tool no longer sends emails directly. After granting access (inserting purchase records via proxyFrom), it opens the sgSetupEmail compose modal pre-loaded with:
+- Recipients: granted customer emails
+- Subject: product-specific ("Your Fusion Sessions Bundle Is Ready!" or "Your Fusion Session Is Ready — {name}")
+- Body: Recovery template with product image, how-to-access instructions, quick tips
+- Brand: Fusion (Neon), From: Dr. Tracey (Personal)
+
+The admin can then preview, edit, test, and send through the existing email pipeline.
+
+### New Helper Functions
+- `wrParseName(email)` — Smart first-name extraction from email address
+- `wrNormalizeProduct(pid)` — Normalizes session-1 → session-01
+- `wrComposeEmail()` — Opens sgSetupEmail for all listed recovery customers
+- `wrClear()` — Clears recovery tool textarea and results
+- `wrUpdateGrantBtn()` — Toggles grant button text based on compose checkbox
+
+### buildRichEmail CTA Detection (updated)
+Priority order for card CTA buttons:
+1. "Collection" or "Upgrade" → COMPLETE YOUR BUNDLE
+2. "Dashboard", "Log In", or "access your" → GO TO DASHBOARD → /login.html
+3. "code", "Share", "referral" → GO TO REFERRAL HUB → /referral-hub.html
+4. Default → CLAIM YOUR DISCOUNT → site root or coupon URL
+
+### Allowed Tables (admin-proxy.js) — Updated
+Added: `email_log`
+Full list: `admin_audit_log`, `admin_notes`, `admin_users`, `email_campaigns`, `email_log`, `email_tracking`, `profiles`, `promotions`, `purchases`, `qa_enrollments`, `qa_profiles`, `referral_codes`, `scheduled_emails`, `session_schedule`
+
+### Card Library (12 cards total)
+Referral Invite, Community Invite, Upcoming Session, Welcome, Feature Highlight, Testimonial, Bold CTA, Academy Promo, QR Code Only, **Purchase Confirmation** (NEW), **Getting Started Tips** (NEW), **Session Product** (NEW), **Bundle Product** (NEW)
+
+### Static Assets
+- `favicon.ico` — Transparent lotus, multi-size ICO (16/32/48/256px)
+- `apple-touch-icon.png` — 180px lotus PNG
+- `netlify.toml` — Build config (publish: ".", functions: "netlify/functions") + security headers
+
+### File Sizes (Session 13)
+- `admin/admin.js` — ~352KB
+- `admin/admin.css` — ~36KB
+- `admin/index.html` — ~65KB
