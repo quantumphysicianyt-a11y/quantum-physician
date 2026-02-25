@@ -474,6 +474,21 @@ body {
 }
 
 /* Toast */
+/* === RICH TEXT TOOLBAR === */
+.rich-toolbar {
+  display: flex; align-items: center; gap: 2px; padding: 6px 8px;
+  background: var(--bg-deep); border: 1px solid var(--border); border-bottom: none;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+.rich-toolbar button {
+  background: none; border: none; color: var(--text-muted); cursor: pointer;
+  padding: 4px 8px; border-radius: 4px; font-size: 12px; font-family: inherit;
+  transition: all .15s;
+}
+.rich-toolbar button:hover { background: rgba(91,168,178,.15); color: var(--teal); }
+.rich-toolbar .divider { width: 1px; height: 16px; background: var(--border); margin: 0 4px; }
+.rich-toolbar + textarea { border-top-left-radius: 0 !important; border-top-right-radius: 0 !important; }
+
 .toast {
   position: fixed; bottom: 24px; right: 24px; z-index: 200;
   padding: 12px 20px; border-radius: var(--radius);
@@ -579,6 +594,15 @@ body {
       New Course
     </button>
 
+    <!-- Bundles Section -->
+    <div class="cb-course-list" style="border-top:1px solid var(--border)">
+      <div class="section-label" style="display:flex;align-items:center;justify-content:space-between">
+        <span>Bundles</span>
+        <button style="background:none;border:none;color:var(--teal);cursor:pointer;font-size:16px;padding:2px 6px" onclick="createNewBundle()" title="New Bundle">+</button>
+      </div>
+      <div id="bundleListItems"></div>
+    </div>
+
     <div class="cb-sidebar-footer">
       <a href="/admin/" target="_blank">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
@@ -632,6 +656,8 @@ let allCourses = [];
 let selectedCourseId = null;
 let courseModules = [];
 let hasUnsavedChanges = false;
+let allBundles = [];
+let allBundleCourses = [];
 
 // --- Proxy (same pattern as admin panel) ---
 function getAdminToken() { return sessionStorage.getItem('qp_admin_token') || ''; }
@@ -829,9 +855,16 @@ function slugify(text) {
 // --- Load Courses ---
 async function loadCourses() {
   try {
-    const res = await proxyFrom('qa_courses').select('*').order('sort_order');
-    allCourses = res.data || [];
+    const [courseRes, bundleRes, bcRes] = await Promise.all([
+      proxyFrom('qa_courses').select('*').order('sort_order'),
+      proxyFrom('qa_bundles').select('*').order('created_at'),
+      proxyFrom('qa_bundle_courses').select('*').order('sort_order'),
+    ]);
+    allCourses = courseRes.data || [];
+    allBundles = bundleRes.data || [];
+    allBundleCourses = bcRes.data || [];
     renderCourseList();
+    renderBundleList();
     if (!selectedCourseId && allCourses.length) {
       selectCourse(allCourses[0].id);
     } else if (selectedCourseId) {
@@ -878,6 +911,7 @@ async function selectCourse(id) {
     if (!await qpConfirm('Unsaved Changes', 'You have unsaved changes. Discard them?', {okText: 'Discard', danger: true})) return;
   }
   selectedCourseId = id;
+  selectedBundleId = null;
   hasUnsavedChanges = false;
   renderCourseList();
 
@@ -886,7 +920,7 @@ async function selectCourse(id) {
 
   // Load modules + lessons
   try {
-    const modRes = await proxyFrom('qa_modules')
+    const modRes = await sb.from('qa_modules')
       .select('*, qa_lessons(*)')
       .eq('course_id', id)
       .order('sort_order');
@@ -913,6 +947,7 @@ function renderCourseEditor(course) {
   document.getElementById('topActions').innerHTML = `
     <span id="unsavedIndicator" style="display:none;align-items:center;gap:6px;font-size:12px;color:var(--warning)"><span class="unsaved-dot"></span> Unsaved</span>
     <a href="/academy/course.html?slug=${course.slug}" target="_blank" class="btn btn-ghost btn-sm">${ICONS.eye} Preview</a>
+    <button class="btn btn-ghost btn-sm" onclick="cloneCourse('${course.id}')" title="Duplicate this course">${ICONS.layers} Clone</button>
     <button class="btn btn-danger btn-sm" onclick="deleteCourse('${course.id}')">${ICONS.trash} Delete</button>
     <button class="btn btn-primary btn-sm" id="saveBtn" onclick="saveCourse()">${ICONS.save} Save Changes</button>
   `;
@@ -1005,10 +1040,89 @@ function renderCourseEditor(course) {
         </div>
       </div>
 
-      <!-- Toggles -->
+      <!-- Sale & Enrollment -->
+      <div class="cb-section">
+        <div class="cb-section-head"><h3>Pricing & Access</h3></div>
+        <div class="field-row-3">
+          <div class="field-group">
+            <label>Sale End Date</label>
+            <input type="datetime-local" id="ed-sale-ends" value="${course.sale_ends_at ? new Date(course.sale_ends_at).toISOString().slice(0,16) : ''}" oninput="markUnsaved()">
+            <div class="hint">${course.sale_ends_at ? (new Date(course.sale_ends_at) > new Date() ? '🟢 Sale active' : '🔴 Sale ended') : 'No sale set'}</div>
+          </div>
+          <div class="field-group">
+            <label>Enrollment Type</label>
+            <select id="ed-enrollment" onchange="markUnsaved()">
+              <option value="paid" ${course.enrollment_type === 'paid' ? 'selected' : ''}>Paid</option>
+              <option value="free" ${course.enrollment_type === 'free' ? 'selected' : ''}>Free</option>
+              <option value="invite" ${course.enrollment_type === 'invite' ? 'selected' : ''}>Invite Only</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label>Visibility</label>
+            <select id="ed-visibility" onchange="markUnsaved()">
+              <option value="public" ${course.visibility === 'public' || !course.visibility ? 'selected' : ''}>Public</option>
+              <option value="hidden" ${course.visibility === 'hidden' ? 'selected' : ''}>Hidden (URL only)</option>
+              <option value="private" ${course.visibility === 'private' ? 'selected' : ''}>Private</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Drip & Prerequisites -->
+      <div class="cb-section">
+        <div class="cb-section-head"><h3>Drip Schedule</h3></div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Enable Drip Content</div>
+            <div class="toggle-desc">Release modules on a schedule after enrollment</div>
+          </div>
+          <button class="toggle ${course.drip_enabled ? 'on' : ''}" id="tog-drip" onclick="this.classList.toggle('on');markUnsaved();document.getElementById('drip-settings').style.display=this.classList.contains('on')?'':'none'"></button>
+        </div>
+        <div id="drip-settings" style="display:${course.drip_enabled ? '' : 'none'};margin-top:12px">
+          <div class="field-group">
+            <label>Default Drip Interval (days between modules)</label>
+            <input type="number" id="ed-drip-days" value="${course.drip_interval_days || 7}" min="1" oninput="markUnsaved()">
+            <div class="hint">Each module unlocks this many days after the previous one</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings & Toggles -->
       <div class="cb-section">
         <div class="cb-section-head"><h3>Settings</h3></div>
-        <div class="toggle-row">
+        <div class="field-row-3">
+          <div class="field-group">
+            <label>Difficulty</label>
+            <select id="ed-difficulty" onchange="markUnsaved()">
+              <option value="" ${!course.difficulty ? 'selected' : ''}>Not set</option>
+              <option value="beginner" ${course.difficulty === 'beginner' ? 'selected' : ''}>Beginner</option>
+              <option value="intermediate" ${course.difficulty === 'intermediate' ? 'selected' : ''}>Intermediate</option>
+              <option value="advanced" ${course.difficulty === 'advanced' ? 'selected' : ''}>Advanced</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label>Tags (comma-separated)</label>
+            <input type="text" id="ed-tags" value="${esc((course.tags || []).join(', '))}" placeholder="healing, meditation, wellness" oninput="markUnsaved()">
+          </div>
+          <div class="field-group" style="display:flex;flex-direction:column;justify-content:flex-end">
+            <button class="btn btn-ghost btn-sm" onclick="toggleSEO()" style="width:100%">SEO Settings ▾</button>
+          </div>
+        </div>
+        <div id="seo-fields" style="display:none;margin-top:12px">
+          <div class="field-group">
+            <label>Meta Title</label>
+            <input type="text" id="ed-meta-title" value="${esc(course.meta_title || '')}" placeholder="Custom page title for search engines" oninput="markUnsaved()">
+          </div>
+          <div class="field-group">
+            <label>Meta Description</label>
+            <textarea id="ed-meta-desc" rows="2" placeholder="Custom description for search engines" oninput="markUnsaved()">${esc(course.meta_description || '')}</textarea>
+          </div>
+          <div class="field-group">
+            <label>OG Image URL</label>
+            <input type="text" id="ed-og-image" value="${esc(course.og_image_url || '')}" placeholder="Social share image URL" oninput="markUnsaved()">
+          </div>
+        </div>
+        <div class="toggle-row" style="margin-top:12px">
           <div class="toggle-info">
             <div class="toggle-label">Discussion</div>
             <div class="toggle-desc">Enable community discussions for this course</div>
@@ -1023,6 +1137,8 @@ function renderCourseEditor(course) {
           <button class="toggle ${course.certificate_enabled ? 'on' : ''}" id="tog-certificate" onclick="this.classList.toggle('on');markUnsaved()"></button>
         </div>
       </div>
+
+      ${getLandingPageEditor(course)}
 
       <!-- CURRICULUM -->
       <div class="cb-section">
@@ -1071,7 +1187,7 @@ function renderModule(mod, idx) {
       <div class="module-header" onclick="toggleModule(this)">
         <div class="drag-handle" draggable="true" ondragstart="dragModuleStart(event, '${mod.id}')" ondragover="event.preventDefault()" ondrop="dropModule(event, '${mod.id}')">${ICONS.grip}</div>
         <span class="module-title">Module ${idx + 1}: ${esc(mod.title)}</span>
-        <span class="module-meta">${lessons.length} lesson${lessons.length !== 1 ? 's' : ''}</span>
+        <span class="module-meta">${lessons.length} lesson${lessons.length !== 1 ? 's' : ''}${mod.require_previous ? ' · 🔒' : ''}${mod.drip_delay_days ? ' · ⏱' + mod.drip_delay_days + 'd' : ''}</span>
         <div class="module-actions">
           <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();editModule('${mod.id}')" title="Edit">${ICONS.edit}</button>
           <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();deleteModule('${mod.id}')" title="Delete" style="color:var(--danger)">${ICONS.trash}</button>
@@ -1133,15 +1249,27 @@ async function saveCourse() {
       category: document.getElementById('ed-category').value.trim() || null,
       price_cents: Number(document.getElementById('ed-price').value) || 0,
       sale_price_cents: document.getElementById('ed-sale-price').value ? Number(document.getElementById('ed-sale-price').value) : null,
+      sale_ends_at: document.getElementById('ed-sale-ends').value ? new Date(document.getElementById('ed-sale-ends').value).toISOString() : null,
+      enrollment_type: document.getElementById('ed-enrollment').value,
+      visibility: document.getElementById('ed-visibility').value,
       status: document.getElementById('ed-status').value,
       thumbnail_url: document.getElementById('ed-thumb').value.trim() || null,
       promo_video_url: document.getElementById('ed-video').value.trim() || null,
       instructor_name: document.getElementById('ed-instructor').value.trim() || null,
       sort_order: Number(document.getElementById('ed-sort').value) || 0,
+      drip_enabled: document.getElementById('tog-drip').classList.contains('on'),
+      drip_interval_days: Number(document.getElementById('ed-drip-days').value) || null,
+      difficulty: document.getElementById('ed-difficulty').value || null,
+      tags: document.getElementById('ed-tags').value.split(',').map(t => t.trim()).filter(Boolean),
+      meta_title: document.getElementById('ed-meta-title').value.trim() || null,
+      meta_description: document.getElementById('ed-meta-desc').value.trim() || null,
+      og_image_url: document.getElementById('ed-og-image').value.trim() || null,
       discussion_enabled: document.getElementById('tog-discussion').classList.contains('on'),
       certificate_enabled: document.getElementById('tog-certificate').classList.contains('on'),
+      short_description: JSON.stringify(collectLandingPageData()),
       total_lessons: courseModules.reduce((sum, m) => sum + (m.qa_lessons || []).length, 0),
       total_duration_minutes: courseModules.reduce((sum, m) => sum + (m.qa_lessons || []).reduce((s, l) => s + (l.estimated_minutes || 0), 0), 0),
+      total_modules: courseModules.length,
     };
 
     if (!data.title) { showToast('Title is required', 'error'); return; }
@@ -1243,11 +1371,73 @@ async function addModule() {
 async function editModule(moduleId) {
   const mod = courseModules.find(m => m.id === moduleId);
   if (!mod) return;
-  const title = await qpPrompt('Edit Module', 'Module title', mod.title);
-  if (title === null) return;
+  const course = allCourses.find(c => c.id === selectedCourseId);
+  const isDrip = course && course.drip_enabled;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal" style="max-width:480px">
+      <div class="modal-head">
+        <h3>Edit Module</h3>
+        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">${ICONS.x}</button>
+      </div>
+      <div class="modal-body">
+        <div class="field-group">
+          <label>Module Title</label>
+          <input type="text" id="mm-title" value="${esc(mod.title)}">
+        </div>
+        <div class="field-group">
+          <label>Description (optional)</label>
+          <textarea id="mm-desc" rows="2" placeholder="What this module covers">${esc(mod.description || '')}</textarea>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Require Previous Module</div>
+            <div class="toggle-desc">Students must complete the prior module first</div>
+          </div>
+          <button class="toggle ${mod.require_previous ? 'on' : ''}" id="mm-prereq" onclick="this.classList.toggle('on')"></button>
+        </div>
+        ${isDrip ? `
+        <div class="field-row" style="margin-top:12px">
+          <div class="field-group">
+            <label>Drip Delay (days)</label>
+            <input type="number" id="mm-drip-days" value="${mod.drip_delay_days || ''}" placeholder="Default: ${course.drip_interval_days || 7}" min="0">
+            <div class="hint">Days after enrollment to unlock. Leave blank for course default.</div>
+          </div>
+          <div class="field-group">
+            <label>Or Fixed Date</label>
+            <input type="datetime-local" id="mm-drip-date" value="${mod.drip_date ? new Date(mod.drip_date).toISOString().slice(0,16) : ''}">
+            <div class="hint">Unlock on a specific date instead</div>
+          </div>
+        </div>` : ''}
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveModuleEdit('${mod.id}')">Save Module</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => { overlay.classList.add('open'); document.getElementById('mm-title').focus(); });
+}
+
+async function saveModuleEdit(moduleId) {
+  const title = document.getElementById('mm-title').value.trim();
+  if (!title) { showToast('Module title is required', 'error'); return; }
+  const data = {
+    title,
+    description: document.getElementById('mm-desc').value.trim() || null,
+    require_previous: document.getElementById('mm-prereq').classList.contains('on'),
+  };
+  const dripDays = document.getElementById('mm-drip-days');
+  const dripDate = document.getElementById('mm-drip-date');
+  if (dripDays) data.drip_delay_days = dripDays.value ? Number(dripDays.value) : null;
+  if (dripDate) data.drip_date = dripDate.value ? new Date(dripDate.value).toISOString() : null;
 
   try {
-    await proxyFrom('qa_modules').update({title: title.trim()}).eq('id', moduleId);
+    await proxyFrom('qa_modules').update(data).eq('id', moduleId);
+    document.querySelector('.modal-overlay').remove();
     await selectCourse(selectedCourseId);
     showToast('Module updated', 'success');
   } catch(e) {
@@ -1293,12 +1483,12 @@ function showLessonModal(lesson, moduleId) {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
-    <div class="modal">
+    <div class="modal" style="max-width:600px">
       <div class="modal-head">
         <h3>${isEdit ? 'Edit Lesson' : 'Add Lesson'}</h3>
         <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">${ICONS.x}</button>
       </div>
-      <div class="modal-body">
+      <div class="modal-body" style="max-height:70vh;overflow-y:auto">
         <div class="field-group">
           <label>Lesson Title</label>
           <input type="text" id="ml-title" value="${esc(lesson ? lesson.title : '')}" placeholder="Lesson title">
@@ -1306,12 +1496,14 @@ function showLessonModal(lesson, moduleId) {
         <div class="field-row">
           <div class="field-group">
             <label>Content Type</label>
-            <select id="ml-type">
+            <select id="ml-type" onchange="updateLessonFields()">
               <option value="video" ${lesson && lesson.content_type === 'video' ? 'selected' : ''}>Video</option>
               <option value="text" ${lesson && lesson.content_type === 'text' ? 'selected' : ''}>Text</option>
               <option value="quiz" ${lesson && lesson.content_type === 'quiz' ? 'selected' : ''}>Quiz</option>
-              <option value="pdf" ${lesson && lesson.content_type === 'pdf' ? 'selected' : ''}>PDF</option>
+              <option value="pdf" ${lesson && lesson.content_type === 'pdf' ? 'selected' : ''}>PDF / File</option>
               <option value="assignment" ${lesson && lesson.content_type === 'assignment' ? 'selected' : ''}>Assignment</option>
+              <option value="embed" ${lesson && lesson.content_type === 'embed' ? 'selected' : ''}>Embed</option>
+              <option value="live" ${lesson && lesson.content_type === 'live' ? 'selected' : ''}>Live Session</option>
             </select>
           </div>
           <div class="field-group">
@@ -1319,20 +1511,108 @@ function showLessonModal(lesson, moduleId) {
             <input type="number" id="ml-duration" value="${lesson ? lesson.estimated_minutes || '' : ''}" placeholder="Optional" min="0">
           </div>
         </div>
-        <div class="field-group">
-          <label>Video URL</label>
-          <input type="text" id="ml-video" value="${esc(lesson ? lesson.video_url || '' : '')}" placeholder="Vimeo or video URL">
+
+        <!-- Video fields -->
+        <div id="ml-video-fields" class="ml-type-section">
+          <div class="field-group">
+            <label>Video URL</label>
+            <input type="text" id="ml-video" value="${esc(lesson ? lesson.video_url || '' : '')}" placeholder="Vimeo or video URL">
+          </div>
+          <div class="field-group">
+            <label>Video Thumbnail URL</label>
+            <input type="text" id="ml-video-thumb" value="${esc(lesson ? lesson.video_thumbnail_url || '' : '')}" placeholder="Optional thumbnail override">
+          </div>
         </div>
-        <div class="field-group">
+
+        <!-- File/PDF fields -->
+        <div id="ml-file-fields" class="ml-type-section" style="display:none">
+          <div class="field-group">
+            <label>File URL</label>
+            <input type="text" id="ml-file-url" value="${esc(lesson ? lesson.file_url || '' : '')}" placeholder="https://... (downloadable file)">
+          </div>
+          <div class="field-row">
+            <div class="field-group">
+              <label>File Name</label>
+              <input type="text" id="ml-file-name" value="${esc(lesson ? lesson.file_name || '' : '')}" placeholder="worksheet.pdf">
+            </div>
+            <div class="field-group">
+              <label>File Size (bytes)</label>
+              <input type="number" id="ml-file-size" value="${lesson ? lesson.file_size_bytes || '' : ''}" placeholder="Optional">
+            </div>
+          </div>
+        </div>
+
+        <!-- Embed fields -->
+        <div id="ml-embed-fields" class="ml-type-section" style="display:none">
+          <div class="field-group">
+            <label>Embed URL</label>
+            <input type="text" id="ml-embed-url" value="${esc(lesson ? lesson.embed_url || '' : '')}" placeholder="External embed URL">
+          </div>
+          <div class="field-group">
+            <label>Embed HTML (optional)</label>
+            <textarea id="ml-embed-html" rows="3" placeholder="Custom embed code (iframe, etc.)">${esc(lesson ? lesson.embed_html || '' : '')}</textarea>
+          </div>
+        </div>
+
+        <!-- Live session fields -->
+        <div id="ml-live-fields" class="ml-type-section" style="display:none">
+          <div class="field-group">
+            <label>Live Date & Time</label>
+            <input type="datetime-local" id="ml-live-date" value="${lesson && lesson.live_date ? new Date(lesson.live_date).toISOString().slice(0,16) : ''}">
+          </div>
+          <div class="field-group">
+            <label>Meeting URL (Zoom, etc.)</label>
+            <input type="text" id="ml-live-url" value="${esc(lesson ? lesson.live_meeting_url || '' : '')}" placeholder="https://zoom.us/j/...">
+          </div>
+          <div class="field-group">
+            <label>Recording URL (after session)</label>
+            <input type="text" id="ml-live-rec" value="${esc(lesson ? lesson.live_recording_url || '' : '')}" placeholder="Added after the live session">
+          </div>
+        </div>
+
+        <!-- Content (always shown) -->
+        <div class="field-group" style="margin-top:12px">
           <label>Content / Description</label>
-          <textarea id="ml-content" rows="4" placeholder="Lesson content or description">${esc(lesson ? lesson.content || '' : '')}</textarea>
+          ${getRichToolbar()}
+          <textarea id="ml-content" rows="8" placeholder="Lesson content, instructions, or description (supports Markdown)" style="font-family:'Inter',monospace;font-size:13px;line-height:1.6">${esc(lesson ? lesson.content_markdown || lesson.content_html || lesson.description || '' : '')}</textarea>
         </div>
-        <div class="toggle-row">
+
+        <!-- Downloadable Resource (shown for all types) -->
+        <div class="cb-section" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+          <div style="font-size:12px;font-weight:600;color:var(--taupe);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Downloadable Resource</div>
+          <div class="field-row">
+            <div class="field-group">
+              <label>Resource File URL</label>
+              <input type="text" id="ml-resource-url" value="${esc(lesson ? lesson.file_url || '' : '')}" placeholder="https://... (PDF, worksheet, etc.)">
+            </div>
+            <div class="field-group">
+              <label>Resource Name</label>
+              <input type="text" id="ml-resource-name" value="${esc(lesson ? lesson.file_name || '' : '')}" placeholder="Worksheet.pdf">
+            </div>
+          </div>
+        </div>
+
+        <!-- Toggles -->
+        <div class="toggle-row" style="margin-top:12px">
           <div class="toggle-info">
             <div class="toggle-label">Free Preview</div>
             <div class="toggle-desc">Allow non-enrolled users to preview this lesson</div>
           </div>
           <button class="toggle ${lesson && lesson.is_free_preview ? 'on' : ''}" id="ml-preview" onclick="this.classList.toggle('on')"></button>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Required</div>
+            <div class="toggle-desc">Students must complete this lesson for course completion</div>
+          </div>
+          <button class="toggle ${lesson && lesson.is_required !== false ? 'on' : ''}" id="ml-required" onclick="this.classList.toggle('on')"></button>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Require Previous</div>
+            <div class="toggle-desc">Must complete the previous lesson first</div>
+          </div>
+          <button class="toggle ${lesson && lesson.require_previous ? 'on' : ''}" id="ml-req-prev" onclick="this.classList.toggle('on')"></button>
         </div>
       </div>
       <div class="modal-footer">
@@ -1342,8 +1622,17 @@ function showLessonModal(lesson, moduleId) {
     </div>
   `;
   document.body.appendChild(overlay);
-  requestAnimationFrame(() => overlay.classList.add('open'));
+  requestAnimationFrame(() => { overlay.classList.add('open'); updateLessonFields(); });
   overlay.querySelector('#ml-title').focus();
+}
+
+function updateLessonFields() {
+  const type = document.getElementById('ml-type').value;
+  document.querySelectorAll('.ml-type-section').forEach(el => el.style.display = 'none');
+  if (type === 'video') document.getElementById('ml-video-fields').style.display = '';
+  if (type === 'pdf') document.getElementById('ml-file-fields').style.display = '';
+  if (type === 'embed') document.getElementById('ml-embed-fields').style.display = '';
+  if (type === 'live') document.getElementById('ml-live-fields').style.display = '';
 }
 
 // --- Save Lesson ---
@@ -1351,14 +1640,44 @@ async function saveLesson(moduleId, lessonId) {
   const title = document.getElementById('ml-title').value.trim();
   if (!title) { showToast('Lesson title is required', 'error'); return; }
 
+  const type = document.getElementById('ml-type').value;
   const data = {
     title: title,
-    content_type: document.getElementById('ml-type').value,
+    content_type: type,
     estimated_minutes: Number(document.getElementById('ml-duration').value) || null,
     video_url: document.getElementById('ml-video').value.trim() || null,
-    content: document.getElementById('ml-content').value.trim() || null,
+    video_thumbnail_url: document.getElementById('ml-video-thumb')?.value.trim() || null,
+    description: document.getElementById('ml-content').value.trim() || null,
+    content_html: document.getElementById('ml-content').value.trim() || null,
+    content_markdown: document.getElementById('ml-content').value.trim() || null,
     is_free_preview: document.getElementById('ml-preview').classList.contains('on'),
+    is_required: document.getElementById('ml-required').classList.contains('on'),
+    require_previous: document.getElementById('ml-req-prev').classList.contains('on'),
   };
+
+  // Type-specific fields
+  if (type === 'pdf' || document.getElementById('ml-file-url')?.value) {
+    data.file_url = document.getElementById('ml-file-url')?.value.trim() || null;
+    data.file_name = document.getElementById('ml-file-name')?.value.trim() || null;
+    data.file_size_bytes = Number(document.getElementById('ml-file-size')?.value) || null;
+  }
+  if (type === 'embed') {
+    data.embed_url = document.getElementById('ml-embed-url')?.value.trim() || null;
+    data.embed_html = document.getElementById('ml-embed-html')?.value.trim() || null;
+  }
+  if (type === 'live') {
+    data.live_date = document.getElementById('ml-live-date')?.value ? new Date(document.getElementById('ml-live-date').value).toISOString() : null;
+    data.live_meeting_url = document.getElementById('ml-live-url')?.value.trim() || null;
+    data.live_recording_url = document.getElementById('ml-live-rec')?.value.trim() || null;
+  }
+
+  // Resource fields (always available)
+  const resUrl = document.getElementById('ml-resource-url')?.value.trim();
+  const resName = document.getElementById('ml-resource-name')?.value.trim();
+  if (resUrl && type !== 'pdf') {
+    data.file_url = resUrl;
+    data.file_name = resName || null;
+  }
 
   try {
     if (lessonId) {
@@ -1559,6 +1878,438 @@ function qpPrompt(title, placeholder, defaultVal) {
       }
     });
   });
+}
+
+// --- Clone Course ---
+async function cloneCourse(id) {
+  const course = allCourses.find(c => c.id === id);
+  if (!course) return;
+  if (!await qpConfirm('Clone Course', `Create a copy of "${course.title}" with all modules and lessons? The clone will be set to Draft status.`, {okText: 'Clone'})) return;
+
+  try {
+    showToast('Cloning course...', '');
+    // Clone course
+    const newCourse = {...course};
+    delete newCourse.id; delete newCourse.created_at; delete newCourse.updated_at; delete newCourse.published_at;
+    newCourse.title = course.title + ' (Copy)';
+    newCourse.slug = course.slug + '-copy-' + Date.now().toString(36).slice(-4);
+    newCourse.status = 'draft';
+    newCourse.enrolled_count = 0;
+    newCourse.sort_order = allCourses.length;
+
+    const cRes = await proxyFrom('qa_courses').insert(newCourse).select('*');
+    if (cRes.error) throw new Error(cRes.error.message);
+    const newCourseId = cRes.data[0].id;
+
+    // Clone modules and lessons
+    for (const mod of courseModules) {
+      const newMod = {course_id: newCourseId, title: mod.title, description: mod.description, sort_order: mod.sort_order, drip_delay_days: mod.drip_delay_days, drip_date: mod.drip_date, require_previous: mod.require_previous};
+      const mRes = await proxyFrom('qa_modules').insert(newMod).select('*');
+      if (mRes.error) continue;
+      const newModId = mRes.data[0].id;
+
+      for (const lesson of (mod.qa_lessons || [])) {
+        const newLesson = {...lesson};
+        delete newLesson.id; delete newLesson.created_at; delete newLesson.updated_at;
+        newLesson.module_id = newModId;
+        newLesson.course_id = newCourseId;
+        await proxyFrom('qa_lessons').insert(newLesson);
+      }
+    }
+
+    selectedCourseId = newCourseId;
+    await loadCourses();
+    showToast('Course cloned!', 'success');
+  } catch(e) {
+    showToast('Clone failed: ' + e.message, 'error');
+  }
+}
+
+// --- Toggle SEO Fields ---
+function toggleSEO() {
+  const el = document.getElementById('seo-fields');
+  el.style.display = el.style.display === 'none' ? '' : 'none';
+}
+
+// ============================================================
+// BUNDLE MANAGEMENT
+// ============================================================
+
+function renderBundleList() {
+  const el = document.getElementById('bundleListItems');
+  if (!allBundles.length) {
+    el.innerHTML = '<div style="padding:12px 20px;font-size:11px;color:var(--text-dim)">No bundles yet</div>';
+    return;
+  }
+  el.innerHTML = allBundles.map(b => {
+    const courseCount = allBundleCourses.filter(bc => bc.bundle_id === b.id).length;
+    return `
+      <div class="cb-course-item ${b.id === selectedBundleId ? 'active' : ''}" onclick="selectBundle('${b.id}')" style="border-left-color:var(--purple)">
+        <span class="dot ${b.status || 'draft'}" style="background:var(--purple)"></span>
+        <span class="title">${esc(b.title)}</span>
+        <span class="count">${courseCount}</span>
+      </div>`;
+  }).join('');
+}
+
+let selectedBundleId = null;
+
+async function createNewBundle() {
+  const title = await qpPrompt('New Bundle', 'Enter a bundle title');
+  if (!title) return;
+  try {
+    const slug = slugify(title);
+    const res = await proxyFrom('qa_bundles').insert({
+      title: title.trim(), slug, status: 'draft', price_cents: 0,
+    }).select('*');
+    if (res.error) throw new Error(res.error.message);
+    selectedBundleId = res.data[0].id;
+    selectedCourseId = null;
+    await loadCourses();
+    selectBundle(selectedBundleId);
+    showToast('Bundle created!', 'success');
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+function selectBundle(id) {
+  selectedBundleId = id;
+  selectedCourseId = null;
+  hasUnsavedChanges = false;
+  renderCourseList();
+  renderBundleList();
+  const bundle = allBundles.find(b => b.id === id);
+  if (!bundle) return;
+  const bundleCourseIds = allBundleCourses.filter(bc => bc.bundle_id === id).map(bc => bc.course_id);
+  const assignedCourses = allCourses.filter(c => bundleCourseIds.includes(c.id));
+  const availableCourses = allCourses.filter(c => !bundleCourseIds.includes(c.id));
+
+  document.getElementById('breadcrumb').innerHTML = `
+    <span style="cursor:pointer;color:var(--text-muted)" onclick="selectedBundleId=null;showEmptyState()">Bundles</span>
+    <span style="margin:0 8px;color:var(--text-dim)">›</span>
+    <span>${esc(bundle.title)}</span>`;
+
+  document.getElementById('topActions').innerHTML = `
+    <button class="btn btn-danger btn-sm" onclick="deleteBundle('${id}')">${ICONS.trash} Delete</button>
+    <button class="btn btn-primary btn-sm" id="saveBundleBtn" onclick="saveBundle()">${ICONS.save} Save Bundle</button>`;
+
+  const fullPrice = assignedCourses.reduce((s,c) => s + (c.price_cents||0), 0);
+
+  document.getElementById('mainContent').innerHTML = `
+    <div class="cb-editor">
+      <div class="cb-section">
+        <div class="cb-section-head"><h3>Bundle Details</h3></div>
+        <div class="field-group">
+          <label>Title</label>
+          <input type="text" id="bd-title" value="${esc(bundle.title)}" placeholder="Bundle title" oninput="markUnsaved()">
+        </div>
+        <div class="field-group">
+          <label>Description</label>
+          <textarea id="bd-desc" rows="3" placeholder="What's included in this bundle" oninput="markUnsaved()">${esc(bundle.description || '')}</textarea>
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label>Slug</label>
+            <input type="text" id="bd-slug" value="${esc(bundle.slug || '')}" placeholder="bundle-url-slug" oninput="markUnsaved()">
+          </div>
+          <div class="field-group">
+            <label>Status</label>
+            <select id="bd-status" onchange="markUnsaved()">
+              <option value="draft" ${bundle.status === 'draft' ? 'selected' : ''}>Draft</option>
+              <option value="published" ${bundle.status === 'published' ? 'selected' : ''}>Published</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label>Bundle Price (cents)</label>
+            <input type="number" id="bd-price" value="${bundle.price_cents || 0}" min="0" oninput="markUnsaved()">
+            <div class="hint">$${((bundle.price_cents || 0) / 100).toFixed(2)} ${fullPrice > (bundle.price_cents||0) ? '(save $' + ((fullPrice - (bundle.price_cents||0))/100).toFixed(2) + ' vs individual)' : ''}</div>
+          </div>
+          <div class="field-group">
+            <label>Original Price (cents)</label>
+            <input type="number" id="bd-orig-price" value="${bundle.original_price_cents || ''}" placeholder="Show as strikethrough" min="0" oninput="markUnsaved()">
+          </div>
+        </div>
+        <div class="field-group">
+          <label>Thumbnail URL</label>
+          <input type="text" id="bd-thumb" value="${esc(bundle.thumbnail_url || '')}" placeholder="https://..." oninput="markUnsaved()">
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label>Stripe Product ID</label>
+            <input type="text" id="bd-stripe-product" value="${esc(bundle.stripe_product_id || '')}" placeholder="prod_..." oninput="markUnsaved()">
+          </div>
+          <div class="field-group">
+            <label>Stripe Price ID</label>
+            <input type="text" id="bd-stripe-price" value="${esc(bundle.stripe_price_id || '')}" placeholder="price_..." oninput="markUnsaved()">
+          </div>
+        </div>
+      </div>
+
+      <div class="cb-section">
+        <div class="cb-section-head">
+          <h3>Courses in Bundle</h3>
+          <span class="badge">${assignedCourses.length} courses · $${(fullPrice / 100).toFixed(2)} individual value</span>
+        </div>
+        <div class="module-list">
+          ${assignedCourses.map((c, i) => `
+            <div class="lesson-item" style="padding:12px 16px">
+              <span class="lesson-type video" style="font-size:14px">${i + 1}</span>
+              <div class="lesson-info">
+                <div class="lesson-title">${esc(c.title)}</div>
+                <div class="lesson-meta"><span>$${((c.price_cents||0)/100).toFixed(2)}</span><span>${c.total_lessons||0} lessons</span></div>
+              </div>
+              <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="removeBundleCourse('${id}','${c.id}')">${ICONS.x}</button>
+            </div>
+          `).join('') || '<div style="padding:20px;text-align:center;font-size:13px;color:var(--text-dim)">No courses assigned yet</div>'}
+        </div>
+        ${availableCourses.length ? `
+          <div style="display:flex;gap:8px;margin-top:12px;align-items:center">
+            <select id="bd-add-course" class="field-group" style="flex:1;padding:8px 12px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:13px">
+              ${availableCourses.map(c => `<option value="${c.id}">${esc(c.title)}</option>`).join('')}
+            </select>
+            <button class="btn btn-primary btn-sm" onclick="addBundleCourse('${id}')">+ Add</button>
+          </div>` : ''}
+      </div>
+    </div>`;
+}
+
+async function saveBundle() {
+  const btn = document.getElementById('saveBundleBtn');
+  btn.disabled = true; btn.innerHTML = '<div class="spinner" style="width:14px;height:14px;border-width:2px"></div> Saving...';
+  try {
+    const data = {
+      title: document.getElementById('bd-title').value.trim(),
+      description: document.getElementById('bd-desc').value.trim() || null,
+      slug: document.getElementById('bd-slug').value.trim(),
+      status: document.getElementById('bd-status').value,
+      price_cents: Number(document.getElementById('bd-price').value) || 0,
+      original_price_cents: document.getElementById('bd-orig-price').value ? Number(document.getElementById('bd-orig-price').value) : null,
+      thumbnail_url: document.getElementById('bd-thumb').value.trim() || null,
+      stripe_product_id: document.getElementById('bd-stripe-product').value.trim() || null,
+      stripe_price_id: document.getElementById('bd-stripe-price').value.trim() || null,
+    };
+    if (!data.title) { showToast('Title is required', 'error'); return; }
+    await proxyFrom('qa_bundles').update(data).eq('id', selectedBundleId);
+    hasUnsavedChanges = false;
+    await loadCourses();
+    showToast('Bundle saved', 'success');
+  } catch(e) { showToast('Save failed: ' + e.message, 'error'); }
+  btn.disabled = false; btn.innerHTML = ICONS.save + ' Save Bundle';
+}
+
+async function addBundleCourse(bundleId) {
+  const courseId = document.getElementById('bd-add-course').value;
+  if (!courseId) return;
+  const sortOrder = allBundleCourses.filter(bc => bc.bundle_id === bundleId).length;
+  try {
+    await proxyFrom('qa_bundle_courses').insert({bundle_id: bundleId, course_id: courseId, sort_order: sortOrder});
+    await loadCourses();
+    selectBundle(bundleId);
+    showToast('Course added to bundle', 'success');
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+async function removeBundleCourse(bundleId, courseId) {
+  if (!await qpConfirm('Remove Course', 'Remove this course from the bundle?', {okText: 'Remove', danger: true})) return;
+  try {
+    await proxyFrom('qa_bundle_courses').delete().eq('bundle_id', bundleId).eq('course_id', courseId);
+    await loadCourses();
+    selectBundle(bundleId);
+    showToast('Course removed from bundle', 'success');
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+async function deleteBundle(id) {
+  const bundle = allBundles.find(b => b.id === id);
+  if (!await qpConfirm('Delete Bundle', `Delete "${bundle.title}"? This won't delete the courses themselves.`, {okText: 'Delete', danger: true})) return;
+  try {
+    await proxyFrom('qa_bundle_courses').delete().eq('bundle_id', id);
+    await proxyFrom('qa_bundles').delete().eq('id', id);
+    selectedBundleId = null;
+    await loadCourses();
+    showEmptyState();
+    showToast('Bundle deleted', 'success');
+  } catch(e) { showToast('Delete failed: ' + e.message, 'error'); }
+}
+
+// ============================================================
+// RICH TEXT TOOLBAR (for lesson content)
+// ============================================================
+
+function insertRichFormat(cmd, val) {
+  const el = document.getElementById('ml-content');
+  const start = el.selectionStart, end = el.selectionEnd;
+  const selected = el.value.substring(start, end);
+  let insert = '';
+  switch(cmd) {
+    case 'bold': insert = `**${selected || 'bold text'}**`; break;
+    case 'italic': insert = `*${selected || 'italic text'}*`; break;
+    case 'h2': insert = `\n## ${selected || 'Heading'}\n`; break;
+    case 'h3': insert = `\n### ${selected || 'Subheading'}\n`; break;
+    case 'ul': insert = `\n- ${selected || 'List item'}\n- \n- \n`; break;
+    case 'ol': insert = `\n1. ${selected || 'First item'}\n2. \n3. \n`; break;
+    case 'link': insert = `[${selected || 'link text'}](https://)`; break;
+    case 'hr': insert = `\n---\n`; break;
+    case 'quote': insert = `\n> ${selected || 'Quote text'}\n`; break;
+    case 'code': insert = selected.includes('\n') ? `\n\`\`\`\n${selected}\n\`\`\`\n` : `\`${selected || 'code'}\``; break;
+  }
+  el.value = el.value.substring(0, start) + insert + el.value.substring(end);
+  el.focus();
+  el.selectionStart = el.selectionEnd = start + insert.length;
+}
+
+function getRichToolbar() {
+  return `<div class="rich-toolbar">
+    <button type="button" onclick="insertRichFormat('bold')" title="Bold"><b>B</b></button>
+    <button type="button" onclick="insertRichFormat('italic')" title="Italic"><i>I</i></button>
+    <span class="divider"></span>
+    <button type="button" onclick="insertRichFormat('h2')" title="Heading 2">H2</button>
+    <button type="button" onclick="insertRichFormat('h3')" title="Heading 3">H3</button>
+    <span class="divider"></span>
+    <button type="button" onclick="insertRichFormat('ul')" title="Bullet List">• List</button>
+    <button type="button" onclick="insertRichFormat('ol')" title="Numbered List">1. List</button>
+    <button type="button" onclick="insertRichFormat('quote')" title="Quote">❝</button>
+    <span class="divider"></span>
+    <button type="button" onclick="insertRichFormat('link')" title="Link">🔗</button>
+    <button type="button" onclick="insertRichFormat('code')" title="Code">&lt;/&gt;</button>
+    <button type="button" onclick="insertRichFormat('hr')" title="Divider">—</button>
+    <span style="flex:1"></span>
+    <span style="font-size:10px;color:var(--text-dim)">Markdown</span>
+  </div>`;
+}
+
+// ============================================================
+// LANDING PAGE EDITOR (What You'll Learn, FAQ, Testimonials)
+// ============================================================
+
+function getLandingPageEditor(course) {
+  // Parse existing data from short_description (JSON) or empty
+  let landing = {learn: [], faq: [], testimonials: []};
+  try {
+    if (course.short_description && course.short_description.startsWith('{')) {
+      landing = JSON.parse(course.short_description);
+    }
+  } catch(e) {}
+  if (!landing.learn) landing.learn = [];
+  if (!landing.faq) landing.faq = [];
+  if (!landing.testimonials) landing.testimonials = [];
+
+  return `
+    <div class="cb-section">
+      <div class="cb-section-head">
+        <h3>Landing Page Content</h3>
+        <span class="badge" style="font-size:10px">Shown on course sales page</span>
+      </div>
+
+      <!-- What You'll Learn -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:12px;font-weight:600;color:var(--taupe);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">What You'll Learn</div>
+        <div id="lp-learn-list">
+          ${landing.learn.map((item, i) => `
+            <div class="lp-item" style="display:flex;gap:8px;margin-bottom:6px;align-items:center">
+              <span style="color:var(--teal);font-size:14px">✓</span>
+              <input type="text" class="lp-learn-input" value="${esc(item)}" placeholder="Learning outcome..." oninput="markUnsaved()" style="flex:1;padding:8px 12px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:13px">
+              <button class="btn btn-ghost btn-sm" onclick="this.parentElement.remove();markUnsaved()" style="color:var(--danger);padding:4px">${ICONS.x}</button>
+            </div>
+          `).join('')}
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="addLearnItem()" style="margin-top:4px">${ICONS.plus} Add Item</button>
+      </div>
+
+      <!-- FAQ -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:12px;font-weight:600;color:var(--taupe);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">FAQ</div>
+        <div id="lp-faq-list">
+          ${landing.faq.map((item, i) => `
+            <div class="lp-faq-item" style="margin-bottom:8px;padding:12px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm)">
+              <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+                <input type="text" class="lp-faq-q" value="${esc(item.q)}" placeholder="Question" oninput="markUnsaved()" style="flex:1;padding:6px 10px;background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:13px;font-weight:600">
+                <button class="btn btn-ghost btn-sm" onclick="this.closest('.lp-faq-item').remove();markUnsaved()" style="color:var(--danger);padding:4px">${ICONS.x}</button>
+              </div>
+              <textarea class="lp-faq-a" rows="2" placeholder="Answer" oninput="markUnsaved()" style="width:100%;padding:6px 10px;background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:13px;resize:vertical">${esc(item.a)}</textarea>
+            </div>
+          `).join('')}
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="addFaqItem()" style="margin-top:4px">${ICONS.plus} Add FAQ</button>
+      </div>
+
+      <!-- Testimonials -->
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--taupe);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Testimonials</div>
+        <div id="lp-testimonial-list">
+          ${landing.testimonials.map((item, i) => `
+            <div class="lp-test-item" style="margin-bottom:8px;padding:12px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm)">
+              <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+                <input type="text" class="lp-test-name" value="${esc(item.name)}" placeholder="Student name" oninput="markUnsaved()" style="flex:1;padding:6px 10px;background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:13px;font-weight:600">
+                <input type="number" class="lp-test-rating" value="${item.rating || 5}" min="1" max="5" oninput="markUnsaved()" style="width:60px;padding:6px 10px;background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--teal);font-size:13px;text-align:center">
+                <button class="btn btn-ghost btn-sm" onclick="this.closest('.lp-test-item').remove();markUnsaved()" style="color:var(--danger);padding:4px">${ICONS.x}</button>
+              </div>
+              <textarea class="lp-test-text" rows="2" placeholder="What they said..." oninput="markUnsaved()" style="width:100%;padding:6px 10px;background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:13px;resize:vertical">${esc(item.text)}</textarea>
+            </div>
+          `).join('')}
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="addTestimonialItem()" style="margin-top:4px">${ICONS.plus} Add Testimonial</button>
+      </div>
+    </div>`;
+}
+
+function addLearnItem() {
+  const list = document.getElementById('lp-learn-list');
+  const div = document.createElement('div');
+  div.className = 'lp-item';
+  div.style.cssText = 'display:flex;gap:8px;margin-bottom:6px;align-items:center';
+  div.innerHTML = `<span style="color:var(--teal);font-size:14px">✓</span>
+    <input type="text" class="lp-learn-input" placeholder="Learning outcome..." oninput="markUnsaved()" style="flex:1;padding:8px 12px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:13px">
+    <button class="btn btn-ghost btn-sm" onclick="this.parentElement.remove();markUnsaved()" style="color:var(--danger);padding:4px">${ICONS.x}</button>`;
+  list.appendChild(div);
+  div.querySelector('input').focus();
+  markUnsaved();
+}
+
+function addFaqItem() {
+  const list = document.getElementById('lp-faq-list');
+  const div = document.createElement('div');
+  div.className = 'lp-faq-item';
+  div.style.cssText = 'margin-bottom:8px;padding:12px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm)';
+  div.innerHTML = `<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+    <input type="text" class="lp-faq-q" placeholder="Question" oninput="markUnsaved()" style="flex:1;padding:6px 10px;background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:13px;font-weight:600">
+    <button class="btn btn-ghost btn-sm" onclick="this.closest('.lp-faq-item').remove();markUnsaved()" style="color:var(--danger);padding:4px">${ICONS.x}</button>
+  </div>
+  <textarea class="lp-faq-a" rows="2" placeholder="Answer" oninput="markUnsaved()" style="width:100%;padding:6px 10px;background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:13px;resize:vertical"></textarea>`;
+  list.appendChild(div);
+  div.querySelector('input').focus();
+  markUnsaved();
+}
+
+function addTestimonialItem() {
+  const list = document.getElementById('lp-testimonial-list');
+  const div = document.createElement('div');
+  div.className = 'lp-test-item';
+  div.style.cssText = 'margin-bottom:8px;padding:12px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm)';
+  div.innerHTML = `<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+    <input type="text" class="lp-test-name" placeholder="Student name" oninput="markUnsaved()" style="flex:1;padding:6px 10px;background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:13px;font-weight:600">
+    <input type="number" class="lp-test-rating" value="5" min="1" max="5" oninput="markUnsaved()" style="width:60px;padding:6px 10px;background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--teal);font-size:13px;text-align:center">
+    <button class="btn btn-ghost btn-sm" onclick="this.closest('.lp-test-item').remove();markUnsaved()" style="color:var(--danger);padding:4px">${ICONS.x}</button>
+  </div>
+  <textarea class="lp-test-text" rows="2" placeholder="What they said..." oninput="markUnsaved()" style="width:100%;padding:6px 10px;background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:13px;resize:vertical"></textarea>`;
+  list.appendChild(div);
+  div.querySelector('input').focus();
+  markUnsaved();
+}
+
+function collectLandingPageData() {
+  const learn = [...document.querySelectorAll('.lp-learn-input')].map(el => el.value.trim()).filter(Boolean);
+  const faq = [...document.querySelectorAll('.lp-faq-item')].map(el => ({
+    q: el.querySelector('.lp-faq-q').value.trim(),
+    a: el.querySelector('.lp-faq-a').value.trim(),
+  })).filter(f => f.q);
+  const testimonials = [...document.querySelectorAll('.lp-test-item')].map(el => ({
+    name: el.querySelector('.lp-test-name').value.trim(),
+    rating: Number(el.querySelector('.lp-test-rating').value) || 5,
+    text: el.querySelector('.lp-test-text').value.trim(),
+  })).filter(t => t.name && t.text);
+  return {learn, faq, testimonials};
 }
 
 // Warn on page leave with unsaved changes
