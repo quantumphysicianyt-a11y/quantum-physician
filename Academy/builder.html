@@ -1,0 +1,1489 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Course Builder — Quantum Academy</title>
+  <link rel="icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <style>
+/* ==============================================
+   COURSE BUILDER — STANDALONE EDITOR
+   Brand: navy #0a1e33, teal #5ba8b2, taupe #ad9b84
+   ============================================== */
+
+:root {
+  --bg: #0a1e33;
+  --bg-deep: #071825;
+  --bg-card: #112a42;
+  --bg-card-hover: #153450;
+  --bg-input: #0d2236;
+  --border: rgba(91,168,178,.15);
+  --border-hover: rgba(91,168,178,.35);
+  --border-focus: rgba(91,168,178,.6);
+  --text: rgba(255,255,255,.88);
+  --text-muted: rgba(255,255,255,.5);
+  --text-dim: rgba(255,255,255,.3);
+  --teal: #5ba8b2;
+  --teal-light: #4acfd9;
+  --teal-glow: rgba(91,168,178,.15);
+  --taupe: #ad9b84;
+  --purple: #a78bfa;
+  --pink: #ff006e;
+  --success: #3dd68c;
+  --danger: #ef5350;
+  --warning: #f0b429;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --ease: .3s cubic-bezier(.22,1,.36,1);
+  --sidebar-w: 280px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  line-height: 1.5;
+}
+
+/* === AUTH SCREEN === */
+.auth-screen {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg-deep);
+}
+.auth-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 48px 40px;
+  width: 100%; max-width: 400px;
+  text-align: center;
+}
+.auth-box .logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 24px; font-weight: 600;
+  background: linear-gradient(135deg, var(--teal), var(--teal-light));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  margin-bottom: 8px;
+}
+.auth-box .subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 32px; }
+.auth-box input {
+  width: 100%; padding: 12px 16px;
+  background: var(--bg-input); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text);
+  font-size: 14px; outline: none; margin-bottom: 12px;
+  transition: border-color var(--ease);
+}
+.auth-box input:focus { border-color: var(--border-focus); }
+.auth-box .btn-login {
+  width: 100%; padding: 12px;
+  background: linear-gradient(135deg, var(--teal), var(--teal-light));
+  border: none; border-radius: var(--radius-sm);
+  color: #fff; font-weight: 600; font-size: 14px;
+  cursor: pointer; transition: opacity var(--ease);
+  margin-top: 4px;
+}
+.auth-box .btn-login:hover { opacity: .9; }
+.auth-box .btn-login:disabled { opacity: .5; cursor: not-allowed; }
+.auth-error {
+  display: none; background: rgba(239,83,80,.1);
+  border: 1px solid rgba(239,83,80,.3);
+  border-radius: var(--radius-sm); padding: 10px 14px;
+  font-size: 12px; color: var(--danger); margin-bottom: 12px;
+}
+
+/* === LAYOUT === */
+.cb-layout { display: flex; min-height: 100vh; }
+
+/* === SIDEBAR === */
+.cb-sidebar {
+  width: var(--sidebar-w); flex-shrink: 0;
+  background: var(--bg-deep);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  position: fixed; top: 0; left: 0; bottom: 0;
+  z-index: 50; overflow-y: auto;
+}
+.cb-sidebar-header {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.cb-sidebar-header .brand {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px; font-weight: 600;
+  background: linear-gradient(135deg, var(--text), var(--teal));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.cb-sidebar-header .sub {
+  font-size: 11px; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: .08em; margin-top: 2px;
+}
+.cb-sidebar-header .admin-info {
+  margin-top: 12px; padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,.04);
+  display: flex; align-items: center; gap: 10px;
+}
+.cb-sidebar-header .admin-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--teal), var(--teal-light));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; color: #fff;
+  font-family: 'Playfair Display', serif;
+}
+.cb-sidebar-header .admin-name { font-size: 13px; font-weight: 500; }
+.cb-sidebar-header .admin-role { font-size: 10px; color: var(--text-muted); }
+
+/* Course list in sidebar */
+.cb-course-list { flex: 1; padding: 12px 0; overflow-y: auto; }
+.cb-course-list .section-label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: .1em;
+  color: var(--text-dim); padding: 8px 20px 6px; font-weight: 600;
+}
+.cb-course-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 20px; cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: all .15s; font-size: 13px; color: var(--text-muted);
+}
+.cb-course-item:hover {
+  background: rgba(255,255,255,.02); color: var(--text);
+}
+.cb-course-item.active {
+  background: rgba(91,168,178,.06); color: var(--teal);
+  border-left-color: var(--teal);
+}
+.cb-course-item .dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.cb-course-item .dot.published { background: var(--success); }
+.cb-course-item .dot.draft { background: var(--warning); }
+.cb-course-item .dot.coming_soon { background: var(--purple); }
+.cb-course-item .title { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cb-course-item .count { font-size: 10px; color: var(--text-dim); }
+
+.cb-add-course {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 20px; cursor: pointer;
+  font-size: 13px; color: var(--teal); font-weight: 500;
+  border: none; background: none; width: 100%; text-align: left;
+  transition: all .15s;
+}
+.cb-add-course:hover { background: rgba(91,168,178,.06); }
+.cb-add-course svg { width: 16px; height: 16px; stroke: var(--teal); }
+
+/* Sidebar footer */
+.cb-sidebar-footer {
+  padding: 12px 20px; border-top: 1px solid var(--border);
+}
+.cb-sidebar-footer a {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--text-muted);
+  text-decoration: none; padding: 6px 0; transition: color .15s;
+}
+.cb-sidebar-footer a:hover { color: var(--text); }
+.cb-sidebar-footer a svg { width: 14px; height: 14px; stroke: currentColor; }
+
+/* === MAIN === */
+.cb-main {
+  margin-left: var(--sidebar-w); flex: 1;
+  padding: 0; min-height: 100vh;
+}
+
+/* Top bar */
+.cb-topbar {
+  display: flex; align-items: center; gap: 16px;
+  padding: 16px 32px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-deep);
+  position: sticky; top: 0; z-index: 40;
+}
+.cb-topbar .breadcrumb {
+  font-size: 13px; color: var(--text-muted); flex: 1;
+}
+.cb-topbar .breadcrumb span { color: var(--text); font-weight: 500; }
+.cb-topbar .actions { display: flex; gap: 8px; }
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 500; cursor: pointer;
+  border: 1px solid var(--border); background: var(--bg-card);
+  color: var(--text); transition: all .15s; white-space: nowrap;
+}
+.btn:hover { border-color: var(--border-hover); background: var(--bg-card-hover); }
+.btn svg { width: 14px; height: 14px; stroke: currentColor; }
+.btn-primary {
+  background: linear-gradient(135deg, var(--teal), var(--teal-light));
+  border-color: transparent; color: #fff;
+}
+.btn-primary:hover { opacity: .9; background: linear-gradient(135deg, var(--teal), var(--teal-light)); border-color: transparent; }
+.btn-danger { border-color: rgba(239,83,80,.3); color: var(--danger); }
+.btn-danger:hover { background: rgba(239,83,80,.08); border-color: rgba(239,83,80,.5); }
+.btn-ghost { border: none; background: none; padding: 6px 10px; }
+.btn-ghost:hover { background: rgba(255,255,255,.04); }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-sm svg { width: 12px; height: 12px; }
+
+/* === EMPTY STATE === */
+.cb-empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 60vh; text-align: center; padding: 40px;
+}
+.cb-empty .icon {
+  width: 80px; height: 80px; border-radius: 50%;
+  background: var(--teal-glow);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 20px;
+}
+.cb-empty .icon svg { width: 36px; height: 36px; stroke: var(--teal); }
+.cb-empty h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px; font-weight: 600; margin-bottom: 8px;
+}
+.cb-empty p { font-size: 14px; color: var(--text-muted); margin-bottom: 24px; max-width: 400px; }
+
+/* === COURSE EDITOR === */
+.cb-editor { padding: 32px; max-width: 900px; }
+
+.cb-editor-header {
+  display: flex; align-items: flex-start; gap: 20px; margin-bottom: 32px;
+}
+.cb-editor-header .thumb {
+  width: 140px; height: 90px; border-radius: var(--radius);
+  background: var(--bg-card); border: 1px solid var(--border);
+  overflow: hidden; flex-shrink: 0; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color var(--ease); position: relative;
+}
+.cb-editor-header .thumb:hover { border-color: var(--border-hover); }
+.cb-editor-header .thumb img { width: 100%; height: 100%; object-fit: cover; }
+.cb-editor-header .thumb .placeholder {
+  font-size: 10px; color: var(--text-dim); text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.cb-editor-header .thumb .placeholder svg { width: 24px; height: 24px; stroke: var(--text-dim); }
+.cb-editor-header .info { flex: 1; }
+
+/* Field groups */
+.field-group { margin-bottom: 20px; }
+.field-group label {
+  display: block; font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .06em;
+  color: var(--text-muted); margin-bottom: 6px;
+}
+.field-group input, .field-group textarea, .field-group select {
+  width: 100%; padding: 10px 14px;
+  background: var(--bg-input); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text);
+  font-size: 14px; font-family: inherit; outline: none;
+  transition: border-color var(--ease);
+}
+.field-group input:focus, .field-group textarea:focus, .field-group select:focus {
+  border-color: var(--border-focus);
+}
+.field-group textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+.field-group select { cursor: pointer; }
+.field-group .hint { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.field-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+/* Toggle */
+.toggle-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,.03);
+}
+.toggle-row:last-child { border-bottom: none; }
+.toggle-row .toggle-info { flex: 1; }
+.toggle-row .toggle-label { font-size: 13px; font-weight: 500; }
+.toggle-row .toggle-desc { font-size: 11px; color: var(--text-muted); }
+.toggle {
+  width: 40px; height: 22px; border-radius: 11px;
+  background: rgba(255,255,255,.1); cursor: pointer;
+  position: relative; transition: background .2s;
+  border: none; flex-shrink: 0;
+}
+.toggle.on { background: var(--teal); }
+.toggle::after {
+  content: ''; position: absolute;
+  top: 3px; left: 3px;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: #fff; transition: transform .2s;
+}
+.toggle.on::after { transform: translateX(18px); }
+
+/* Section dividers */
+.cb-section {
+  margin-top: 32px; padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+.cb-section-head {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 16px;
+}
+.cb-section-head h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px; font-weight: 600; flex: 1;
+}
+.cb-section-head .badge {
+  font-size: 10px; padding: 3px 8px; border-radius: 10px;
+  background: var(--teal-glow); color: var(--teal); font-weight: 600;
+}
+
+/* === MODULES === */
+.module-list { }
+.module-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+  transition: border-color var(--ease);
+  overflow: hidden;
+}
+.module-item:hover { border-color: var(--border-hover); }
+.module-item.dragging { opacity: .5; border-color: var(--teal); }
+.module-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 16px; cursor: pointer;
+}
+.module-header .drag-handle {
+  cursor: grab; color: var(--text-dim); display: flex;
+  padding: 2px; transition: color .15s;
+}
+.module-header .drag-handle:hover { color: var(--text-muted); }
+.module-header .drag-handle svg { width: 16px; height: 16px; stroke: currentColor; }
+.module-header .module-title {
+  flex: 1; font-size: 14px; font-weight: 600;
+}
+.module-header .module-meta {
+  font-size: 11px; color: var(--text-dim);
+}
+.module-header .module-actions { display: flex; gap: 4px; }
+.module-header .expand-icon {
+  transition: transform .2s; color: var(--text-dim);
+}
+.module-item.open .module-header .expand-icon { transform: rotate(180deg); }
+
+/* Lessons inside module */
+.module-lessons {
+  display: none; padding: 0 16px 12px;
+  border-top: 1px solid rgba(255,255,255,.03);
+}
+.module-item.open .module-lessons { display: block; }
+
+.lesson-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; margin-top: 4px;
+  border-radius: var(--radius-sm);
+  background: rgba(0,0,0,.15);
+  transition: background .15s;
+  cursor: pointer;
+}
+.lesson-item:hover { background: rgba(0,0,0,.25); }
+.lesson-item.dragging { opacity: .5; }
+.lesson-item .lesson-drag {
+  cursor: grab; color: var(--text-dim); display: flex;
+}
+.lesson-item .lesson-drag svg { width: 14px; height: 14px; stroke: currentColor; }
+.lesson-item .lesson-type {
+  width: 28px; height: 28px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; flex-shrink: 0;
+}
+.lesson-type.video { background: rgba(91,168,178,.1); color: var(--teal); }
+.lesson-type.text { background: rgba(173,155,132,.1); color: var(--taupe); }
+.lesson-type.quiz { background: rgba(167,139,250,.1); color: var(--purple); }
+.lesson-type.pdf { background: rgba(240,180,41,.1); color: var(--warning); }
+.lesson-type.assignment { background: rgba(255,0,110,.08); color: var(--pink); }
+
+.lesson-item .lesson-info { flex: 1; min-width: 0; }
+.lesson-item .lesson-title { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lesson-item .lesson-meta { font-size: 11px; color: var(--text-dim); display: flex; gap: 8px; }
+.lesson-item .lesson-actions { display: flex; gap: 2px; }
+
+.add-lesson-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 12px; margin-top: 8px;
+  border: 1px dashed rgba(91,168,178,.3);
+  border-radius: var(--radius-sm);
+  background: transparent; color: var(--teal);
+  font-size: 12px; cursor: pointer; width: 100%;
+  transition: all .15s;
+}
+.add-lesson-btn:hover { background: rgba(91,168,178,.04); border-color: rgba(91,168,178,.5); }
+.add-lesson-btn svg { width: 14px; height: 14px; stroke: currentColor; }
+
+.add-module-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 14px; margin-top: 12px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  background: transparent; color: var(--text-muted);
+  font-size: 13px; cursor: pointer; width: 100%;
+  transition: all .15s;
+}
+.add-module-btn:hover { border-color: var(--border-hover); color: var(--teal); background: rgba(91,168,178,.02); }
+.add-module-btn svg { width: 16px; height: 16px; stroke: currentColor; }
+
+/* === MODAL === */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,.6); z-index: 100;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; opacity: 0; transition: opacity .2s;
+}
+.modal-overlay.open { opacity: 1; }
+.modal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  width: 100%; max-width: 560px;
+  max-height: 90vh; overflow-y: auto;
+  transform: translateY(10px); transition: transform .2s;
+}
+.modal-overlay.open .modal { transform: translateY(0); }
+.modal-head {
+  display: flex; align-items: center; gap: 12px;
+  padding: 20px 24px; border-bottom: 1px solid var(--border);
+}
+.modal-head h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px; font-weight: 600; flex: 1;
+}
+.modal-close {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: rgba(255,255,255,.04); border: none;
+  color: var(--text-muted); cursor: pointer; display: flex;
+  align-items: center; justify-content: center; transition: all .15s;
+}
+.modal-close:hover { background: rgba(255,255,255,.08); color: var(--text); }
+.modal-close svg { width: 18px; height: 18px; stroke: currentColor; }
+.modal-body { padding: 24px; }
+.modal-footer {
+  padding: 16px 24px; border-top: 1px solid var(--border);
+  display: flex; gap: 8px; justify-content: flex-end;
+}
+
+/* Toast */
+.toast {
+  position: fixed; bottom: 24px; right: 24px; z-index: 200;
+  padding: 12px 20px; border-radius: var(--radius);
+  font-size: 13px; font-weight: 500;
+  background: var(--bg-card); border: 1px solid var(--border);
+  color: var(--text); box-shadow: 0 8px 32px rgba(0,0,0,.3);
+  transform: translateY(20px); opacity: 0;
+  transition: all .3s ease;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.success { border-color: rgba(61,214,140,.4); color: var(--success); }
+.toast.error { border-color: rgba(239,83,80,.4); color: var(--danger); }
+
+/* Status badge */
+.status-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: 10px;
+  font-size: 10px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.status-badge.published { background: rgba(61,214,140,.1); color: var(--success); }
+.status-badge.draft { background: rgba(240,180,41,.1); color: var(--warning); }
+.status-badge.coming_soon { background: rgba(167,139,250,.1); color: var(--purple); }
+
+/* Preview badge */
+.preview-badge {
+  display: inline-block; padding: 1px 6px; border-radius: 4px;
+  font-size: 9px; font-weight: 600; text-transform: uppercase;
+  background: rgba(91,168,178,.15); color: var(--teal);
+}
+
+/* Unsaved indicator */
+.unsaved-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--warning); display: inline-block;
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; } 50% { opacity: .4; }
+}
+
+/* Loading spinner */
+.spinner {
+  width: 24px; height: 24px;
+  border: 2px solid var(--border);
+  border-top-color: var(--teal);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .cb-sidebar { display: none; }
+  .cb-main { margin-left: 0; }
+  .cb-editor { padding: 20px; }
+  .field-row, .field-row-3 { grid-template-columns: 1fr; }
+  .cb-editor-header { flex-direction: column; }
+  .cb-editor-header .thumb { width: 100%; height: 120px; }
+}
+  </style>
+</head>
+<body>
+
+<!-- Auth Screen -->
+<div id="auth-screen" class="auth-screen">
+  <div class="auth-box">
+    <div class="logo">Quantum Academy</div>
+    <div class="subtitle">Course Builder — Admin Access Required</div>
+    <div id="auth-error" class="auth-error"></div>
+    <input type="email" id="auth-email" placeholder="Admin email" autocomplete="email">
+    <input type="password" id="auth-pass" placeholder="Password" autocomplete="current-password">
+    <button class="btn-login" id="auth-btn" onclick="doAuth()">Sign In</button>
+  </div>
+</div>
+
+<!-- Main Layout (hidden until auth) -->
+<div id="app-layout" class="cb-layout" style="display:none">
+
+  <!-- Sidebar -->
+  <aside class="cb-sidebar">
+    <div class="cb-sidebar-header">
+      <div class="brand">Course Builder</div>
+      <div class="sub">Quantum Academy</div>
+      <div class="admin-info">
+        <div class="admin-avatar" id="adminAvatar">?</div>
+        <div>
+          <div class="admin-name" id="adminName">—</div>
+          <div class="admin-role" id="adminRole">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cb-course-list" id="courseList">
+      <div class="section-label">Courses</div>
+      <div id="courseListItems" style="padding:20px;text-align:center">
+        <div class="spinner" style="margin:0 auto"></div>
+      </div>
+    </div>
+
+    <button class="cb-add-course" onclick="createNewCourse()">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      New Course
+    </button>
+
+    <div class="cb-sidebar-footer">
+      <a href="/admin/" target="_blank">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Admin Panel
+      </a>
+      <a href="/academy/" target="_blank">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        View Academy
+      </a>
+      <a href="#" onclick="signOutBuilder();return false">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Sign Out
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="cb-main">
+    <div class="cb-topbar">
+      <div class="breadcrumb" id="breadcrumb">
+        Courses
+      </div>
+      <div class="actions" id="topActions"></div>
+    </div>
+
+    <div id="mainContent">
+      <!-- Dynamic content renders here -->
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div id="toast" class="toast"></div>
+
+<!-- ============ JAVASCRIPT ============ -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* =============================================
+   COURSE BUILDER — Quantum Academy
+   Uses same Supabase + admin-proxy pattern as QP Admin
+   ============================================= */
+
+// --- Config ---
+const SUPABASE_URL = 'https://bqbcehfozsaaqrbjvkml.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxYmNlaGZvenNhYXFyYmp2a21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjczMTcxNDEsImV4cCI6MjA0Mjg5MzE0MX0.2Iv2kPMLpECGqHPiyDGkPrdsMhFKQMFnpJm2x9a3vMA';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// --- State ---
+let currentAdmin = null;
+let allCourses = [];
+let selectedCourseId = null;
+let courseModules = [];
+let hasUnsavedChanges = false;
+
+// --- Proxy (same pattern as admin panel) ---
+function getAdminToken() { return sessionStorage.getItem('qp_admin_token') || ''; }
+
+async function adminProxy(payload) {
+  const res = await fetch('/.netlify/functions/admin-proxy', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + getAdminToken()
+    },
+    body: JSON.stringify(payload)
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error || 'Proxy request failed');
+  return json;
+}
+
+function proxyFrom(table) {
+  return {
+    _table: table, _select: '*', _filters: [], _order: null, _limit: null, _single: false,
+    select(s, opts) { this._select = s; if (opts && opts.count) this._count = opts.count; return this; },
+    eq(c, v) { this._filters.push({column:c, op:'eq', value:v}); return this; },
+    neq(c, v) { this._filters.push({column:c, op:'neq', value:v}); return this; },
+    gt(c, v) { this._filters.push({column:c, op:'gt', value:v}); return this; },
+    gte(c, v) { this._filters.push({column:c, op:'gte', value:v}); return this; },
+    in(c, v) { this._filters.push({column:c, op:'in', value:v}); return this; },
+    order(c, opts) { this._order = {column:c, ascending: opts ? opts.ascending !== false : true}; return this; },
+    limit(n) { this._limit = n; return this; },
+    single() { this._single = true; return this; },
+    maybeSingle() { this._filters.push({op:'maybeSingle'}); return this; },
+    then(resolve, reject) {
+      return adminProxy({type:'query', table:this._table, select:this._select, filters:this._filters, order:this._order, limit:this._limit, single:this._single})
+        .then(r => ({data: r.data, count: r.count !== undefined ? r.count : null, error: null}))
+        .then(resolve, e => resolve ? resolve({data:null, error:{message:e.message}}) : reject ? reject(e) : null);
+    },
+    insert(rows) {
+      const t = this._table; let sel = this._select;
+      return {
+        select(s) { sel = s; return this; },
+        then(resolve, reject) {
+          return adminProxy({type:'insert', table:t, data:rows, select: sel !== '*' ? sel : undefined})
+            .then(r => ({data:r.data, error:null}))
+            .then(resolve, e => resolve ? resolve({data:null, error:{message:e.message}}) : reject ? reject(e) : null);
+        }
+      };
+    },
+    update(d) {
+      const t = this._table; const f = this._filters;
+      return {
+        eq(c, v) { f.push({column:c, op:'eq', value:v}); return this; },
+        then(resolve, reject) {
+          return adminProxy({type:'update', table:t, data:d, filters:f})
+            .then(r => ({data:r.data, error:null}))
+            .then(resolve, e => resolve ? resolve({data:null, error:{message:e.message}}) : reject ? reject(e) : null);
+        }
+      };
+    },
+    delete() {
+      const t = this._table; const f = this._filters;
+      return {
+        eq(c, v) { f.push({column:c, op:'eq', value:v}); return this; },
+        then(resolve, reject) {
+          return adminProxy({type:'delete', table:t, filters:f})
+            .then(r => ({data:r.data, error:null}))
+            .then(resolve, e => resolve ? resolve({data:null, error:{message:e.message}}) : reject ? reject(e) : null);
+        }
+      };
+    }
+  };
+}
+
+// --- Auth ---
+async function doAuth() {
+  const emailEl = document.getElementById('auth-email');
+  const passEl = document.getElementById('auth-pass');
+  const errEl = document.getElementById('auth-error');
+  const btn = document.getElementById('auth-btn');
+  const email = emailEl.value.trim();
+  const pass = passEl.value;
+  if (!email || !pass) { errEl.textContent = 'Enter email and password'; errEl.style.display = 'block'; return; }
+  errEl.style.display = 'none';
+  btn.disabled = true; btn.textContent = 'Signing in...';
+  try {
+    // Try admin-auth function first
+    const res = await fetch('/.netlify/functions/admin-auth', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({action:'login', email:email.toLowerCase(), password:pass})
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Login failed');
+    currentAdmin = data.admin;
+    sessionStorage.setItem('qp_admin_auth', JSON.stringify(currentAdmin));
+    if (data.token) sessionStorage.setItem('qp_admin_token', data.token);
+    showApp();
+  } catch(e) {
+    // Fallback: direct Supabase auth
+    if (e.message && e.message.indexOf('Failed to fetch') !== -1) {
+      try {
+        const authRes = await sb.auth.signInWithPassword({email: email.toLowerCase(), password: pass});
+        if (authRes.error) throw new Error(authRes.error.message);
+        const admRes = await proxyFrom('admin_users').select('*').eq('email', email.toLowerCase()).eq('is_active', true).single();
+        if (admRes.error || !admRes.data) throw new Error('No admin access.');
+        currentAdmin = {
+          id: admRes.data.id, email: admRes.data.email, name: admRes.data.name, role: admRes.data.role,
+          permissions: { customers: admRes.data.can_customers, email: admRes.data.can_email }
+        };
+        sessionStorage.setItem('qp_admin_auth', JSON.stringify(currentAdmin));
+        if (authRes.data && authRes.data.session) sessionStorage.setItem('qp_admin_token', authRes.data.session.access_token);
+        showApp();
+      } catch(e2) {
+        errEl.textContent = e2.message; errEl.style.display = 'block';
+      }
+    } else {
+      errEl.textContent = e.message; errEl.style.display = 'block';
+    }
+  }
+  btn.disabled = false; btn.textContent = 'Sign In';
+}
+
+// Enter key on password field
+document.getElementById('auth-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doAuth(); });
+
+// Check for existing session
+(async function checkSession() {
+  const saved = sessionStorage.getItem('qp_admin_auth');
+  const token = sessionStorage.getItem('qp_admin_token');
+  if (saved && token) {
+    try {
+      currentAdmin = JSON.parse(saved);
+      showApp();
+    } catch(e) {
+      sessionStorage.clear();
+    }
+  }
+})();
+
+function showApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app-layout').style.display = 'flex';
+  document.getElementById('adminAvatar').textContent = (currentAdmin.name || currentAdmin.email)[0].toUpperCase();
+  document.getElementById('adminName').textContent = currentAdmin.name || currentAdmin.email.split('@')[0];
+  document.getElementById('adminRole').textContent = currentAdmin.role.replace('_', ' ');
+  loadCourses();
+}
+
+function signOutBuilder() {
+  sessionStorage.clear();
+  window.location.reload();
+}
+
+// --- SVG Icons ---
+const ICONS = {
+  grip: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="9" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="9" cy="18" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="18" r="1" fill="currentColor" stroke="none"/></svg>',
+  chevDown: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+  edit: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+  trash: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+  save: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>',
+  eye: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+  image: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>',
+  book: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>',
+  x: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+  layers: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>',
+  video: '▶️',
+  text: '📖',
+  quiz: '❓',
+  pdf: '📄',
+  assignment: '📝',
+};
+
+function typeIcon(t) {
+  return {video:'▶️', text:'📖', quiz:'❓', pdf:'📄', assignment:'📝'}[t] || '📖';
+}
+
+// --- Toast ---
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + (type || '') + ' show';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.className = 'toast', 3000);
+}
+
+// --- Escape HTML ---
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// --- Slug generator ---
+function slugify(text) {
+  return text.toLowerCase().trim()
+    .replace(/[^\w\s-]/g, '').replace(/[\s_]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+// --- Load Courses ---
+async function loadCourses() {
+  try {
+    const res = await sb.from('qa_courses').select('*').order('sort_order');
+    allCourses = res.data || [];
+    renderCourseList();
+    if (!selectedCourseId && allCourses.length) {
+      selectCourse(allCourses[0].id);
+    } else if (selectedCourseId) {
+      selectCourse(selectedCourseId);
+    } else {
+      showEmptyState();
+    }
+  } catch(e) {
+    showToast('Failed to load courses: ' + e.message, 'error');
+  }
+}
+
+function renderCourseList() {
+  const el = document.getElementById('courseListItems');
+  if (!allCourses.length) {
+    el.innerHTML = '<div style="padding:20px;text-align:center;font-size:12px;color:var(--text-dim)">No courses yet</div>';
+    return;
+  }
+  el.innerHTML = allCourses.map(c => `
+    <div class="cb-course-item ${c.id === selectedCourseId ? 'active' : ''}" onclick="selectCourse('${c.id}')">
+      <span class="dot ${c.status || 'draft'}"></span>
+      <span class="title">${esc(c.title)}</span>
+      <span class="count">${c.total_lessons || 0}</span>
+    </div>
+  `).join('');
+}
+
+function showEmptyState() {
+  document.getElementById('breadcrumb').innerHTML = 'Courses';
+  document.getElementById('topActions').innerHTML = '';
+  document.getElementById('mainContent').innerHTML = `
+    <div class="cb-empty">
+      <div class="icon">${ICONS.book}</div>
+      <h2>Build Your First Course</h2>
+      <p>Create courses with modules and lessons. Your students will see them on the Academy site.</p>
+      <button class="btn btn-primary" onclick="createNewCourse()">${ICONS.plus} Create Course</button>
+    </div>
+  `;
+}
+
+// --- Select Course ---
+async function selectCourse(id) {
+  if (hasUnsavedChanges) {
+    if (!confirm('You have unsaved changes. Discard them?')) return;
+  }
+  selectedCourseId = id;
+  hasUnsavedChanges = false;
+  renderCourseList();
+
+  const course = allCourses.find(c => c.id === id);
+  if (!course) { showEmptyState(); return; }
+
+  // Load modules + lessons
+  try {
+    const modRes = await sb.from('qa_modules')
+      .select('*, qa_lessons(*)')
+      .eq('course_id', id)
+      .order('sort_order');
+    courseModules = (modRes.data || []).map(m => ({
+      ...m,
+      qa_lessons: (m.qa_lessons || []).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+    }));
+  } catch(e) {
+    courseModules = [];
+    console.error('Module load error:', e);
+  }
+
+  renderCourseEditor(course);
+}
+
+// --- Render Course Editor ---
+function renderCourseEditor(course) {
+  document.getElementById('breadcrumb').innerHTML = `
+    <span style="cursor:pointer;color:var(--text-muted)" onclick="showEmptyState()">Courses</span>
+    <span style="margin:0 8px;color:var(--text-dim)">›</span>
+    <span>${esc(course.title)}</span>
+  `;
+
+  document.getElementById('topActions').innerHTML = `
+    <span id="unsavedIndicator" style="display:none;align-items:center;gap:6px;font-size:12px;color:var(--warning)"><span class="unsaved-dot"></span> Unsaved</span>
+    <a href="/academy/course.html?slug=${course.slug}" target="_blank" class="btn btn-ghost btn-sm">${ICONS.eye} Preview</a>
+    <button class="btn btn-danger btn-sm" onclick="deleteCourse('${course.id}')">${ICONS.trash} Delete</button>
+    <button class="btn btn-primary btn-sm" id="saveBtn" onclick="saveCourse()">${ICONS.save} Save Changes</button>
+  `;
+
+  const totalLessons = courseModules.reduce((sum, m) => sum + (m.qa_lessons || []).length, 0);
+
+  document.getElementById('mainContent').innerHTML = `
+    <div class="cb-editor">
+      <!-- Header with thumbnail -->
+      <div class="cb-editor-header">
+        <div class="thumb" onclick="editThumbnail()">
+          ${course.thumbnail_url
+            ? `<img src="${esc(course.thumbnail_url)}" alt="">`
+            : `<div class="placeholder">${ICONS.image}<span>Add thumbnail</span></div>`
+          }
+        </div>
+        <div class="info">
+          <div class="field-group" style="margin-bottom:10px">
+            <input type="text" id="ed-title" value="${esc(course.title || '')}" placeholder="Course title" style="font-size:20px;font-family:'Playfair Display',serif;font-weight:600;background:transparent;border:1px solid transparent;padding:8px 12px" onfocus="this.style.borderColor='var(--border-focus)'" onblur="this.style.borderColor='transparent'" oninput="markUnsaved()">
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span class="status-badge ${course.status || 'draft'}">${course.status || 'draft'}</span>
+            <span style="font-size:12px;color:var(--text-dim)">${courseModules.length} modules · ${totalLessons} lessons</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Details -->
+      <div class="field-group">
+        <label>Subtitle</label>
+        <input type="text" id="ed-subtitle" value="${esc(course.subtitle || '')}" placeholder="A brief tagline for your course" oninput="markUnsaved()">
+      </div>
+
+      <div class="field-group">
+        <label>Description</label>
+        <textarea id="ed-desc" rows="4" placeholder="What students will learn…" oninput="markUnsaved()">${esc(course.description || '')}</textarea>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label>Slug</label>
+          <input type="text" id="ed-slug" value="${esc(course.slug || '')}" placeholder="course-url-slug" oninput="markUnsaved()">
+          <div class="hint">/academy/course.html?slug=<span id="slugPreview">${esc(course.slug || '')}</span></div>
+        </div>
+        <div class="field-group">
+          <label>Category</label>
+          <input type="text" id="ed-category" value="${esc(course.category || '')}" placeholder="e.g. Self-H.O.P.E. Workshop Series" oninput="markUnsaved()">
+        </div>
+      </div>
+
+      <div class="field-row-3">
+        <div class="field-group">
+          <label>Price (cents)</label>
+          <input type="number" id="ed-price" value="${course.price_cents || 0}" min="0" oninput="markUnsaved()">
+          <div class="hint">$${((course.price_cents || 0) / 100).toFixed(2)}</div>
+        </div>
+        <div class="field-group">
+          <label>Sale Price (cents)</label>
+          <input type="number" id="ed-sale-price" value="${course.sale_price_cents || ''}" placeholder="Optional" oninput="markUnsaved()">
+        </div>
+        <div class="field-group">
+          <label>Status</label>
+          <select id="ed-status" onchange="markUnsaved()">
+            <option value="draft" ${course.status === 'draft' ? 'selected' : ''}>Draft</option>
+            <option value="published" ${course.status === 'published' ? 'selected' : ''}>Published</option>
+            <option value="coming_soon" ${course.status === 'coming_soon' ? 'selected' : ''}>Coming Soon</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label>Thumbnail URL</label>
+          <input type="text" id="ed-thumb" value="${esc(course.thumbnail_url || '')}" placeholder="https://..." oninput="markUnsaved()">
+        </div>
+        <div class="field-group">
+          <label>Promo Video URL</label>
+          <input type="text" id="ed-video" value="${esc(course.promo_video_url || '')}" placeholder="https://..." oninput="markUnsaved()">
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label>Instructor Name</label>
+          <input type="text" id="ed-instructor" value="${esc(course.instructor_name || '')}" placeholder="Dr. Tracey Clark" oninput="markUnsaved()">
+        </div>
+        <div class="field-group">
+          <label>Sort Order</label>
+          <input type="number" id="ed-sort" value="${course.sort_order || 0}" min="0" oninput="markUnsaved()">
+        </div>
+      </div>
+
+      <!-- Toggles -->
+      <div class="cb-section">
+        <div class="cb-section-head"><h3>Settings</h3></div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Discussion</div>
+            <div class="toggle-desc">Enable community discussions for this course</div>
+          </div>
+          <button class="toggle ${course.discussion_enabled ? 'on' : ''}" id="tog-discussion" onclick="this.classList.toggle('on');markUnsaved()"></button>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Certificate</div>
+            <div class="toggle-desc">Award certificate on course completion</div>
+          </div>
+          <button class="toggle ${course.certificate_enabled ? 'on' : ''}" id="tog-certificate" onclick="this.classList.toggle('on');markUnsaved()"></button>
+        </div>
+      </div>
+
+      <!-- CURRICULUM -->
+      <div class="cb-section">
+        <div class="cb-section-head">
+          <h3>Curriculum</h3>
+          <span class="badge">${courseModules.length} modules · ${totalLessons} lessons</span>
+        </div>
+
+        <div class="module-list" id="moduleList">
+          ${courseModules.map((m, mi) => renderModule(m, mi)).join('')}
+        </div>
+
+        <button class="add-module-btn" onclick="addModule()">
+          ${ICONS.plus} Add Module
+        </button>
+      </div>
+    </div>
+  `;
+
+  // Update slug preview on title change
+  const titleEl = document.getElementById('ed-title');
+  const slugEl = document.getElementById('ed-slug');
+  titleEl.addEventListener('input', () => {
+    if (!slugEl._userEdited) {
+      const newSlug = slugify(titleEl.value);
+      slugEl.value = newSlug;
+      document.getElementById('slugPreview').textContent = newSlug;
+    }
+  });
+  slugEl.addEventListener('input', () => {
+    slugEl._userEdited = true;
+    document.getElementById('slugPreview').textContent = slugEl.value;
+  });
+
+  // Update price display
+  document.getElementById('ed-price').addEventListener('input', function() {
+    const hint = this.parentElement.querySelector('.hint');
+    if (hint) hint.textContent = '$' + (Number(this.value || 0) / 100).toFixed(2);
+  });
+}
+
+function renderModule(mod, idx) {
+  const lessons = mod.qa_lessons || [];
+  return `
+    <div class="module-item" data-id="${mod.id}" data-idx="${idx}">
+      <div class="module-header" onclick="toggleModule(this)">
+        <div class="drag-handle" draggable="true" ondragstart="dragModuleStart(event, '${mod.id}')" ondragover="event.preventDefault()" ondrop="dropModule(event, '${mod.id}')">${ICONS.grip}</div>
+        <span class="module-title">Module ${idx + 1}: ${esc(mod.title)}</span>
+        <span class="module-meta">${lessons.length} lesson${lessons.length !== 1 ? 's' : ''}</span>
+        <div class="module-actions">
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();editModule('${mod.id}')" title="Edit">${ICONS.edit}</button>
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();deleteModule('${mod.id}')" title="Delete" style="color:var(--danger)">${ICONS.trash}</button>
+        </div>
+        <span class="expand-icon">${ICONS.chevDown}</span>
+      </div>
+      <div class="module-lessons">
+        ${lessons.map((l, li) => renderLesson(l, li, mod.id)).join('')}
+        <button class="add-lesson-btn" onclick="addLesson('${mod.id}')">
+          ${ICONS.plus} Add Lesson
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+function renderLesson(lesson, idx, moduleId) {
+  return `
+    <div class="lesson-item" data-id="${lesson.id}" draggable="true" ondragstart="dragLessonStart(event, '${lesson.id}', '${moduleId}')" ondragover="event.preventDefault()" ondrop="dropLesson(event, '${lesson.id}', '${moduleId}')">
+      <div class="lesson-drag">${ICONS.grip}</div>
+      <div class="lesson-type ${lesson.content_type || 'text'}">${typeIcon(lesson.content_type)}</div>
+      <div class="lesson-info">
+        <div class="lesson-title">${esc(lesson.title)}</div>
+        <div class="lesson-meta">
+          <span>${lesson.content_type || 'text'}</span>
+          ${lesson.estimated_minutes ? `<span>${lesson.estimated_minutes}m</span>` : ''}
+          ${lesson.is_free_preview ? '<span class="preview-badge">Preview</span>' : ''}
+        </div>
+      </div>
+      <div class="lesson-actions">
+        <button class="btn btn-ghost btn-sm" onclick="editLesson('${lesson.id}', '${moduleId}')">${ICONS.edit}</button>
+        <button class="btn btn-ghost btn-sm" onclick="deleteLesson('${lesson.id}', '${moduleId}')" style="color:var(--danger)">${ICONS.trash}</button>
+      </div>
+    </div>
+  `;
+}
+
+function toggleModule(header) {
+  header.closest('.module-item').classList.toggle('open');
+}
+
+function markUnsaved() {
+  hasUnsavedChanges = true;
+  const ind = document.getElementById('unsavedIndicator');
+  if (ind) ind.style.display = 'flex';
+}
+
+// --- Save Course ---
+async function saveCourse() {
+  const btn = document.getElementById('saveBtn');
+  btn.disabled = true; btn.innerHTML = '<div class="spinner" style="width:14px;height:14px;border-width:2px"></div> Saving...';
+
+  try {
+    const data = {
+      title: document.getElementById('ed-title').value.trim(),
+      subtitle: document.getElementById('ed-subtitle').value.trim() || null,
+      description: document.getElementById('ed-desc').value.trim() || null,
+      slug: document.getElementById('ed-slug').value.trim(),
+      category: document.getElementById('ed-category').value.trim() || null,
+      price_cents: Number(document.getElementById('ed-price').value) || 0,
+      sale_price_cents: document.getElementById('ed-sale-price').value ? Number(document.getElementById('ed-sale-price').value) : null,
+      status: document.getElementById('ed-status').value,
+      thumbnail_url: document.getElementById('ed-thumb').value.trim() || null,
+      promo_video_url: document.getElementById('ed-video').value.trim() || null,
+      instructor_name: document.getElementById('ed-instructor').value.trim() || null,
+      sort_order: Number(document.getElementById('ed-sort').value) || 0,
+      discussion_enabled: document.getElementById('tog-discussion').classList.contains('on'),
+      certificate_enabled: document.getElementById('tog-certificate').classList.contains('on'),
+      total_lessons: courseModules.reduce((sum, m) => sum + (m.qa_lessons || []).length, 0),
+      total_duration_minutes: courseModules.reduce((sum, m) => sum + (m.qa_lessons || []).reduce((s, l) => s + (l.estimated_minutes || 0), 0), 0),
+    };
+
+    if (!data.title) { showToast('Title is required', 'error'); return; }
+    if (!data.slug) { showToast('Slug is required', 'error'); return; }
+
+    const res = await proxyFrom('qa_courses').update(data).eq('id', selectedCourseId);
+    if (res.error) throw new Error(res.error.message);
+
+    hasUnsavedChanges = false;
+    const ind = document.getElementById('unsavedIndicator');
+    if (ind) ind.style.display = 'none';
+
+    await loadCourses();
+    showToast('Course saved', 'success');
+  } catch(e) {
+    showToast('Save failed: ' + e.message, 'error');
+  }
+  btn.disabled = false; btn.innerHTML = ICONS.save + ' Save Changes';
+}
+
+// --- Create Course ---
+async function createNewCourse() {
+  const title = prompt('Course title:');
+  if (!title) return;
+
+  try {
+    const slug = slugify(title);
+    const sortOrder = allCourses.length;
+    const res = await proxyFrom('qa_courses').insert({
+      title: title.trim(),
+      slug: slug,
+      status: 'draft',
+      sort_order: sortOrder,
+      price_cents: 0,
+      instructor_name: 'Dr. Tracey Clark',
+      discussion_enabled: false,
+      certificate_enabled: false,
+      total_lessons: 0,
+      total_duration_minutes: 0,
+    }).select('*');
+
+    if (res.error) throw new Error(res.error.message);
+    if (res.data && res.data.length) {
+      selectedCourseId = res.data[0].id;
+    }
+    await loadCourses();
+    showToast('Course created!', 'success');
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+// --- Delete Course ---
+async function deleteCourse(id) {
+  const course = allCourses.find(c => c.id === id);
+  if (!confirm(`Delete "${course.title}"? This will also delete all modules and lessons. This cannot be undone.`)) return;
+
+  try {
+    // Delete lessons first, then modules, then course
+    for (const m of courseModules) {
+      for (const l of (m.qa_lessons || [])) {
+        await proxyFrom('qa_lessons').delete().eq('id', l.id);
+      }
+      await proxyFrom('qa_modules').delete().eq('id', m.id);
+    }
+    await proxyFrom('qa_courses').delete().eq('id', id);
+
+    selectedCourseId = null;
+    hasUnsavedChanges = false;
+    await loadCourses();
+    showToast('Course deleted', 'success');
+  } catch(e) {
+    showToast('Delete failed: ' + e.message, 'error');
+  }
+}
+
+// --- Add Module ---
+async function addModule() {
+  const title = prompt('Module title:');
+  if (!title) return;
+
+  try {
+    const sortOrder = courseModules.length;
+    const res = await proxyFrom('qa_modules').insert({
+      course_id: selectedCourseId,
+      title: title.trim(),
+      sort_order: sortOrder,
+    }).select('*');
+
+    if (res.error) throw new Error(res.error.message);
+    await selectCourse(selectedCourseId);
+    showToast('Module added', 'success');
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+// --- Edit Module ---
+async function editModule(moduleId) {
+  const mod = courseModules.find(m => m.id === moduleId);
+  if (!mod) return;
+  const title = prompt('Module title:', mod.title);
+  if (title === null) return;
+
+  try {
+    await proxyFrom('qa_modules').update({title: title.trim()}).eq('id', moduleId);
+    await selectCourse(selectedCourseId);
+    showToast('Module updated', 'success');
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+// --- Delete Module ---
+async function deleteModule(moduleId) {
+  const mod = courseModules.find(m => m.id === moduleId);
+  if (!mod) return;
+  const lessonCount = (mod.qa_lessons || []).length;
+  if (!confirm(`Delete module "${mod.title}"${lessonCount ? ' and its ' + lessonCount + ' lesson(s)' : ''}?`)) return;
+
+  try {
+    for (const l of (mod.qa_lessons || [])) {
+      await proxyFrom('qa_lessons').delete().eq('id', l.id);
+    }
+    await proxyFrom('qa_modules').delete().eq('id', moduleId);
+    await selectCourse(selectedCourseId);
+    showToast('Module deleted', 'success');
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+// --- Add Lesson ---
+function addLesson(moduleId) {
+  showLessonModal(null, moduleId);
+}
+
+// --- Edit Lesson ---
+function editLesson(lessonId, moduleId) {
+  const mod = courseModules.find(m => m.id === moduleId);
+  const lesson = mod ? (mod.qa_lessons || []).find(l => l.id === lessonId) : null;
+  if (!lesson) return;
+  showLessonModal(lesson, moduleId);
+}
+
+// --- Lesson Modal ---
+function showLessonModal(lesson, moduleId) {
+  const isEdit = !!lesson;
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <div class="modal-head">
+        <h3>${isEdit ? 'Edit Lesson' : 'Add Lesson'}</h3>
+        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">${ICONS.x}</button>
+      </div>
+      <div class="modal-body">
+        <div class="field-group">
+          <label>Lesson Title</label>
+          <input type="text" id="ml-title" value="${esc(lesson ? lesson.title : '')}" placeholder="Lesson title">
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label>Content Type</label>
+            <select id="ml-type">
+              <option value="video" ${lesson && lesson.content_type === 'video' ? 'selected' : ''}>Video</option>
+              <option value="text" ${lesson && lesson.content_type === 'text' ? 'selected' : ''}>Text</option>
+              <option value="quiz" ${lesson && lesson.content_type === 'quiz' ? 'selected' : ''}>Quiz</option>
+              <option value="pdf" ${lesson && lesson.content_type === 'pdf' ? 'selected' : ''}>PDF</option>
+              <option value="assignment" ${lesson && lesson.content_type === 'assignment' ? 'selected' : ''}>Assignment</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label>Duration (minutes)</label>
+            <input type="number" id="ml-duration" value="${lesson ? lesson.estimated_minutes || '' : ''}" placeholder="Optional" min="0">
+          </div>
+        </div>
+        <div class="field-group">
+          <label>Video URL</label>
+          <input type="text" id="ml-video" value="${esc(lesson ? lesson.video_url || '' : '')}" placeholder="Vimeo or video URL">
+        </div>
+        <div class="field-group">
+          <label>Content / Description</label>
+          <textarea id="ml-content" rows="4" placeholder="Lesson content or description">${esc(lesson ? lesson.content || '' : '')}</textarea>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Free Preview</div>
+            <div class="toggle-desc">Allow non-enrolled users to preview this lesson</div>
+          </div>
+          <button class="toggle ${lesson && lesson.is_free_preview ? 'on' : ''}" id="ml-preview" onclick="this.classList.toggle('on')"></button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveLesson('${moduleId}', ${isEdit ? "'" + lesson.id + "'" : 'null'})">${isEdit ? 'Save Changes' : 'Add Lesson'}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add('open'));
+  overlay.querySelector('#ml-title').focus();
+}
+
+// --- Save Lesson ---
+async function saveLesson(moduleId, lessonId) {
+  const title = document.getElementById('ml-title').value.trim();
+  if (!title) { showToast('Lesson title is required', 'error'); return; }
+
+  const data = {
+    title: title,
+    content_type: document.getElementById('ml-type').value,
+    estimated_minutes: Number(document.getElementById('ml-duration').value) || null,
+    video_url: document.getElementById('ml-video').value.trim() || null,
+    content: document.getElementById('ml-content').value.trim() || null,
+    is_free_preview: document.getElementById('ml-preview').classList.contains('on'),
+  };
+
+  try {
+    if (lessonId) {
+      await proxyFrom('qa_lessons').update(data).eq('id', lessonId);
+    } else {
+      const mod = courseModules.find(m => m.id === moduleId);
+      data.module_id = moduleId;
+      data.course_id = selectedCourseId;
+      data.sort_order = mod ? (mod.qa_lessons || []).length : 0;
+      await proxyFrom('qa_lessons').insert(data);
+    }
+    document.querySelector('.modal-overlay').remove();
+    await selectCourse(selectedCourseId);
+    // Auto-save total_lessons count
+    const totalLessons = courseModules.reduce((sum, m) => sum + (m.qa_lessons || []).length, 0);
+    const totalDuration = courseModules.reduce((sum, m) => sum + (m.qa_lessons || []).reduce((s, l) => s + (l.estimated_minutes || 0), 0), 0);
+    await proxyFrom('qa_courses').update({total_lessons: totalLessons, total_duration_minutes: totalDuration}).eq('id', selectedCourseId);
+    showToast(lessonId ? 'Lesson updated' : 'Lesson added', 'success');
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+// --- Delete Lesson ---
+async function deleteLesson(lessonId, moduleId) {
+  if (!confirm('Delete this lesson?')) return;
+  try {
+    await proxyFrom('qa_lessons').delete().eq('id', lessonId);
+    await selectCourse(selectedCourseId);
+    showToast('Lesson deleted', 'success');
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+// --- Thumbnail Edit ---
+function editThumbnail() {
+  const el = document.getElementById('ed-thumb');
+  el.focus();
+  el.scrollIntoView({behavior: 'smooth', block: 'center'});
+}
+
+// --- Drag & Drop: Modules ---
+let dragModuleId = null;
+function dragModuleStart(e, id) {
+  dragModuleId = id;
+  e.stopPropagation();
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+async function dropModule(e, targetId) {
+  e.preventDefault();
+  if (!dragModuleId || dragModuleId === targetId) return;
+
+  const fromIdx = courseModules.findIndex(m => m.id === dragModuleId);
+  const toIdx = courseModules.findIndex(m => m.id === targetId);
+  if (fromIdx === -1 || toIdx === -1) return;
+
+  // Reorder
+  const [moved] = courseModules.splice(fromIdx, 1);
+  courseModules.splice(toIdx, 0, moved);
+
+  // Save new sort orders
+  try {
+    for (let i = 0; i < courseModules.length; i++) {
+      await proxyFrom('qa_modules').update({sort_order: i}).eq('id', courseModules[i].id);
+    }
+    await selectCourse(selectedCourseId);
+  } catch(e) {
+    showToast('Reorder failed: ' + e.message, 'error');
+  }
+  dragModuleId = null;
+}
+
+// --- Drag & Drop: Lessons ---
+let dragLessonId = null;
+let dragLessonModuleId = null;
+function dragLessonStart(e, lessonId, moduleId) {
+  dragLessonId = lessonId;
+  dragLessonModuleId = moduleId;
+  e.stopPropagation();
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+async function dropLesson(e, targetLessonId, targetModuleId) {
+  e.preventDefault();
+  if (!dragLessonId || dragLessonId === targetLessonId) return;
+
+  const sourceMod = courseModules.find(m => m.id === dragLessonModuleId);
+  const targetMod = courseModules.find(m => m.id === targetModuleId);
+  if (!sourceMod || !targetMod) return;
+
+  const lessons = targetMod.qa_lessons || [];
+  const fromIdx = (sourceMod.qa_lessons || []).findIndex(l => l.id === dragLessonId);
+  const toIdx = lessons.findIndex(l => l.id === targetLessonId);
+
+  if (dragLessonModuleId === targetModuleId) {
+    // Same module reorder
+    const [moved] = lessons.splice(fromIdx, 1);
+    lessons.splice(toIdx, 0, moved);
+    try {
+      for (let i = 0; i < lessons.length; i++) {
+        await proxyFrom('qa_lessons').update({sort_order: i}).eq('id', lessons[i].id);
+      }
+      await selectCourse(selectedCourseId);
+    } catch(e) {
+      showToast('Reorder failed', 'error');
+    }
+  } else {
+    // Move to different module
+    try {
+      await proxyFrom('qa_lessons').update({module_id: targetModuleId, sort_order: toIdx}).eq('id', dragLessonId);
+      await selectCourse(selectedCourseId);
+    } catch(e) {
+      showToast('Move failed', 'error');
+    }
+  }
+  dragLessonId = null;
+  dragLessonModuleId = null;
+}
+
+// Warn on page leave with unsaved changes
+window.addEventListener('beforeunload', e => {
+  if (hasUnsavedChanges) { e.preventDefault(); e.returnValue = ''; }
+});
+</script>
+</body>
+</html>
