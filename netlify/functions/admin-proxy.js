@@ -1,10 +1,6 @@
 // /netlify/functions/admin-proxy.js
-// Proxies ALL admin Supabase operations server-side so the service role key
-// never touches the browser. Validates admin session before executing.
-
 const { createClient } = require("@supabase/supabase-js");
 
-// Tables the admin panel is allowed to read/write
 const ALLOWED_TABLES = [
   "admin_audit_log", "admin_notes", "admin_users",
   "email_campaigns", "email_tracking", "profiles",
@@ -12,13 +8,7 @@ const ALLOWED_TABLES = [
   "referral_codes", "scheduled_emails", "session_schedule"
 ];
 
-// Tables the admin panel is allowed to write to
-const WRITABLE_TABLES = [
-  "admin_audit_log", "admin_notes", "admin_users",
-  "email_campaigns", "email_tracking", "profiles",
-  "promotions", "purchases", "qa_enrollments", "qa_profiles",
-  "referral_codes", "scheduled_emails", "session_schedule"
-];
+const WRITABLE_TABLES = [...ALLOWED_TABLES];
 
 exports.handler = async (event) => {
   const headers = {
@@ -27,13 +17,8 @@ exports.handler = async (event) => {
     "Access-Control-Allow-Methods": "POST, OPTIONS",
   };
 
-  if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 200, headers, body: "" };
-  }
-
-  if (event.httpMethod !== "POST") {
-    return { statusCode: 405, headers, body: JSON.stringify({ error: "Method not allowed" }) };
-  }
+  if (event.httpMethod === "OPTIONS") return { statusCode: 200, headers, body: "" };
+  if (event.httpMethod !== "POST") return { statusCode: 405, headers, body: JSON.stringify({ error: "Method not allowed" }) };
 
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
@@ -46,87 +31,77 @@ exports.handler = async (event) => {
   const sbAnon = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const sbAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-  // --- Authenticate the request ---
   const authHeader = event.headers["authorization"] || "";
   const token = authHeader.replace("Bearer ", "");
 
-  if (!token) {
-    return { statusCode: 401, headers, body: JSON.stringify({ error: "No auth token" }) };
-  }
+  if (!token) return { statusCode: 401, headers, body: JSON.stringify({ error: "No auth token" }) };
 
-  // Verify token and check admin access
   let adminEmail;
   try {
     const { data: { user }, error } = await sbAnon.auth.getUser(token);
-    if (error || !user) {
-      return { statusCode: 401, headers, body: JSON.stringify({ error: "Invalid token" }) };
-    }
+    if (error || !user) return { statusCode: 401, headers, body: JSON.stringify({ error: "Invalid token" }) };
     adminEmail = user.email.toLowerCase();
 
     const { data: adminUser, error: adminErr } = await sbAdmin
-      .from("admin_users")
-      .select("id, is_active")
-      .eq("email", adminEmail)
-      .eq("is_active", true)
-      .single();
+      .from("admin_users").select("id, is_active")
+      .eq("email", adminEmail).eq("is_active", true).single();
 
-    if (adminErr || !adminUser) {
-      return { statusCode: 403, headers, body: JSON.stringify({ error: "Not an active admin" }) };
-    }
+    if (adminErr || !adminUser) return { statusCode: 403, headers, body: JSON.stringify({ error: "Not an active admin" }) };
   } catch (e) {
     return { statusCode: 401, headers, body: JSON.stringify({ error: "Auth failed: " + e.message }) };
   }
 
-  // --- Parse and execute the operation ---
   try {
     const body = JSON.parse(event.body || "{}");
     const { type } = body;
 
-    // Route to handler
-    if (type === "query") {
-      return await handleQuery(sbAdmin, body, headers);
-    } else if (type === "insert") {
-      return await handleInsert(sbAdmin, body, headers);
-    } else if (type === "update") {
-      return await handleUpdate(sbAdmin, body, headers);
-    } else if (type === "delete") {
-      return await handleDelete(sbAdmin, body, headers);
-    } else if (type === "auth_admin") {
-      return await handleAuthAdmin(SUPABASE_URL, SUPABASE_SERVICE_KEY, body, headers);
-    } else {
-      return { statusCode: 400, headers, body: JSON.stringify({ error: "Unknown type: " + type }) };
-    }
+    if (type === "query") return await handleQuery(sbAdmin, body, headers);
+    if (type === "insert") return await handleInsert(sbAdmin, body, headers);
+    if (type === "update") return await handleUpdate(sbAdmin, body, headers);
+    if (type === "delete") return await handleDelete(sbAdmin, body, headers);
+    if (type === "auth_admin") return await handleAuthAdmin(SUPABASE_URL, SUPABASE_SERVICE_KEY, body, headers);
+
+    return { statusCode: 400, headers, body: JSON.stringify({ error: "Unknown type: " + type }) };
   } catch (err) {
     console.error("Proxy error:", err);
     return { statusCode: 500, headers, body: JSON.stringify({ error: err.message }) };
   }
 };
 
-// --- Query (select) ---
 async function handleQuery(sb, body, headers) {
-  const { table, select, filters, order, limit, single } = body;
+  const { table, select, filters, order, limit, single, range, count } = body;
 
   if (!table || !ALLOWED_TABLES.includes(table)) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: "Invalid table: " + table }) };
   }
 
-  let query = sb.from(table).select(select || "*");
+  // Support count option in select
+  let selectOpts = {};
+  if (count) selectOpts.count = count;
+  let query = sb.from(table).select(select || "*", Object.keys(selectOpts).length ? selectOpts : undefined);
+  
   query = applyFilters(query, filters);
   if (order) query = query.order(order.column, { ascending: order.ascending !== false });
+  if (range) query = query.range(range.from, range.to);
   if (limit) query = query.limit(limit);
   if (single) query = query.single();
 
-  const { data, error } = await query;
-  if (error) {
-    return { statusCode: 400, headers, body: JSON.stringify({ error: error.message }) };
+  const result = await query;
+  if (result.error) {
+    return { statusCode: 400, headers, body: JSON.stringify({ error: result.error.message }) };
   }
-  return { statusCode: 200, headers, body: JSON.stringify({ data }) };
+  
+  // Include count in response if requested
+  const responseBody = { data: result.data };
+  if (result.count !== undefined && result.count !== null) {
+    responseBody.count = result.count;
+  }
+  
+  return { statusCode: 200, headers, body: JSON.stringify(responseBody) };
 }
 
-// --- Insert ---
 async function handleInsert(sb, body, headers) {
   const { table, data: rowData, select: returnSelect } = body;
-
   if (!table || !WRITABLE_TABLES.includes(table)) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: "Invalid table: " + table }) };
   }
@@ -135,20 +110,15 @@ async function handleInsert(sb, body, headers) {
   if (returnSelect) query = query.select(returnSelect);
 
   const { data, error } = await query;
-  if (error) {
-    return { statusCode: 400, headers, body: JSON.stringify({ error: error.message }) };
-  }
+  if (error) return { statusCode: 400, headers, body: JSON.stringify({ error: error.message }) };
   return { statusCode: 200, headers, body: JSON.stringify({ data }) };
 }
 
-// --- Update ---
 async function handleUpdate(sb, body, headers) {
   const { table, data: updateData, filters } = body;
-
   if (!table || !WRITABLE_TABLES.includes(table)) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: "Invalid table: " + table }) };
   }
-
   if (!filters || filters.length === 0) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: "Update requires filters" }) };
   }
@@ -157,20 +127,15 @@ async function handleUpdate(sb, body, headers) {
   query = applyFilters(query, filters);
 
   const { data, error } = await query;
-  if (error) {
-    return { statusCode: 400, headers, body: JSON.stringify({ error: error.message }) };
-  }
+  if (error) return { statusCode: 400, headers, body: JSON.stringify({ error: error.message }) };
   return { statusCode: 200, headers, body: JSON.stringify({ data }) };
 }
 
-// --- Delete ---
 async function handleDelete(sb, body, headers) {
   const { table, filters } = body;
-
   if (!table || !WRITABLE_TABLES.includes(table)) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: "Invalid table: " + table }) };
   }
-
   if (!filters || filters.length === 0) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: "Delete requires filters" }) };
   }
@@ -179,16 +144,12 @@ async function handleDelete(sb, body, headers) {
   query = applyFilters(query, filters);
 
   const { data, error } = await query;
-  if (error) {
-    return { statusCode: 400, headers, body: JSON.stringify({ error: error.message }) };
-  }
+  if (error) return { statusCode: 400, headers, body: JSON.stringify({ error: error.message }) };
   return { statusCode: 200, headers, body: JSON.stringify({ data }) };
 }
 
-// --- Auth Admin API calls (users list, ban, magic link, etc.) ---
 async function handleAuthAdmin(supabaseUrl, serviceKey, body, headers) {
   const { action, params } = body;
-
   const authHeaders = {
     "Content-Type": "application/json",
     "apikey": serviceKey,
@@ -198,51 +159,32 @@ async function handleAuthAdmin(supabaseUrl, serviceKey, body, headers) {
   if (action === "list_users") {
     const page = params.page || 1;
     const perPage = params.per_page || 500;
-    const res = await fetch(
-      supabaseUrl + "/auth/v1/admin/users?page=" + page + "&per_page=" + perPage,
-      { headers: authHeaders }
-    );
+    const res = await fetch(supabaseUrl + "/auth/v1/admin/users?page=" + page + "&per_page=" + perPage, { headers: authHeaders });
     const data = await res.json();
-    if (!res.ok) {
-      return { statusCode: res.status, headers, body: JSON.stringify({ error: "Auth API error", details: data }) };
-    }
+    if (!res.ok) return { statusCode: res.status, headers, body: JSON.stringify({ error: "Auth API error", details: data }) };
     return { statusCode: 200, headers, body: JSON.stringify({ data }) };
   }
 
   if (action === "generate_link") {
-    const res = await fetch(supabaseUrl + "/auth/v1/admin/generate_link", {
-      method: "POST",
-      headers: authHeaders,
-      body: JSON.stringify(params),
-    });
+    const res = await fetch(supabaseUrl + "/auth/v1/admin/generate_link", { method: "POST", headers: authHeaders, body: JSON.stringify(params) });
     const data = await res.json();
-    if (!res.ok) {
-      return { statusCode: res.status, headers, body: JSON.stringify({ error: "Auth API error", details: data }) };
-    }
+    if (!res.ok) return { statusCode: res.status, headers, body: JSON.stringify({ error: "Auth API error", details: data }) };
     return { statusCode: 200, headers, body: JSON.stringify({ data }) };
   }
 
   if (action === "update_user") {
     const { userId, userData } = params;
-    const res = await fetch(supabaseUrl + "/auth/v1/admin/users/" + userId, {
-      method: "PUT",
-      headers: authHeaders,
-      body: JSON.stringify(userData),
-    });
+    const res = await fetch(supabaseUrl + "/auth/v1/admin/users/" + userId, { method: "PUT", headers: authHeaders, body: JSON.stringify(userData) });
     const data = await res.json();
-    if (!res.ok) {
-      return { statusCode: res.status, headers, body: JSON.stringify({ error: "Auth API error", details: data }) };
-    }
+    if (!res.ok) return { statusCode: res.status, headers, body: JSON.stringify({ error: "Auth API error", details: data }) };
     return { statusCode: 200, headers, body: JSON.stringify({ data }) };
   }
 
   return { statusCode: 400, headers, body: JSON.stringify({ error: "Unknown auth action: " + action }) };
 }
 
-// --- Apply filter array to a Supabase query ---
 function applyFilters(query, filters) {
   if (!filters || !Array.isArray(filters)) return query;
-
   for (const f of filters) {
     const { column, op, value } = f;
     switch (op) {
