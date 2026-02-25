@@ -616,6 +616,7 @@
         <a href="/academy/"><svg><use href="#i-book"/></svg> Browse Courses</a>
         <a href="javascript:void(0)" onclick="openEventsPanel()"><svg><use href="#i-cal"/></svg> Schedule</a>
         <a href="/"><svg><use href="#i-home"/></svg> Main Site</a>
+        <a href="/academy/builder.html" id="builderLink" style="display:none"><svg><use href="#i-settings"/></svg> Course Builder</a>
         <div class="divider"></div>
         <button class="d-theme-toggle" onclick="toggleTheme()">
           <svg><use href="#i-sun"/></svg> <span id="themeLabel">Light</span>
@@ -906,6 +907,12 @@
       } catch(e){}
 
       trackEvent('page_view', null, null, { page: 'dashboard' });
+
+      // Show Course Builder link for admins
+      try {
+        const { data: adm } = await sb.from('admin_users').select('id').eq('email', user.email.toLowerCase()).eq('is_active', true).single();
+        if (adm) document.getElementById('builderLink').style.display = '';
+      } catch(e) {}
     })();
   </script>
   <script src="/js/events-panel.js"></script>

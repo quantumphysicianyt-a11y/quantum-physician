@@ -829,7 +829,7 @@ function slugify(text) {
 // --- Load Courses ---
 async function loadCourses() {
   try {
-    const res = await sb.from('qa_courses').select('*').order('sort_order');
+    const res = await proxyFrom('qa_courses').select('*').order('sort_order');
     allCourses = res.data || [];
     renderCourseList();
     if (!selectedCourseId && allCourses.length) {
@@ -886,7 +886,7 @@ async function selectCourse(id) {
 
   // Load modules + lessons
   try {
-    const modRes = await sb.from('qa_modules')
+    const modRes = await proxyFrom('qa_modules')
       .select('*, qa_lessons(*)')
       .eq('course_id', id)
       .order('sort_order');
