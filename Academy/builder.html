@@ -920,13 +920,14 @@ async function selectCourse(id) {
 
   // Load modules + lessons
   try {
-    const modRes = await sb.from('qa_modules')
-      .select('*, qa_lessons(*)')
-      .eq('course_id', id)
-      .order('sort_order');
+    const [modRes, lessonRes] = await Promise.all([
+      proxyFrom('qa_modules').select('*').eq('course_id', id).order('sort_order'),
+      proxyFrom('qa_lessons').select('*').eq('course_id', id).order('sort_order'),
+    ]);
+    const lessons = lessonRes.data || [];
     courseModules = (modRes.data || []).map(m => ({
       ...m,
-      qa_lessons: (m.qa_lessons || []).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+      qa_lessons: lessons.filter(l => l.module_id === m.id).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
     }));
   } catch(e) {
     courseModules = [];
