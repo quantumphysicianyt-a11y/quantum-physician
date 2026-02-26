@@ -94,7 +94,66 @@ h1, h2, h3 { font-family: 'Playfair Display', Georgia, serif; }
 
 .les-row { padding:12px 20px 12px 64px; display:flex; align-items:center; gap:12px; border-bottom:1px solid rgba(91,168,178,.04); transition:background .1s; }
 .les-row:last-child { border-bottom:none; }
-.les-row:hover { background:rgba(91,168,178,.02); }
+.les-row:hover { background:rgba(91,168,178,.04); }
+.les-row.active { background:rgba(91,184,194,.08); border-left:3px solid var(--teal); }
+
+/* Lesson Detail Panel */
+.lesson-panel-overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:200; opacity:0; transition:opacity .25s; backdrop-filter:blur(4px); }
+.lesson-panel-overlay.open { opacity:1; }
+.lesson-panel {
+  position:fixed; top:0; right:-560px; width:560px; max-width:90vw; height:100vh;
+  background:var(--bg); border-left:1px solid var(--border); z-index:201;
+  transition:right .3s cubic-bezier(.4,0,.2,1); overflow-y:auto;
+  box-shadow:-8px 0 40px rgba(0,0,0,.4);
+}
+.lesson-panel.open { right:0; }
+.lp-header {
+  position:sticky; top:0; z-index:10; background:var(--bg); border-bottom:1px solid var(--border);
+  padding:16px 24px; display:flex; align-items:center; gap:12px;
+}
+.lp-header .lp-type { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; }
+.lp-header .lp-type svg { width:16px; height:16px; stroke:currentColor; }
+.lp-header .lp-title { flex:1; font-weight:700; font-size:16px; }
+.lp-header .lp-close { background:none; border:none; color:var(--text-muted); cursor:pointer; padding:6px; border-radius:6px; }
+.lp-header .lp-close:hover { background:rgba(255,255,255,.05); color:var(--text); }
+.lp-header .lp-close svg { width:18px; height:18px; stroke:currentColor; }
+.lp-body { padding:24px; }
+.lp-meta { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px; font-size:12px; color:var(--text-dim); }
+.lp-meta .pill { padding:3px 10px; border-radius:10px; background:rgba(91,184,194,.06); font-weight:600; }
+.lp-video { width:100%; aspect-ratio:16/9; border-radius:10px; border:1px solid var(--border); margin-bottom:20px; background:#000; }
+.lp-video iframe { width:100%; height:100%; border:none; border-radius:10px; }
+.lp-video img { width:100%; height:100%; object-fit:cover; border-radius:10px; }
+.lp-content { font-size:14px; line-height:1.8; color:var(--text-muted); }
+.lp-content h2 { font-family:'Playfair Display',serif; font-size:20px; color:var(--text); margin:24px 0 12px; }
+.lp-content h3 { font-size:15px; color:var(--teal); margin:20px 0 8px; font-family:Inter,sans-serif; font-weight:700; }
+.lp-content strong { color:var(--text); }
+.lp-content code { background:rgba(91,184,194,.08); padding:2px 6px; border-radius:4px; font-size:13px; color:var(--teal); }
+.lp-content ul,.lp-content ol { padding-left:20px; margin:8px 0; }
+.lp-content li { margin-bottom:4px; }
+.lp-content blockquote { border-left:3px solid var(--teal); padding-left:16px; margin:12px 0; color:var(--text-muted); font-style:italic; }
+.lp-quiz { margin-top:16px; }
+.lp-quiz-q { background:var(--bg-card); border:1px solid var(--border); border-radius:10px; padding:16px 20px; margin-bottom:10px; }
+.lp-quiz-q .q-label { font-size:11px; font-weight:700; color:var(--purple); text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px; }
+.lp-quiz-q .q-text { font-size:14px; font-weight:600; margin-bottom:10px; }
+.lp-quiz-q .q-opt { display:flex; align-items:center; gap:8px; padding:8px 12px; margin:4px 0; border-radius:6px; font-size:13px; transition:background .15s; }
+.lp-quiz-q .q-opt.correct { background:rgba(61,214,140,.08); border:1px solid rgba(61,214,140,.2); }
+.lp-quiz-q .q-opt:not(.correct) { background:rgba(255,255,255,.02); border:1px solid var(--border); }
+.lp-quiz-q .q-opt .dot { width:16px; height:16px; border-radius:50%; border:2px solid var(--border); flex-shrink:0; }
+.lp-quiz-q .q-opt.correct .dot { border-color:var(--success); background:var(--success); }
+.lp-quiz-q .q-scale { display:flex; justify-content:space-between; font-size:12px; color:var(--text-dim); margin-top:8px; }
+.lp-quiz-q .q-scale-bar { height:8px; border-radius:4px; background:linear-gradient(90deg,var(--border),var(--teal)); margin-top:6px; }
+.lp-quiz-q .q-reflection { padding:12px; background:rgba(167,139,250,.05); border:1px dashed rgba(167,139,250,.2); border-radius:8px; font-size:13px; color:var(--text-dim); font-style:italic; }
+.lp-quiz-q .q-check { display:flex; align-items:center; gap:8px; padding:6px 0; font-size:13px; }
+.lp-quiz-q .q-check span { color:var(--teal); }
+.lp-file { display:flex; align-items:center; gap:12px; padding:16px; background:var(--bg-card); border:1px solid var(--border); border-radius:10px; margin-top:16px; }
+.lp-file .file-icon { width:40px; height:40px; border-radius:8px; background:rgba(240,180,41,.1); color:var(--warning); display:flex; align-items:center; justify-content:center; }
+.lp-file .file-icon svg { width:18px; height:18px; stroke:currentColor; }
+.lp-file .file-info { flex:1; }
+.lp-file .file-name { font-weight:600; font-size:14px; }
+.lp-file .file-size { font-size:12px; color:var(--text-dim); }
+.lp-nav { display:flex; gap:8px; padding:16px 24px; border-top:1px solid var(--border); position:sticky; bottom:0; background:var(--bg); }
+.lp-nav button { flex:1; padding:10px 16px; border:1px solid var(--border); border-radius:8px; background:none; color:var(--text); font-size:13px; font-weight:600; cursor:pointer; transition:all .15s; font-family:inherit; }
+.lp-nav button:hover { border-color:var(--teal); background:rgba(91,184,194,.05); }
 .les-icon { width:30px; height:30px; border-radius:7px; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
 .les-icon svg { width:14px; height:14px; stroke:currentColor; }
 .les-icon.video { background:rgba(91,184,194,.1); color:var(--teal); }
@@ -199,6 +258,7 @@ async function loadPreview(){
 
     const[mr,lr]=await Promise.all([proxyFrom('qa_modules').select('*').eq('course_id',c.id).order('sort_order'),proxyFrom('qa_lessons').select('*').eq('course_id',c.id).order('sort_order')]);
     const al=lr.data||[];
+    window._allLessons=al; // store for panel
     const mods=(mr.data||[]).map(m=>({...m,lessons:al.filter(l=>l.module_id===m.id).sort((a,b)=>(a.sort_order||0)-(b.sort_order||0))}));
     let lp={learn:[],faq:[],testimonials:[]};
     try{if(c.short_description&&c.short_description.startsWith('{'))lp=JSON.parse(c.short_description)}catch(e){}
@@ -262,7 +322,7 @@ async function loadPreview(){
           </div>
           <div class="mod-lessons">
             ${m.lessons.length?m.lessons.map(l=>`
-            <div class="les-row">
+            <div class="les-row" onclick="showLesson(this)" data-lid="${l.id}" style="cursor:pointer">
               <div class="les-icon ${l.content_type||'text'}">${ti(l.content_type)}</div>
               <span class="les-name">${esc(l.title)}</span>
               ${l.estimated_minutes?`<span class="les-dur">${l.estimated_minutes} min</span>`:''}
@@ -280,6 +340,138 @@ async function loadPreview(){
     <div class="preview-footer">Quantum Academy · Admin Preview</div>`;
   }catch(e){document.getElementById('content').innerHTML=`<div class="not-found"><h2>Preview Error</h2><p>${esc(e.message)}</p><p style="margin-top:12px"><a href="/academy/builder.html">Back to Builder</a></p></div>`}
 }
+function mdToHtml(md) {
+  if(!md) return '';
+  // Check if it's JSON (quiz data) — don't render as markdown
+  if(md.trim().startsWith('{')) return '';
+  return md
+    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
+    .replace(/^## (.+)$/gm,'<h2>$1</h2>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/`(.+?)`/g,'<code>$1</code>')
+    .replace(/^- \[ \] (.+)$/gm,'<div style="display:flex;gap:8px;margin:4px 0"><span style="color:var(--text-dim)">☐</span> $1</div>')
+    .replace(/^- \[x\] (.+)$/gm,'<div style="display:flex;gap:8px;margin:4px 0"><span style="color:var(--teal)">☑</span> $1</div>')
+    .replace(/^- (.+)$/gm,'<li>$1</li>')
+    .replace(/^(\d+)\. (.+)$/gm,'<li>$2</li>')
+    .replace(/(<li>.*<\/li>\n?)+/g,'<ul>$&</ul>')
+    .replace(/\n\n/g,'<br><br>')
+    .replace(/\n/g,'<br>');
+}
+
+function renderQuizPreview(jsonStr) {
+  try {
+    const q = typeof jsonStr === 'string' ? JSON.parse(jsonStr) : jsonStr;
+    if(!q.questions) return '';
+    return `<div class="lp-quiz">${q.questions.map((qq,i) => {
+      let body = '';
+      if(q.quiz_type === 'multiple_choice') {
+        body = (qq.options||[]).map((o,oi) =>
+          `<div class="q-opt ${oi===qq.correct?'correct':''}"><div class="dot"></div>${esc(o)}</div>`
+        ).join('');
+      } else if(q.quiz_type === 'true_false') {
+        body = `<div class="q-opt ${qq.correct===true||qq.correct==='true'?'correct':''}"><div class="dot"></div>True</div>
+                <div class="q-opt ${qq.correct===false||qq.correct==='false'?'correct':''}"><div class="dot"></div>False</div>`;
+      } else if(q.quiz_type === 'reflection') {
+        body = `<div class="q-reflection">Students write their response here...</div>`;
+      } else if(q.quiz_type === 'rating') {
+        body = `<div class="q-scale-bar"></div><div class="q-scale"><span>${esc(qq.scale_low||'Low')}</span><span>${esc(qq.scale_high||'High')}</span></div>`;
+      } else if(q.quiz_type === 'checklist') {
+        body = (qq.items||[]).map(item => `<div class="q-check"><span>☐</span> ${esc(item)}</div>`).join('');
+      }
+      return `<div class="lp-quiz-q"><div class="q-label">Question ${i+1} · ${(q.quiz_type||'').replace('_',' ')}</div><div class="q-text">${esc(qq.question)}</div>${body}</div>`;
+    }).join('')}</div>`;
+  } catch(e) { return ''; }
+}
+
+function showLesson(el) {
+  const lid = el.dataset.lid;
+  const lesson = (window._allLessons||[]).find(l => l.id === lid);
+  if(!lesson) return;
+
+  // Remove old panel if exists
+  document.querySelectorAll('.lesson-panel-overlay,.lesson-panel').forEach(e=>e.remove());
+
+  // Mark active
+  document.querySelectorAll('.les-row.active').forEach(e=>e.classList.remove('active'));
+  el.classList.add('active');
+
+  // Find prev/next
+  const sorted = (window._allLessons||[]).slice().sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));
+  const idx = sorted.findIndex(l=>l.id===lid);
+  const prev = idx > 0 ? sorted[idx-1] : null;
+  const next = idx < sorted.length-1 ? sorted[idx+1] : null;
+
+  // Content
+  const ct = lesson.content_type || 'text';
+  const content = lesson.content_markdown || lesson.content_html || lesson.description || '';
+  let quizHtml = '';
+  if(ct === 'quiz') {
+    quizHtml = renderQuizPreview(lesson.content_html || lesson.content_markdown);
+  }
+  const hasVideo = lesson.video_url && (ct === 'video');
+  const isVimeo = hasVideo && lesson.video_url.includes('vimeo');
+
+  // Build panel
+  const overlay = document.createElement('div');
+  overlay.className = 'lesson-panel-overlay';
+  overlay.onclick = () => closeLesson();
+
+  const panel = document.createElement('div');
+  panel.className = 'lesson-panel';
+  panel.onclick = (e) => e.stopPropagation();
+  panel.innerHTML = `
+    <div class="lp-header">
+      <div class="lp-type les-icon ${ct}">${ti(ct)}</div>
+      <div class="lp-title">${esc(lesson.title)}</div>
+      <button class="lp-close" onclick="closeLesson()"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="lp-body">
+      <div class="lp-meta">
+        <span class="pill">${ct.replace('_',' ')}</span>
+        ${lesson.estimated_minutes ? `<span>${lesson.estimated_minutes} min</span>` : ''}
+        ${lesson.is_free_preview ? '<span style="color:var(--teal)">Free Preview</span>' : ''}
+        ${lesson.is_required ? '<span>Required</span>' : '<span>Optional</span>'}
+      </div>
+      ${hasVideo ? `<div class="lp-video">
+        ${isVimeo
+          ? `<iframe src="${esc(lesson.video_url)}?title=0&byline=0&portrait=0" allow="autoplay; fullscreen" allowfullscreen></iframe>`
+          : lesson.video_thumbnail_url
+            ? `<img src="${esc(lesson.video_thumbnail_url)}" alt="Video thumbnail">`
+            : `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-dim)">Video: ${esc(lesson.video_url)}</div>`
+        }
+      </div>` : ''}
+      ${lesson.video_thumbnail_url && !hasVideo ? `<img src="${esc(lesson.video_thumbnail_url)}" style="width:100%;border-radius:10px;margin-bottom:16px;border:1px solid var(--border)" alt="">` : ''}
+      ${quizHtml}
+      <div class="lp-content">${mdToHtml(content)}</div>
+      ${lesson.file_name ? `<div class="lp-file">
+        <div class="file-icon">${I.pdf}</div>
+        <div class="file-info">
+          <div class="file-name">${esc(lesson.file_name)}</div>
+          <div class="file-size">${lesson.file_url && lesson.file_url !== '#' ? 'Download available' : 'File placeholder'}</div>
+        </div>
+      </div>` : ''}
+    </div>
+    <div class="lp-nav">
+      ${prev ? `<button onclick="closeLesson();document.querySelector('[data-lid=\\'${prev.id}\\']').click()">← ${esc(prev.title)}</button>` : '<button disabled style="opacity:.3">← Previous</button>'}
+      ${next ? `<button onclick="closeLesson();document.querySelector('[data-lid=\\'${next.id}\\']').click()">${esc(next.title)} →</button>` : '<button disabled style="opacity:.3">Next →</button>'}
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+  document.body.appendChild(panel);
+  requestAnimationFrame(() => { overlay.classList.add('open'); panel.classList.add('open'); });
+}
+
+function closeLesson() {
+  document.querySelectorAll('.les-row.active').forEach(e=>e.classList.remove('active'));
+  const o = document.querySelector('.lesson-panel-overlay');
+  const p = document.querySelector('.lesson-panel');
+  if(o) { o.classList.remove('open'); setTimeout(()=>o.remove(),300); }
+  if(p) { p.classList.remove('open'); setTimeout(()=>p.remove(),300); }
+}
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeLesson(); });
+
 loadPreview();
 </script>
 </body>
