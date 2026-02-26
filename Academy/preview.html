@@ -244,8 +244,9 @@ function viewLesson(lid){
   const mod=ALL_MODS.find(m=>m.lessons.some(x=>x.id===lid));
   const modTitle=mod?mod.title:'';
 
-  // prev/next across ALL lessons
-  const sorted=ALL_LESSONS.slice().sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));
+  // prev/next: flatten all lessons in module order, then lesson order
+  const sorted=[];
+  ALL_MODS.forEach(m=>{m.lessons.forEach(l=>sorted.push(l))});
   const idx=sorted.findIndex(x=>x.id===lid);
   const prev=idx>0?sorted[idx-1]:null;
   const next=idx<sorted.length-1?sorted[idx+1]:null;
@@ -297,8 +298,8 @@ function viewLesson(lid){
     </div>`:''}
 
     <div class="lv-nav">
-      ${prev?`<button class="btn btn-ghost" onclick="viewLesson('${prev.id}')">← ${e(prev.title)}</button>`:'<button class="btn btn-ghost" disabled>← Previous</button>'}
-      ${next?`<button class="btn btn-ghost" onclick="viewLesson('${next.id}')">${e(next.title)} →</button>`:'<button class="btn btn-ghost" disabled>Next →</button>'}
+      ${prev?`<button class="btn btn-ghost" onclick="viewLesson('${prev.id}')">← ${e(prev.title)}</button>`:'<button class="btn btn-ghost" disabled>← Start of course</button>'}
+      ${next?`<button class="btn btn-ghost" onclick="viewLesson('${next.id}')">${e(next.title)} →</button>`:'<button class="btn btn-teal" onclick="backToLanding()">✓ Course Complete</button>'}
     </div>
   </div>`;
   window.scrollTo(0,0);
