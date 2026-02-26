@@ -906,8 +906,8 @@ function showEmptyState() {
 }
 
 // --- Select Course ---
-async function selectCourse(id) {
-  if (hasUnsavedChanges) {
+async function selectCourse(id, force) {
+  if (!force && hasUnsavedChanges) {
     if (!await qpConfirm('Unsaved Changes', 'You have unsaved changes. Discard them?', {okText: 'Discard', danger: true})) return;
   }
   selectedCourseId = id;
@@ -924,6 +924,7 @@ async function selectCourse(id) {
       proxyFrom('qa_modules').select('*').eq('course_id', id).order('sort_order'),
       proxyFrom('qa_lessons').select('*').eq('course_id', id).order('sort_order'),
     ]);
+    console.log('Modules loaded:', modRes.data?.length || 0, 'Lessons loaded:', lessonRes.data?.length || 0);
     const lessons = lessonRes.data || [];
     courseModules = (modRes.data || []).map(m => ({
       ...m,
@@ -1361,7 +1362,7 @@ async function addModule() {
     }).select('*');
 
     if (res.error) throw new Error(res.error.message);
-    await selectCourse(selectedCourseId);
+    await selectCourse(selectedCourseId, true);
     showToast('Module added', 'success');
   } catch(e) {
     showToast('Error: ' + e.message, 'error');
@@ -1439,7 +1440,7 @@ async function saveModuleEdit(moduleId) {
   try {
     await proxyFrom('qa_modules').update(data).eq('id', moduleId);
     document.querySelector('.modal-overlay').remove();
-    await selectCourse(selectedCourseId);
+    await selectCourse(selectedCourseId, true);
     showToast('Module updated', 'success');
   } catch(e) {
     showToast('Error: ' + e.message, 'error');
@@ -1458,7 +1459,7 @@ async function deleteModule(moduleId) {
       await proxyFrom('qa_lessons').delete().eq('id', l.id);
     }
     await proxyFrom('qa_modules').delete().eq('id', moduleId);
-    await selectCourse(selectedCourseId);
+    await selectCourse(selectedCourseId, true);
     showToast('Module deleted', 'success');
   } catch(e) {
     showToast('Error: ' + e.message, 'error');
@@ -1691,7 +1692,7 @@ async function saveLesson(moduleId, lessonId) {
       await proxyFrom('qa_lessons').insert(data);
     }
     document.querySelector('.modal-overlay').remove();
-    await selectCourse(selectedCourseId);
+    await selectCourse(selectedCourseId, true);
     // Auto-save total_lessons count
     const totalLessons = courseModules.reduce((sum, m) => sum + (m.qa_lessons || []).length, 0);
     const totalDuration = courseModules.reduce((sum, m) => sum + (m.qa_lessons || []).reduce((s, l) => s + (l.estimated_minutes || 0), 0), 0);
@@ -1707,7 +1708,7 @@ async function deleteLesson(lessonId, moduleId) {
   if (!await qpConfirm('Delete Lesson', 'Delete this lesson?', {okText: 'Delete', danger: true})) return;
   try {
     await proxyFrom('qa_lessons').delete().eq('id', lessonId);
-    await selectCourse(selectedCourseId);
+    await selectCourse(selectedCourseId, true);
     showToast('Lesson deleted', 'success');
   } catch(e) {
     showToast('Error: ' + e.message, 'error');
@@ -1746,7 +1747,7 @@ async function dropModule(e, targetId) {
     for (let i = 0; i < courseModules.length; i++) {
       await proxyFrom('qa_modules').update({sort_order: i}).eq('id', courseModules[i].id);
     }
-    await selectCourse(selectedCourseId);
+    await selectCourse(selectedCourseId, true);
   } catch(e) {
     showToast('Reorder failed: ' + e.message, 'error');
   }
@@ -1783,7 +1784,7 @@ async function dropLesson(e, targetLessonId, targetModuleId) {
       for (let i = 0; i < lessons.length; i++) {
         await proxyFrom('qa_lessons').update({sort_order: i}).eq('id', lessons[i].id);
       }
-      await selectCourse(selectedCourseId);
+      await selectCourse(selectedCourseId, true);
     } catch(e) {
       showToast('Reorder failed', 'error');
     }
@@ -1791,7 +1792,7 @@ async function dropLesson(e, targetLessonId, targetModuleId) {
     // Move to different module
     try {
       await proxyFrom('qa_lessons').update({module_id: targetModuleId, sort_order: toIdx}).eq('id', dragLessonId);
-      await selectCourse(selectedCourseId);
+      await selectCourse(selectedCourseId, true);
     } catch(e) {
       showToast('Move failed', 'error');
     }
