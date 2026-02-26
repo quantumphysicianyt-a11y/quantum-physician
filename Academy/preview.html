@@ -143,8 +143,10 @@ function toggleMod(el){
   const block=el.closest('.mod');
   const mid=block.dataset.mid;
   const body=block.querySelector('.mod-body');
+  console.log('Toggle module:', mid, 'ALL_MODS:', ALL_MODS.length);
   if(!body.dataset.loaded){
     const mod=ALL_MODS.find(m=>m.id===mid);
+    console.log('Found mod:', mod ? mod.title : 'NOT FOUND', 'lessons:', mod ? mod.lessons.length : 0);
     if(mod&&mod.lessons.length){
       body.innerHTML=mod.lessons.map(l=>
         `<div class="les" onclick="openLesson('${l.id}')" data-lid="${l.id}">
@@ -315,6 +317,11 @@ async function load(){
 
     html+='</div>';
     document.getElementById('app').innerHTML=html;
+    console.log('Preview loaded:', mods.length, 'modules,', ALL_LESSONS.length, 'lessons');
+    console.log('Module IDs:', ALL_MODS.map(m=>m.id));
+    // Auto-open first module
+    const firstMod=document.querySelector('.mod .mod-h');
+    if(firstMod) firstMod.click();
 
   }catch(e){
     document.getElementById('app').innerHTML=`<div class="err-page"><h2>Error</h2><p>${h(e.message)}</p><p><a href="/academy/builder.html">Back to Builder</a></p></div>`;
