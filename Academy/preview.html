@@ -9,28 +9,41 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Inter,sans-serif;background:#0b1d30;color:rgba(255,255,255,.9);line-height:1.6}
 h1,h2{font-family:'Playfair Display',serif}
-a{color:#5bb8c2}
+a{color:#5bb8c2;text-decoration:none}
 
-.bar{background:#1a1035;border-bottom:1px solid rgba(167,139,250,.2);padding:8px 24px;display:flex;align-items:center;gap:10px;font-size:12px;color:#a78bfa}
-.bar b{letter-spacing:.05em;text-transform:uppercase}
-.bar a{margin-left:auto;color:#5bb8c2;text-decoration:none;font-weight:600}
+/* Admin bar */
+.bar{background:#1a1035;border-bottom:1px solid rgba(167,139,250,.2);padding:8px 24px;display:flex;align-items:center;gap:10px;font-size:12px;color:#a78bfa;position:sticky;top:0;z-index:50}
+.bar b{text-transform:uppercase;letter-spacing:.05em}
+.bar a{margin-left:auto;color:#5bb8c2;font-weight:600}
 
-.wrap{max-width:900px;margin:0 auto;padding:40px 24px}
-.status{display:inline-block;padding:4px 12px;border-radius:16px;font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:16px;background:rgba(240,180,41,.1);color:#f0b429;border:1px solid rgba(240,180,41,.25)}
-.status.published{background:rgba(61,214,140,.1);color:#3dd68c;border-color:rgba(61,214,140,.25)}
-h1{font-size:34px;margin-bottom:8px}
-.sub{font-size:17px;color:rgba(255,255,255,.5);margin-bottom:16px}
-.meta{font-size:13px;color:rgba(255,255,255,.3);margin-bottom:32px}
-.thumb{width:100%;max-height:360px;object-fit:cover;border-radius:12px;border:1px solid rgba(91,168,178,.12);margin-bottom:32px}
-
-.card{background:#112a42;border:1px solid rgba(91,168,178,.12);border-radius:12px;padding:20px 24px;margin-bottom:24px}
-.price{font-size:32px;font-weight:800;color:#5bb8c2}
-
-.sec{margin-bottom:32px}
+/* Shared */
+.container{max-width:900px;margin:0 auto;padding:0 24px}
+.sec{margin-bottom:36px}
 .sec h2{font-size:22px;margin-bottom:16px}
-.learn-item{padding:10px 14px;background:rgba(91,188,198,.05);border-radius:8px;margin-bottom:6px;font-size:14px}
+.card{background:#112a42;border:1px solid rgba(91,168,178,.12);border-radius:12px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border-radius:8px;border:none;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.btn-teal{background:linear-gradient(135deg,#5bb8c2,#4fd4e0);color:#fff}
+.btn-ghost{background:none;border:1px solid rgba(91,168,178,.2);color:rgba(255,255,255,.7)}
+.btn-ghost:hover{border-color:#5bb8c2;color:#5bb8c2}
+
+/* LANDING PAGE MODE */
+.hero{padding:48px 0 32px}
+.hero-grid{display:grid;grid-template-columns:1fr 380px;gap:32px;align-items:start}
+.badge{display:inline-block;padding:4px 12px;border-radius:16px;font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:14px;background:rgba(240,180,41,.1);color:#f0b429;border:1px solid rgba(240,180,41,.25)}
+.badge.published{background:rgba(61,214,140,.1);color:#3dd68c;border-color:rgba(61,214,140,.25)}
+.hero h1{font-size:36px;margin-bottom:10px}
+.hero .sub{font-size:17px;color:rgba(255,255,255,.5);margin-bottom:16px}
+.hero .meta{font-size:13px;color:rgba(255,255,255,.3);margin-bottom:20px}
+.hero-img{width:100%;border-radius:12px;border:1px solid rgba(91,168,178,.12);background:#112a42;overflow:hidden;aspect-ratio:16/10}
+.hero-img img{width:100%;height:100%;object-fit:cover;display:block}
+.hero-img .ph{display:flex;align-items:center;justify-content:center;height:100%;color:rgba(255,255,255,.2);font-size:14px}
+.price-bar{padding:20px 24px;margin-bottom:32px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.price-big{font-size:32px;font-weight:800;color:#5bb8c2}
+
+.learn-item{padding:10px 14px;background:rgba(91,188,198,.04);border-radius:8px;margin-bottom:6px;font-size:14px;color:rgba(255,255,255,.7)}
 .learn-item::before{content:'✓ ';color:#5bb8c2;font-weight:700}
 
+/* Modules */
 .mod{border:1px solid rgba(91,168,178,.12);border-radius:10px;margin-bottom:8px;overflow:hidden}
 .mod-h{padding:14px 18px;display:flex;align-items:center;gap:12px;cursor:pointer}
 .mod-h:hover{background:rgba(91,168,178,.02)}
@@ -39,13 +52,13 @@ h1{font-size:34px;margin-bottom:8px}
 .mod-c{font-size:12px;color:rgba(255,255,255,.3)}
 .mod-a{color:rgba(255,255,255,.3);transition:transform .2s}
 .mod.open .mod-a{transform:rotate(180deg)}
-.mod-body{display:none;border-top:1px solid rgba(91,168,178,.08)}
+.mod-body{display:none;border-top:1px solid rgba(91,168,178,.06)}
 .mod.open .mod-body{display:block}
 
-.les{padding:10px 18px 10px 56px;display:flex;align-items:center;gap:10px;cursor:pointer;border-bottom:1px solid rgba(91,168,178,.04);font-size:14px}
+.les{padding:10px 18px 10px 56px;display:flex;align-items:center;gap:10px;cursor:pointer;border-bottom:1px solid rgba(91,168,178,.03);font-size:14px}
 .les:last-child{border-bottom:none}
 .les:hover{background:rgba(91,168,178,.03)}
-.les-i{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px}
+.les-i{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .les-i svg{width:13px;height:13px;stroke:currentColor}
 .les-i.video{background:rgba(91,184,194,.1);color:#5bb8c2}
 .les-i.text{background:rgba(196,173,148,.1);color:#c4ad94}
@@ -59,7 +72,7 @@ h1{font-size:34px;margin-bottom:8px}
 .les-d{font-size:12px;color:rgba(255,255,255,.3)}
 .les-b{font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(91,184,194,.08);color:#5bb8c2;font-weight:700;text-transform:uppercase}
 
-.test{background:#112a42;border:1px solid rgba(91,168,178,.12);border-radius:10px;padding:18px 20px;margin-bottom:10px}
+.test{padding:18px 20px;margin-bottom:10px}
 .test .stars{color:#d4a853;margin-bottom:6px;font-size:14px}
 .test .txt{font-size:14px;color:rgba(255,255,255,.5);font-style:italic;margin-bottom:8px}
 .test .who{font-size:13px;font-weight:600;color:#c4ad94}
@@ -70,261 +83,257 @@ h1{font-size:34px;margin-bottom:8px}
 .faq-a{padding:0 18px 14px;font-size:14px;color:rgba(255,255,255,.5);display:none}
 .faq.open .faq-a{display:block}
 
-/* Lesson panel */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none}
-.overlay.open{display:block}
-.panel{position:fixed;top:0;right:0;width:520px;max-width:92vw;height:100vh;background:#0b1d30;border-left:1px solid rgba(91,168,178,.15);z-index:201;overflow-y:auto;transform:translateX(100%);transition:transform .25s}
-.panel.open{transform:translateX(0)}
-.p-head{padding:14px 20px;border-bottom:1px solid rgba(91,168,178,.12);display:flex;align-items:center;gap:10px;position:sticky;top:0;background:#0b1d30;z-index:5}
-.p-head .p-t{flex:1;font-weight:700;font-size:15px}
-.p-close{background:none;border:none;color:rgba(255,255,255,.5);cursor:pointer;font-size:20px;padding:4px 8px}
-.p-body{padding:20px}
-.p-meta{font-size:12px;color:rgba(255,255,255,.3);margin-bottom:16px}
-.p-vid{width:100%;aspect-ratio:16/9;border-radius:8px;overflow:hidden;margin-bottom:16px;background:#000}
-.p-vid iframe{width:100%;height:100%;border:none}
-.p-content{font-size:14px;line-height:1.7;color:rgba(255,255,255,.6)}
-.p-content h2{font-size:18px;color:rgba(255,255,255,.9);margin:20px 0 8px;font-family:'Playfair Display',serif}
-.p-content h3{font-size:14px;color:#5bb8c2;margin:16px 0 6px;font-family:Inter,sans-serif;font-weight:700}
-.p-content strong{color:rgba(255,255,255,.85)}
-.p-content ul{padding-left:18px;margin:6px 0}
-.p-content li{margin-bottom:3px}
-.p-quiz{margin-top:12px}
-.pq{background:#112a42;border:1px solid rgba(91,168,178,.12);border-radius:8px;padding:14px 16px;margin-bottom:8px}
-.pq .ql{font-size:10px;font-weight:700;color:#a78bfa;text-transform:uppercase;margin-bottom:4px}
-.pq .qt{font-size:14px;font-weight:600;margin-bottom:8px}
-.pq .qo{padding:6px 10px;margin:3px 0;border-radius:5px;font-size:13px;border:1px solid rgba(91,168,178,.08);background:rgba(255,255,255,.02)}
-.pq .qo.right{background:rgba(61,214,140,.06);border-color:rgba(61,214,140,.2)}
-.pq .qo.right::before{content:'✓ ';color:#3dd68c}
-.pq .qr{padding:10px;background:rgba(167,139,250,.04);border:1px dashed rgba(167,139,250,.15);border-radius:6px;font-size:13px;color:rgba(255,255,255,.4);font-style:italic}
-.pq .qs{display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,.3);margin-top:6px}
-.pq .qs-bar{height:6px;border-radius:3px;background:linear-gradient(90deg,rgba(91,168,178,.15),#5bb8c2);margin-top:4px}
-.p-nav{display:flex;gap:8px;padding:14px 20px;border-top:1px solid rgba(91,168,178,.12);position:sticky;bottom:0;background:#0b1d30}
-.p-nav button{flex:1;padding:8px 12px;border:1px solid rgba(91,168,178,.15);border-radius:6px;background:none;color:rgba(255,255,255,.7);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
-.p-nav button:hover{border-color:#5bb8c2;color:#5bb8c2}
-.p-nav button:disabled{opacity:.3;cursor:default}
+/* LESSON VIEW MODE */
+#lessonView{display:none}
+.lv-top{padding:12px 0;margin-bottom:24px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(91,168,178,.08)}
+.lv-back{font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px}
+.lv-back:hover{color:#4fd4e0}
+.lv-crumb{font-size:12px;color:rgba(255,255,255,.3);flex:1}
 
-.loading{text-align:center;padding:100px 24px;color:rgba(255,255,255,.5)}
+.lv-title{font-size:28px;margin-bottom:8px}
+.lv-meta{font-size:13px;color:rgba(255,255,255,.3);margin-bottom:24px;display:flex;gap:12px;flex-wrap:wrap}
+.lv-meta .pill{padding:3px 10px;border-radius:10px;font-weight:600}
+.lv-meta .pill.video{background:rgba(91,184,194,.08);color:#5bb8c2}
+.lv-meta .pill.text{background:rgba(196,173,148,.08);color:#c4ad94}
+.lv-meta .pill.quiz{background:rgba(167,139,250,.08);color:#a78bfa}
+.lv-meta .pill.assignment{background:rgba(255,94,148,.06);color:#ff5e94}
+.lv-meta .pill.pdf{background:rgba(240,180,41,.08);color:#f0b429}
+.lv-meta .pill.live_session{background:rgba(239,83,80,.06);color:#ef5350}
+
+.lv-video{width:100%;aspect-ratio:16/9;border-radius:12px;overflow:hidden;margin-bottom:28px;background:#000;border:1px solid rgba(91,168,178,.08)}
+.lv-video iframe{width:100%;height:100%;border:none}
+.lv-video img{width:100%;height:100%;object-fit:cover}
+
+.lv-body{font-size:15px;line-height:1.8;color:rgba(255,255,255,.65);max-width:740px}
+.lv-body h2{font-size:22px;color:rgba(255,255,255,.9);margin:28px 0 12px;font-family:'Playfair Display',serif}
+.lv-body h3{font-size:15px;color:#5bb8c2;margin:20px 0 8px;font-family:Inter,sans-serif;font-weight:700}
+.lv-body strong{color:rgba(255,255,255,.85)}
+.lv-body code{background:rgba(91,184,194,.08);padding:1px 5px;border-radius:3px;font-size:13px;color:#5bb8c2}
+.lv-body ul,.lv-body ol{padding-left:20px;margin:8px 0}
+.lv-body li{margin-bottom:4px}
+
+.lv-quiz{margin:24px 0;max-width:640px}
+.qq{background:#112a42;border:1px solid rgba(91,168,178,.1);border-radius:10px;padding:18px 22px;margin-bottom:10px}
+.qq .ql{font-size:10px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.qq .qt{font-size:15px;font-weight:600;margin-bottom:12px}
+.qq .qo{padding:8px 14px;margin:4px 0;border-radius:7px;font-size:14px;border:1px solid rgba(91,168,178,.06);background:rgba(255,255,255,.015)}
+.qq .qo.right{background:rgba(61,214,140,.06);border-color:rgba(61,214,140,.2);color:#3dd68c}
+.qq .qo.right::before{content:'✓ ';font-weight:700}
+.qq .qr{padding:14px;background:rgba(167,139,250,.04);border:1px dashed rgba(167,139,250,.15);border-radius:8px;font-size:14px;color:rgba(255,255,255,.35);font-style:italic}
+.qq .qs{display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,.3);margin-top:8px}
+.qq .qs-bar{height:8px;border-radius:4px;background:linear-gradient(90deg,rgba(91,168,178,.1),#5bb8c2);margin-top:6px}
+
+.lv-file{display:flex;align-items:center;gap:12px;padding:16px;margin:20px 0}
+.lv-file .fi{width:40px;height:40px;border-radius:8px;background:rgba(240,180,41,.1);color:#f0b429;display:flex;align-items:center;justify-content:center}
+.lv-file .fi svg{width:18px;height:18px;stroke:currentColor}
+
+.lv-nav{display:flex;gap:10px;margin-top:40px;padding-top:24px;border-top:1px solid rgba(91,168,178,.08)}
+.lv-nav .btn{flex:1;justify-content:center}
+
+.loading{text-align:center;padding:100px 24px;color:rgba(255,255,255,.4)}
 .spin{width:30px;height:30px;border:3px solid rgba(91,168,178,.15);border-top-color:#5bb8c2;border-radius:50%;animation:sp .7s linear infinite;margin:0 auto 16px}
 @keyframes sp{to{transform:rotate(360deg)}}
 .err-page{text-align:center;padding:100px 24px}
-.err-page h2{margin-bottom:8px}
 .err-page p{color:rgba(255,255,255,.5)}
+
+@media(max-width:768px){
+  .hero-grid{grid-template-columns:1fr}
+  .hero-img{order:-1}
+  .hero h1{font-size:26px}
+  .lv-title{font-size:22px}
+}
 </style>
 </head>
 <body>
 <div class="bar"><b>Admin Preview</b><span style="color:rgba(167,139,250,.5)">— Student view</span><a href="javascript:history.back()">← Builder</a></div>
-<div id="app"><div class="loading"><div class="spin"></div>Loading…</div></div>
-<div class="overlay" id="overlay" onclick="closePanel()"></div>
-<div class="panel" id="panel"></div>
+
+<div id="landing"><div class="loading"><div class="spin"></div>Loading…</div></div>
+<div id="lessonView"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 function getToken(){return sessionStorage.getItem('qp_admin_token')||localStorage.getItem('qp_admin_token')||''}
 async function api(p){const r=await fetch('/.netlify/functions/admin-proxy',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+getToken()},body:JSON.stringify(p)});const j=await r.json();if(!r.ok)throw new Error(j.error||'fail');return j}
-function pf(t){return{_t:t,_s:'*',_f:[],_o:null,_si:false,select(s){this._s=s;return this},eq(c,v){this._f.push({column:c,op:'eq',value:v});return this},order(c){this._o={column:c,ascending:true};return this},single(){this._si=true;return this},then(res,rej){return api({type:'query',table:this._t,select:this._s,filters:this._f,order:this._o,single:this._si}).then(r=>({data:r.data,error:null})).then(res,e=>res?res({data:null,error:{message:e.message}}):null)}}}
-function h(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
+function pf(t){return{_t:t,_s:'*',_f:[],_o:null,_si:false,select(s){this._s=s;return this},eq(c,v){this._f.push({column:c,op:'eq',value:v});return this},order(c){this._o={column:c,ascending:true};return this},single(){this._si=true;return this},then(res){return api({type:'query',table:this._t,select:this._s,filters:this._f,order:this._o,single:this._si}).then(r=>({data:r.data,error:null})).then(res,e=>res({data:null,error:{message:e.message}}))}}}
+function e(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
 
-const IC={
-video:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>',
-text:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
-quiz:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
-pdf:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
-assignment:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>',
-embed:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
-live_session:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>',
-audio:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>'
-};
+const IC={video:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>',text:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',quiz:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',pdf:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',assignment:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>',embed:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',live_session:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>',audio:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>'};
 function icon(t){return IC[t]||IC.text}
 
-// Store data globally
-let ALL_LESSONS=[], ALL_MODS=[];
+let ALL_LESSONS=[], ALL_MODS=[], COURSE=null;
 
 function toggleMod(el){
-  const block=el.closest('.mod');
-  const mid=block.dataset.mid;
-  const body=block.querySelector('.mod-body');
-  console.log('Toggle module:', mid, 'ALL_MODS:', ALL_MODS.length);
+  const block=el.closest('.mod'), mid=block.dataset.mid, body=block.querySelector('.mod-body');
   if(!body.dataset.loaded){
     const mod=ALL_MODS.find(m=>m.id===mid);
-    console.log('Found mod:', mod ? mod.title : 'NOT FOUND', 'lessons:', mod ? mod.lessons.length : 0);
     if(mod&&mod.lessons.length){
-      body.innerHTML=mod.lessons.map(l=>
-        `<div class="les" onclick="openLesson('${l.id}')" data-lid="${l.id}">
-          <div class="les-i ${l.content_type||'text'}">${icon(l.content_type)}</div>
-          <span class="les-n">${h(l.title)}</span>
-          ${l.estimated_minutes?`<span class="les-d">${l.estimated_minutes}m</span>`:''}
-          ${l.is_free_preview?'<span class="les-b">Preview</span>':''}
-        </div>`
-      ).join('');
-    }else{
-      body.innerHTML='<div style="padding:14px 18px 14px 56px;font-size:13px;color:rgba(255,255,255,.3)">No lessons yet</div>';
-    }
+      body.innerHTML=mod.lessons.map(l=>`<div class="les" onclick="viewLesson('${l.id}')" data-lid="${l.id}"><div class="les-i ${l.content_type||'text'}">${icon(l.content_type)}</div><span class="les-n">${e(l.title)}</span>${l.estimated_minutes?`<span class="les-d">${l.estimated_minutes}m</span>`:''}${l.is_free_preview?'<span class="les-b">Preview</span>':''}</div>`).join('');
+    } else { body.innerHTML='<div style="padding:14px 56px;font-size:13px;color:rgba(255,255,255,.25)">No lessons yet</div>'; }
     body.dataset.loaded='1';
   }
   block.classList.toggle('open');
 }
-
 function toggleFaq(el){el.closest('.faq').classList.toggle('open')}
 
 function md(s){
   if(!s||s.trim().startsWith('{'))return '';
-  return s.replace(/^### (.+)$/gm,'<h3>$1</h3>').replace(/^## (.+)$/gm,'<h2>$1</h2>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>').replace(/`(.+?)`/g,'<code style="background:rgba(91,184,194,.08);padding:1px 4px;border-radius:3px;font-size:12px;color:#5bb8c2">$1</code>').replace(/^- (.+)$/gm,'<li>$1</li>').replace(/(<li>.*<\/li>)+/g,'<ul>$&</ul>').replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>');
+  return s.replace(/^### (.+)$/gm,'<h3>$1</h3>').replace(/^## (.+)$/gm,'<h2>$1</h2>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>').replace(/`(.+?)`/g,'<code>$1</code>').replace(/^- \[ \] (.+)$/gm,'<div style="display:flex;gap:6px;margin:3px 0"><span style="color:rgba(255,255,255,.2)">☐</span>$1</div>').replace(/^- \[x\] (.+)$/gm,'<div style="display:flex;gap:6px;margin:3px 0"><span style="color:#5bb8c2">☑</span>$1</div>').replace(/^- (.+)$/gm,'<li>$1</li>').replace(/^(\d+)\. (.+)$/gm,'<li>$2</li>').replace(/(<li>[\s\S]*?<\/li>)+/g,m=>'<ul>'+m+'</ul>').replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>');
 }
 
 function quizHtml(raw){
   try{
     const q=typeof raw==='string'?JSON.parse(raw):raw;
     if(!q||!q.questions)return '';
-    return '<div class="p-quiz">'+q.questions.map((qq,i)=>{
+    return '<div class="lv-quiz">'+q.questions.map((qq,i)=>{
       let body='';
-      if(q.quiz_type==='multiple_choice'){
-        body=(qq.options||[]).map((o,oi)=>`<div class="qo${oi===qq.correct?' right':''}">${h(o)}</div>`).join('');
-      }else if(q.quiz_type==='true_false'){
-        body=`<div class="qo${qq.correct===true||qq.correct==='true'?' right':''}">True</div><div class="qo${qq.correct===false||qq.correct==='false'?' right':''}">False</div>`;
-      }else if(q.quiz_type==='reflection'){
-        body='<div class="qr">Students write their response here…</div>';
-      }else if(q.quiz_type==='rating'){
-        body=`<div class="qs-bar"></div><div class="qs"><span>${h(qq.scale_low||'Low')}</span><span>${h(qq.scale_high||'High')}</span></div>`;
-      }else if(q.quiz_type==='checklist'){
-        body=(qq.items||[]).map(it=>`<div style="padding:4px 0;font-size:13px">☐ ${h(it)}</div>`).join('');
-      }
-      return `<div class="pq"><div class="ql">Q${i+1} · ${(q.quiz_type||'').replace('_',' ')}</div><div class="qt">${h(qq.question)}</div>${body}</div>`;
+      if(q.quiz_type==='multiple_choice') body=(qq.options||[]).map((o,oi)=>`<div class="qo${oi===qq.correct?' right':''}">${e(o)}</div>`).join('');
+      else if(q.quiz_type==='true_false') body=`<div class="qo${qq.correct===true||qq.correct==='true'?' right':''}">True</div><div class="qo${qq.correct===false||qq.correct==='false'?' right':''}">False</div>`;
+      else if(q.quiz_type==='reflection') body='<div class="qr">Students write their open-ended response here…</div>';
+      else if(q.quiz_type==='rating') body=`<div class="qs-bar"></div><div class="qs"><span>${e(qq.scale_low||'Low')}</span><span>${e(qq.scale_high||'High')}</span></div>`;
+      else if(q.quiz_type==='checklist') body=(qq.items||[]).map(it=>`<div style="padding:4px 0;font-size:14px">☐ ${e(it)}</div>`).join('');
+      return `<div class="qq"><div class="ql">Question ${i+1} · ${(q.quiz_type||'').replace('_',' ')}</div><div class="qt">${e(qq.question)}</div>${body}</div>`;
     }).join('')+'</div>';
-  }catch(e){return ''}
+  }catch(ex){return ''}
 }
 
-function openLesson(lid){
+// ===== FULL PAGE LESSON VIEW =====
+function viewLesson(lid){
   const l=ALL_LESSONS.find(x=>x.id===lid);
-  if(!l)return;
+  if(!l) return;
   const ct=l.content_type||'text';
   const content=l.content_markdown||l.content_html||l.description||'';
   const hasVid=ct==='video'&&l.video_url;
-  const isVimeo=hasVid&&l.video_url.includes('vimeo');
 
-  // prev/next
+  // Find module name
+  const mod=ALL_MODS.find(m=>m.lessons.some(x=>x.id===lid));
+  const modTitle=mod?mod.title:'';
+
+  // prev/next across ALL lessons
   const sorted=ALL_LESSONS.slice().sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));
   const idx=sorted.findIndex(x=>x.id===lid);
   const prev=idx>0?sorted[idx-1]:null;
   const next=idx<sorted.length-1?sorted[idx+1]:null;
 
-  const p=document.getElementById('panel');
-  p.innerHTML=`
-    <div class="p-head">
-      <div class="les-i ${ct}" style="width:32px;height:32px;border-radius:7px">${icon(ct)}</div>
-      <div class="p-t">${h(l.title)}</div>
-      <button class="p-close" onclick="closePanel()">✕</button>
+  let vidHtml='';
+  if(hasVid){
+    if(l.video_url.includes('youtube.com')||l.video_url.includes('youtu.be')){
+      // Extract YouTube ID
+      let ytid='';
+      if(l.video_url.includes('youtu.be/')) ytid=l.video_url.split('youtu.be/')[1].split('?')[0];
+      else if(l.video_url.includes('v=')) ytid=l.video_url.split('v=')[1].split('&')[0];
+      else if(l.video_url.includes('/embed/')) ytid=l.video_url.split('/embed/')[1].split('?')[0];
+      if(ytid) vidHtml=`<div class="lv-video"><iframe src="https://www.youtube-nocookie.com/embed/${ytid}" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen loading="lazy"></iframe></div>`;
+    } else if(l.video_url.includes('vimeo')){
+      vidHtml=`<div class="lv-video"><iframe src="${e(l.video_url)}?title=0&byline=0&portrait=0" allow="autoplay;fullscreen" allowfullscreen loading="lazy"></iframe></div>`;
+    } else if(l.video_thumbnail_url){
+      vidHtml=`<div class="lv-video"><img src="${e(l.video_thumbnail_url)}" alt="" loading="lazy"></div>`;
+    }
+  } else if(l.video_thumbnail_url){
+    vidHtml=`<img src="${e(l.video_thumbnail_url)}" alt="" style="width:100%;border-radius:12px;margin-bottom:24px;border:1px solid rgba(91,168,178,.08)" loading="lazy">`;
+  }
+
+  document.getElementById('landing').style.display='none';
+  const lv=document.getElementById('lessonView');
+  lv.style.display='block';
+  lv.innerHTML=`<div class="container" style="padding-top:20px;padding-bottom:60px">
+    <div class="lv-top">
+      <a class="lv-back" onclick="backToLanding()">← Back to Course</a>
+      <span class="lv-crumb">${e(modTitle)}</span>
     </div>
-    <div class="p-body">
-      <div class="p-meta">${ct.replace('_',' ')} ${l.estimated_minutes?'· '+l.estimated_minutes+' min':''} ${l.is_free_preview?'· Free Preview':''}</div>
-      ${hasVid?`<div class="p-vid">${isVimeo?`<iframe src="${h(l.video_url)}?title=0&byline=0&portrait=0" allow="autoplay;fullscreen" allowfullscreen loading="lazy"></iframe>`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;color:rgba(255,255,255,.3);font-size:13px">${h(l.video_url)}</div>`}</div>`:''}
-      ${ct==='quiz'?quizHtml(l.content_html||l.content_markdown):''}
-      <div class="p-content">${md(content)}</div>
-      ${l.file_name?`<div class="card" style="margin-top:12px;display:flex;align-items:center;gap:10px"><div class="les-i pdf" style="width:32px;height:32px;border-radius:7px">${IC.pdf}</div><div><div style="font-weight:600;font-size:14px">${h(l.file_name)}</div><div style="font-size:12px;color:rgba(255,255,255,.3)">Download</div></div></div>`:''}
+    <h1 class="lv-title">${e(l.title)}</h1>
+    <div class="lv-meta">
+      <span class="pill ${ct}">${ct.replace('_',' ')}</span>
+      ${l.estimated_minutes?`<span>${l.estimated_minutes} min</span>`:''}
+      ${l.is_free_preview?'<span style="color:#5bb8c2">Free Preview</span>':''}
+      ${l.is_required?'<span>Required</span>':''}
     </div>
-    <div class="p-nav">
-      <button ${prev?`onclick="openLesson('${prev.id}')"`:'disabled'}>← ${prev?h(prev.title):'Previous'}</button>
-      <button ${next?`onclick="openLesson('${next.id}')"`:'disabled'}>${next?h(next.title):'Next'} →</button>
-    </div>`;
-  document.getElementById('overlay').classList.add('open');
-  p.classList.add('open');
+    ${vidHtml}
+    ${ct==='quiz'?quizHtml(l.content_html||l.content_markdown):''}
+    <div class="lv-body">${md(content)}</div>
+    ${l.file_name?`<div class="card lv-file"><div class="fi">${IC.pdf}</div><div><div style="font-weight:600;font-size:14px">${e(l.file_name)}</div><div style="font-size:12px;color:rgba(255,255,255,.3)">Download resource</div></div></div>`:''}
+    <div class="lv-nav">
+      ${prev?`<button class="btn btn-ghost" onclick="viewLesson('${prev.id}')">← ${e(prev.title)}</button>`:'<button class="btn btn-ghost" disabled>← Previous</button>'}
+      ${next?`<button class="btn btn-ghost" onclick="viewLesson('${next.id}')">${e(next.title)} →</button>`:'<button class="btn btn-ghost" disabled>Next →</button>'}
+    </div>
+  </div>`;
+  window.scrollTo(0,0);
 }
 
-function closePanel(){
-  document.getElementById('overlay').classList.remove('open');
-  document.getElementById('panel').classList.remove('open');
+function backToLanding(){
+  document.getElementById('lessonView').style.display='none';
+  document.getElementById('landing').style.display='block';
 }
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closePanel()});
 
+// ===== LOAD =====
 async function load(){
   const p=new URLSearchParams(location.search),slug=p.get('slug'),id=p.get('id');
-  if(!getToken()){document.getElementById('app').innerHTML='<div class="err-page"><h2>Admin Access Required</h2><p><a href="/academy/builder.html">Sign in via Builder</a> first.</p></div>';return}
+  if(!getToken()){document.getElementById('landing').innerHTML='<div class="err-page"><h2>Admin Access Required</h2><p><a href="/academy/builder.html">Sign in via Builder</a> first.</p></div>';return}
   try{
     let c;
-    if(id){c=(await pf('qa_courses').select('*').eq('id',id).single()).data}
-    else if(slug){c=(await pf('qa_courses').select('*').eq('slug',slug).single()).data}
-    if(!c){document.getElementById('app').innerHTML='<div class="err-page"><h2>Not Found</h2><p><a href="/academy/builder.html">Back to Builder</a></p></div>';return}
+    if(id) c=(await pf('qa_courses').select('*').eq('id',id).single()).data;
+    else if(slug) c=(await pf('qa_courses').select('*').eq('slug',slug).single()).data;
+    if(!c){document.getElementById('landing').innerHTML='<div class="err-page"><h2>Not Found</h2><p><a href="/academy/builder.html">Back to Builder</a></p></div>';return}
+    COURSE=c;
 
     const[mr,lr]=await Promise.all([pf('qa_modules').select('*').eq('course_id',c.id).order('sort_order'),pf('qa_lessons').select('*').eq('course_id',c.id).order('sort_order')]);
     ALL_LESSONS=lr.data||[];
-    const mods=(mr.data||[]).map(m=>({...m,lessons:ALL_LESSONS.filter(l=>l.module_id===m.id).sort((a,b)=>(a.sort_order||0)-(b.sort_order||0))}));
-    ALL_MODS=mods;
+    ALL_MODS=(mr.data||[]).map(m=>({...m,lessons:ALL_LESSONS.filter(l=>l.module_id===m.id).sort((a,b)=>(a.sort_order||0)-(b.sort_order||0))}));
 
     let lp={learn:[],faq:[],testimonials:[]};
-    try{if(c.short_description&&c.short_description.startsWith('{'))lp=JSON.parse(c.short_description)}catch(e){}
+    try{if(c.short_description&&c.short_description.startsWith('{'))lp=JSON.parse(c.short_description)}catch(ex){}
 
-    const tl=mods.reduce((s,m)=>s+m.lessons.length,0);
+    const tl=ALL_MODS.reduce((s,m)=>s+m.lessons.length,0);
     const free=c.enrollment_type==='free';
     document.title=c.title+' — Preview';
 
-    // Build page in sections
-    let html='<div class="wrap">';
+    let html='<div class="container"><div class="hero"><div class="hero-grid"><div>';
+    html+=`<span class="badge ${c.status||'draft'}">${(c.status||'draft').replace('_',' ')}</span>`;
+    html+=`<h1>${e(c.title)}</h1>`;
+    if(c.subtitle) html+=`<p class="sub">${e(c.subtitle)}</p>`;
+    html+=`<p class="meta">${c.instructor_name?e(c.instructor_name)+' · ':''}${ALL_MODS.length} modules · ${tl} lessons${c.difficulty?' · '+e(c.difficulty):''}</p>`;
+    html+=`<button class="btn btn-teal" style="margin-top:8px">${free?'Enroll for Free':'Enroll Now'}</button>`;
+    html+='</div><div class="hero-img">';
+    html+=c.thumbnail_url?`<img src="${e(c.thumbnail_url)}" alt="" loading="lazy">`:'<div class="ph">No thumbnail set</div>';
+    html+='</div></div></div>';
 
-    // Hero
-    if(c.thumbnail_url) html+=`<img class="thumb" src="${h(c.thumbnail_url)}" alt="" loading="lazy">`;
-    html+=`<span class="status ${c.status||'draft'}">${(c.status||'draft').replace('_',' ')}</span>`;
-    html+=`<h1>${h(c.title)}</h1>`;
-    if(c.subtitle) html+=`<p class="sub">${h(c.subtitle)}</p>`;
-    html+=`<p class="meta">${c.instructor_name?h(c.instructor_name)+' · ':''}${mods.length} modules · ${tl} lessons${c.difficulty?' · '+h(c.difficulty):''}</p>`;
+    if(c.price_cents&&!free) html+=`<div class="card price-bar"><span class="price-big">$${(c.price_cents/100).toFixed(2)}</span></div>`;
 
-    // Price
-    if(c.price_cents||free){
-      html+=`<div class="card" style="margin-bottom:32px"><span class="price">${free?'Free':'$'+(c.price_cents/100).toFixed(2)}</span></div>`;
-    }
+    if(c.description) html+=`<div class="sec"><h2>About This Course</h2><p style="color:rgba(255,255,255,.5);font-size:15px;line-height:1.7;white-space:pre-wrap">${e(c.description)}</p></div>`;
 
-    // Description
-    if(c.description) html+=`<div class="sec"><h2>About This Course</h2><p style="color:rgba(255,255,255,.5);font-size:15px;white-space:pre-wrap">${h(c.description)}</p></div>`;
-
-    // What You'll Learn
     if(lp.learn&&lp.learn.length){
       html+='<div class="sec"><h2>What You\'ll Learn</h2>';
-      lp.learn.forEach(i=>{html+=`<div class="learn-item">${h(i)}</div>`});
+      lp.learn.forEach(i=>html+=`<div class="learn-item">${e(i)}</div>`);
       html+='</div>';
     }
 
-    // Curriculum - ONLY module headers, lessons loaded on click
     html+='<div class="sec"><h2>Curriculum</h2>';
-    mods.forEach((m,mi)=>{
+    ALL_MODS.forEach((m,mi)=>{
       const lm=m.lessons.reduce((s,l)=>s+(l.estimated_minutes||0),0);
-      html+=`<div class="mod" data-mid="${m.id}">
-        <div class="mod-h" onclick="toggleMod(this)">
-          <span class="mod-n">${mi+1}</span>
-          <span class="mod-t">${h(m.title)}</span>
-          <span class="mod-c">${m.lessons.length} lesson${m.lessons.length!==1?'s':''}${lm?' · '+lm+'m':''}</span>
-          <span class="mod-a">▾</span>
-        </div>
-        <div class="mod-body"></div>
-      </div>`;
+      html+=`<div class="mod" data-mid="${m.id}"><div class="mod-h" onclick="toggleMod(this)"><span class="mod-n">${mi+1}</span><span class="mod-t">${e(m.title)}</span><span class="mod-c">${m.lessons.length} lesson${m.lessons.length!==1?'s':''}${lm?' · '+lm+'m':''}</span><span class="mod-a">▾</span></div><div class="mod-body"></div></div>`;
     });
     html+='</div>';
 
-    // Testimonials
     if(lp.testimonials&&lp.testimonials.length){
       html+='<div class="sec"><h2>What Students Say</h2>';
-      lp.testimonials.forEach(t=>{
-        html+=`<div class="test"><div class="stars">${'★'.repeat(t.rating||5)}${'☆'.repeat(5-(t.rating||5))}</div><div class="txt">"${h(t.text)}"</div><div class="who">— ${h(t.name)}</div></div>`;
-      });
+      lp.testimonials.forEach(t=>html+=`<div class="card test"><div class="stars">${'★'.repeat(t.rating||5)}${'☆'.repeat(5-(t.rating||5))}</div><div class="txt">"${e(t.text)}"</div><div class="who">— ${e(t.name)}</div></div>`);
       html+='</div>';
     }
 
-    // FAQ
     if(lp.faq&&lp.faq.length){
       html+='<div class="sec"><h2>FAQ</h2>';
-      lp.faq.forEach(f=>{
-        html+=`<div class="faq"><div class="faq-q" onclick="toggleFaq(this)"><span>${h(f.q)}</span><span>▾</span></div><div class="faq-a">${h(f.a)}</div></div>`;
-      });
+      lp.faq.forEach(f=>html+=`<div class="faq"><div class="faq-q" onclick="toggleFaq(this)"><span>${e(f.q)}</span><span>▾</span></div><div class="faq-a">${e(f.a)}</div></div>`);
       html+='</div>';
     }
 
     html+='</div>';
-    document.getElementById('app').innerHTML=html;
-    console.log('Preview loaded:', mods.length, 'modules,', ALL_LESSONS.length, 'lessons');
-    console.log('Module IDs:', ALL_MODS.map(m=>m.id));
-    // Auto-open first module
-    const firstMod=document.querySelector('.mod .mod-h');
-    if(firstMod) firstMod.click();
+    document.getElementById('landing').innerHTML=html;
 
-  }catch(e){
-    document.getElementById('app').innerHTML=`<div class="err-page"><h2>Error</h2><p>${h(e.message)}</p><p><a href="/academy/builder.html">Back to Builder</a></p></div>`;
+    // Auto-open first module
+    const first=document.querySelector('.mod .mod-h');
+    if(first) first.click();
+
+  }catch(ex){
+    document.getElementById('landing').innerHTML=`<div class="err-page"><h2>Error</h2><p>${e(ex.message)}</p><p><a href="/academy/builder.html">Back to Builder</a></p></div>`;
   }
 }
 load();
