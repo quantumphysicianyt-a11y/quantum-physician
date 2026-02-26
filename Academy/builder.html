@@ -961,7 +961,7 @@ function renderCourseEditor(course) {
 
   document.getElementById('topActions').innerHTML = `
     <span id="unsavedIndicator" style="display:none;align-items:center;gap:6px;font-size:12px;color:var(--warning)"><span class="unsaved-dot"></span> Unsaved</span>
-    <a href="/academy/course.html?slug=${course.slug}" target="_blank" class="btn btn-ghost btn-sm">${ICONS.eye} Preview</a>
+    <a href="/academy/preview.html?slug=${course.slug}" target="_blank" class="btn btn-ghost btn-sm">${ICONS.eye} Preview</a>
     <button class="btn btn-ghost btn-sm" onclick="cloneCourse('${course.id}')" title="Duplicate this course">${ICONS.layers} Clone</button>
     <button class="btn btn-danger btn-sm" onclick="deleteCourse('${course.id}')">${ICONS.trash} Delete</button>
     <button class="btn btn-primary btn-sm" id="saveBtn" onclick="saveCourse()">${ICONS.save} Save Changes</button>

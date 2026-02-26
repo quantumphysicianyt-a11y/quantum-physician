@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Course Preview — Quantum Academy</title>
+  <link rel="icon" href="/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <style>
+:root {
+  --bg: #0a1e33; --bg-deep: #071825; --bg-card: #112a42;
+  --border: rgba(91,168,178,.15); --text: rgba(255,255,255,.88);
+  --text-muted: rgba(255,255,255,.5); --teal: #5ba8b2;
+  --teal-light: #4acfd9; --taupe: #ad9b84; --purple: #a78bfa;
+  --success: #3dd68c; --danger: #ef5350; --warning: #f0b429;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+
+.preview-banner {
+  background: linear-gradient(135deg, rgba(167,139,250,.15), rgba(91,168,178,.1));
+  border-bottom: 1px solid var(--purple);
+  padding: 10px 24px; display: flex; align-items: center; gap: 12px;
+  font-size: 13px; color: var(--purple); position: sticky; top: 0; z-index: 100;
+  backdrop-filter: blur(12px);
+}
+.preview-banner .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--purple); animation: pulse 2s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
+.preview-banner a { color: var(--teal); text-decoration: none; margin-left: auto; font-weight: 600; }
+
+.hero { padding: 60px 24px 40px; max-width: 900px; margin: 0 auto; }
+.hero .status { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 16px; }
+.hero .status.draft { background: rgba(240,180,41,.1); color: var(--warning); border: 1px solid rgba(240,180,41,.3); }
+.hero .status.published { background: rgba(61,214,140,.1); color: var(--success); border: 1px solid rgba(61,214,140,.3); }
+.hero .status.coming_soon { background: rgba(167,139,250,.1); color: var(--purple); border: 1px solid rgba(167,139,250,.3); }
+.hero h1 { font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 700; margin-bottom: 8px; }
+.hero .subtitle { font-size: 18px; color: var(--text-muted); margin-bottom: 16px; }
+.hero .meta { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+.hero .meta span { display: flex; align-items: center; gap: 6px; }
+.hero .thumb { width: 100%; max-height: 400px; object-fit: cover; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 24px; }
+
+.price-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 32px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.price-box .price { font-size: 32px; font-weight: 700; color: var(--teal); }
+.price-box .original { font-size: 18px; color: var(--text-muted); text-decoration: line-through; }
+.price-box .sale-badge { background: rgba(239,83,80,.1); color: var(--danger); padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; }
+.price-box .enroll-btn { margin-left: auto; padding: 12px 32px; background: linear-gradient(135deg, var(--teal), var(--teal-light)); color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: default; }
+
+.section { max-width: 900px; margin: 0 auto; padding: 0 24px 32px; }
+.section h2 { font-family: 'Playfair Display', serif; font-size: 24px; margin-bottom: 16px; }
+
+.desc { white-space: pre-wrap; color: var(--text-muted); font-size: 15px; line-height: 1.7; }
+
+.learn-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.learn-item { display: flex; gap: 10px; align-items: flex-start; padding: 10px 14px; background: var(--bg-card); border-radius: 8px; font-size: 14px; }
+.learn-item .check { color: var(--teal); font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+.faq-item { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; overflow: hidden; }
+.faq-q { padding: 14px 18px; font-weight: 600; font-size: 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+.faq-q:hover { background: rgba(91,168,178,.05); }
+.faq-a { padding: 0 18px 14px; font-size: 14px; color: var(--text-muted); display: none; }
+.faq-item.open .faq-a { display: block; }
+
+.testimonial { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 12px; }
+.testimonial .stars { color: var(--warning); margin-bottom: 6px; font-size: 14px; }
+.testimonial .text { font-size: 14px; color: var(--text-muted); font-style: italic; margin-bottom: 8px; }
+.testimonial .name { font-size: 13px; font-weight: 600; color: var(--taupe); }
+
+.curriculum { margin-bottom: 40px; }
+.module-card { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+.module-head { padding: 16px 20px; display: flex; align-items: center; gap: 12px; cursor: pointer; }
+.module-head:hover { background: rgba(91,168,178,.03); }
+.module-head .num { width: 28px; height: 28px; border-radius: 50%; background: rgba(91,168,178,.1); color: var(--teal); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+.module-head .title { font-weight: 600; font-size: 15px; flex: 1; }
+.module-head .count { font-size: 12px; color: var(--text-muted); }
+.module-head .arrow { color: var(--text-muted); transition: transform .2s; }
+.module-card.open .module-head .arrow { transform: rotate(180deg); }
+.module-lessons { display: none; border-top: 1px solid var(--border); }
+.module-card.open .module-lessons { display: block; }
+.lesson-row { padding: 12px 20px 12px 56px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(91,168,178,.06); font-size: 14px; }
+.lesson-row:last-child { border-bottom: none; }
+.lesson-row .icon { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+.lesson-row .icon svg { width: 14px; height: 14px; stroke: currentColor; }
+.lesson-row .icon.video { background: rgba(91,168,178,.1); color: var(--teal); }
+.lesson-row .icon.text { background: rgba(173,155,132,.1); color: var(--taupe); }
+.lesson-row .icon.quiz { background: rgba(167,139,250,.1); color: var(--purple); }
+.lesson-row .icon.pdf, .lesson-row .icon.download { background: rgba(240,180,41,.1); color: var(--warning); }
+.lesson-row .icon.assignment { background: rgba(255,0,110,.08); color: #ff006e; }
+.lesson-row .icon.live_session { background: rgba(239,83,80,.08); color: var(--danger); }
+.lesson-row .icon.embed { background: rgba(91,168,178,.08); color: var(--teal-light); }
+.lesson-row .icon.audio { background: rgba(61,214,140,.08); color: var(--success); }
+.lesson-row .name { flex: 1; }
+.lesson-row .dur { font-size: 12px; color: var(--text-muted); }
+.lesson-row .badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; background: rgba(91,168,178,.1); color: var(--teal); font-weight: 600; }
+
+.loading { text-align: center; padding: 80px 24px; color: var(--text-muted); }
+.spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--teal); border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 16px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.not-found { text-align: center; padding: 120px 24px; }
+.not-found h2 { font-family: 'Playfair Display', serif; margin-bottom: 8px; }
+.not-found p { color: var(--text-muted); }
+
+@media (max-width: 640px) {
+  .hero h1 { font-size: 26px; }
+  .learn-list { grid-template-columns: 1fr; }
+  .price-box { flex-direction: column; align-items: flex-start; }
+  .price-box .enroll-btn { width: 100%; text-align: center; margin-left: 0; }
+}
+  </style>
+</head>
+<body>
+
+<div class="preview-banner">
+  <div class="dot"></div>
+  <strong>ADMIN PREVIEW</strong>
+  <span>This is how the course page will look to students</span>
+  <a href="javascript:history.back()">← Back to Builder</a>
+</div>
+
+<div id="content">
+  <div class="loading">
+    <div class="spinner"></div>
+    Loading course preview...
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://bqbcehfozsaaqrbjvkml.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxYmNlaGZvenNhYXFyYmp2a21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjczMTcxNDEsImV4cCI6MjA0Mjg5MzE0MX0.2Iv2kPMLpECGqHPiyDGkPrdsMhFKQMFnpJm2x9a3vMA';
+
+function getAdminToken() { return sessionStorage.getItem('qp_admin_token') || ''; }
+
+async function adminProxy(payload) {
+  const res = await fetch('/.netlify/functions/admin-proxy', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getAdminToken() },
+    body: JSON.stringify(payload)
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error || 'Proxy request failed');
+  return json;
+}
+
+function proxyFrom(table) {
+  return {
+    _table: table, _select: '*', _filters: [], _order: null,
+    select(s) { this._select = s; return this; },
+    eq(c, v) { this._filters.push({column:c, op:'eq', value:v}); return this; },
+    order(c, opts) { this._order = {column:c, ascending: opts ? opts.ascending !== false : true}; return this; },
+    single() { this._single = true; return this; },
+    then(resolve, reject) {
+      return adminProxy({type:'query', table:this._table, select:this._select, filters:this._filters, order:this._order, single:this._single})
+        .then(r => ({data: r.data, error: null}))
+        .then(resolve, e => resolve ? resolve({data:null, error:{message:e.message}}) : reject ? reject(e) : null);
+    }
+  };
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+const ICONS = {
+  video: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>',
+  text: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
+  quiz: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  pdf: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+  assignment: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>',
+  embed: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
+  live_session: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>',
+  audio: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
+};
+function typeIcon(t) { return ICONS[t] || ICONS.text; }
+
+async function loadPreview() {
+  const params = new URLSearchParams(window.location.search);
+  const slug = params.get('slug');
+  const id = params.get('id');
+
+  if (!getAdminToken()) {
+    document.getElementById('content').innerHTML = `<div class="not-found"><h2>Admin Access Required</h2><p>Please sign in via the <a href="/academy/builder.html" style="color:var(--teal)">Course Builder</a> first, then use Preview.</p></div>`;
+    return;
+  }
+
+  try {
+    let course;
+    if (id) {
+      const res = await proxyFrom('qa_courses').select('*').eq('id', id).single();
+      course = res.data;
+    } else if (slug) {
+      const res = await proxyFrom('qa_courses').select('*').eq('slug', slug).single();
+      course = res.data;
+    }
+
+    if (!course) {
+      document.getElementById('content').innerHTML = `<div class="not-found"><h2>Course Not Found</h2><p>No course found with that slug or ID.</p></div>`;
+      return;
+    }
+
+    // Load modules + lessons
+    const [modRes, lesRes] = await Promise.all([
+      proxyFrom('qa_modules').select('*').eq('course_id', course.id).order('sort_order'),
+      proxyFrom('qa_lessons').select('*').eq('course_id', course.id).order('sort_order'),
+    ]);
+    const lessons = lesRes.data || [];
+    const modules = (modRes.data || []).map(m => ({
+      ...m, lessons: lessons.filter(l => l.module_id === m.id).sort((a,b) => (a.sort_order||0) - (b.sort_order||0))
+    }));
+
+    // Parse landing page data
+    let landing = {learn: [], faq: [], testimonials: []};
+    try { if (course.short_description && course.short_description.startsWith('{')) landing = JSON.parse(course.short_description); } catch(e) {}
+
+    const price = course.price_cents || 0;
+    const salePrice = course.sale_price_cents;
+    const saleActive = salePrice && course.sale_ends_at && new Date(course.sale_ends_at) > new Date();
+    const displayPrice = saleActive ? salePrice : price;
+    const totalLessons = modules.reduce((s,m) => s + m.lessons.length, 0);
+
+    document.title = course.title + ' — Quantum Academy Preview';
+
+    document.getElementById('content').innerHTML = `
+      <div class="hero">
+        ${course.thumbnail_url ? `<img class="thumb" src="${esc(course.thumbnail_url)}" alt="">` : ''}
+        <span class="status ${course.status || 'draft'}">${(course.status || 'draft').replace('_', ' ')}</span>
+        <h1>${esc(course.title)}</h1>
+        ${course.subtitle ? `<p class="subtitle">${esc(course.subtitle)}</p>` : ''}
+        <div class="meta">
+          ${course.instructor_name ? `<span>👤 ${esc(course.instructor_name)}</span>` : ''}
+          <span>📚 ${modules.length} modules · ${totalLessons} lessons</span>
+          ${course.total_duration_minutes ? `<span>⏱ ${course.total_duration_minutes} min</span>` : ''}
+          ${course.difficulty ? `<span>📊 ${course.difficulty}</span>` : ''}
+          ${course.enrollment_type === 'free' ? '<span>🆓 Free</span>' : ''}
+        </div>
+      </div>
+
+      ${price > 0 || course.enrollment_type === 'free' ? `
+      <div class="section">
+        <div class="price-box">
+          ${course.enrollment_type === 'free'
+            ? '<span class="price">Free</span>'
+            : `<span class="price">$${(displayPrice / 100).toFixed(2)}</span>
+               ${saleActive ? `<span class="original">$${(price / 100).toFixed(2)}</span><span class="sale-badge">SALE</span>` : ''}`
+          }
+          <button class="enroll-btn">${course.enrollment_type === 'free' ? 'Enroll Free' : 'Enroll Now'}</button>
+        </div>
+      </div>` : ''}
+
+      ${course.description ? `<div class="section"><h2>About This Course</h2><div class="desc">${esc(course.description)}</div></div>` : ''}
+
+      ${landing.learn && landing.learn.length ? `
+      <div class="section">
+        <h2>What You'll Learn</h2>
+        <div class="learn-list">
+          ${landing.learn.map(item => `<div class="learn-item"><span class="check">✓</span><span>${esc(item)}</span></div>`).join('')}
+        </div>
+      </div>` : ''}
+
+      <div class="section curriculum">
+        <h2>Curriculum</h2>
+        ${modules.map((m, mi) => `
+          <div class="module-card${mi === 0 ? ' open' : ''}" onclick="this.classList.toggle('open')">
+            <div class="module-head">
+              <span class="num">${mi + 1}</span>
+              <span class="title">${esc(m.title)}</span>
+              <span class="count">${m.lessons.length} lesson${m.lessons.length !== 1 ? 's' : ''}</span>
+              <span class="arrow">▾</span>
+            </div>
+            <div class="module-lessons">
+              ${m.lessons.map(l => `
+                <div class="lesson-row">
+                  <div class="icon ${l.content_type || 'text'}">${typeIcon(l.content_type)}</div>
+                  <span class="name">${esc(l.title)}</span>
+                  ${l.estimated_minutes ? `<span class="dur">${l.estimated_minutes} min</span>` : ''}
+                  ${l.is_free_preview ? '<span class="badge">Preview</span>' : ''}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `).join('') || '<p style="color:var(--text-muted)">No modules yet.</p>'}
+      </div>
+
+      ${landing.testimonials && landing.testimonials.length ? `
+      <div class="section">
+        <h2>Student Testimonials</h2>
+        ${landing.testimonials.map(t => `
+          <div class="testimonial">
+            <div class="stars">${'★'.repeat(t.rating || 5)}${'☆'.repeat(5 - (t.rating || 5))}</div>
+            <div class="text">"${esc(t.text)}"</div>
+            <div class="name">— ${esc(t.name)}</div>
+          </div>
+        `).join('')}
+      </div>` : ''}
+
+      ${landing.faq && landing.faq.length ? `
+      <div class="section">
+        <h2>Frequently Asked Questions</h2>
+        ${landing.faq.map(f => `
+          <div class="faq-item" onclick="this.classList.toggle('open')">
+            <div class="faq-q"><span>${esc(f.q)}</span><span>▾</span></div>
+            <div class="faq-a">${esc(f.a)}</div>
+          </div>
+        `).join('')}
+      </div>` : ''}
+    `;
+
+  } catch(e) {
+    document.getElementById('content').innerHTML = `<div class="not-found"><h2>Preview Error</h2><p>${esc(e.message)}</p><p style="margin-top:8px"><a href="/academy/builder.html" style="color:var(--teal)">Back to Builder</a></p></div>`;
+  }
+}
+
+loadPreview();
+</script>
+</body>
+</html>
