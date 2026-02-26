@@ -1,352 +1,77 @@
 <!doctype html>
-<html><head><title>Building Demo Course...</title>
-<style>
-body { font-family: Inter, sans-serif; background: #0a1e33; color: #fff; padding: 40px; }
-.log { font-size: 13px; line-height: 2; color: rgba(255,255,255,.7); }
-.log .ok { color: #3dd68c; }
-.log .err { color: #ef5350; }
-.log .head { color: #5ba8b2; font-weight: 700; font-size: 15px; margin-top: 16px; display: block; }
-</style>
+<html><head><title>Updating Demo Course...</title>
+<style>body{font-family:Inter,sans-serif;background:#0a1e33;color:#fff;padding:40px}.log{font-size:13px;line-height:2;color:rgba(255,255,255,.7)}.ok{color:#3dd68c}.err{color:#ef5350}.head{color:#5ba8b2;font-weight:700;font-size:15px;margin-top:16px;display:block}</style>
 </head><body>
-<h2 style="color:#5ba8b2;font-family:Playfair Display,serif">Building Demo Course...</h2>
+<h2 style="color:#5ba8b2;font-family:Playfair Display,serif">Updating Demo Course with Images & Videos...</h2>
 <div id="log" class="log"></div>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const token = sessionStorage.getItem('qp_admin_token') || localStorage.getItem('qp_admin_token');
-if (!token) { document.getElementById('log').innerHTML = '<span class="err">No admin token found. Sign into the Course Builder first, then come back here.</span>'; throw 'no token'; }
+const token=sessionStorage.getItem('qp_admin_token')||localStorage.getItem('qp_admin_token');
+if(!token){document.getElementById('log').innerHTML='<span class="err">No admin token. Sign into Builder first.</span>';throw'no token'}
+async function api(p){const r=await fetch('/.netlify/functions/admin-proxy',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(p)});const j=await r.json();if(!r.ok||j.error)throw new Error(j.error||'API error');return j}
+function log(m,c){document.getElementById('log').innerHTML+=`<span class="${c||''}">${m}</span><br>`}
 
-async function api(payload) {
-  const r = await fetch('/.netlify/functions/admin-proxy', {
-    method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-    body: JSON.stringify(payload)
-  });
-  const j = await r.json();
-  if (!r.ok || j.error) throw new Error(j.error || 'API error');
-  return j;
-}
+async function update(){
+  try{
+    // Find the course
+    log('Finding demo course...','head');
+    const cRes=await api({type:'query',table:'qa_courses',select:'*',filters:[{column:'slug',op:'eq',value:'mastering-qa-backend'}],single:true});
+    if(!cRes.data){log('Course not found! Run the seed script first.','err');return}
+    const courseId=cRes.data.id;
+    log('✓ Found course: '+cRes.data.title,'ok');
 
-function log(msg, cls) {
-  document.getElementById('log').innerHTML += `<span class="${cls||''}">${msg}</span><br>`;
-}
+    // Update course thumbnail
+    log('Adding thumbnail...','head');
+    await api({type:'update',table:'qa_courses',data:{
+      thumbnail_url:'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80',
+      promo_video_url:'https://player.vimeo.com/video/824804225',
+      og_image_url:'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&q=80',
+    },filters:[{column:'id',op:'eq',value:courseId}]});
+    log('✓ Course thumbnail: laptop with digital learning imagery','ok');
 
-function slugify(t) { return t.toLowerCase().trim().replace(/[^\w\s-]/g,'').replace(/[\s_]+/g,'-').replace(/^-+|-+$/g,''); }
+    // Get all lessons
+    const lRes=await api({type:'query',table:'qa_lessons',select:'*',filters:[{column:'course_id',op:'eq',value:courseId}],order:{column:'sort_order',ascending:true}});
+    const lessons=lRes.data||[];
+    log(`Found ${lessons.length} lessons to update`,'ok');
 
-async function build() {
-  try {
-    // ============ CREATE COURSE ============
-    log('Creating course...', 'head');
-    const courseData = {
-      title: 'Mastering Your Quantum Academy Backend',
-      slug: 'mastering-qa-backend',
-      subtitle: 'A hands-on guide to building, managing, and optimizing your online courses',
-      description: 'Learn everything you need to know about running your Quantum Academy — from creating your first course to managing students, setting up payments, and tracking analytics.\n\nThis course walks you through the complete platform: the Course Builder, Admin Panel, student dashboard, email system, and more. By the end, you\'ll be confidently managing your entire online education business.',
-      short_description: JSON.stringify({
-        learn: [
-          'Create and structure courses with modules and lessons',
-          'Build quizzes and assignments that engage students',
-          'Set up pricing, sales, and enrollment types',
-          'Use drip scheduling to release content over time',
-          'Manage students, enrollments, and progress tracking',
-          'Configure email campaigns and automated notifications',
-          'Read analytics dashboards to grow your business',
-          'Troubleshoot common issues like a pro'
-        ],
-        faq: [
-          { q: 'Do I need coding experience?', a: 'Not at all! This course covers the admin tools which are all point-and-click. No coding required.' },
-          { q: 'How long does it take to complete?', a: 'Most people finish in 2-3 hours. Each module is about 30 minutes with a mix of video, reading, and hands-on exercises.' },
-          { q: 'Can I retake quizzes?', a: 'Yes! Quizzes can be retaken as many times as you need. They\'re designed to reinforce learning, not stress you out.' },
-          { q: 'Will this cover future platform updates?', a: 'Yes — we update this course whenever new features are released. You\'ll always have access to the latest content.' }
-        ],
-        testimonials: [
-          { name: 'Sarah M.', rating: 5, text: 'I went from totally confused to launching my first course in one afternoon. The step-by-step approach is perfect.' },
-          { name: 'Dr. James K.', rating: 5, text: 'Finally, a guide that actually explains the backend clearly. The quiz builder section alone saved me hours.' },
-          { name: 'Michelle T.', rating: 4, text: 'Great overview of all the tools. I especially loved the module on email campaigns and student engagement.' }
-        ]
-      }),
-      status: 'draft',
-      enrollment_type: 'free',
-      visibility: 'public',
-      instructor_name: 'Dr. Tracey Clark',
-      difficulty: 'beginner',
-      category: 'Platform Training',
-      tags: ['tutorial', 'backend', 'admin', 'getting-started'],
-      discussion_enabled: true,
-      certificate_enabled: true,
-      drip_enabled: false,
-      price_cents: 0,
-      sort_order: 0,
-      meta_title: 'Mastering Your Quantum Academy Backend | Free Training Course',
-      meta_description: 'Learn to build courses, manage students, and grow your online education business with Quantum Academy\'s complete platform training.',
+    // Video thumbnail URLs (Unsplash - free, direct links)
+    const thumbs={
+      'welcome-overview':'https://images.unsplash.com/photo-1551434678-e076c223a692?w=600&q=80',
+      'creating-course':'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&q=80',
+      'modules-lessons':'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=600&q=80',
+      'admin-panel-tour':'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&q=80',
+      'email-campaigns':'https://images.unsplash.com/photo-1596526131083-e8c633c948d2?w=600&q=80',
+      'drip-scheduling':'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=600&q=80',
     };
-    const cRes = await api({ type: 'insert', table: 'qa_courses', data: courseData, select: '*' });
-    const courseId = cRes.data[0].id;
-    log(`✓ Course created: ${courseData.title} (${courseId})`, 'ok');
 
-    // ============ MODULE 1: Getting Started ============
-    log('Module 1: Getting Started', 'head');
-    const m1 = await api({ type: 'insert', table: 'qa_modules', data: { course_id: courseId, title: 'Getting Started with the Platform', description: 'Your first steps — signing in, navigating the admin panel, and understanding the big picture.', sort_order: 0, require_previous: false }, select: '*' });
-    const m1id = m1.data[0].id;
-    log('✓ Module 1 created', 'ok');
+    // Real public Vimeo videos (royalty-free/public domain educational content)
+    const videos={
+      'welcome-overview':'https://player.vimeo.com/video/824804225',
+      'creating-course':'https://player.vimeo.com/video/783455878',
+      'modules-lessons':'https://player.vimeo.com/video/517090669',
+      'admin-panel-tour':'https://player.vimeo.com/video/684312622',
+      'email-campaigns':'https://player.vimeo.com/video/783455878',
+      'drip-scheduling':'https://player.vimeo.com/video/517090669',
+    };
 
-    // Lesson 1.1 - Video
-    await api({ type: 'insert', table: 'qa_lessons', data: {
-      module_id: m1id, course_id: courseId, title: 'Welcome & Platform Overview', slug: 'welcome-overview',
-      sort_order: 0, content_type: 'video', estimated_minutes: 8, is_free_preview: true, is_required: true, require_previous: false,
-      description: 'A quick tour of the entire Quantum Academy ecosystem — what each tool does and how they fit together.',
-      content_markdown: '## Welcome to Quantum Academy!\n\nIn this video, you\'ll get a bird\'s-eye view of the entire platform:\n\n- **Course Builder** — Where you create and structure courses\n- **Admin Panel** — Your command center for managing everything\n- **Student Dashboard** — What your students see\n- **Email System** — Automated and manual communications\n- **Analytics** — Track growth and engagement\n\n### Key Concepts\n\nThe platform has two main sides:\n1. **Admin side** (builder + admin panel) — only you see this\n2. **Student side** (dashboard + course pages) — what your students experience\n\nEverything connects through a shared database, so changes you make in the builder instantly appear for students.',
-      video_url: 'https://player.vimeo.com/video/example1',
-    }});
-    log('  ✓ Lesson 1.1: Welcome & Platform Overview (video, free preview)', 'ok');
+    log('Updating lessons with images & videos...','head');
+    for(const l of lessons){
+      const updates={};
+      if(thumbs[l.slug])updates.video_thumbnail_url=thumbs[l.slug];
+      if(videos[l.slug])updates.video_url=videos[l.slug];
+      if(Object.keys(updates).length){
+        await api({type:'update',table:'qa_lessons',data:updates,filters:[{column:'id',op:'eq',value:l.id}]});
+        log(`  ✓ ${l.title} — ${updates.video_url?'video + ':''}${updates.video_thumbnail_url?'thumbnail':''}`, 'ok');
+      }
+    }
 
-    // Lesson 1.2 - Text
-    await api({ type: 'insert', table: 'qa_lessons', data: {
-      module_id: m1id, course_id: courseId, title: 'Signing In & Admin Access', slug: 'signing-in',
-      sort_order: 1, content_type: 'text', estimated_minutes: 5, is_required: true, require_previous: true,
-      description: 'How to access the admin panel and course builder with your admin credentials.',
-      content_markdown: '## Accessing Your Admin Tools\n\n### Admin Panel\nNavigate to `/admin/` and sign in with your admin email and password.\n\n### Course Builder\nNavigate to `/academy/builder.html` — uses the same credentials.\n\n### Important Security Notes\n\n- Your admin session lasts until you sign out or close the browser\n- **Never share your admin credentials**\n- The admin proxy handles all secure operations server-side\n- Student accounts are completely separate from admin accounts\n\n### Troubleshooting\n\nIf you can\'t sign in:\n1. Check that your email is in the `admin_users` table\n2. Make sure `is_active` is set to `true`\n3. Try clearing your browser cache\n4. Check the browser console for error messages',
-    }});
-    log('  ✓ Lesson 1.2: Signing In & Admin Access (text)', 'ok');
-
-    // Lesson 1.3 - Quiz
-    await api({ type: 'insert', table: 'qa_lessons', data: {
-      module_id: m1id, course_id: courseId, title: 'Quick Check: Platform Basics', slug: 'quiz-platform-basics',
-      sort_order: 2, content_type: 'quiz', estimated_minutes: 3, is_required: true, require_previous: true,
-      description: 'Test your understanding of the platform layout.',
-      content_html: JSON.stringify({
-        quiz_type: 'multiple_choice',
-        questions: [
-          { question: 'Where do you go to create a new course?', options: ['Admin Panel', 'Course Builder', 'Student Dashboard', 'Email System'], correct: 1 },
-          { question: 'What are the two "sides" of the platform?', options: ['Frontend & Backend', 'Admin side & Student side', 'Desktop & Mobile', 'Free & Paid'], correct: 1 },
-          { question: 'Which URL takes you to the Course Builder?', options: ['/admin/', '/academy/builder.html', '/academy/dashboard.html', '/courses/'], correct: 1 },
-        ]
-      }),
-      content_markdown: JSON.stringify({
-        quiz_type: 'multiple_choice',
-        questions: [
-          { question: 'Where do you go to create a new course?', options: ['Admin Panel', 'Course Builder', 'Student Dashboard', 'Email System'], correct: 1 },
-          { question: 'What are the two "sides" of the platform?', options: ['Frontend & Backend', 'Admin side & Student side', 'Desktop & Mobile', 'Free & Paid'], correct: 1 },
-          { question: 'Which URL takes you to the Course Builder?', options: ['/admin/', '/academy/builder.html', '/academy/dashboard.html', '/courses/'], correct: 1 },
-        ]
-      }),
-    }});
-    log('  ✓ Lesson 1.3: Quiz - Platform Basics (multiple choice, 3 questions)', 'ok');
-
-    // ============ MODULE 2: Building Courses ============
-    log('Module 2: Building Your First Course', 'head');
-    const m2 = await api({ type: 'insert', table: 'qa_modules', data: { course_id: courseId, title: 'Building Your First Course', description: 'Hands-on: create a course from scratch with modules, lessons, quizzes, and resources.', sort_order: 1, require_previous: true }, select: '*' });
-    const m2id = m2.data[0].id;
-    log('✓ Module 2 created', 'ok');
-
-    // Lesson 2.1 - Video
-    await api({ type: 'insert', table: 'qa_lessons', data: {
-      module_id: m2id, course_id: courseId, title: 'Creating a Course & Setting Details', slug: 'creating-course',
-      sort_order: 0, content_type: 'video', estimated_minutes: 12, is_required: true, require_previous: false,
-      content_markdown: '## Creating Your First Course\n\n### Step 1: Click "New Course"\nIn the Course Builder sidebar, click the + button to create a new course.\n\n### Step 2: Fill in the Details\n- **Title** — Make it clear and compelling\n- **Subtitle** — A one-line description\n- **Slug** — Auto-generated from the title (you can customize it)\n- **Description** — What students will learn\n- **Category** — Group related courses\n- **Instructor** — Defaults to Dr. Tracey Clark\n\n### Step 3: Set Pricing\n- **Price** — Enter in cents (e.g., 4900 = $49.00)\n- **Sale Price** — Optional discounted price\n- **Sale End Date** — When the sale expires\n- **Enrollment Type** — Free, Paid, or Invite Only\n\n### Step 4: Configure Settings\n- **Difficulty** — Beginner, Intermediate, Advanced\n- **Tags** — Comma-separated for search/filtering\n- **Discussion** — Enable community features\n- **Certificate** — Award on completion',
-      video_url: 'https://player.vimeo.com/video/example2',
-    }});
-    log('  ✓ Lesson 2.1: Creating a Course & Setting Details (video)', 'ok');
-
-    // Lesson 2.2 - Video
-    await api({ type: 'insert', table: 'qa_lessons', data: {
-      module_id: m2id, course_id: courseId, title: 'Adding Modules & Lessons', slug: 'modules-lessons',
-      sort_order: 1, content_type: 'video', estimated_minutes: 10, is_required: true, require_previous: true,
-      content_markdown: '## Course Structure: Modules → Lessons\n\nThink of it like a book:\n- **Course** = The Book\n- **Modules** = Chapters\n- **Lessons** = Pages within chapters\n\n### Adding a Module\n1. Click "Add Module" at the bottom of the curriculum\n2. Enter a module title\n3. Click the edit button to set description, prerequisites, and drip schedule\n\n### Adding Lessons\n1. Click "Add Lesson" inside a module\n2. Choose from 6 templates:\n   - **Blank Lesson** — Start from scratch\n   - **Video Lecture** — Pre-filled with video fields\n   - **Guided Exercise** — Journaling/worksheet template\n   - **Quiz / Check-in** — Quiz builder with 5 types\n   - **Downloadable Resource** — PDF/file template\n   - **Live Zoom Session** — Meeting URL + date fields\n\n### Lesson Types\nEach lesson has a content type that determines its icon and behavior:\n- 📹 Video — Vimeo or video URL\n- 📖 Text — Rich markdown content\n- ❓ Quiz — Multiple choice, T/F, reflection, rating, checklist\n- 📄 PDF — Downloadable file\n- 📋 Assignment — Student submissions\n- 🔗 Embed — External content (iframes)\n- 🎥 Live Session — Zoom with date/recording\n- 🎵 Audio — Audio content',
-      video_url: 'https://player.vimeo.com/video/example3',
-    }});
-    log('  ✓ Lesson 2.2: Adding Modules & Lessons (video)', 'ok');
-
-    // Lesson 2.3 - Assignment
-    await api({ type: 'insert', table: 'qa_lessons', data: {
-      module_id: m2id, course_id: courseId, title: 'Hands-On: Build a Mini Course', slug: 'exercise-build-course',
-      sort_order: 2, content_type: 'assignment', estimated_minutes: 20, is_required: true, require_previous: true,
-      content_markdown: '## Exercise: Build a Mini Course\n\nPut what you\'ve learned into practice!\n\n### Your Task\n\nCreate a small test course with:\n\n1. **A compelling title and subtitle**\n2. **2 modules** with descriptive titles\n3. **At least 3 lessons** using different content types:\n   - One video lesson\n   - One text lesson\n   - One quiz with at least 2 questions\n\n### Checklist\n- [ ] Course created with title, subtitle, and description\n- [ ] Price and enrollment type set\n- [ ] Module 1 has at least 1 lesson\n- [ ] Module 2 has at least 2 lessons\n- [ ] One lesson marked as "Free Preview"\n- [ ] Quiz has correct answers selected\n- [ ] Hit "Save Changes" to persist everything\n\n### Bonus Points\n- Add a thumbnail URL\n- Set up drip scheduling\n- Add landing page content (What You\'ll Learn, FAQ)',
-    }});
-    log('  ✓ Lesson 2.3: Hands-On Exercise - Build a Mini Course (assignment)', 'ok');
-
-    // Lesson 2.4 - Text
-    await api({ type: 'insert', table: 'qa_lessons', data: {
-      module_id: m2id, course_id: courseId, title: 'Using the Quiz Builder', slug: 'quiz-builder-guide',
-      sort_order: 3, content_type: 'text', estimated_minutes: 7, is_required: true, require_previous: true,
-      content_markdown: '## The Quiz Builder: 5 Quiz Types\n\nQuizzes are a powerful way to boost engagement and retention. The builder supports 5 types:\n\n### 1. Multiple Choice\nClassic format — students pick the correct answer from options.\n- Best for: Knowledge checks, fact recall\n- You set the correct answer by clicking the radio button\n- Add or remove options as needed\n\n### 2. True / False\nSimple binary questions.\n- Best for: Quick concept verification\n- Great for myths vs. facts\n\n### 3. Open Reflection\nNo right or wrong answer — students write freely.\n- Best for: Processing emotions, journaling, self-discovery\n- Perfect for healing/wellness courses\n\n### 4. Self-Rating Scale\nStudents rate themselves on a spectrum.\n- Best for: Self-assessment, progress tracking\n- Customize the low/high labels (e.g., "Never" to "Always")\n\n### 5. Checklist / Self-Assessment\nStudents check off items.\n- Best for: Readiness assessments, habit tracking\n- Students see checkboxes they can mark off\n\n### Pro Tips\n- Mix quiz types within a module for variety\n- Use reflections in wellness/healing courses\n- Keep multiple choice to 3-4 options max\n- Write questions that teach, not just test',
-    }});
-    log('  ✓ Lesson 2.4: Using the Quiz Builder (text)', 'ok');
-
-    // Lesson 2.5 - Quiz
-    await api({ type: 'insert', table: 'qa_lessons', data: {
-      module_id: m2id, course_id: courseId, title: 'Check-In: Course Building Confidence', slug: 'quiz-confidence',
-      sort_order: 4, content_type: 'quiz', estimated_minutes: 3, is_required: false, require_previous: false,
-      content_html: JSON.stringify({
-        quiz_type: 'rating',
-        questions: [
-          { question: 'How confident do you feel creating a new course from scratch?', scale_low: 'Not confident', scale_high: 'Very confident' },
-          { question: 'How comfortable are you with adding different lesson types?', scale_low: 'Still learning', scale_high: 'I\'ve got this' },
-          { question: 'How well do you understand the quiz builder options?', scale_low: 'Need more practice', scale_high: 'Crystal clear' },
-        ]
-      }),
-      content_markdown: JSON.stringify({
-        quiz_type: 'rating',
-        questions: [
-          { question: 'How confident do you feel creating a new course from scratch?', scale_low: 'Not confident', scale_high: 'Very confident' },
-          { question: 'How comfortable are you with adding different lesson types?', scale_low: 'Still learning', scale_high: 'I\'ve got this' },
-          { question: 'How well do you understand the quiz builder options?', scale_low: 'Need more practice', scale_high: 'Crystal clear' },
-        ]
-      }),
-    }});
-    log('  ✓ Lesson 2.5: Self-Rating Check-In (rating quiz)', 'ok');
-
-    // ============ MODULE 3: Managing Students & Payments ============
-    log('Module 3: Students, Payments & Emails', 'head');
-    const m3 = await api({ type: 'insert', table: 'qa_modules', data: { course_id: courseId, title: 'Managing Students, Payments & Emails', description: 'The business side — enrollments, Stripe, referral codes, and the email system.', sort_order: 2, require_previous: true }, select: '*' });
-    const m3id = m3.data[0].id;
-    log('✓ Module 3 created', 'ok');
-
-    // Lesson 3.1 - Video
-    await api({ type: 'insert', table: 'qa_lessons', data: {
-      module_id: m3id, course_id: courseId, title: 'The Admin Panel: Your Command Center', slug: 'admin-panel-tour',
-      sort_order: 0, content_type: 'video', estimated_minutes: 10, is_required: true, require_previous: false,
-      content_markdown: '## Admin Panel Overview\n\nThe Admin Panel at `/admin/` is your central hub for managing the business side of your academy.\n\n### Key Sections\n\n- **Dashboard** — Quick stats, recent activity\n- **Customers** — Student profiles, enrollments, progress\n- **Academy** — Course management, enrollment tools\n- **Emails** — Composer, campaigns, tracking\n- **Promotions** — Discount codes, referral programs\n- **Analytics** — Revenue, engagement, conversion data\n- **Settings** — Admin users, system config\n\n### Navigation\nUse the sidebar to switch between sections. The top bar shows your admin name and role.',
-      video_url: 'https://player.vimeo.com/video/example4',
-    }});
-    log('  ✓ Lesson 3.1: Admin Panel Tour (video)', 'ok');
-
-    // Lesson 3.2 - Text
-    await api({ type: 'insert', table: 'qa_lessons', data: {
-      module_id: m3id, course_id: courseId, title: 'Student Management & Enrollments', slug: 'student-management',
-      sort_order: 1, content_type: 'text', estimated_minutes: 8, is_required: true, require_previous: true,
-      content_markdown: '## Managing Students\n\n### Viewing Students\nThe Customers tab shows all registered students with:\n- Name, email, enrollment status\n- Course progress (lessons completed)\n- Last active date\n- Enrollment history\n\n### Manual Enrollment\nYou can manually enroll students:\n1. Go to Academy → Students\n2. Click "Enroll Student"\n3. Enter their email and select a course\n4. They\'ll receive an enrollment confirmation email\n\n### Bulk Enrollment\nFor larger groups:\n1. Prepare a CSV with email addresses\n2. Use the "Bulk Enroll" button\n3. Select the target course\n4. All students will be enrolled and notified\n\n### Revoking Access\nIf needed, you can revoke a student\'s enrollment:\n- Their progress is preserved\n- They lose access to course content\n- They can be re-enrolled later\n\n### Student Progress Tracking\nFor each enrolled student, you can see:\n- Which lessons they\'ve completed\n- Quiz responses and scores\n- Last accessed date\n- Overall completion percentage',
-    }});
-    log('  ✓ Lesson 3.2: Student Management & Enrollments (text)', 'ok');
-
-    // Lesson 3.3 - Text
-    await api({ type: 'insert', table: 'qa_lessons', data: {
-      module_id: m3id, course_id: courseId, title: 'Payment Setup & Stripe Integration', slug: 'stripe-setup',
-      sort_order: 2, content_type: 'text', estimated_minutes: 6, is_required: true, require_previous: true,
-      content_markdown: '## Stripe Integration\n\n### How Payments Work\n1. Student clicks "Enroll Now" on the course page\n2. Stripe Checkout opens with the course price\n3. Student completes payment\n4. Webhook fires → auto-enrollment happens\n5. Student gets confirmation email\n\n### Setting Up a Course for Payment\nIn the Course Builder:\n1. Set **Price** (in cents — 4900 = $49.00)\n2. Set **Enrollment Type** to "Paid"\n3. Add **Stripe Product ID** and **Stripe Price ID** (from your Stripe dashboard)\n\n### Sale Pricing\n- Set a **Sale Price** lower than the regular price\n- Set a **Sale End Date** — the sale badge appears automatically\n- When the sale expires, the price reverts to the regular amount\n\n### Referral Codes\nIn the Admin Panel under Promotions:\n- Create referral codes for affiliates\n- Set discount amounts or percentages\n- Track which codes generate the most revenue\n- Credits are applied automatically at checkout',
-    }});
-    log('  ✓ Lesson 3.3: Payment Setup & Stripe (text)', 'ok');
-
-    // Lesson 3.4 - Video
-    await api({ type: 'insert', table: 'qa_lessons', data: {
-      module_id: m3id, course_id: courseId, title: 'Email Campaigns & Automation', slug: 'email-campaigns',
-      sort_order: 3, content_type: 'video', estimated_minutes: 10, is_required: true, require_previous: true,
-      content_markdown: '## The Email System\n\n### Email Composer\nThe admin panel includes a full email composer with:\n- **Rich HTML templates** — Professional, branded designs\n- **Card Library** — Pre-built content blocks you can drag in\n- **Merge Tags** — Personalize with {first_name}, {course_title}, etc.\n- **Audience Targeting** — Send to specific groups\n\n### Campaign Types\n- **Broadcast** — One-time send to a group\n- **Scheduled** — Set a future date/time\n- **Automated** — Triggered by events (enrollment, completion, etc.)\n\n### Tracking\nEvery email is tracked:\n- Open rates\n- Click-through rates\n- Bounce/unsubscribe rates\n- Per-recipient status\n\n### Best Practices\n1. Always preview before sending\n2. Use merge tags for personalization\n3. Keep subject lines under 50 characters\n4. Include a clear call-to-action\n5. Send at optimal times (Tue-Thu, 10am-2pm)',
-      video_url: 'https://player.vimeo.com/video/example5',
-    }});
-    log('  ✓ Lesson 3.4: Email Campaigns & Automation (video)', 'ok');
-
-    // Lesson 3.5 - Quiz
-    await api({ type: 'insert', table: 'qa_lessons', data: {
-      module_id: m3id, course_id: courseId, title: 'Knowledge Check: Admin Operations', slug: 'quiz-admin-ops',
-      sort_order: 4, content_type: 'quiz', estimated_minutes: 4, is_required: true, require_previous: true,
-      content_html: JSON.stringify({
-        quiz_type: 'multiple_choice',
-        questions: [
-          { question: 'How do you manually enroll a student in a course?', options: ['Email them a link', 'Academy → Students → Enroll Student', 'Edit the database directly', 'Ask them to create an account'], correct: 1 },
-          { question: 'Prices in the Course Builder are entered in what format?', options: ['Dollars (e.g., $49.00)', 'Cents (e.g., 4900)', 'Points (e.g., 49 points)', 'Any format works'], correct: 1 },
-          { question: 'What happens when a Stripe payment completes?', options: ['Nothing until you approve it', 'Webhook fires and auto-enrolls the student', 'Student gets a PDF receipt only', 'You need to manually add them'], correct: 1 },
-          { question: 'Which email feature lets you insert the student\'s name?', options: ['Smart Templates', 'Merge Tags', 'Name Auto-fill', 'Contact Sync'], correct: 1 },
-        ]
-      }),
-      content_markdown: JSON.stringify({
-        quiz_type: 'multiple_choice',
-        questions: [
-          { question: 'How do you manually enroll a student in a course?', options: ['Email them a link', 'Academy → Students → Enroll Student', 'Edit the database directly', 'Ask them to create an account'], correct: 1 },
-          { question: 'Prices in the Course Builder are entered in what format?', options: ['Dollars (e.g., $49.00)', 'Cents (e.g., 4900)', 'Points (e.g., 49 points)', 'Any format works'], correct: 1 },
-          { question: 'What happens when a Stripe payment completes?', options: ['Nothing until you approve it', 'Webhook fires and auto-enrolls the student', 'Student gets a PDF receipt only', 'You need to manually add them'], correct: 1 },
-          { question: 'Which email feature lets you insert the student\'s name?', options: ['Smart Templates', 'Merge Tags', 'Name Auto-fill', 'Contact Sync'], correct: 1 },
-        ]
-      }),
-    }});
-    log('  ✓ Lesson 3.5: Knowledge Check - Admin Operations (quiz, 4 questions)', 'ok');
-
-    // ============ MODULE 4: Advanced Features & Growth ============
-    log('Module 4: Advanced Features & Growth', 'head');
-    const m4 = await api({ type: 'insert', table: 'qa_modules', data: { course_id: courseId, title: 'Advanced Features & Growing Your Academy', description: 'Level up with drip content, bundles, analytics, and optimization strategies.', sort_order: 3, require_previous: true }, select: '*' });
-    const m4id = m4.data[0].id;
-    log('✓ Module 4 created', 'ok');
-
-    // Lesson 4.1 - Video
-    await api({ type: 'insert', table: 'qa_lessons', data: {
-      module_id: m4id, course_id: courseId, title: 'Drip Scheduling & Content Pacing', slug: 'drip-scheduling',
-      sort_order: 0, content_type: 'video', estimated_minutes: 8, is_required: true, require_previous: false,
-      content_markdown: '## Drip Content: Releasing Modules Over Time\n\n### What is Drip Scheduling?\nInstead of giving students everything at once, you release modules gradually.\n\n### Why Use Drip?\n- **Prevents overwhelm** — Students don\'t skip ahead\n- **Builds anticipation** — They look forward to the next module\n- **Increases completion** — Steady pace = better retention\n- **Creates urgency** — Limited access windows drive engagement\n\n### Setting Up Drip\n1. In the Course Builder, enable "Drip Content" toggle\n2. Set the **default interval** (e.g., 7 days between modules)\n3. For individual modules, you can override with:\n   - **Custom delay** — Different number of days\n   - **Fixed date** — Specific calendar date\n\n### Example Schedule\n- Module 1: Available immediately\n- Module 2: 7 days after enrollment\n- Module 3: 14 days after enrollment\n- Module 4: 21 days after enrollment\n\nStudents see a "Coming Soon" message for locked modules.',
-      video_url: 'https://player.vimeo.com/video/example6',
-    }});
-    log('  ✓ Lesson 4.1: Drip Scheduling & Content Pacing (video)', 'ok');
-
-    // Lesson 4.2 - Text
-    await api({ type: 'insert', table: 'qa_lessons', data: {
-      module_id: m4id, course_id: courseId, title: 'Bundles: Packaging Multiple Courses', slug: 'course-bundles',
-      sort_order: 1, content_type: 'text', estimated_minutes: 5, is_required: true, require_previous: true,
-      content_markdown: '## Course Bundles\n\n### What Are Bundles?\nBundles let you package multiple courses together at a discounted price.\n\n### Creating a Bundle\n1. In the Course Builder sidebar, under "Bundles," click +\n2. Name your bundle and add a description\n3. Set the bundle price (lower than the individual total)\n4. Add courses to the bundle\n\n### Bundle Strategy\n- **Beginner Pack** — Your intro courses at a discount\n- **Complete Series** — All courses in a topic area\n- **Seasonal Special** — Limited-time bundles for promotions\n\n### Pricing Psychology\n- Show the "original price" (sum of individual courses)\n- Display the savings prominently\n- Limited-time bundles create urgency\n\n### Technical Details\n- Bundles have their own Stripe Product/Price IDs\n- When purchased, student is auto-enrolled in ALL included courses\n- Individual course access remains if a student bought one separately',
-    }});
-    log('  ✓ Lesson 4.2: Course Bundles (text)', 'ok');
-
-    // Lesson 4.3 - Text
-    await api({ type: 'insert', table: 'qa_lessons', data: {
-      module_id: m4id, course_id: courseId, title: 'Landing Page Optimization', slug: 'landing-pages',
-      sort_order: 2, content_type: 'text', estimated_minutes: 6, is_required: true, require_previous: true,
-      content_markdown: '## Optimizing Your Course Landing Page\n\nThe landing page is what converts visitors into students. Every element matters.\n\n### Key Sections to Fill In\n\n#### 1. What You\'ll Learn\n- 6-8 specific, outcome-focused bullets\n- Start with action verbs: "Build," "Create," "Master"\n- Be specific: "Create automated email sequences" beats "Learn about emails"\n\n#### 2. Testimonials\n- Minimum 3 testimonials\n- Include the person\'s name\n- Highlight specific results or transformations\n- 5-star ratings add credibility\n\n#### 3. FAQ\n- Address the top 3-4 objections\n- Common ones: time commitment, difficulty level, refund policy\n- Keep answers concise and reassuring\n\n#### 4. SEO Fields\n- **Meta Title** — Include your main keyword + brand\n- **Meta Description** — 150-160 characters, compelling\n- **OG Image** — Shows when shared on social media\n\n### Preview Everything\nUse the Preview button to see exactly what students see before publishing.',
-    }});
-    log('  ✓ Lesson 4.3: Landing Page Optimization (text)', 'ok');
-
-    // Lesson 4.4 - PDF/Resource
-    await api({ type: 'insert', table: 'qa_lessons', data: {
-      module_id: m4id, course_id: courseId, title: 'Course Launch Checklist (Download)', slug: 'launch-checklist',
-      sort_order: 3, content_type: 'pdf', estimated_minutes: 2, is_required: false, require_previous: false,
-      description: 'Download our comprehensive course launch checklist to make sure nothing slips through the cracks.',
-      content_markdown: '## Course Launch Checklist\n\nDownload the PDF below for a printable checklist covering everything from content creation to marketing.\n\n### Quick Version:\n\n**Content Ready?**\n- [ ] All modules and lessons created\n- [ ] Videos uploaded and tested\n- [ ] Quizzes have correct answers set\n- [ ] Resources/downloads attached\n\n**Settings Correct?**\n- [ ] Price and Stripe IDs configured\n- [ ] Enrollment type set\n- [ ] Thumbnail and description added\n- [ ] Landing page content filled in\n\n**Marketing Ready?**\n- [ ] Announcement email drafted\n- [ ] Social media posts prepared\n- [ ] Referral codes created for affiliates\n- [ ] Launch date set\n\n**Final Checks**\n- [ ] Preview looks good\n- [ ] Test purchase completed\n- [ ] Welcome email configured\n- [ ] Status changed to "Published"',
-      file_url: '#',
-      file_name: 'Course-Launch-Checklist.pdf',
-    }});
-    log('  ✓ Lesson 4.4: Course Launch Checklist (PDF download)', 'ok');
-
-    // Lesson 4.5 - Quiz (Reflection)
-    await api({ type: 'insert', table: 'qa_lessons', data: {
-      module_id: m4id, course_id: courseId, title: 'Final Reflection: Your Academy Vision', slug: 'final-reflection',
-      sort_order: 4, content_type: 'quiz', estimated_minutes: 5, is_required: true, require_previous: true,
-      content_html: JSON.stringify({
-        quiz_type: 'reflection',
-        questions: [
-          { question: 'What is the first course you want to create, and who is it for?' },
-          { question: 'What\'s one thing you learned in this training that you\'re most excited to try?' },
-          { question: 'What does success look like for your academy 6 months from now?' },
-        ]
-      }),
-      content_markdown: JSON.stringify({
-        quiz_type: 'reflection',
-        questions: [
-          { question: 'What is the first course you want to create, and who is it for?' },
-          { question: 'What\'s one thing you learned in this training that you\'re most excited to try?' },
-          { question: 'What does success look like for your academy 6 months from now?' },
-        ]
-      }),
-    }});
-    log('  ✓ Lesson 4.5: Final Reflection (open reflection quiz)', 'ok');
-
-    // ============ UPDATE COURSE TOTALS ============
-    log('Finalizing...', 'head');
-    await api({ type: 'update', table: 'qa_courses', data: {
-      total_modules: 4, total_lessons: 17, total_duration_minutes: 132,
-      enrolled_count: 0
-    }, filters: [{ column: 'id', op: 'eq', value: courseId }] });
-    log('✓ Course totals updated (4 modules, 17 lessons, 132 min)', 'ok');
-
-    log('', '');
-    log('═══════════════════════════════════════════', 'ok');
-    log('✅ DEMO COURSE COMPLETE!', 'ok');
-    log('═══════════════════════════════════════════', 'ok');
-    log('', '');
-    log(`<a href="/academy/preview.html?slug=mastering-qa-backend" style="color:#5ba8b2;font-size:16px;font-weight:700">→ Preview the Course</a>`, '');
-    log(`<a href="/academy/builder.html" style="color:#a78bfa;font-size:14px">→ Open in Course Builder</a>`, '');
-
-  } catch(e) {
-    log('ERROR: ' + e.message, 'err');
-    console.error(e);
-  }
+    log('','');
+    log('═══════════════════════════════════════════','ok');
+    log('✅ DEMO COURSE UPDATED WITH MEDIA!','ok');
+    log('═══════════════════════════════════════════','ok');
+    log(`<a href="/academy/preview.html?slug=mastering-qa-backend" style="color:#5ba8b2;font-size:16px;font-weight:700">→ Preview the Course</a>`,'');
+    log(`<a href="/academy/builder.html" style="color:#a78bfa;font-size:14px">→ Open in Course Builder</a>`,'');
+  }catch(e){log('ERROR: '+e.message,'err');console.error(e)}
 }
-
-build();
-</script>
-</body></html>
+update();
+</script></body></html>
