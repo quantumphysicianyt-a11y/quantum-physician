@@ -19,7 +19,7 @@ a{color:#5bb8c2;text-decoration:none}
 /* Shared */
 .container{max-width:900px;margin:0 auto;padding:0 24px}
 .sec{margin-bottom:36px}
-.sec h2{font-size:22px;margin-bottom:16px}
+.sec h2{font-size:22px;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid rgba(91,184,194,.15);display:inline-block}
 .card{background:#112a42;border:1px solid rgba(91,168,178,.12);border-radius:12px}
 .btn{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border-radius:8px;border:none;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer}
 .btn-teal{background:linear-gradient(135deg,#5bb8c2,#4fd4e0);color:#fff}
@@ -40,7 +40,9 @@ a{color:#5bb8c2;text-decoration:none}
 .price-bar{padding:20px 24px;margin-bottom:32px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 .price-big{font-size:32px;font-weight:800;color:#5bb8c2}
 
-.learn-item{padding:10px 14px;background:rgba(91,188,198,.04);border-radius:8px;margin-bottom:6px;font-size:14px;color:rgba(255,255,255,.7)}
+.learn-item{padding:12px 16px;border-radius:8px;margin-bottom:6px;font-size:14px;color:rgba(255,255,255,.7);border-left:3px solid transparent}
+.learn-item:nth-child(odd){background:rgba(91,188,198,.04);border-left-color:rgba(91,184,194,.3)}
+.learn-item:nth-child(even){background:rgba(167,139,250,.03);border-left-color:rgba(167,139,250,.2)}
 .learn-item::before{content:'✓ ';color:#5bb8c2;font-weight:700}
 
 /* Modules */
@@ -72,9 +74,9 @@ a{color:#5bb8c2;text-decoration:none}
 .les-d{font-size:12px;color:rgba(255,255,255,.3)}
 .les-b{font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(91,184,194,.08);color:#5bb8c2;font-weight:700;text-transform:uppercase}
 
-.test{padding:18px 20px;margin-bottom:10px}
-.test .stars{color:#d4a853;margin-bottom:6px;font-size:14px}
-.test .txt{font-size:14px;color:rgba(255,255,255,.5);font-style:italic;margin-bottom:8px}
+.test{padding:20px 22px;margin-bottom:10px;background:linear-gradient(135deg,rgba(17,42,66,.9),rgba(30,50,75,.6));border:1px solid rgba(196,173,148,.1)}
+.test .stars{color:#d4a853;margin-bottom:8px;font-size:14px;letter-spacing:2px}
+.test .txt{font-size:14px;color:rgba(255,255,255,.55);font-style:italic;margin-bottom:10px;line-height:1.6}
 .test .who{font-size:13px;font-weight:600;color:#c4ad94}
 
 .faq{border:1px solid rgba(91,168,178,.12);border-radius:8px;margin-bottom:6px;overflow:hidden}
@@ -104,13 +106,30 @@ a{color:#5bb8c2;text-decoration:none}
 .lv-video iframe{width:100%;height:100%;border:none}
 .lv-video img{width:100%;height:100%;object-fit:cover}
 
-.lv-body{font-size:15px;line-height:1.8;color:rgba(255,255,255,.65);max-width:740px}
-.lv-body h2{font-size:22px;color:rgba(255,255,255,.9);margin:28px 0 12px;font-family:'Playfair Display',serif}
-.lv-body h3{font-size:15px;color:#5bb8c2;margin:20px 0 8px;font-family:Inter,sans-serif;font-weight:700}
+.lv-body{font-size:15px;line-height:1.75;color:rgba(255,255,255,.65);max-width:740px}
+.lv-body h2{font-size:20px;color:rgba(255,255,255,.92);margin:32px 0 10px;padding-top:24px;border-top:1px solid rgba(91,168,178,.08);font-family:'Playfair Display',serif}
+.lv-body h2:first-child{margin-top:0;padding-top:0;border-top:none}
+.lv-body h3{font-size:14px;color:#5bb8c2;margin:18px 0 6px;font-family:Inter,sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.03em}
 .lv-body strong{color:rgba(255,255,255,.85)}
 .lv-body code{background:rgba(91,184,194,.08);padding:1px 5px;border-radius:3px;font-size:13px;color:#5bb8c2}
-.lv-body ul,.lv-body ol{padding-left:20px;margin:8px 0}
-.lv-body li{margin-bottom:4px}
+.lv-body ul,.lv-body ol{padding-left:20px;margin:6px 0}
+.lv-body li{margin-bottom:2px}
+
+/* Content card wrapper */
+.lv-content-card{background:linear-gradient(135deg,rgba(17,42,66,.8),rgba(17,42,66,.5));border:1px solid rgba(91,168,178,.08);border-left:3px solid #5bb8c2;border-radius:0 12px 12px 0;padding:28px 32px;margin:20px 0}
+.lv-content-card.quiz-card{border-left-color:#a78bfa}
+.lv-content-card.assignment-card{border-left-color:#ff5e94}
+.lv-content-card.pdf-card{border-left-color:#f0b429}
+
+/* Lesson type header banner */
+.lv-type-banner{padding:10px 16px;border-radius:8px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;display:inline-flex;align-items:center;gap:8px;margin-bottom:20px}
+.lv-type-banner.video{background:rgba(91,184,194,.08);color:#5bb8c2}
+.lv-type-banner.text{background:rgba(196,173,148,.08);color:#c4ad94}
+.lv-type-banner.quiz{background:rgba(167,139,250,.08);color:#a78bfa}
+.lv-type-banner.assignment{background:rgba(255,94,148,.06);color:#ff5e94}
+.lv-type-banner.pdf{background:rgba(240,180,41,.06);color:#f0b429}
+.lv-type-banner.live_session{background:rgba(239,83,80,.06);color:#ef5350}
+.lv-type-banner svg{width:14px;height:14px;stroke:currentColor}
 
 .lv-quiz{margin:24px 0;max-width:640px}
 .qq{background:#112a42;border:1px solid rgba(91,168,178,.1);border-radius:10px;padding:18px 22px;margin-bottom:10px}
@@ -123,8 +142,8 @@ a{color:#5bb8c2;text-decoration:none}
 .qq .qs{display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,.3);margin-top:8px}
 .qq .qs-bar{height:8px;border-radius:4px;background:linear-gradient(90deg,rgba(91,168,178,.1),#5bb8c2);margin-top:6px}
 
-.lv-file{display:flex;align-items:center;gap:12px;padding:16px;margin:20px 0}
-.lv-file .fi{width:40px;height:40px;border-radius:8px;background:rgba(240,180,41,.1);color:#f0b429;display:flex;align-items:center;justify-content:center}
+.lv-file{display:flex;align-items:center;gap:14px;padding:16px 20px;background:rgba(240,180,41,.03);border:1px solid rgba(240,180,41,.12);border-radius:10px}
+.lv-file .fi{width:42px;height:42px;border-radius:8px;background:rgba(240,180,41,.1);color:#f0b429;display:flex;align-items:center;justify-content:center}
 .lv-file .fi svg{width:18px;height:18px;stroke:currentColor}
 
 .lv-nav{display:flex;gap:10px;margin-top:40px;padding-top:24px;border-top:1px solid rgba(91,168,178,.08)}
@@ -177,7 +196,24 @@ function toggleFaq(el){el.closest('.faq').classList.toggle('open')}
 
 function md(s){
   if(!s||s.trim().startsWith('{'))return '';
-  return s.replace(/^### (.+)$/gm,'<h3>$1</h3>').replace(/^## (.+)$/gm,'<h2>$1</h2>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>').replace(/`(.+?)`/g,'<code>$1</code>').replace(/^- \[ \] (.+)$/gm,'<div style="display:flex;gap:6px;margin:3px 0"><span style="color:rgba(255,255,255,.2)">☐</span>$1</div>').replace(/^- \[x\] (.+)$/gm,'<div style="display:flex;gap:6px;margin:3px 0"><span style="color:#5bb8c2">☑</span>$1</div>').replace(/^- (.+)$/gm,'<li>$1</li>').replace(/^(\d+)\. (.+)$/gm,'<li>$2</li>').replace(/(<li>[\s\S]*?<\/li>)+/g,m=>'<ul>'+m+'</ul>').replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>');
+  // Normalize line endings and remove excessive blank lines
+  s=s.replace(/\r\n/g,'\n').replace(/\n{3,}/g,'\n\n');
+  return s
+    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
+    .replace(/^## (.+)$/gm,'<h2>$1</h2>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/`(.+?)`/g,'<code>$1</code>')
+    .replace(/^- \[ \] (.+)$/gm,'<div style="display:flex;gap:6px;padding:3px 0"><span style="color:rgba(255,255,255,.15)">☐</span><span>$1</span></div>')
+    .replace(/^- \[x\] (.+)$/gm,'<div style="display:flex;gap:6px;padding:3px 0"><span style="color:#5bb8c2">☑</span><span>$1</span></div>')
+    .replace(/^(\d+)\. (.+)$/gm,'<li style="margin-bottom:2px">$2</li>')
+    .replace(/^- (.+)$/gm,'<li style="margin-bottom:2px">$1</li>')
+    .replace(/((?:<li[^>]*>.*?<\/li>\s*)+)/g,'<ul style="margin:4px 0 12px;padding-left:20px">$1</ul>')
+    .replace(/\n\n/g,'</p><p style="margin:8px 0">')
+    .replace(/\n/g,' ')
+    .replace(/^/,'<p style="margin:8px 0">').replace(/$/,'</p>')
+    .replace(/<p style="margin:8px 0">(<h[23]>)/g,'$1')
+    .replace(/(<\/h[23]>)<\/p>/g,'$1');
 }
 
 function quizHtml(raw){
@@ -235,22 +271,31 @@ function viewLesson(lid){
   document.getElementById('landing').style.display='none';
   const lv=document.getElementById('lessonView');
   lv.style.display='block';
+
+  const cardClass=ct==='quiz'?'quiz-card':ct==='assignment'?'assignment-card':(ct==='pdf'||ct==='download')?'pdf-card':'';
+  const mdContent=md(content);
+  const qzContent=ct==='quiz'?quizHtml(l.content_html||l.content_markdown):'';
+
   lv.innerHTML=`<div class="container" style="padding-top:20px;padding-bottom:60px">
     <div class="lv-top">
       <a class="lv-back" onclick="backToLanding()">← Back to Course</a>
       <span class="lv-crumb">${e(modTitle)}</span>
     </div>
+
+    <div class="lv-type-banner ${ct}">${icon(ct)} ${ct.replace('_',' ')}${l.estimated_minutes?' · '+l.estimated_minutes+' min':''}${l.is_free_preview?' · Free Preview':''}</div>
+
     <h1 class="lv-title">${e(l.title)}</h1>
-    <div class="lv-meta">
-      <span class="pill ${ct}">${ct.replace('_',' ')}</span>
-      ${l.estimated_minutes?`<span>${l.estimated_minutes} min</span>`:''}
-      ${l.is_free_preview?'<span style="color:#5bb8c2">Free Preview</span>':''}
-      ${l.is_required?'<span>Required</span>':''}
-    </div>
+
+    ${l.description&&l.description!==content?`<p style="font-size:15px;color:rgba(255,255,255,.45);margin:8px 0 24px;max-width:640px">${e(l.description)}</p>`:''}
+
     ${vidHtml}
-    ${ct==='quiz'?quizHtml(l.content_html||l.content_markdown):''}
-    <div class="lv-body">${md(content)}</div>
-    ${l.file_name?`<div class="card lv-file"><div class="fi">${IC.pdf}</div><div><div style="font-weight:600;font-size:14px">${e(l.file_name)}</div><div style="font-size:12px;color:rgba(255,255,255,.3)">Download resource</div></div></div>`:''}
+
+    ${(mdContent||qzContent||l.file_name)?`<div class="lv-content-card ${cardClass}">
+      ${qzContent}
+      ${mdContent?`<div class="lv-body">${mdContent}</div>`:''}
+      ${l.file_name?`<div class="lv-file" style="margin-top:${mdContent?'20':'0'}px"><div class="fi">${IC.pdf}</div><div><div style="font-weight:600;font-size:14px">${e(l.file_name)}</div><div style="font-size:12px;color:rgba(255,255,255,.3)">Download resource</div></div></div>`:''}
+    </div>`:''}
+
     <div class="lv-nav">
       ${prev?`<button class="btn btn-ghost" onclick="viewLesson('${prev.id}')">← ${e(prev.title)}</button>`:'<button class="btn btn-ghost" disabled>← Previous</button>'}
       ${next?`<button class="btn btn-ghost" onclick="viewLesson('${next.id}')">${e(next.title)} →</button>`:'<button class="btn btn-ghost" disabled>Next →</button>'}
