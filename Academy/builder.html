@@ -404,6 +404,10 @@ body {
 .lesson-type.quiz { background: rgba(167,139,250,.1); color: var(--purple); }
 .lesson-type.pdf { background: rgba(240,180,41,.1); color: var(--warning); }
 .lesson-type.assignment { background: rgba(255,0,110,.08); color: var(--pink); }
+.lesson-type.embed { background: rgba(91,168,178,.08); color: var(--teal-light); }
+.lesson-type.live_session { background: rgba(239,83,80,.08); color: var(--danger); }
+.lesson-type.audio { background: rgba(61,214,140,.08); color: var(--success); }
+.lesson-item .lesson-type svg { width: 16px; height: 16px; stroke: currentColor; }
 
 .lesson-item .lesson-info { flex: 1; min-width: 0; }
 .lesson-item .lesson-title { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -823,15 +827,24 @@ const ICONS = {
   book: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>',
   x: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
   layers: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>',
-  video: '▶️',
-  text: '📖',
-  quiz: '❓',
-  pdf: '📄',
-  assignment: '📝',
+  video: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>',
+  text: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>',
+  quiz: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  pdf: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+  assignment: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>',
+  embed: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
+  live: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>',
+  audio: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
+  template: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>',
 };
 
 function typeIcon(t) {
-  return {video:'▶️', text:'📖', quiz:'❓', pdf:'📄', assignment:'📝'}[t] || '📖';
+  const icons = {
+    video: ICONS.video, text: ICONS.text, quiz: ICONS.quiz, pdf: ICONS.pdf,
+    assignment: ICONS.assignment, embed: ICONS.embed, live_session: ICONS.live,
+    live: ICONS.live, audio: ICONS.audio, download: ICONS.pdf, discussion: ICONS.book
+  };
+  return icons[t] || ICONS.text;
 }
 
 // --- Toast ---
@@ -1466,9 +1479,51 @@ async function deleteModule(moduleId) {
   }
 }
 
+// --- Lesson Templates ---
+const LESSON_TEMPLATES = [
+  { name: 'Blank Lesson', icon: 'text', desc: 'Start from scratch', defaults: {content_type: 'video', title: ''} },
+  { name: 'Video Lecture', icon: 'video', desc: 'Video with notes & resource', defaults: {content_type: 'video', title: 'Video Lecture', description: '## Key Takeaways\n\n- \n- \n- \n\n## Notes\n\n', estimated_minutes: 15} },
+  { name: 'Guided Exercise', icon: 'assignment', desc: 'Worksheet or journaling prompt', defaults: {content_type: 'assignment', title: 'Guided Exercise', description: '## Instructions\n\nTake 10-15 minutes to complete this exercise.\n\n### Step 1\n\n\n### Step 2\n\n\n### Reflection\n\nWhat did you notice?', estimated_minutes: 15} },
+  { name: 'Quiz / Check-in', icon: 'quiz', desc: 'Multiple choice or reflection', defaults: {content_type: 'quiz', title: 'Knowledge Check', description: ''} },
+  { name: 'Downloadable Resource', icon: 'pdf', desc: 'PDF, worksheet, or guide', defaults: {content_type: 'pdf', title: 'Resource Download', description: '## About This Resource\n\nDownload the file below to complete this section.'} },
+  { name: 'Live Zoom Session', icon: 'live', desc: 'Scheduled live class', defaults: {content_type: 'live_session', title: 'Live Session', description: '## What to Prepare\n\n- Find a quiet space\n- Have your journal ready\n- Come with questions!'} },
+];
+
 // --- Add Lesson ---
 function addLesson(moduleId) {
-  showLessonModal(null, moduleId);
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal" style="max-width:520px">
+      <div class="modal-head">
+        <h3>Add Lesson</h3>
+        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">${ICONS.x}</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Choose a template or start blank:</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          ${LESSON_TEMPLATES.map((t, i) => `
+            <button class="template-btn" onclick="this.closest('.modal-overlay').remove();applyLessonTemplate('${moduleId}', ${i})" style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);cursor:pointer;text-align:left;transition:all .15s;font-family:inherit">
+              <div class="lesson-type ${t.icon}" style="width:36px;height:36px;min-width:36px;border-radius:8px;display:flex;align-items:center;justify-content:center">${typeIcon(t.icon)}</div>
+              <div><div style="font-size:13px;font-weight:600">${t.name}</div><div style="font-size:11px;color:var(--text-muted)">${t.desc}</div></div>
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add('open'));
+  // Hover effect
+  overlay.querySelectorAll('.template-btn').forEach(b => {
+    b.addEventListener('mouseenter', () => { b.style.borderColor = 'var(--teal)'; b.style.background = 'var(--bg-card)'; });
+    b.addEventListener('mouseleave', () => { b.style.borderColor = 'var(--border)'; b.style.background = 'var(--bg-input)'; });
+  });
+}
+
+function applyLessonTemplate(moduleId, templateIdx) {
+  const t = LESSON_TEMPLATES[templateIdx];
+  const lesson = {...t.defaults};
+  showLessonModal(lesson, moduleId, true);
 }
 
 // --- Edit Lesson ---
@@ -1480,12 +1535,12 @@ function editLesson(lessonId, moduleId) {
 }
 
 // --- Lesson Modal ---
-function showLessonModal(lesson, moduleId) {
-  const isEdit = !!lesson;
+function showLessonModal(lesson, moduleId, isTemplate) {
+  const isEdit = !!lesson && !isTemplate && !!lesson.id;
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
-    <div class="modal" style="max-width:600px">
+    <div class="modal" style="max-width:640px">
       <div class="modal-head">
         <h3>${isEdit ? 'Edit Lesson' : 'Add Lesson'}</h3>
         <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">${ICONS.x}</button>
@@ -1493,19 +1548,20 @@ function showLessonModal(lesson, moduleId) {
       <div class="modal-body" style="max-height:70vh;overflow-y:auto">
         <div class="field-group">
           <label>Lesson Title</label>
-          <input type="text" id="ml-title" value="${esc(lesson ? lesson.title : '')}" placeholder="Lesson title">
+          <input type="text" id="ml-title" value="${esc(lesson ? lesson.title || '' : '')}" placeholder="Lesson title">
         </div>
         <div class="field-row">
           <div class="field-group">
             <label>Content Type</label>
             <select id="ml-type" onchange="updateLessonFields()">
               <option value="video" ${lesson && lesson.content_type === 'video' ? 'selected' : ''}>Video</option>
-              <option value="text" ${lesson && lesson.content_type === 'text' ? 'selected' : ''}>Text</option>
+              <option value="text" ${lesson && lesson.content_type === 'text' ? 'selected' : ''}>Text / Reading</option>
               <option value="quiz" ${lesson && lesson.content_type === 'quiz' ? 'selected' : ''}>Quiz</option>
               <option value="pdf" ${lesson && lesson.content_type === 'pdf' ? 'selected' : ''}>PDF / File</option>
               <option value="assignment" ${lesson && lesson.content_type === 'assignment' ? 'selected' : ''}>Assignment</option>
               <option value="embed" ${lesson && lesson.content_type === 'embed' ? 'selected' : ''}>Embed</option>
-              <option value="live" ${lesson && lesson.content_type === 'live' ? 'selected' : ''}>Live Session</option>
+              <option value="live_session" ${lesson && lesson.content_type === 'live_session' ? 'selected' : ''}>Live Session</option>
+              <option value="audio" ${lesson && lesson.content_type === 'audio' ? 'selected' : ''}>Audio</option>
             </select>
           </div>
           <div class="field-group">
@@ -1572,6 +1628,24 @@ function showLessonModal(lesson, moduleId) {
           </div>
         </div>
 
+        <!-- Quiz Builder -->
+        <div id="ml-quiz-fields" class="ml-type-section" style="display:none">
+          <div style="font-size:12px;font-weight:600;color:var(--purple);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Quiz Builder</div>
+          <div class="field-group" style="margin-bottom:8px">
+            <label>Quiz Type</label>
+            <select id="ml-quiz-type" onchange="updateQuizType()" style="max-width:250px">
+              <option value="multiple_choice">Multiple Choice</option>
+              <option value="true_false">True / False</option>
+              <option value="reflection">Open Reflection (no right answer)</option>
+              <option value="rating">Self-Rating Scale</option>
+              <option value="checklist">Checklist / Self-Assessment</option>
+            </select>
+          </div>
+          <div id="ml-quiz-questions"></div>
+          <button class="btn btn-ghost btn-sm" onclick="addQuizQuestion()" style="margin-top:8px">${ICONS.plus} Add Question</button>
+          <div class="hint" style="margin-top:8px">Quiz data is saved as JSON in the lesson content field.</div>
+        </div>
+
         <!-- Content (always shown) -->
         <div class="field-group" style="margin-top:12px">
           <label>Content / Description</label>
@@ -1634,7 +1708,136 @@ function updateLessonFields() {
   if (type === 'video') document.getElementById('ml-video-fields').style.display = '';
   if (type === 'pdf') document.getElementById('ml-file-fields').style.display = '';
   if (type === 'embed') document.getElementById('ml-embed-fields').style.display = '';
-  if (type === 'live') document.getElementById('ml-live-fields').style.display = '';
+  if (type === 'live_session') document.getElementById('ml-live-fields').style.display = '';
+  if (type === 'quiz') {
+    document.getElementById('ml-quiz-fields').style.display = '';
+    // Try to load existing quiz data from content
+    try {
+      const content = document.getElementById('ml-content').value;
+      if (content && content.startsWith('{')) {
+        const qd = JSON.parse(content);
+        if (qd.quiz_type) {
+          document.getElementById('ml-quiz-type').value = qd.quiz_type;
+          const container = document.getElementById('ml-quiz-questions');
+          container.innerHTML = '';
+          (qd.questions || []).forEach(q => addQuizQuestion(q));
+        }
+      }
+    } catch(e) {}
+  }
+}
+
+// --- Quiz Builder Functions ---
+function addQuizQuestion(existing) {
+  const container = document.getElementById('ml-quiz-questions');
+  const qType = document.getElementById('ml-quiz-type').value;
+  const idx = container.children.length;
+  const div = document.createElement('div');
+  div.className = 'quiz-q-item';
+  div.style.cssText = 'padding:12px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px';
+
+  const q = existing || {};
+  let answersHtml = '';
+
+  if (qType === 'multiple_choice') {
+    const opts = q.options || ['', '', '', ''];
+    answersHtml = `<div class="quiz-options" style="margin-top:8px">
+      ${opts.map((o, oi) => `<div style="display:flex;gap:6px;align-items:center;margin-bottom:4px">
+        <input type="radio" name="q${idx}-correct" value="${oi}" ${q.correct === oi ? 'checked' : ''} style="accent-color:var(--teal)">
+        <input type="text" class="quiz-opt" value="${esc(o)}" placeholder="Option ${oi+1}" style="flex:1;padding:6px 10px;background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:13px">
+        ${oi > 1 ? `<button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:14px">×</button>` : ''}
+      </div>`).join('')}
+      <button class="btn btn-ghost btn-sm" onclick="addQuizOption(this.parentElement, ${idx})" style="font-size:11px;margin-top:4px">${ICONS.plus} Option</button>
+    </div>
+    <div class="hint" style="margin-top:4px">Select the radio button next to the correct answer</div>`;
+  } else if (qType === 'true_false') {
+    answersHtml = `<div style="display:flex;gap:12px;margin-top:8px">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
+        <input type="radio" name="q${idx}-correct" value="true" ${q.correct === true || q.correct === 'true' ? 'checked' : ''} style="accent-color:var(--teal)"> True
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
+        <input type="radio" name="q${idx}-correct" value="false" ${q.correct === false || q.correct === 'false' ? 'checked' : ''} style="accent-color:var(--teal)"> False
+      </label>
+    </div>`;
+  } else if (qType === 'reflection') {
+    answersHtml = `<div class="hint" style="margin-top:8px">Students will see a free-text response box. No right/wrong answer.</div>`;
+  } else if (qType === 'rating') {
+    answersHtml = `<div style="margin-top:8px">
+      <div class="field-row">
+        <div class="field-group"><label style="font-size:11px">Scale Label (low)</label><input type="text" class="quiz-scale-low" value="${esc(q.scale_low || 'Not at all')}" style="padding:6px 10px;background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:12px"></div>
+        <div class="field-group"><label style="font-size:11px">Scale Label (high)</label><input type="text" class="quiz-scale-high" value="${esc(q.scale_high || 'Completely')}" style="padding:6px 10px;background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:12px"></div>
+      </div>
+    </div>`;
+  } else if (qType === 'checklist') {
+    const items = q.items || ['', ''];
+    answersHtml = `<div class="quiz-checklist" style="margin-top:8px">
+      ${items.map((item, ii) => `<div style="display:flex;gap:6px;align-items:center;margin-bottom:4px">
+        <span style="color:var(--teal)">☐</span>
+        <input type="text" class="quiz-check-item" value="${esc(item)}" placeholder="Checklist item" style="flex:1;padding:6px 10px;background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:13px">
+        <button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:14px">×</button>
+      </div>`).join('')}
+      <button class="btn btn-ghost btn-sm" onclick="addChecklistItem(this.parentElement)" style="font-size:11px;margin-top:4px">${ICONS.plus} Item</button>
+    </div>
+    <div class="hint" style="margin-top:4px">Students check off items as they complete them</div>`;
+  }
+
+  div.innerHTML = `
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+      <span style="font-size:12px;font-weight:700;color:var(--purple)">Q${idx + 1}</span>
+      <input type="text" class="quiz-question-text" value="${esc(q.question || '')}" placeholder="Enter your question" style="flex:1;padding:8px 10px;background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:13px;font-weight:600">
+      <button onclick="this.closest('.quiz-q-item').remove()" style="background:none;border:none;color:var(--danger);cursor:pointer;padding:4px">${ICONS.x}</button>
+    </div>
+    ${answersHtml}`;
+  container.appendChild(div);
+}
+
+function addQuizOption(container, qIdx) {
+  const opts = container.querySelectorAll('.quiz-opt');
+  const idx = opts.length;
+  const div = document.createElement('div');
+  div.style.cssText = 'display:flex;gap:6px;align-items:center;margin-bottom:4px';
+  div.innerHTML = `<input type="radio" name="q${qIdx}-correct" value="${idx}" style="accent-color:var(--teal)">
+    <input type="text" class="quiz-opt" value="" placeholder="Option ${idx+1}" style="flex:1;padding:6px 10px;background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:13px">
+    <button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:14px">×</button>`;
+  container.querySelector('.btn').before(div);
+}
+
+function addChecklistItem(container) {
+  const div = document.createElement('div');
+  div.style.cssText = 'display:flex;gap:6px;align-items:center;margin-bottom:4px';
+  div.innerHTML = `<span style="color:var(--teal)">☐</span>
+    <input type="text" class="quiz-check-item" value="" placeholder="Checklist item" style="flex:1;padding:6px 10px;background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:13px">
+    <button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:14px">×</button>`;
+  container.querySelector('.btn').before(div);
+}
+
+function updateQuizType() {
+  document.getElementById('ml-quiz-questions').innerHTML = '';
+  addQuizQuestion();
+}
+
+function collectQuizData() {
+  const qType = document.getElementById('ml-quiz-type').value;
+  const questions = [];
+  document.querySelectorAll('.quiz-q-item').forEach((qEl, qi) => {
+    const q = { question: qEl.querySelector('.quiz-question-text').value.trim() };
+    if (!q.question) return;
+    if (qType === 'multiple_choice') {
+      q.options = [...qEl.querySelectorAll('.quiz-opt')].map(o => o.value.trim());
+      const checked = qEl.querySelector(`input[name="q${qi}-correct"]:checked`);
+      q.correct = checked ? Number(checked.value) : null;
+    } else if (qType === 'true_false') {
+      const checked = qEl.querySelector(`input[name="q${qi}-correct"]:checked`);
+      q.correct = checked ? checked.value === 'true' : null;
+    } else if (qType === 'rating') {
+      q.scale_low = qEl.querySelector('.quiz-scale-low')?.value.trim() || 'Not at all';
+      q.scale_high = qEl.querySelector('.quiz-scale-high')?.value.trim() || 'Completely';
+    } else if (qType === 'checklist') {
+      q.items = [...qEl.querySelectorAll('.quiz-check-item')].map(i => i.value.trim()).filter(Boolean);
+    }
+    questions.push(q);
+  });
+  return { quiz_type: qType, questions };
 }
 
 // --- Save Lesson ---
@@ -1643,6 +1846,17 @@ async function saveLesson(moduleId, lessonId) {
   if (!title) { showToast('Lesson title is required', 'error'); return; }
 
   const type = document.getElementById('ml-type').value;
+  const contentVal = document.getElementById('ml-content').value.trim();
+  
+  // For quiz type, serialize quiz builder data as JSON into content fields
+  let finalContent = contentVal;
+  if (type === 'quiz') {
+    const quizData = collectQuizData();
+    if (quizData.questions.length > 0) {
+      finalContent = JSON.stringify(quizData);
+    }
+  }
+  
   const data = {
     title: title,
     content_type: type,
@@ -1650,8 +1864,8 @@ async function saveLesson(moduleId, lessonId) {
     video_url: document.getElementById('ml-video').value.trim() || null,
     video_thumbnail_url: document.getElementById('ml-video-thumb')?.value.trim() || null,
     description: document.getElementById('ml-content').value.trim() || null,
-    content_html: document.getElementById('ml-content').value.trim() || null,
-    content_markdown: document.getElementById('ml-content').value.trim() || null,
+    content_html: finalContent || null,
+    content_markdown: finalContent || null,
     is_free_preview: document.getElementById('ml-preview').classList.contains('on'),
     is_required: document.getElementById('ml-required').classList.contains('on'),
     require_previous: document.getElementById('ml-req-prev').classList.contains('on'),
@@ -1667,7 +1881,7 @@ async function saveLesson(moduleId, lessonId) {
     data.embed_url = document.getElementById('ml-embed-url')?.value.trim() || null;
     data.embed_html = document.getElementById('ml-embed-html')?.value.trim() || null;
   }
-  if (type === 'live') {
+  if (type === 'live_session') {
     data.live_date = document.getElementById('ml-live-date')?.value ? new Date(document.getElementById('ml-live-date').value).toISOString() : null;
     data.live_meeting_url = document.getElementById('ml-live-url')?.value.trim() || null;
     data.live_recording_url = document.getElementById('ml-live-rec')?.value.trim() || null;
