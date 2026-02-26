@@ -10,306 +10,276 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
   <style>
 :root {
-  --bg: #0a1e33; --bg-deep: #071825; --bg-card: #112a42;
-  --border: rgba(91,168,178,.15); --text: rgba(255,255,255,.88);
-  --text-muted: rgba(255,255,255,.5); --teal: #5ba8b2;
-  --teal-light: #4acfd9; --taupe: #ad9b84; --purple: #a78bfa;
-  --success: #3dd68c; --danger: #ef5350; --warning: #f0b429;
+  --bg: #0b1d30; --bg-deep: #071825; --bg-card: #112a42; --bg-card2: #15344e;
+  --border: rgba(91,168,178,.12); --border-hover: rgba(91,168,178,.3);
+  --text: rgba(255,255,255,.92); --text-muted: rgba(255,255,255,.55); --text-dim: rgba(255,255,255,.3);
+  --teal: #5bb8c2; --teal-light: #4fd4e0; --teal-glow: rgba(91,188,198,.08);
+  --taupe: #c4ad94; --purple: #a78bfa; --pink: #ff5e94;
+  --success: #3dd68c; --danger: #ef5350; --warning: #f0b429; --gold: #d4a853;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+h1, h2, h3 { font-family: 'Playfair Display', Georgia, serif; }
 
-.preview-banner {
-  background: linear-gradient(135deg, rgba(167,139,250,.15), rgba(91,168,178,.1));
-  border-bottom: 1px solid var(--purple);
-  padding: 10px 24px; display: flex; align-items: center; gap: 12px;
-  font-size: 13px; color: var(--purple); position: sticky; top: 0; z-index: 100;
-  backdrop-filter: blur(12px);
+.admin-bar {
+  background: rgba(167,139,250,.08); border-bottom: 1px solid rgba(167,139,250,.2);
+  padding: 8px 24px; display: flex; align-items: center; gap: 10px;
+  font-size: 12px; color: var(--purple); position: sticky; top: 0; z-index: 100;
+  backdrop-filter: blur(16px);
 }
-.preview-banner .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--purple); animation: pulse 2s infinite; }
-@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
-.preview-banner a { color: var(--teal); text-decoration: none; margin-left: auto; font-weight: 600; }
+.admin-bar .pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--purple); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
+.admin-bar .label { font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.admin-bar .info { color: rgba(167,139,250,.6); }
+.admin-bar .back { margin-left: auto; color: var(--teal); text-decoration: none; font-weight: 600; }
+.admin-bar .back:hover { text-decoration: underline; }
 
-.hero { padding: 60px 24px 40px; max-width: 900px; margin: 0 auto; }
-.hero .status { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 16px; }
-.hero .status.draft { background: rgba(240,180,41,.1); color: var(--warning); border: 1px solid rgba(240,180,41,.3); }
-.hero .status.published { background: rgba(61,214,140,.1); color: var(--success); border: 1px solid rgba(61,214,140,.3); }
-.hero .status.coming_soon { background: rgba(167,139,250,.1); color: var(--purple); border: 1px solid rgba(167,139,250,.3); }
-.hero h1 { font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 700; margin-bottom: 8px; }
-.hero .subtitle { font-size: 18px; color: var(--text-muted); margin-bottom: 16px; }
-.hero .meta { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
-.hero .meta span { display: flex; align-items: center; gap: 6px; }
-.hero .thumb { width: 100%; max-height: 400px; object-fit: cover; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 24px; }
+.hero-wrap { position: relative; overflow: hidden; background: linear-gradient(180deg, rgba(91,184,194,.04) 0%, transparent 60%); }
+.hero-wrap::before { content:''; position:absolute; top:-200px; right:-200px; width:600px; height:600px; border-radius:50%; background:radial-gradient(circle,rgba(91,184,194,.06),transparent 70%); pointer-events:none; }
+.hero { max-width:1000px; margin:0 auto; padding:50px 32px 40px; display:flex; gap:40px; align-items:flex-start; position:relative; }
+.hero-content { flex:1; min-width:0; }
+.hero-badges { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+.badge-pill { padding:5px 14px; border-radius:20px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; border:1px solid; }
+.badge-pill.draft { background:rgba(240,180,41,.08); color:var(--warning); border-color:rgba(240,180,41,.25); }
+.badge-pill.published { background:rgba(61,214,140,.08); color:var(--success); border-color:rgba(61,214,140,.25); }
+.badge-pill.coming_soon { background:rgba(167,139,250,.08); color:var(--purple); border-color:rgba(167,139,250,.25); }
+.badge-pill.free { background:rgba(91,184,194,.08); color:var(--teal); border-color:rgba(91,184,194,.25); }
+.badge-pill.cat { background:rgba(196,173,148,.06); color:var(--taupe); border-color:rgba(196,173,148,.2); }
+.hero h1 { font-size:40px; font-weight:700; line-height:1.15; margin-bottom:12px; }
+.hero .subtitle { font-size:18px; color:var(--text-muted); line-height:1.5; margin-bottom:20px; }
+.hero .meta-row { display:flex; gap:20px; flex-wrap:wrap; font-size:13px; color:var(--text-dim); }
+.hero .meta-row span { display:flex; align-items:center; gap:6px; }
+.hero .meta-row svg { width:14px; height:14px; stroke:currentColor; opacity:.6; }
+.hero-thumb { width:380px; min-width:380px; aspect-ratio:16/10; border-radius:14px; overflow:hidden; border:1px solid var(--border); background:var(--bg-card); }
+.hero-thumb img { width:100%; height:100%; object-fit:cover; }
+.hero-thumb .placeholder { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:var(--text-dim); font-size:13px; gap:8px; }
+.hero-thumb .placeholder svg { width:40px; height:40px; stroke:currentColor; opacity:.3; }
 
-.price-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 32px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-.price-box .price { font-size: 32px; font-weight: 700; color: var(--teal); }
-.price-box .original { font-size: 18px; color: var(--text-muted); text-decoration: line-through; }
-.price-box .sale-badge { background: rgba(239,83,80,.1); color: var(--danger); padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; }
-.price-box .enroll-btn { margin-left: auto; padding: 12px 32px; background: linear-gradient(135deg, var(--teal), var(--teal-light)); color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: default; }
+.price-strip { max-width:1000px; margin:0 auto; padding:0 32px 32px; }
+.price-card { background:linear-gradient(135deg,var(--bg-card),var(--bg-card2)); border:1px solid var(--border); border-radius:14px; padding:24px 28px; display:flex; align-items:center; gap:20px; flex-wrap:wrap; }
+.price-main { font-size:36px; font-weight:800; color:var(--teal); }
+.price-original { font-size:18px; color:var(--text-dim); text-decoration:line-through; }
+.price-sale-tag { background:linear-gradient(135deg,rgba(239,83,80,.12),rgba(255,94,148,.12)); color:var(--pink); padding:5px 12px; border-radius:8px; font-size:12px; font-weight:800; }
+.price-sale-timer { font-size:12px; color:var(--text-dim); }
+.enroll-btn { margin-left:auto; padding:14px 40px; border:none; border-radius:10px; font-size:16px; font-weight:700; cursor:default; background:linear-gradient(135deg,var(--teal),var(--teal-light)); color:#fff; box-shadow:0 4px 20px rgba(91,184,194,.25); }
 
-.section { max-width: 900px; margin: 0 auto; padding: 0 24px 32px; }
-.section h2 { font-family: 'Playfair Display', serif; font-size: 24px; margin-bottom: 16px; }
+.container { max-width:1000px; margin:0 auto; padding:0 32px; }
+.section { margin-bottom:40px; }
+.section-title { font-size:26px; font-weight:700; margin-bottom:20px; position:relative; display:inline-block; }
+.section-title::after { content:''; position:absolute; bottom:-6px; left:0; width:40px; height:3px; border-radius:2px; background:linear-gradient(90deg,var(--teal),transparent); }
 
-.desc { white-space: pre-wrap; color: var(--text-muted); font-size: 15px; line-height: 1.7; }
+.desc-text { color:var(--text-muted); font-size:15px; line-height:1.8; white-space:pre-wrap; max-width:720px; }
 
-.learn-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.learn-item { display: flex; gap: 10px; align-items: flex-start; padding: 10px 14px; background: var(--bg-card); border-radius: 8px; font-size: 14px; }
-.learn-item .check { color: var(--teal); font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.learn-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.learn-card { display:flex; gap:12px; align-items:flex-start; padding:14px 18px; background:var(--teal-glow); border:1px solid rgba(91,184,194,.08); border-radius:10px; transition:all .2s; }
+.learn-card:hover { border-color:rgba(91,184,194,.2); }
+.learn-check { color:var(--teal); font-size:16px; font-weight:700; flex-shrink:0; }
+.learn-text { font-size:14px; line-height:1.5; }
 
-.faq-item { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; overflow: hidden; }
-.faq-q { padding: 14px 18px; font-weight: 600; font-size: 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-.faq-q:hover { background: rgba(91,168,178,.05); }
-.faq-a { padding: 0 18px 14px; font-size: 14px; color: var(--text-muted); display: none; }
-.faq-item.open .faq-a { display: block; }
+.module-block { border:1px solid var(--border); border-radius:12px; margin-bottom:10px; overflow:hidden; transition:border-color .2s; }
+.module-block:hover { border-color:var(--border-hover); }
+.mod-head { padding:16px 20px; display:flex; align-items:center; gap:14px; cursor:pointer; user-select:none; transition:background .15s; }
+.mod-head:hover { background:rgba(91,184,194,.03); }
+.mod-num { width:32px; height:32px; border-radius:8px; flex-shrink:0; background:linear-gradient(135deg,rgba(91,184,194,.12),rgba(91,184,194,.05)); color:var(--teal); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; }
+.mod-title { flex:1; font-weight:600; font-size:15px; }
+.mod-count { font-size:12px; color:var(--text-dim); white-space:nowrap; }
+.mod-arrow { color:var(--text-dim); transition:transform .25s; font-size:12px; }
+.module-block.open .mod-arrow { transform:rotate(180deg); }
+.mod-lessons { display:none; border-top:1px solid var(--border); }
+.module-block.open .mod-lessons { display:block; }
+.mod-tags { display:flex; gap:6px; }
+.mod-tag { font-size:10px; padding:2px 8px; border-radius:10px; font-weight:600; text-transform:uppercase; letter-spacing:.03em; }
+.mod-tag.drip { background:rgba(240,180,41,.08); color:var(--warning); }
+.mod-tag.locked { background:rgba(167,139,250,.08); color:var(--purple); }
 
-.testimonial { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 12px; }
-.testimonial .stars { color: var(--warning); margin-bottom: 6px; font-size: 14px; }
-.testimonial .text { font-size: 14px; color: var(--text-muted); font-style: italic; margin-bottom: 8px; }
-.testimonial .name { font-size: 13px; font-weight: 600; color: var(--taupe); }
+.les-row { padding:12px 20px 12px 64px; display:flex; align-items:center; gap:12px; border-bottom:1px solid rgba(91,168,178,.04); transition:background .1s; }
+.les-row:last-child { border-bottom:none; }
+.les-row:hover { background:rgba(91,168,178,.02); }
+.les-icon { width:30px; height:30px; border-radius:7px; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+.les-icon svg { width:14px; height:14px; stroke:currentColor; }
+.les-icon.video { background:rgba(91,184,194,.1); color:var(--teal); }
+.les-icon.text { background:rgba(196,173,148,.1); color:var(--taupe); }
+.les-icon.quiz { background:rgba(167,139,250,.1); color:var(--purple); }
+.les-icon.pdf,.les-icon.download { background:rgba(240,180,41,.1); color:var(--warning); }
+.les-icon.assignment { background:rgba(255,94,148,.08); color:var(--pink); }
+.les-icon.live_session { background:rgba(239,83,80,.08); color:var(--danger); }
+.les-icon.embed { background:rgba(91,184,194,.06); color:var(--teal-light); }
+.les-icon.audio { background:rgba(61,214,140,.08); color:var(--success); }
+.les-name { flex:1; font-size:14px; }
+.les-dur { font-size:12px; color:var(--text-dim); }
+.les-badge { font-size:10px; padding:3px 10px; border-radius:12px; background:rgba(91,184,194,.08); color:var(--teal); font-weight:700; text-transform:uppercase; letter-spacing:.03em; }
+.les-lock { color:var(--text-dim); font-size:11px; }
 
-.curriculum { margin-bottom: 40px; }
-.module-card { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
-.module-head { padding: 16px 20px; display: flex; align-items: center; gap: 12px; cursor: pointer; }
-.module-head:hover { background: rgba(91,168,178,.03); }
-.module-head .num { width: 28px; height: 28px; border-radius: 50%; background: rgba(91,168,178,.1); color: var(--teal); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
-.module-head .title { font-weight: 600; font-size: 15px; flex: 1; }
-.module-head .count { font-size: 12px; color: var(--text-muted); }
-.module-head .arrow { color: var(--text-muted); transition: transform .2s; }
-.module-card.open .module-head .arrow { transform: rotate(180deg); }
-.module-lessons { display: none; border-top: 1px solid var(--border); }
-.module-card.open .module-lessons { display: block; }
-.lesson-row { padding: 12px 20px 12px 56px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(91,168,178,.06); font-size: 14px; }
-.lesson-row:last-child { border-bottom: none; }
-.lesson-row .icon { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; }
-.lesson-row .icon svg { width: 14px; height: 14px; stroke: currentColor; }
-.lesson-row .icon.video { background: rgba(91,168,178,.1); color: var(--teal); }
-.lesson-row .icon.text { background: rgba(173,155,132,.1); color: var(--taupe); }
-.lesson-row .icon.quiz { background: rgba(167,139,250,.1); color: var(--purple); }
-.lesson-row .icon.pdf, .lesson-row .icon.download { background: rgba(240,180,41,.1); color: var(--warning); }
-.lesson-row .icon.assignment { background: rgba(255,0,110,.08); color: #ff006e; }
-.lesson-row .icon.live_session { background: rgba(239,83,80,.08); color: var(--danger); }
-.lesson-row .icon.embed { background: rgba(91,168,178,.08); color: var(--teal-light); }
-.lesson-row .icon.audio { background: rgba(61,214,140,.08); color: var(--success); }
-.lesson-row .name { flex: 1; }
-.lesson-row .dur { font-size: 12px; color: var(--text-muted); }
-.lesson-row .badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; background: rgba(91,168,178,.1); color: var(--teal); font-weight: 600; }
+.test-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.test-card { background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:22px 24px; transition:border-color .2s; }
+.test-card:hover { border-color:var(--border-hover); }
+.test-stars { color:var(--gold); margin-bottom:10px; font-size:14px; letter-spacing:2px; }
+.test-quote { font-size:14px; color:var(--text-muted); font-style:italic; line-height:1.6; margin-bottom:12px; }
+.test-quote::before { content:'\201C'; color:var(--teal); font-size:24px; font-weight:700; line-height:0; vertical-align:-.3em; margin-right:3px; }
+.test-quote::after { content:'\201D'; color:var(--teal); font-size:24px; font-weight:700; line-height:0; vertical-align:-.3em; margin-left:3px; }
+.test-author { font-size:13px; font-weight:600; color:var(--taupe); }
 
-.loading { text-align: center; padding: 80px 24px; color: var(--text-muted); }
-.spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--teal); border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 16px; }
-@keyframes spin { to { transform: rotate(360deg); } }
+.faq-item { border:1px solid var(--border); border-radius:10px; margin-bottom:8px; overflow:hidden; transition:border-color .2s; }
+.faq-item:hover { border-color:var(--border-hover); }
+.faq-q { padding:16px 20px; font-weight:600; font-size:14px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; user-select:none; transition:background .15s; }
+.faq-q:hover { background:rgba(91,184,194,.03); }
+.faq-q .arrow { color:var(--text-dim); transition:transform .25s; font-size:12px; }
+.faq-item.open .faq-q .arrow { transform:rotate(180deg); }
+.faq-a { padding:0 20px 16px; font-size:14px; color:var(--text-muted); line-height:1.7; display:none; }
+.faq-item.open .faq-a { display:block; }
 
-.not-found { text-align: center; padding: 120px 24px; }
-.not-found h2 { font-family: 'Playfair Display', serif; margin-bottom: 8px; }
-.not-found p { color: var(--text-muted); }
+.preview-footer { text-align:center; padding:48px 24px; border-top:1px solid var(--border); margin-top:20px; font-size:12px; color:var(--text-dim); }
 
-@media (max-width: 640px) {
-  .hero h1 { font-size: 26px; }
-  .learn-list { grid-template-columns: 1fr; }
-  .price-box { flex-direction: column; align-items: flex-start; }
-  .price-box .enroll-btn { width: 100%; text-align: center; margin-left: 0; }
+.loading { text-align:center; padding:120px 24px; color:var(--text-muted); }
+.spinner { width:36px; height:36px; border:3px solid var(--border); border-top-color:var(--teal); border-radius:50%; animation:spin .7s linear infinite; margin:0 auto 20px; }
+@keyframes spin { to{transform:rotate(360deg)} }
+.not-found { text-align:center; padding:120px 24px; }
+.not-found h2 { margin-bottom:8px; }
+.not-found p { color:var(--text-muted); }
+.not-found a { color:var(--teal); }
+
+@media(max-width:768px){
+  .hero{flex-direction:column-reverse;padding:30px 20px;gap:24px}
+  .hero-thumb{width:100%;min-width:100%}
+  .hero h1{font-size:28px}
+  .learn-grid,.test-grid{grid-template-columns:1fr}
+  .price-card{flex-direction:column;align-items:stretch}
+  .enroll-btn{margin-left:0;text-align:center}
+  .container{padding:0 20px}
+  .les-row{padding-left:48px}
 }
   </style>
 </head>
 <body>
-
-<div class="preview-banner">
-  <div class="dot"></div>
-  <strong>ADMIN PREVIEW</strong>
-  <span>This is how the course page will look to students</span>
-  <a href="javascript:history.back()">← Back to Builder</a>
+<div class="admin-bar">
+  <div class="pulse"></div>
+  <span class="label">Admin Preview</span>
+  <span class="info">— How students will see this course</span>
+  <a class="back" href="javascript:history.back()">← Back to Builder</a>
 </div>
-
-<div id="content">
-  <div class="loading">
-    <div class="spinner"></div>
-    Loading course preview...
-  </div>
-</div>
+<div id="content"><div class="loading"><div class="spinner"></div>Loading preview…</div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const SUPABASE_URL = 'https://bqbcehfozsaaqrbjvkml.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxYmNlaGZvenNhYXFyYmp2a21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjczMTcxNDEsImV4cCI6MjA0Mjg5MzE0MX0.2Iv2kPMLpECGqHPiyDGkPrdsMhFKQMFnpJm2x9a3vMA';
-
-function getAdminToken() { return sessionStorage.getItem('qp_admin_token') || localStorage.getItem('qp_admin_token') || ''; }
-
-async function adminProxy(payload) {
-  const res = await fetch('/.netlify/functions/admin-proxy', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getAdminToken() },
-    body: JSON.stringify(payload)
-  });
-  const json = await res.json();
-  if (!res.ok) throw new Error(json.error || 'Proxy request failed');
-  return json;
-}
-
-function proxyFrom(table) {
-  return {
-    _table: table, _select: '*', _filters: [], _order: null,
-    select(s) { this._select = s; return this; },
-    eq(c, v) { this._filters.push({column:c, op:'eq', value:v}); return this; },
-    order(c, opts) { this._order = {column:c, ascending: opts ? opts.ascending !== false : true}; return this; },
-    single() { this._single = true; return this; },
-    then(resolve, reject) {
-      return adminProxy({type:'query', table:this._table, select:this._select, filters:this._filters, order:this._order, single:this._single})
-        .then(r => ({data: r.data, error: null}))
-        .then(resolve, e => resolve ? resolve({data:null, error:{message:e.message}}) : reject ? reject(e) : null);
-    }
-  };
-}
-
-function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
-
-const ICONS = {
-  video: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>',
-  text: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
-  quiz: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
-  pdf: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
-  assignment: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>',
-  embed: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
-  live_session: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>',
-  audio: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
+const SUPABASE_URL='https://bqbcehfozsaaqrbjvkml.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxYmNlaGZvenNhYXFyYmp2a21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjczMTcxNDEsImV4cCI6MjA0Mjg5MzE0MX0.2Iv2kPMLpECGqHPiyDGkPrdsMhFKQMFnpJm2x9a3vMA';
+function getAdminToken(){return sessionStorage.getItem('qp_admin_token')||localStorage.getItem('qp_admin_token')||''}
+async function adminProxy(p){const r=await fetch('/.netlify/functions/admin-proxy',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+getAdminToken()},body:JSON.stringify(p)});const j=await r.json();if(!r.ok)throw new Error(j.error||'Proxy failed');return j}
+function proxyFrom(t){return{_t:t,_s:'*',_f:[],_o:null,_si:false,select(s){this._s=s;return this},eq(c,v){this._f.push({column:c,op:'eq',value:v});return this},order(c,o){this._o={column:c,ascending:o?o.ascending!==false:true};return this},single(){this._si=true;return this},then(res,rej){return adminProxy({type:'query',table:this._t,select:this._s,filters:this._f,order:this._o,single:this._si}).then(r=>({data:r.data,error:null})).then(res,e=>res?res({data:null,error:{message:e.message}}):rej?rej(e):null)}}}
+function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
+const I={
+  video:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>',
+  text:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
+  quiz:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  pdf:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+  assignment:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>',
+  embed:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
+  live_session:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>',
+  audio:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
+  download:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+  discussion:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+  image:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>',
+  user:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+  clock:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+  book:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>',
+  bar:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>',
 };
-function typeIcon(t) { return ICONS[t] || ICONS.text; }
+function ti(t){return I[t]||I.text}
+function toggleMod(el){el.closest('.module-block').classList.toggle('open')}
+function toggleFaq(el){el.closest('.faq-item').classList.toggle('open')}
 
-async function loadPreview() {
-  const params = new URLSearchParams(window.location.search);
-  const slug = params.get('slug');
-  const id = params.get('id');
+async function loadPreview(){
+  const p=new URLSearchParams(location.search), slug=p.get('slug'), id=p.get('id');
+  if(!getAdminToken()){document.getElementById('content').innerHTML='<div class="not-found"><h2>Admin Access Required</h2><p>Please <a href="/academy/builder.html">sign in via the Course Builder</a> first.</p></div>';return}
+  try{
+    let c;
+    if(id){const r=await proxyFrom('qa_courses').select('*').eq('id',id).single();c=r.data}
+    else if(slug){const r=await proxyFrom('qa_courses').select('*').eq('slug',slug).single();c=r.data}
+    if(!c){document.getElementById('content').innerHTML='<div class="not-found"><h2>Course Not Found</h2><p><a href="/academy/builder.html">Back to Builder</a></p></div>';return}
 
-  if (!getAdminToken()) {
-    document.getElementById('content').innerHTML = `<div class="not-found"><h2>Admin Access Required</h2><p>Please sign in via the <a href="/academy/builder.html" style="color:var(--teal)">Course Builder</a> first, then use Preview.</p></div>`;
-    return;
-  }
+    const[mr,lr]=await Promise.all([proxyFrom('qa_modules').select('*').eq('course_id',c.id).order('sort_order'),proxyFrom('qa_lessons').select('*').eq('course_id',c.id).order('sort_order')]);
+    const al=lr.data||[];
+    const mods=(mr.data||[]).map(m=>({...m,lessons:al.filter(l=>l.module_id===m.id).sort((a,b)=>(a.sort_order||0)-(b.sort_order||0))}));
+    let lp={learn:[],faq:[],testimonials:[]};
+    try{if(c.short_description&&c.short_description.startsWith('{'))lp=JSON.parse(c.short_description)}catch(e){}
 
-  try {
-    let course;
-    if (id) {
-      const res = await proxyFrom('qa_courses').select('*').eq('id', id).single();
-      course = res.data;
-    } else if (slug) {
-      const res = await proxyFrom('qa_courses').select('*').eq('slug', slug).single();
-      course = res.data;
-    }
+    const price=c.price_cents||0, sp=c.sale_price_cents;
+    const saleOn=sp&&c.sale_ends_at&&new Date(c.sale_ends_at)>new Date();
+    const dp=saleOn?sp:price;
+    const tl=mods.reduce((s,m)=>s+m.lessons.length,0);
+    const tm=mods.reduce((s,m)=>s+m.lessons.reduce((s2,l)=>s2+(l.estimated_minutes||0),0),0);
+    const free=c.enrollment_type==='free';
+    document.title=c.title+' — Quantum Academy';
 
-    if (!course) {
-      document.getElementById('content').innerHTML = `<div class="not-found"><h2>Course Not Found</h2><p>No course found with that slug or ID.</p></div>`;
-      return;
-    }
+    let saleTimer='';
+    if(saleOn){const d=new Date(c.sale_ends_at)-new Date(),dd=Math.floor(d/864e5),hh=Math.floor(d%864e5/36e5);saleTimer=`<span class="price-sale-timer">Sale ends in ${dd>0?dd+'d ':''}${hh}h</span>`}
 
-    // Load modules + lessons
-    const [modRes, lesRes] = await Promise.all([
-      proxyFrom('qa_modules').select('*').eq('course_id', course.id).order('sort_order'),
-      proxyFrom('qa_lessons').select('*').eq('course_id', course.id).order('sort_order'),
-    ]);
-    const lessons = lesRes.data || [];
-    const modules = (modRes.data || []).map(m => ({
-      ...m, lessons: lessons.filter(l => l.module_id === m.id).sort((a,b) => (a.sort_order||0) - (b.sort_order||0))
-    }));
-
-    // Parse landing page data
-    let landing = {learn: [], faq: [], testimonials: []};
-    try { if (course.short_description && course.short_description.startsWith('{')) landing = JSON.parse(course.short_description); } catch(e) {}
-
-    const price = course.price_cents || 0;
-    const salePrice = course.sale_price_cents;
-    const saleActive = salePrice && course.sale_ends_at && new Date(course.sale_ends_at) > new Date();
-    const displayPrice = saleActive ? salePrice : price;
-    const totalLessons = modules.reduce((s,m) => s + m.lessons.length, 0);
-
-    document.title = course.title + ' — Quantum Academy Preview';
-
-    document.getElementById('content').innerHTML = `
-      <div class="hero">
-        ${course.thumbnail_url ? `<img class="thumb" src="${esc(course.thumbnail_url)}" alt="">` : ''}
-        <span class="status ${course.status || 'draft'}">${(course.status || 'draft').replace('_', ' ')}</span>
-        <h1>${esc(course.title)}</h1>
-        ${course.subtitle ? `<p class="subtitle">${esc(course.subtitle)}</p>` : ''}
-        <div class="meta">
-          ${course.instructor_name ? `<span>👤 ${esc(course.instructor_name)}</span>` : ''}
-          <span>📚 ${modules.length} modules · ${totalLessons} lessons</span>
-          ${course.total_duration_minutes ? `<span>⏱ ${course.total_duration_minutes} min</span>` : ''}
-          ${course.difficulty ? `<span>📊 ${course.difficulty}</span>` : ''}
-          ${course.enrollment_type === 'free' ? '<span>🆓 Free</span>' : ''}
+    document.getElementById('content').innerHTML=`
+    <div class="hero-wrap"><div class="hero">
+      <div class="hero-content">
+        <div class="hero-badges">
+          <span class="badge-pill ${c.status||'draft'}">${(c.status||'draft').replace('_',' ')}</span>
+          ${free?'<span class="badge-pill free">Free Course</span>':''}
+          ${c.category?`<span class="badge-pill cat">${esc(c.category)}</span>`:''}
+          ${c.difficulty?`<span class="badge-pill cat">${esc(c.difficulty)}</span>`:''}
+        </div>
+        <h1>${esc(c.title)}</h1>
+        ${c.subtitle?`<p class="subtitle">${esc(c.subtitle)}</p>`:''}
+        <div class="meta-row">
+          ${c.instructor_name?`<span>${I.user} ${esc(c.instructor_name)}</span>`:''}
+          <span>${I.book} ${mods.length} module${mods.length!==1?'s':''} · ${tl} lesson${tl!==1?'s':''}</span>
+          ${tm>0?`<span>${I.clock} ${tm} min</span>`:''}
         </div>
       </div>
+      <div class="hero-thumb">
+        ${c.thumbnail_url?`<img src="${esc(c.thumbnail_url)}" alt="">`:`<div class="placeholder">${I.image}<span>No thumbnail</span></div>`}
+      </div>
+    </div></div>
 
-      ${price > 0 || course.enrollment_type === 'free' ? `
+    ${price>0||free?`<div class="price-strip"><div class="price-card">
+      ${free?'<span class="price-main">Free</span>':`<span class="price-main">$${(dp/100).toFixed(2)}</span>${saleOn?`<span class="price-original">$${(price/100).toFixed(2)}</span><span class="price-sale-tag">SAVE $${((price-sp)/100).toFixed(2)}</span>${saleTimer}`:''}`}
+      <button class="enroll-btn">${free?'Enroll for Free':'Enroll Now'}</button>
+    </div></div>`:''}
+
+    <div class="container">
+      ${c.description?`<div class="section"><h2 class="section-title">About This Course</h2><div class="desc-text">${esc(c.description)}</div></div>`:''}
+
+      ${lp.learn&&lp.learn.length?`<div class="section"><h2 class="section-title">What You'll Learn</h2><div class="learn-grid">${lp.learn.map(i=>`<div class="learn-card"><span class="learn-check">✓</span><span class="learn-text">${esc(i)}</span></div>`).join('')}</div></div>`:''}
+
       <div class="section">
-        <div class="price-box">
-          ${course.enrollment_type === 'free'
-            ? '<span class="price">Free</span>'
-            : `<span class="price">$${(displayPrice / 100).toFixed(2)}</span>
-               ${saleActive ? `<span class="original">$${(price / 100).toFixed(2)}</span><span class="sale-badge">SALE</span>` : ''}`
-          }
-          <button class="enroll-btn">${course.enrollment_type === 'free' ? 'Enroll Free' : 'Enroll Now'}</button>
-        </div>
-      </div>` : ''}
-
-      ${course.description ? `<div class="section"><h2>About This Course</h2><div class="desc">${esc(course.description)}</div></div>` : ''}
-
-      ${landing.learn && landing.learn.length ? `
-      <div class="section">
-        <h2>What You'll Learn</h2>
-        <div class="learn-list">
-          ${landing.learn.map(item => `<div class="learn-item"><span class="check">✓</span><span>${esc(item)}</span></div>`).join('')}
-        </div>
-      </div>` : ''}
-
-      <div class="section curriculum">
-        <h2>Curriculum</h2>
-        ${modules.map((m, mi) => `
-          <div class="module-card${mi === 0 ? ' open' : ''}" onclick="this.classList.toggle('open')">
-            <div class="module-head">
-              <span class="num">${mi + 1}</span>
-              <span class="title">${esc(m.title)}</span>
-              <span class="count">${m.lessons.length} lesson${m.lessons.length !== 1 ? 's' : ''}</span>
-              <span class="arrow">▾</span>
+        <h2 class="section-title">Curriculum</h2>
+        ${mods.length?mods.map((m,mi)=>{const lm=m.lessons.reduce((s,l)=>s+(l.estimated_minutes||0),0);return`
+        <div class="module-block${mi===0?' open':''}">
+          <div class="mod-head" onclick="toggleMod(this)">
+            <span class="mod-num">${mi+1}</span>
+            <span class="mod-title">${esc(m.title)}</span>
+            <div class="mod-tags">
+              ${m.drip_delay_days?`<span class="mod-tag drip">Drip ${m.drip_delay_days}d</span>`:''}
+              ${m.require_previous?'<span class="mod-tag locked">Sequential</span>':''}
             </div>
-            <div class="module-lessons">
-              ${m.lessons.map(l => `
-                <div class="lesson-row">
-                  <div class="icon ${l.content_type || 'text'}">${typeIcon(l.content_type)}</div>
-                  <span class="name">${esc(l.title)}</span>
-                  ${l.estimated_minutes ? `<span class="dur">${l.estimated_minutes} min</span>` : ''}
-                  ${l.is_free_preview ? '<span class="badge">Preview</span>' : ''}
-                </div>
-              `).join('')}
-            </div>
+            <span class="mod-count">${m.lessons.length} lesson${m.lessons.length!==1?'s':''}${lm?' · '+lm+' min':''}</span>
+            <span class="mod-arrow">▾</span>
           </div>
-        `).join('') || '<p style="color:var(--text-muted)">No modules yet.</p>'}
+          <div class="mod-lessons">
+            ${m.lessons.length?m.lessons.map(l=>`
+            <div class="les-row">
+              <div class="les-icon ${l.content_type||'text'}">${ti(l.content_type)}</div>
+              <span class="les-name">${esc(l.title)}</span>
+              ${l.estimated_minutes?`<span class="les-dur">${l.estimated_minutes} min</span>`:''}
+              ${l.is_free_preview?'<span class="les-badge">Preview</span>':''}
+              ${l.require_previous?'<span class="les-lock">🔒</span>':''}
+            </div>`).join(''):'<div style="padding:16px 20px 16px 64px;font-size:13px;color:var(--text-dim)">No lessons yet</div>'}
+          </div>
+        </div>`}).join(''):'<p style="color:var(--text-muted);font-style:italic">No curriculum added yet.</p>'}
       </div>
 
-      ${landing.testimonials && landing.testimonials.length ? `
-      <div class="section">
-        <h2>Student Testimonials</h2>
-        ${landing.testimonials.map(t => `
-          <div class="testimonial">
-            <div class="stars">${'★'.repeat(t.rating || 5)}${'☆'.repeat(5 - (t.rating || 5))}</div>
-            <div class="text">"${esc(t.text)}"</div>
-            <div class="name">— ${esc(t.name)}</div>
-          </div>
-        `).join('')}
-      </div>` : ''}
+      ${lp.testimonials&&lp.testimonials.length?`<div class="section"><h2 class="section-title">What Students Say</h2><div class="test-grid">${lp.testimonials.map(t=>`<div class="test-card"><div class="test-stars">${'★'.repeat(t.rating||5)}${'☆'.repeat(5-(t.rating||5))}</div><div class="test-quote">${esc(t.text)}</div><div class="test-author">— ${esc(t.name)}</div></div>`).join('')}</div></div>`:''}
 
-      ${landing.faq && landing.faq.length ? `
-      <div class="section">
-        <h2>Frequently Asked Questions</h2>
-        ${landing.faq.map(f => `
-          <div class="faq-item" onclick="this.classList.toggle('open')">
-            <div class="faq-q"><span>${esc(f.q)}</span><span>▾</span></div>
-            <div class="faq-a">${esc(f.a)}</div>
-          </div>
-        `).join('')}
-      </div>` : ''}
-    `;
-
-  } catch(e) {
-    document.getElementById('content').innerHTML = `<div class="not-found"><h2>Preview Error</h2><p>${esc(e.message)}</p><p style="margin-top:8px"><a href="/academy/builder.html" style="color:var(--teal)">Back to Builder</a></p></div>`;
-  }
+      ${lp.faq&&lp.faq.length?`<div class="section"><h2 class="section-title">Frequently Asked Questions</h2>${lp.faq.map(f=>`<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)"><span>${esc(f.q)}</span><span class="arrow">▾</span></div><div class="faq-a">${esc(f.a)}</div></div>`).join('')}</div>`:''}
+    </div>
+    <div class="preview-footer">Quantum Academy · Admin Preview</div>`;
+  }catch(e){document.getElementById('content').innerHTML=`<div class="not-found"><h2>Preview Error</h2><p>${esc(e.message)}</p><p style="margin-top:12px"><a href="/academy/builder.html">Back to Builder</a></p></div>`}
 }
-
 loadPreview();
 </script>
 </body>
