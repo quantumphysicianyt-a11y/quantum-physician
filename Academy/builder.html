@@ -664,7 +664,7 @@ let allBundles = [];
 let allBundleCourses = [];
 
 // --- Proxy (same pattern as admin panel) ---
-function getAdminToken() { return sessionStorage.getItem('qp_admin_token') || ''; }
+function getAdminToken() { return sessionStorage.getItem('qp_admin_token') || localStorage.getItem('qp_admin_token') || ''; }
 
 async function adminProxy(payload) {
   const res = await fetch('/.netlify/functions/admin-proxy', {
@@ -756,7 +756,7 @@ async function doAuth() {
     if (!res.ok) throw new Error(data.error || 'Login failed');
     currentAdmin = data.admin;
     sessionStorage.setItem('qp_admin_auth', JSON.stringify(currentAdmin));
-    if (data.token) sessionStorage.setItem('qp_admin_token', data.token);
+    if (data.token) sessionStorage.setItem('qp_admin_token', data.token); localStorage.setItem('qp_admin_token', data.token);
     showApp();
   } catch(e) {
     // Fallback: direct Supabase auth
@@ -771,7 +771,7 @@ async function doAuth() {
           permissions: { customers: admRes.data.can_customers, email: admRes.data.can_email }
         };
         sessionStorage.setItem('qp_admin_auth', JSON.stringify(currentAdmin));
-        if (authRes.data && authRes.data.session) sessionStorage.setItem('qp_admin_token', authRes.data.session.access_token);
+        if (authRes.data && authRes.data.session) sessionStorage.setItem('qp_admin_token', authRes.data.session.access_token); localStorage.setItem('qp_admin_token', authRes.data.session.access_token);
         showApp();
       } catch(e2) {
         errEl.textContent = e2.message; errEl.style.display = 'block';
@@ -811,6 +811,7 @@ function showApp() {
 
 function signOutBuilder() {
   sessionStorage.clear();
+  localStorage.removeItem('qp_admin_token');
   window.location.reload();
 }
 

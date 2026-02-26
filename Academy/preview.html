@@ -131,7 +131,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 const SUPABASE_URL = 'https://bqbcehfozsaaqrbjvkml.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxYmNlaGZvenNhYXFyYmp2a21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjczMTcxNDEsImV4cCI6MjA0Mjg5MzE0MX0.2Iv2kPMLpECGqHPiyDGkPrdsMhFKQMFnpJm2x9a3vMA';
 
-function getAdminToken() { return sessionStorage.getItem('qp_admin_token') || ''; }
+function getAdminToken() { return sessionStorage.getItem('qp_admin_token') || localStorage.getItem('qp_admin_token') || ''; }
 
 async function adminProxy(payload) {
   const res = await fetch('/.netlify/functions/admin-proxy', {
