@@ -1683,13 +1683,17 @@ async function saveLesson(moduleId, lessonId) {
 
   try {
     if (lessonId) {
-      await proxyFrom('qa_lessons').update(data).eq('id', lessonId);
+      const res = await proxyFrom('qa_lessons').update(data).eq('id', lessonId);
+      if (res.error) throw new Error(res.error.message);
     } else {
       const mod = courseModules.find(m => m.id === moduleId);
       data.module_id = moduleId;
       data.course_id = selectedCourseId;
       data.sort_order = mod ? (mod.qa_lessons || []).length : 0;
-      await proxyFrom('qa_lessons').insert(data);
+      data.slug = slugify(title) + '-' + Date.now().toString(36).slice(-4);
+      const res = await proxyFrom('qa_lessons').insert(data);
+      console.log('Lesson insert result:', res);
+      if (res.error) throw new Error(res.error.message);
     }
     document.querySelector('.modal-overlay').remove();
     await selectCourse(selectedCourseId, true);
