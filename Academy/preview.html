@@ -286,33 +286,63 @@ a{color:var(--teal);text-decoration:none}
 
 /* ===== STUDENT TOOLS ===== */
 .st-toolbar{position:fixed;right:20px;bottom:20px;display:flex;flex-direction:column;gap:8px;z-index:40}
-.st-btn{width:44px;height:44px;border-radius:50%;border:1px solid var(--border);background:var(--bg-card);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;box-shadow:0 2px 12px rgba(0,0,0,.15)}
+.st-btn{width:44px;height:44px;border-radius:50%;border:1px solid var(--border);background:var(--bg-card);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;box-shadow:0 2px 12px rgba(0,0,0,.15);position:relative;padding:0;font-family:inherit}
 .st-btn:hover{border-color:var(--teal);color:var(--teal);transform:scale(1.1)}
 .st-btn.active{background:var(--teal);color:#fff;border-color:var(--teal)}
 .st-btn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2}
-.st-btn .badge{position:absolute;top:-2px;right:-2px;width:16px;height:16px;border-radius:50%;background:#ff5e94;color:#fff;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center}
-.st-btn{position:relative}
+.st-count{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;border-radius:9px;background:#ff5e94;color:#fff;font-size:10px;font-weight:800;display:none;align-items:center;justify-content:center;padding:0 4px;line-height:1;border:2px solid var(--bg)}
+.st-count.show{display:flex}
 
 /* Notes panel */
-.st-notes{position:fixed;right:20px;bottom:80px;width:340px;max-height:70vh;background:var(--bg-card);border:1px solid var(--border);border-radius:14px;box-shadow:0 8px 40px rgba(0,0,0,.25);display:none;flex-direction:column;z-index:41;overflow:hidden;animation:scaleIn .2s ease}
-.st-notes.open{display:flex}
-.st-notes-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;font-weight:700;font-size:14px}
-.st-notes-head svg{width:16px;height:16px;stroke:var(--teal)}
-.st-notes-head .close{margin-left:auto;cursor:pointer;color:var(--text-dim);font-size:18px}
-.st-notes-head .close:hover{color:var(--text)}
-.st-notes-body{flex:1;overflow-y:auto;padding:12px}
-.st-notes-empty{padding:20px;text-align:center;color:var(--text-dim);font-size:13px}
-.st-note{padding:10px 12px;margin-bottom:8px;border-radius:8px;background:rgba(91,184,194,.04);border-left:3px solid var(--teal);font-size:13px;line-height:1.5;position:relative}
-.st-note .st-note-meta{font-size:10px;color:var(--text-dim);margin-top:4px;font-weight:600}
-.st-note .st-note-del{position:absolute;top:6px;right:8px;cursor:pointer;color:var(--text-dim);font-size:12px;opacity:0;transition:opacity .15s}
+.st-panel{position:fixed;right:20px;bottom:80px;width:360px;max-height:75vh;background:var(--bg-card);border:1px solid var(--border);border-radius:14px;box-shadow:0 8px 40px rgba(0,0,0,.25);display:none;flex-direction:column;z-index:41;overflow:hidden;animation:scaleIn .2s ease}
+.st-panel.open{display:flex}
+.st-panel-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;font-weight:700;font-size:14px}
+.st-panel-head svg{width:16px;height:16px;stroke:var(--teal);fill:none;stroke-width:2;flex-shrink:0}
+.st-panel-head .close{margin-left:auto;cursor:pointer;color:var(--text-dim);font-size:18px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:6px;transition:all .15s}
+.st-panel-head .close:hover{color:var(--text);background:rgba(91,184,194,.06)}
+
+/* Panel tabs */
+.st-tabs{display:flex;border-bottom:1px solid var(--border)}
+.st-tab{flex:1;padding:10px;text-align:center;font-size:12px;font-weight:600;color:var(--text-dim);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+.st-tab:hover{color:var(--text-muted)}
+.st-tab.active{color:var(--teal);border-bottom-color:var(--teal)}
+
+.st-panel-body{flex:1;overflow-y:auto;padding:12px}
+.st-empty{padding:24px;text-align:center;color:var(--text-dim);font-size:13px;line-height:1.6}
+
+/* Notes */
+.st-note{padding:10px 12px;margin-bottom:8px;border-radius:8px;background:rgba(91,184,194,.04);border-left:3px solid var(--teal);font-size:13px;line-height:1.5;position:relative;transition:all .15s}
+.st-note:hover{background:rgba(91,184,194,.06)}
+.st-note-meta{font-size:10px;color:var(--text-dim);margin-top:4px;font-weight:600}
+.st-note-del{position:absolute;top:6px;right:8px;cursor:pointer;color:var(--text-dim);font-size:14px;opacity:0;transition:opacity .15s;width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:4px}
 .st-note:hover .st-note-del{opacity:1}
+.st-note-del:hover{background:rgba(239,83,80,.1);color:var(--danger)}
 .st-note-input{display:flex;gap:8px;padding:12px;border-top:1px solid var(--border)}
-.st-note-input textarea{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:13px;padding:8px 10px;resize:none;min-height:36px;max-height:80px}
+.st-note-input textarea{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:13px;padding:8px 10px;resize:none;min-height:36px;max-height:80px;transition:border-color .15s}
 .st-note-input textarea:focus{outline:none;border-color:var(--teal)}
-.st-note-input button{padding:0 14px;border-radius:8px;border:none;background:var(--teal);color:#fff;font-family:inherit;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap}
-.st-notes-footer{padding:8px 12px;border-top:1px solid var(--border);display:flex;gap:8px}
-.st-notes-footer button{flex:1;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:none;color:var(--text-muted);font-family:inherit;font-size:11px;font-weight:600;cursor:pointer}
-.st-notes-footer button:hover{border-color:var(--teal);color:var(--teal)}
+.st-note-input button{padding:0 14px;border-radius:8px;border:none;background:var(--teal);color:#fff;font-family:inherit;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap;transition:all .15s}
+.st-note-input button:hover{filter:brightness(1.1)}
+.st-panel-footer{padding:8px 12px;border-top:1px solid var(--border);display:flex;gap:6px}
+.st-panel-footer button{flex:1;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:none;color:var(--text-muted);font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s}
+.st-panel-footer button:hover{border-color:var(--teal);color:var(--teal)}
+
+/* Highlights */
+.st-highlight{padding:10px 12px;margin-bottom:8px;border-radius:8px;font-size:13px;line-height:1.5;position:relative;transition:all .15s}
+.st-highlight.yellow{background:rgba(240,180,41,.08);border-left:3px solid var(--warn)}
+.st-highlight.green{background:rgba(61,214,140,.06);border-left:3px solid var(--success)}
+.st-highlight.purple{background:rgba(167,139,250,.06);border-left:3px solid var(--purple)}
+.st-highlight:hover .st-note-del{opacity:1}
+
+/* Timer */
+.st-timer{text-align:center;padding:16px}
+.st-timer-display{font-size:36px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--teal);margin-bottom:12px}
+.st-timer-btns{display:flex;gap:8px;justify-content:center}
+.st-timer-btns button{padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--text-muted);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+.st-timer-btns button:hover{border-color:var(--teal);color:var(--teal)}
+.st-timer-btns button.primary{background:var(--teal);color:#fff;border-color:var(--teal)}
+.st-timer-presets{display:flex;gap:6px;justify-content:center;margin-top:12px}
+.st-timer-presets button{padding:4px 12px;border-radius:12px;border:1px solid var(--border);background:none;color:var(--text-dim);font-family:inherit;font-size:11px;cursor:pointer}
+.st-timer-presets button:hover{border-color:var(--teal);color:var(--teal)}
 
 /* Interactive checkboxes */
 .cb-box{cursor:pointer}
@@ -348,30 +378,26 @@ a{color:var(--teal);text-decoration:none}
 
 <!-- Student Tools -->
 <div class="st-toolbar" id="stToolbar" style="display:none">
-  <button class="st-btn" onclick="toggleNotes()" title="My Notes" id="stNotesBtn">
+  <button class="st-btn" onclick="openTool('notes')" title="My Notes" id="stNotesBtn">
     <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-    <span class="badge" id="noteCount" style="display:none">0</span>
+    <span class="st-count" id="noteCount">0</span>
+  </button>
+  <button class="st-btn" onclick="openTool('timer')" title="Focus Timer">
+    <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
   </button>
   <button class="st-btn" onclick="printNotes()" title="Print Notes">
     <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
   </button>
 </div>
 
-<div class="st-notes" id="stNotes">
-  <div class="st-notes-head">
-    <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-    My Notes
-    <span class="close" onclick="toggleNotes()">✕</span>
+<!-- Tools Panel -->
+<div class="st-panel" id="stPanel">
+  <div class="st-panel-head" id="stPanelHead">
+    <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+    <span id="stPanelTitle">My Notes</span>
+    <span class="close" onclick="closePanel()">✕</span>
   </div>
-  <div class="st-notes-body" id="stNotesBody"></div>
-  <div class="st-note-input">
-    <textarea id="stNoteText" placeholder="Add a note for this lesson..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();addNote()}"></textarea>
-    <button onclick="addNote()">Save</button>
-  </div>
-  <div class="st-notes-footer">
-    <button onclick="exportNotes()">📋 Copy All</button>
-    <button onclick="clearNotes()">🗑 Clear All</button>
-  </div>
+  <div id="stPanelContent"></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -472,8 +498,8 @@ function viewLesson(lid){
   if(!l) return;
   currentLessonId=lid;
   showToolbar(true);
-  const panel=document.getElementById('stNotes');if(panel)panel.classList.remove('open');
   updateNotesBadge();
+  notesView='lesson';
   const ct=l.content_type||'text';
   const content=l.content_markdown||l.content_html||l.description||'';
   const hasVid=ct==='video'&&l.video_url;
@@ -552,137 +578,109 @@ function backToLanding(){
   document.getElementById('landing').style.display='block';
   currentLessonId=null;
   showToolbar(false);
-  const panel=document.getElementById('stNotes');if(panel)panel.classList.remove('open');
 }
 
 // ===== STUDENT TOOLS =====
 let currentLessonId = null;
+let activePanel = null;
+let timerInterval = null;
+let timerSeconds = 0;
+let timerRunning = false;
 
 function getNotesKey(){ return 'qp_notes_'+(COURSE?COURSE.id:''); }
 function getAllNotes(){ try{return JSON.parse(localStorage.getItem(getNotesKey())||'[]')}catch(e){return []} }
 function saveAllNotes(notes){ localStorage.setItem(getNotesKey(),JSON.stringify(notes)); updateNotesBadge(); }
 function updateNotesBadge(){
   const notes=getAllNotes();
-  const badge=document.getElementById('noteCount');
-  if(badge){badge.textContent=notes.length;badge.style.display=notes.length?'flex':'none'}
+  const el=document.getElementById('noteCount');
+  if(el){el.textContent=notes.length;el.classList.toggle('show',notes.length>0)}
 }
 
-function toggleNotes(){
-  const panel=document.getElementById('stNotes');
-  panel.classList.toggle('open');
-  if(panel.classList.contains('open')) renderNotes();
+function openTool(tool){
+  const panel=document.getElementById('stPanel');
+  if(activePanel===tool&&panel.classList.contains('open')){closePanel();return}
+  activePanel=tool;
+  panel.classList.add('open');
+  if(tool==='notes') renderNotesPanel();
+  else if(tool==='timer') renderTimerPanel();
 }
+function closePanel(){document.getElementById('stPanel').classList.remove('open');activePanel=null}
 
-function renderNotes(){
-  const body=document.getElementById('stNotesBody');
+let notesView='lesson';
+function renderNotesPanel(){
+  document.getElementById('stPanelTitle').textContent='My Notes';
   const notes=getAllNotes();
-  const lessonNotes=currentLessonId?notes.filter(n=>n.lessonId===currentLessonId):notes;
-  if(!lessonNotes.length){
-    body.innerHTML='<div class="st-notes-empty">No notes yet for this lesson.<br>Type below to add one!</div>';
-    return;
-  }
-  body.innerHTML=lessonNotes.map((n,i)=>{
-    const mod=ALL_MODS.find(m=>m.lessons.some(l=>l.id===n.lessonId));
-    const les=ALL_LESSONS.find(l=>l.id===n.lessonId);
-    return `<div class="st-note">
-      <span class="st-note-del" onclick="deleteNote(${i})">✕</span>
-      ${e(n.text)}
-      <div class="st-note-meta">${mod?e(mod.title):''} → ${les?e(les.title):''} · ${new Date(n.ts).toLocaleDateString()}</div>
-    </div>`;
-  }).join('');
+  const filtered=(notesView==='all')?notes:notes.filter(n=>n.lessonId===currentLessonId);
+  let tabs='<div class="st-tabs"><div class="st-tab'+(notesView==='lesson'?' active':'')+'" onclick="notesView='lesson';renderNotesPanel()">This Lesson</div><div class="st-tab'+(notesView==='all'?' active':'')+'" onclick="notesView='all';renderNotesPanel()">All Notes ('+notes.length+')</div></div>';
+  let body='';
+  if(!filtered.length){body='<div class="st-empty">No notes yet. Add one below!</div>'}
+  else{body=filtered.map(function(n,i){
+    var gi=notes.indexOf(n);
+    var mod=ALL_MODS.find(function(m){return m.lessons.some(function(l){return l.id===n.lessonId})});
+    var les=ALL_LESSONS.find(function(l){return l.id===n.lessonId});
+    var canNav=notesView==='all'&&n.lessonId!==currentLessonId;
+    return '<div class="st-note"'+(canNav?' onclick="viewLesson(''+n.lessonId+'');openTool('notes')" style="cursor:pointer"':'')+'><span class="st-note-del" onclick="event.stopPropagation();deleteNote('+gi+')">x</span>'+e(n.text)+'<div class="st-note-meta">'+(mod?e(mod.title)+' > ':'')+( les?e(les.title):'')+' · '+timeAgo(n.ts)+'</div></div>';
+  }).join('')}
+  document.getElementById('stPanelContent').innerHTML=tabs+'<div class="st-panel-body">'+body+'</div><div class="st-note-input"><textarea id="stNoteText" placeholder="Add a note..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();addNote()}"></textarea><button onclick="addNote()">Save</button></div><div class="st-panel-footer"><button onclick="exportNotes()">Copy All</button><button onclick="printNotes()">Print</button><button onclick="clearNotes()">Clear</button></div>';
 }
 
 function addNote(){
-  const ta=document.getElementById('stNoteText');
-  const text=ta.value.trim();
-  if(!text||!currentLessonId) return;
-  const notes=getAllNotes();
-  notes.push({lessonId:currentLessonId,text,ts:Date.now()});
-  saveAllNotes(notes);
-  ta.value='';
-  renderNotes();
+  var ta=document.getElementById('stNoteText');if(!ta)return;
+  var text=ta.value.trim();if(!text||!currentLessonId)return;
+  var notes=getAllNotes();notes.push({lessonId:currentLessonId,text:text,ts:Date.now()});
+  saveAllNotes(notes);ta.value='';renderNotesPanel();
 }
-
-function deleteNote(idx){
-  const notes=getAllNotes();
-  const lessonNotes=currentLessonId?notes.filter(n=>n.lessonId===currentLessonId):notes;
-  const note=lessonNotes[idx];
-  if(!note)return;
-  const globalIdx=notes.findIndex(n=>n.ts===note.ts&&n.text===note.text);
-  if(globalIdx>=0){notes.splice(globalIdx,1);saveAllNotes(notes);renderNotes()}
-}
-
-function clearNotes(){
-  if(!confirm('Delete all notes for this course?'))return;
-  saveAllNotes([]);
-  renderNotes();
-}
+function deleteNote(gi){var notes=getAllNotes();if(gi>=0&&gi<notes.length){notes.splice(gi,1);saveAllNotes(notes);renderNotesPanel()}}
+function clearNotes(){if(!confirm('Delete all notes?'))return;saveAllNotes([]);renderNotesPanel()}
+function timeAgo(ts){var d=Date.now()-ts,m=Math.floor(d/60000);if(m<1)return 'just now';if(m<60)return m+'m ago';var h=Math.floor(m/60);if(h<24)return h+'h ago';return new Date(ts).toLocaleDateString()}
 
 function exportNotes(){
-  const notes=getAllNotes();
-  if(!notes.length){alert('No notes to copy');return}
-  let text='📝 Course Notes: '+(COURSE?COURSE.title:'')+'\n';
-  text+='Exported: '+new Date().toLocaleDateString()+'\n';
-  text+='═'.repeat(40)+'\n\n';
-  let lastMod='';
-  notes.forEach(n=>{
-    const mod=ALL_MODS.find(m=>m.lessons.some(l=>l.id===n.lessonId));
-    const les=ALL_LESSONS.find(l=>l.id===n.lessonId);
-    const modTitle=mod?mod.title:'';
-    if(modTitle!==lastMod){text+='\n── '+modTitle+' ──\n';lastMod=modTitle}
-    text+='\n  '+(les?les.title:'')+'\n';
-    text+='  '+n.text+'\n';
-    text+='  ('+new Date(n.ts).toLocaleDateString()+')\n';
-  });
-  navigator.clipboard.writeText(text).then(()=>showToastPreview('Notes copied to clipboard!')).catch(()=>{
-    const w=window.open('','_blank');if(w){w.document.write('<pre>'+e(text)+'</pre>')}
-  });
+  var notes=getAllNotes();if(!notes.length){showToastPreview('No notes');return}
+  var text=(COURSE?COURSE.title:'')+'
+';var lastMod='';
+  notes.forEach(function(n){var mod=ALL_MODS.find(function(m){return m.lessons.some(function(l){return l.id===n.lessonId})});var les=ALL_LESSONS.find(function(l){return l.id===n.lessonId});var mt=mod?mod.title:'';if(mt!==lastMod){text+='
+'+mt+'
+';lastMod=mt}text+='  '+(les?les.title:'')+': '+n.text+'
+'});
+  navigator.clipboard.writeText(text).then(function(){showToastPreview('Copied!')}).catch(function(){});
+}
+function printNotes(){
+  var notes=getAllNotes();if(!notes.length){showToastPreview('No notes');return}
+  var html='<html><head><title>Notes</title><style>body{font-family:Inter,Arial,sans-serif;max-width:700px;margin:40px auto;color:#1a1a2e;line-height:1.6}h1{font-size:22px;border-bottom:2px solid #5bb8c2;padding-bottom:8px}h2{font-size:16px;color:#5bb8c2;margin:24px 0 8px}.note{border-left:3px solid #5bb8c2;padding:6px 12px;margin:6px 0;background:#f5f5f5;border-radius:0 6px 6px 0;font-size:14px}.meta{font-size:11px;color:#888;margin-bottom:8px}</style></head><body>';
+  html+='<h1>'+e(COURSE?COURSE.title:'Notes')+'</h1>';var lastMod='';
+  notes.forEach(function(n){var mod=ALL_MODS.find(function(m){return m.lessons.some(function(l){return l.id===n.lessonId})});var les=ALL_LESSONS.find(function(l){return l.id===n.lessonId});var mt=mod?mod.title:'';if(mt!==lastMod){html+='<h2>'+e(mt)+'</h2>';lastMod=mt}html+='<div class="note">'+e(n.text)+'</div><div class="meta">'+(les?e(les.title):'')+' · '+new Date(n.ts).toLocaleDateString()+'</div>'});
+  html+='</body></html>';var w=window.open('','_blank');if(w){w.document.write(html);w.document.close();setTimeout(function(){w.print()},300)}
 }
 
-function printNotes(){
-  const notes=getAllNotes();
-  if(!notes.length){alert('No notes to print');return}
-  let html='<html><head><title>Course Notes</title><style>body{font-family:Inter,Arial,sans-serif;max-width:700px;margin:40px auto;color:#1a1a2e;line-height:1.6}h1{font-size:22px;border-bottom:2px solid #5bb8c2;padding-bottom:8px}h2{font-size:16px;color:#5bb8c2;margin:24px 0 8px}p{margin:4px 0 4px 16px;font-size:14px}.meta{font-size:11px;color:#888;margin-left:16px}.note{border-left:3px solid #5bb8c2;padding:6px 12px;margin:6px 0 6px 16px;background:#f5f5f5;border-radius:0 6px 6px 0}</style></head><body>';
-  html+='<h1>'+e(COURSE?COURSE.title:'Course Notes')+'</h1>';
-  html+='<p style="color:#888;font-size:13px">Exported '+new Date().toLocaleDateString()+' · '+notes.length+' notes</p>';
-  let lastMod='';
-  notes.forEach(n=>{
-    const mod=ALL_MODS.find(m=>m.lessons.some(l=>l.id===n.lessonId));
-    const les=ALL_LESSONS.find(l=>l.id===n.lessonId);
-    const modTitle=mod?mod.title:'';
-    if(modTitle!==lastMod){html+='<h2>'+e(modTitle)+'</h2>';lastMod=modTitle}
-    html+='<div class="note">'+e(n.text)+'</div>';
-    html+='<div class="meta">'+(les?e(les.title):'')+' · '+new Date(n.ts).toLocaleDateString()+'</div>';
-  });
-  html+='</body></html>';
-  const w=window.open('','_blank');
-  if(w){w.document.write(html);w.document.close();setTimeout(()=>w.print(),300)}
+// --- Focus Timer ---
+function renderTimerPanel(){
+  document.getElementById('stPanelTitle').textContent='Focus Timer';
+  var mm=String(Math.floor(timerSeconds/60)).padStart(2,'0');
+  var ss=String(timerSeconds%60).padStart(2,'0');
+  document.getElementById('stPanelContent').innerHTML='<div class="st-timer"><div class="st-timer-display">'+mm+':'+ss+'</div><div class="st-timer-btns"><button class="'+(timerRunning?'':'primary')+'" onclick="timerToggle()">'+(timerRunning?'Pause':'Start')+'</button><button onclick="timerReset()">Reset</button></div><div class="st-timer-presets"><button onclick="timerSet(5)">5m</button><button onclick="timerSet(10)">10m</button><button onclick="timerSet(15)">15m</button><button onclick="timerSet(25)">25m</button></div><p style="margin-top:16px;font-size:12px;color:var(--text-dim);line-height:1.5">Focus timer for study sessions.<br>Plays a chime when complete.</p></div>';
 }
+function timerToggle(){
+  if(timerRunning){clearInterval(timerInterval);timerRunning=false}
+  else{if(timerSeconds<=0)timerSeconds=25*60;timerRunning=true;timerInterval=setInterval(function(){timerSeconds--;if(timerSeconds<=0){clearInterval(timerInterval);timerRunning=false;timerSeconds=0;timerChime();showToastPreview('Timer complete!')}if(activePanel==='timer')renderTimerPanel()},1000)}
+  if(activePanel==='timer')renderTimerPanel();
+}
+function timerReset(){clearInterval(timerInterval);timerRunning=false;timerSeconds=0;if(activePanel==='timer')renderTimerPanel()}
+function timerSet(min){clearInterval(timerInterval);timerRunning=false;timerSeconds=min*60;if(activePanel==='timer')renderTimerPanel()}
+function timerChime(){try{var ctx=new(window.AudioContext||window.webkitAudioContext)();[523.25,659.25,783.99].forEach(function(freq,i){var osc=ctx.createOscillator(),gain=ctx.createGain();osc.connect(gain);gain.connect(ctx.destination);osc.type='sine';osc.frequency.value=freq;gain.gain.setValueAtTime(0.15,ctx.currentTime+i*0.2);gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+i*0.2+0.5);osc.start(ctx.currentTime+i*0.2);osc.stop(ctx.currentTime+i*0.2+0.5)})}catch(ex){}}
 
 function showToastPreview(msg){
-  let t=document.getElementById('previewToast');
-  if(!t){t=document.createElement('div');t.id='previewToast';t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--bg-card);border:1px solid var(--teal);color:var(--teal);padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:99;transition:opacity .3s';document.body.appendChild(t)}
-  t.textContent=msg;t.style.opacity='1';
-  setTimeout(()=>{t.style.opacity='0'},2000);
+  var t=document.getElementById('previewToast');
+  if(!t){t=document.createElement('div');t.id='previewToast';t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--bg-card);border:1px solid var(--teal);color:var(--teal);padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:99;transition:opacity .3s;box-shadow:0 4px 16px rgba(0,0,0,.15)';document.body.appendChild(t)}
+  t.textContent=msg;t.style.opacity='1';setTimeout(function(){t.style.opacity='0'},2500);
 }
 
-// Interactive checkboxes
 document.addEventListener('click',function(ev){
-  const box=ev.target.closest('.cb-box');
-  if(!box)return;
-  if(box.classList.contains('checked')){
-    box.classList.remove('checked');box.innerHTML='';
-  } else {
-    box.classList.add('checked');
-    box.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="#0b1d30" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
-  }
+  var box=ev.target.closest('.cb-box');if(!box)return;
+  if(box.classList.contains('checked')){box.classList.remove('checked');box.innerHTML=''}
+  else{box.classList.add('checked');box.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="#0b1d30" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'}
 });
 
-// Show toolbar when viewing lessons
-function showToolbar(show){
-  const tb=document.getElementById('stToolbar');
-  if(tb)tb.style.display=show?'flex':'none';
-}
+function showToolbar(show){var tb=document.getElementById('stToolbar');if(tb)tb.style.display=show?'flex':'none';if(!show)closePanel()}
 
 // ===== LOAD =====
 async function load(){
