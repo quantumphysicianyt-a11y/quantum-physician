@@ -151,8 +151,8 @@
 <!-- From Address -->
 <div class="form-group" style="margin-bottom:16px"><label>From Address</label>
 <select class="input" id="email-from">
-<option value="hello@quantumphysician.com">hello@quantumphysician.com (Marketing)</option>
-<option value="tracey@quantumphysician.com">tracey@quantumphysician.com (Personal)</option>
+<option value="hello@quantumphysician.com"><template class="__cf_email__" data-cfemail="48202d24242708393d29263c3d253820313b212b212926662b2725">[email&#160;protected]</template> (Marketing)</option>
+<option value="tracey@quantumphysician.com"><template class="__cf_email__" data-cfemail="98eceaf9fbfde1d8e9edf9f6ecedf5e8f0e1ebf1fbf1f9f6b6fbf7f5">[email&#160;protected]</template> (Personal)</option>
 </select></div>
 
 <!-- Email Type -->
@@ -205,11 +205,10 @@
 
 <!-- Body with merge tag toolbar -->
 <div class="form-group" style="margin-bottom:16px"><label>Email Body</label>
-<div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;align-items:center">
+<div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
 <button class="btn btn-ghost btn-sm" type="button" onclick="insertEmailVar('{{name}}')">Name</button>
 <button class="btn btn-ghost btn-sm" type="button" onclick="insertEmailVar('{{email}}')">Email</button>
 <button class="btn btn-ghost btn-sm" type="button" onclick="insertEmailVar('{{referral_code}}')">Referral Code</button>
-<span style="flex:1"></span>
 </div>
 <textarea class="input" id="email-body" placeholder="Write your email message here...&#10;&#10;Use {{name}} to personalize with recipient's name.&#10;Use {{referral_code}} to include their referral code." rows="10" oninput="ecAutoPreview()"></textarea>
 <div id="ec-section-controls" style="display:none;margin-top:8px;margin-bottom:8px"><div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">Cards <span style="opacity:.5">(drag to reorder)</span></div><div id="ec-card-pills" style="display:flex;flex-wrap:wrap;gap:6px"></div></div>

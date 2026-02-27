@@ -852,7 +852,7 @@ async function updateAudiencePreview(){var audience=document.getElementById('ema
 function updateSendCount(){var el=document.getElementById('send-count');if(el)el.textContent=currentAudience.length}
 function copyAllEmails(){var emails=currentAudience.map(function(r){return r.email}).join('\n');navigator.clipboard.writeText(emails).then(function(){showToast('Copied '+currentAudience.length+' emails','success')}).catch(function(){showToast('Copy failed','error')})}
 function toggleAudienceExpand(el,count){var hidden=el.parentElement.querySelector('.ec-hidden');if(!hidden)return;var showing=hidden.style.display!=='none';hidden.style.display=showing?'none':'block';el.textContent=showing?'...and '+count+' more ▼':'show less ▲'}
-function insertEmailVar(v){var ta=document.getElementById('email-body');if(!ta)return;var s=ta.selectionStart,e=ta.selectionEnd,t=ta.value;ta.value=t.substring(0,s)+v+t.substring(e);ta.focus();ta.selectionStart=ta.selectionEnd=s+v.length;ecAutoPreview()}
+function insertEmailVar(v){var ta=document.getElementById('email-body');var s=ta.selectionStart,e=ta.selectionEnd,t=ta.value;ta.value=t.substring(0,s)+v+t.substring(e);ta.focus();ta.selectionStart=ta.selectionEnd=s+v.length}
 
 function updateEmailTypeHint(){var type=document.getElementById('email-type-select').value;var hint=document.getElementById('email-type-hint');if(type==='promotional'){hint.style.color='var(--warning)';hint.textContent='Promotional emails count toward the weekly limit and respect opt-out preferences.'}else if(type==='automated'){hint.style.color='var(--teal)';hint.textContent='Automated/Course emails are NOT limited and sent regardless of opt-out.'}else{hint.style.color='var(--success)';hint.textContent='Transactional emails are NOT limited and sent regardless of opt-out.'}}
 
@@ -964,15 +964,9 @@ else if(promo.discount_type==='set_price') discountText='Special price: **$'+pro
 }else{discountText='Special discount on your next purchase!'}
 var block='\n---\n'+discountText+'\n\nYour code: **'+code+'**\n\nThis offer is applied automatically when you use the link below.';
 var textarea=document.getElementById('email-body');
-/* Strip existing discount section first */
-var body=textarea.value;
-var parts=body.split('\n---\n');
-var kept=[parts[0]];var removed=false;
-for(var i=1;i<parts.length;i++){if(!removed&&parts[i].match(/Limited Time:|Your code:|discount/i)){removed=true}else{kept.push(parts[i])}}
-textarea.value=kept.join('\n---\n').trimEnd()+'\n'+block;
+textarea.value=textarea.value.trimEnd()+'\n'+block;
 textarea.scrollTop=textarea.scrollHeight;
-showToast('Discount card inserted into body','success');
-ecAutoPreview();
+showToast('Discount card inserted into body','success')
 }
 
 function loadPromoSelect(){
@@ -2401,13 +2395,7 @@ showToast("Added: "+card.name,"success");
 }
 
 /* ================================================================
-   EMAIL CENTER BRIDGE
-   Ports sgSetupEmail popup features into the inline Email Center:
-   - Cursor-position merge tag insert
-   - Card Library (reuses cardLibraryTemplates)
-   - Drag-to-reorder card pills
-   - Live preview
-   - Discount block insert
+   EMAIL CENTER BRIDGE - Card Library, Live Preview, Drag Reorder
    ================================================================ */
 
 function ecInsertVar(v){
@@ -2415,7 +2403,6 @@ function ecInsertVar(v){
   var s=ta.selectionStart,en=ta.selectionEnd,t=ta.value;
   ta.value=t.substring(0,s)+v+t.substring(en);
   ta.focus();ta.selectionStart=ta.selectionEnd=s+v.length;
-  ecAutoPreview();
 }
 
 var _ecPreviewTimer=null;
@@ -2476,20 +2463,14 @@ function ecBuildHtml(bodyText){
   var discCfg=null;
   var discTog=document.getElementById('discount-toggle');
   if(discTog&&discTog.checked){
-    var code=document.getElementById('discount-promo-select').value||document.getElementById('discount-promo-custom').value;
+    var code=(document.getElementById('discount-promo-select')||{}).value||(document.getElementById('discount-promo-custom')||{}).value;
     if(code){
       var promo=promotionsData.find(function(p){return p.coupon_id===code});
       if(promo)discCfg={couponId:code,percent:promo.discount_percent||0,product:promo.applies_to||'any'};
     }
   }
-  if(!discCfg){
-    var dm=bodyText.match(/\[PROMO:([^\]]+)\]/);
-    if(dm){var mp=promotionsData.find(function(p){return p.coupon_id===dm[1]});
-    if(mp)discCfg={couponId:dm[1],percent:mp.discount_percent||0,product:mp.applies_to||'any'}}
-  }
   var siteUrl=brand==='academy'?'https://academy.quantumphysician.com':'https://fusionsessions.com';
   var html=brand==='academy'?buildAcademyEmail(bodyText,null,siteUrl,discCfg):buildRichEmail(bodyText,null,siteUrl,discCfg);
-  /* Safety: replace any remaining session_image tokens that buildRichEmail might have missed */
   html=html.replace(/\{\{session_image:([^}]+)\}\}/g,function(_,sid){
     var img=typeof FUSION_IMAGES!=='undefined'&&FUSION_IMAGES[sid];
     if(!img)return '';
@@ -2499,20 +2480,22 @@ function ecBuildHtml(bodyText){
 }
 
 function ecPreview(){
-  var subject=document.getElementById('email-subject').value;
-  var body=document.getElementById('email-body').value;
-  var from=document.getElementById('email-from').value;
+  var subject=(document.getElementById('email-subject')||{}).value||'';
+  var body=(document.getElementById('email-body')||{}).value||'';
+  var from=(document.getElementById('email-from')||{}).value||'';
   if(!body)return;
   var pb=body.replace(/\{\{name\}\}/g,'Friend').replace(/\{\{email\}\}/g,'preview@example.com').replace(/\{\{referral_code\}\}/g,'XXXXXX');
-  var richHtml=ecBuildHtml(pb);
-  richHtml=richHtml.replace(/REFCODE/g,'XXXXXX');
-  var area=document.getElementById('ec-preview-area');
-  if(!area)return;
-  area.innerHTML='<div style="border-top:2px solid rgba(91,168,178,.3);padding-top:14px"><div style="font-size:12px;color:var(--text-muted);margin-bottom:8px"><strong>From:</strong> '+esc(from)+' &nbsp; <strong>Subject:</strong> <span style="color:var(--teal)">'+esc(subject||'(no subject)')+'</span> <button class="btn btn-ghost btn-sm" style="font-size:10px;margin-left:8px" onclick="document.getElementById(\'ec-preview-area\').innerHTML=\'\'">Close Preview</button></div><iframe id="ec-preview-iframe" style="width:100%;min-height:500px;border:none;border-radius:8px;background:#1a1a2e"></iframe></div>';
-  var fr=document.getElementById('ec-preview-iframe');
-  var iDoc=fr.contentDocument||fr.contentWindow.document;
-  iDoc.open();iDoc.write(richHtml);iDoc.close();
-  setTimeout(function(){try{fr.style.height=Math.max(500,iDoc.body.scrollHeight+20)+'px'}catch(e){}},400);
+  try{
+    var richHtml=ecBuildHtml(pb);
+    richHtml=richHtml.replace(/REFCODE/g,'XXXXXX');
+    var area=document.getElementById('ec-preview-area');
+    if(!area)return;
+    area.innerHTML='<div style="border-top:2px solid rgba(91,168,178,.3);padding-top:14px"><div style="font-size:12px;color:var(--text-muted);margin-bottom:8px"><strong>From:</strong> '+esc(from)+' &nbsp; <strong>Subject:</strong> <span style="color:var(--teal)">'+esc(subject||'(no subject)')+'</span> <button class="btn btn-ghost btn-sm" style="font-size:10px;margin-left:8px" onclick="document.getElementById(\'ec-preview-area\').innerHTML=\'\'">Close Preview</button></div><iframe id="ec-preview-iframe" style="width:100%;min-height:500px;border:none;border-radius:8px;background:#1a1a2e"></iframe></div>';
+    var fr=document.getElementById('ec-preview-iframe');
+    var iDoc=fr.contentDocument||fr.contentWindow.document;
+    iDoc.open();iDoc.write(richHtml);iDoc.close();
+    setTimeout(function(){try{fr.style.height=Math.max(500,iDoc.body.scrollHeight+20)+'px'}catch(e){}},400);
+  }catch(ex){console.error('ecPreview error:',ex)}
 }
 
 function ecOpenCardLibrary(){
@@ -2546,7 +2529,7 @@ function ecInsertLibraryCard(index){
 }
 
 function ecInsertDiscountBlock(){
-  var code=document.getElementById('discount-promo-select').value||document.getElementById('discount-promo-custom').value;
+  var code=(document.getElementById('discount-promo-select')||{}).value||(document.getElementById('discount-promo-custom')||{}).value;
   if(!code){showToast('Select or enter a promo code first','error');return}
   var promo=promotionsData.find(function(p){return p.coupon_id===code});
   var discLabel=code;
@@ -2556,7 +2539,6 @@ function ecInsertDiscountBlock(){
     else if(promo.discount_type==='set_price')discLabel='Only $'+(promo.discount_set_price||0);
   }
   var textarea=document.getElementById('email-body');if(!textarea)return;
-  /* Strip existing discount section if present */
   var body=textarea.value;
   var parts=body.split('\n---\n');
   var kept=[parts[0]];var removed=false;
