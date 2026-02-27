@@ -71,6 +71,7 @@ a{color:#5bb8c2;text-decoration:none}
 .les-i.embed{background:rgba(91,184,194,.06);color:#4fd4e0}
 .les-i.audio{background:rgba(61,214,140,.08);color:#3dd68c}
 .les-n{flex:1}
+.les-num{font-size:11px;color:rgba(255,255,255,.2);font-weight:700;min-width:16px;text-align:center}
 .les-d{font-size:12px;color:rgba(255,255,255,.3)}
 .les-b{font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(91,184,194,.08);color:#5bb8c2;font-weight:700;text-transform:uppercase}
 
@@ -116,7 +117,8 @@ a{color:#5bb8c2;text-decoration:none}
 .lv-body li{margin-bottom:2px}
 
 /* Content card wrapper */
-.lv-content-card{background:linear-gradient(135deg,rgba(17,42,66,.8),rgba(17,42,66,.5));border:1px solid rgba(91,168,178,.08);border-left:3px solid #5bb8c2;border-radius:0 12px 12px 0;padding:28px 32px;margin:20px 0;overflow-x:hidden;word-wrap:break-word;overflow-wrap:break-word}
+.lv-content-card{background:linear-gradient(135deg,rgba(17,42,66,.8),rgba(17,42,66,.5));border:1px solid rgba(91,168,178,.08);border-left:3px solid #5bb8c2;border-radius:0 12px 12px 0;padding:24px 24px;margin:20px 0;overflow:hidden;word-break:break-word;overflow-wrap:anywhere}
+.lv-content-card *{max-width:100%}
 .lv-content-card.quiz-card{border-left-color:#a78bfa}
 .lv-content-card.assignment-card{border-left-color:#ff5e94}
 .lv-content-card.pdf-card{border-left-color:#f0b429}
@@ -136,7 +138,29 @@ a{color:#5bb8c2;text-decoration:none}
 .cb-box{width:20px;height:20px;min-width:20px;border-radius:5px;border:2px solid rgba(91,184,194,.2);margin-top:1px;transition:all .15s;flex-shrink:0}
 .cb-box.checked{background:linear-gradient(135deg,#5bb8c2,#4fd4e0);border-color:transparent}
 .cb-box.checked svg{width:12px;height:12px;display:block;margin:2px auto}
-.cb-row span{flex:1;min-width:0;word-wrap:break-word}
+.cb-row span{flex:1;min-width:0;word-break:break-word}
+
+/* Callout boxes */
+.lv-tip{padding:14px 18px;border-radius:8px;margin:16px 0;font-size:14px;display:flex;gap:10px;align-items:flex-start;line-height:1.6}
+.lv-tip .tip-icon{font-size:18px;flex-shrink:0;margin-top:-1px}
+.lv-tip.tip-info{background:rgba(91,184,194,.06);border:1px solid rgba(91,184,194,.12)}
+.lv-tip.tip-warn{background:rgba(240,180,41,.04);border:1px solid rgba(240,180,41,.12)}
+.lv-tip.tip-success{background:rgba(61,214,140,.04);border:1px solid rgba(61,214,140,.12)}
+
+/* Inline images in lessons */
+.lv-img{width:100%;border-radius:10px;margin:16px 0;border:1px solid rgba(91,168,178,.08)}
+.lv-img-caption{font-size:12px;color:rgba(255,255,255,.3);text-align:center;margin-top:-10px;margin-bottom:12px}
+
+/* Key takeaway */
+.lv-takeaway{padding:16px 20px;border-radius:10px;margin:20px 0;background:linear-gradient(135deg,rgba(61,214,140,.04),rgba(91,184,194,.04));border:1px solid rgba(61,214,140,.12)}
+.lv-takeaway-title{font-size:12px;font-weight:700;color:#3dd68c;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+
+/* Lesson number badge */
+.lv-lesson-num{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:rgba(91,184,194,.1);color:#5bb8c2;font-size:13px;font-weight:800;margin-right:8px;flex-shrink:0}
+
+/* Progress bar for course */
+.progress-bar{height:4px;background:rgba(91,184,194,.1);border-radius:2px;margin:8px 0 20px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,#5bb8c2,#4fd4e0);border-radius:2px}
 
 .lv-quiz{margin:24px 0;max-width:640px}
 .qq{background:#112a42;border:1px solid rgba(91,168,178,.1);border-radius:10px;padding:18px 22px;margin-bottom:10px}
@@ -197,7 +221,7 @@ function toggleMod(el){
   if(!body.dataset.loaded){
     const mod=ALL_MODS.find(m=>m.id===mid);
     if(mod&&mod.lessons.length){
-      body.innerHTML=mod.lessons.map(l=>`<div class="les" onclick="viewLesson('${l.id}')" data-lid="${l.id}"><div class="les-i ${l.content_type||'text'}">${icon(l.content_type)}</div><span class="les-n">${e(l.title)}</span>${l.estimated_minutes?`<span class="les-d">${l.estimated_minutes}m</span>`:''}${l.is_free_preview?'<span class="les-b">Preview</span>':''}</div>`).join('');
+      body.innerHTML=mod.lessons.map((l,li)=>`<div class="les" onclick="viewLesson('${l.id}')" data-lid="${l.id}"><span class="les-num">${li+1}</span><div class="les-i ${l.content_type||'text'}">${icon(l.content_type)}</div><span class="les-n">${e(l.title)}</span>${l.estimated_minutes?`<span class="les-d">${l.estimated_minutes}m</span>`:''}${l.is_free_preview?'<span class="les-b">Preview</span>':''}</div>`).join('');
     } else { body.innerHTML='<div style="padding:14px 56px;font-size:13px;color:rgba(255,255,255,.25)">No lessons yet</div>'; }
     body.dataset.loaded='1';
   }
@@ -207,24 +231,43 @@ function toggleFaq(el){el.closest('.faq').classList.toggle('open')}
 
 function md(s){
   if(!s||s.trim().startsWith('{'))return '';
-  // Normalize line endings and remove excessive blank lines
   s=s.replace(/\r\n/g,'\n').replace(/\n{3,}/g,'\n\n');
   return s
+    // Images: ![alt](url)
+    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g,'<img class="lv-img" src="$2" alt="$1" loading="lazy">')
+    // Blockquotes as tip boxes: > 💡 ... or > ⚠️ ... or > ✅ ...
+    .replace(/^> 💡 ?(.+)$/gm,'<div class="lv-tip tip-info"><span class="tip-icon">💡</span><span>$1</span></div>')
+    .replace(/^> ⚠️ ?(.+)$/gm,'<div class="lv-tip tip-warn"><span class="tip-icon">⚠️</span><span>$1</span></div>')
+    .replace(/^> ✅ ?(.+)$/gm,'<div class="lv-tip tip-success"><span class="tip-icon">✅</span><span>$1</span></div>')
+    // Generic blockquote
+    .replace(/^> (.+)$/gm,'<div class="lv-tip tip-info"><span>$1</span></div>')
+    // Horizontal rule as section divider
+    .replace(/^---$/gm,'<hr style="border:none;border-top:1px solid rgba(91,168,178,.1);margin:20px 0">')
+    // Key takeaway: === text ===
+    .replace(/^=== (.+) ===$/gm,'<div class="lv-takeaway"><div class="lv-takeaway-title">🔑 Key Takeaway</div>$1</div>')
+    // Headers
     .replace(/^### (.+)$/gm,'<h3>$1</h3>')
     .replace(/^## (.+)$/gm,'<h2>$1</h2>')
+    // Inline
     .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
     .replace(/\*(.+?)\*/g,'<em>$1</em>')
     .replace(/`(.+?)`/g,'<code>$1</code>')
+    // Checkboxes
     .replace(/^- \[ \] (.+)$/gm,'<div class="cb-row"><div class="cb-box"></div><span>$1</span></div>')
     .replace(/^- \[x\] (.+)$/gm,'<div class="cb-row"><div class="cb-box checked"><svg viewBox="0 0 24 24" fill="none" stroke="#0b1d30" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><span>$1</span></div>')
+    // Lists
     .replace(/^(\d+)\. (.+)$/gm,'<li style="margin-bottom:2px">$2</li>')
     .replace(/^- (.+)$/gm,'<li style="margin-bottom:2px">$1</li>')
     .replace(/((?:<li[^>]*>.*?<\/li>\s*)+)/g,'<ul style="margin:4px 0 12px;padding-left:20px">$1</ul>')
+    // Paragraphs
     .replace(/\n\n/g,'</p><p style="margin:8px 0">')
     .replace(/\n/g,' ')
     .replace(/^/,'<p style="margin:8px 0">').replace(/$/,'</p>')
     .replace(/<p style="margin:8px 0">(<h[23]>)/g,'$1')
-    .replace(/(<\/h[23]>)<\/p>/g,'$1');
+    .replace(/(<\/h[23]>)<\/p>/g,'$1')
+    .replace(/<p style="margin:8px 0">(<div )/g,'$1')
+    .replace(/<p style="margin:8px 0">(<hr )/g,'$1')
+    .replace(/<p style="margin:8px 0">(<img )/g,'$1');
 }
 
 function quizHtml(raw){
@@ -251,9 +294,11 @@ function viewLesson(lid){
   const content=l.content_markdown||l.content_html||l.description||'';
   const hasVid=ct==='video'&&l.video_url;
 
-  // Find module name
+  // Find module name and lesson index
   const mod=ALL_MODS.find(m=>m.lessons.some(x=>x.id===lid));
   const modTitle=mod?mod.title:'';
+  const lesIdx=mod?mod.lessons.findIndex(x=>x.id===lid)+1:0;
+  const modIdx=ALL_MODS.indexOf(mod)+1;
 
   // prev/next: flatten all lessons in module order, then lesson order
   const sorted=[];
@@ -261,6 +306,7 @@ function viewLesson(lid){
   const idx=sorted.findIndex(x=>x.id===lid);
   const prev=idx>0?sorted[idx-1]:null;
   const next=idx<sorted.length-1?sorted[idx+1]:null;
+  const progressPct=Math.round(((idx+1)/sorted.length)*100);
 
   let vidHtml='';
   if(hasVid){
@@ -291,8 +337,9 @@ function viewLesson(lid){
   lv.innerHTML=`<div class="container" style="padding-top:20px;padding-bottom:60px">
     <div class="lv-top">
       <a class="lv-back" onclick="backToLanding()">← Back to Course</a>
-      <span class="lv-crumb">${e(modTitle)}</span>
+      <span class="lv-crumb">Module ${modIdx}: ${e(modTitle)} · Lesson ${lesIdx}</span>
     </div>
+    <div class="progress-bar"><div class="progress-fill" style="width:${progressPct}%"></div></div>
 
     <div class="lv-type-banner ${ct}">${icon(ct)} ${ct.replace('_',' ')}${l.estimated_minutes?' · '+l.estimated_minutes+' min':''}${l.is_free_preview?' · Free Preview':''}</div>
 

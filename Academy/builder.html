@@ -169,6 +169,23 @@ body {
 .cb-course-item .title { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cb-course-item .count { font-size: 10px; color: var(--text-dim); }
 
+.sidebar-group { border-bottom: 1px solid rgba(255,255,255,.03); }
+.sidebar-group-head {
+  display: flex; align-items: center; gap: 8px; padding: 8px 20px;
+  cursor: pointer; font-size: 10px; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--text-dim); font-weight: 700;
+}
+.sidebar-group-head:hover { color: var(--text-muted); }
+.sidebar-group-label { flex: 1; }
+.sidebar-group-count {
+  font-size: 9px; background: rgba(255,255,255,.05); padding: 1px 6px;
+  border-radius: 8px; min-width: 18px; text-align: center;
+}
+.sidebar-group-arrow { transition: transform .2s; font-size: 10px; }
+.sidebar-group:not(.open) .sidebar-group-arrow { transform: rotate(-90deg); }
+.sidebar-group-items { display: none; }
+.sidebar-group.open .sidebar-group-items { display: block; }
+
 .cb-add-course {
   display: flex; align-items: center; gap: 8px;
   padding: 10px 20px; cursor: pointer;
@@ -901,13 +918,36 @@ function renderCourseList() {
     el.innerHTML = '<div style="padding:20px;text-align:center;font-size:12px;color:var(--text-dim)">No courses yet</div>';
     return;
   }
-  el.innerHTML = allCourses.map(c => `
-    <div class="cb-course-item ${c.id === selectedCourseId ? 'active' : ''}" onclick="selectCourse('${c.id}')">
-      <span class="dot ${c.status || 'draft'}"></span>
-      <span class="title">${esc(c.title)}</span>
-      <span class="count">${c.total_lessons || 0}</span>
-    </div>
-  `).join('');
+  // Group by status
+  const groups = {published:[], draft:[], coming_soon:[]};
+  allCourses.forEach(c => {
+    const s = c.status || 'draft';
+    if (!groups[s]) groups[s] = [];
+    groups[s].push(c);
+  });
+  const labels = {published:'Published', draft:'Drafts', coming_soon:'Coming Soon'};
+  const order = ['published','draft','coming_soon'];
+  let html = '';
+  order.forEach(status => {
+    const list = groups[status];
+    if (!list || !list.length) return;
+    const isActive = list.some(c => c.id === selectedCourseId);
+    html += `<div class="sidebar-group${isActive?' open':' open'}">
+      <div class="sidebar-group-head" onclick="this.parentElement.classList.toggle('open')">
+        <span class="sidebar-group-label">${labels[status]||status}</span>
+        <span class="sidebar-group-count">${list.length}</span>
+        <span class="sidebar-group-arrow">▾</span>
+      </div>
+      <div class="sidebar-group-items">
+        ${list.map(c => `<div class="cb-course-item ${c.id === selectedCourseId ? 'active' : ''}" onclick="selectCourse('${c.id}')">
+          <span class="dot ${c.status || 'draft'}"></span>
+          <span class="title">${esc(c.title)}</span>
+          <span class="count">${c.total_lessons || 0}</span>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  });
+  el.innerHTML = html;
 }
 
 function showEmptyState() {
@@ -2616,7 +2656,7 @@ async function generateDemoCourse() {
     await addLes(m1, {title:'Welcome & Platform Overview',slug:'welcome-overview-'+Date.now().toString(36),sort_order:0,content_type:'video',estimated_minutes:8,is_free_preview:true,is_required:true,require_previous:false,video_url:VIDS.welcome,video_thumbnail_url:IMG.v1,
       content_markdown:'## Welcome to Quantum Academy!\n\nIn this video, you\'ll get a bird\'s-eye view of the platform:\n\n- **Course Builder** — Create and structure courses\n- **Admin Panel** — Your command center\n- **Student Dashboard** — What students see\n- **Email System** — Communications\n- **Analytics** — Track growth\n\nThe platform has two sides:\n1. **Admin side** (builder + admin) — only you see this\n2. **Student side** (dashboard + course pages) — what students experience'});
     await addLes(m1, {title:'Signing In & Admin Access',slug:'signing-in-'+Date.now().toString(36),sort_order:1,content_type:'text',estimated_minutes:5,is_required:true,require_previous:true,
-      content_markdown:'## Accessing Your Admin Tools\n\n### Admin Panel\nNavigate to `/admin/` and sign in with your admin email.\n\n### Course Builder\nNavigate to `/academy/builder.html` — same credentials.\n\n### Security Notes\n- Session lasts until sign out or browser close\n- Never share admin credentials\n- Student accounts are separate from admin\n\n### Troubleshooting\n1. Check your email is in `admin_users` table\n2. Make sure `is_active` is true\n3. Clear browser cache\n4. Check console for errors'});
+      content_markdown:'## Accessing Your Admin Tools\n\n![Admin login screen](https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?w=700&q=80)\n\n### Admin Panel\nNavigate to `/admin/` and sign in with your admin email.\n\n### Course Builder\nNavigate to `/academy/builder.html` — same credentials.\n\n> 💡 Both the Admin Panel and Course Builder share the same login — sign into one and you are good for both.\n\n---\n\n### Security Notes\n- Session lasts until sign out or browser close\n- Never share admin credentials\n- Student accounts are separate from admin\n\n> ⚠️ Always sign out when using a shared computer. Your admin session gives full access to all student data and course content.\n\n---\n\n### Troubleshooting\n1. Check your email is in `admin_users` table\n2. Make sure `is_active` is true\n3. Clear browser cache\n4. Check console for errors\n\n=== Keep your admin URL bookmarked and your credentials in a password manager for quick, secure access. ==='});
     await addLes(m1, {title:'Quick Check: Platform Basics',slug:'quiz-basics-'+Date.now().toString(36),sort_order:2,content_type:'quiz',estimated_minutes:3,is_required:true,require_previous:true,
       content_html:quizJson('multiple_choice',[{question:'Where do you create a new course?',options:['Admin Panel','Course Builder','Student Dashboard','Email System'],correct:1},{question:'What are the two sides of the platform?',options:['Frontend & Backend','Admin side & Student side','Desktop & Mobile','Free & Paid'],correct:1},{question:'Which URL opens the Course Builder?',options:['/admin/','/academy/builder.html','/dashboard/','/courses/'],correct:1}]),
       content_markdown:quizJson('multiple_choice',[{question:'Where do you create a new course?',options:['Admin Panel','Course Builder','Student Dashboard','Email System'],correct:1},{question:'What are the two sides of the platform?',options:['Frontend & Backend','Admin side & Student side','Desktop & Mobile','Free & Paid'],correct:1},{question:'Which URL opens the Course Builder?',options:['/admin/','/academy/builder.html','/dashboard/','/courses/'],correct:1}])});
@@ -2630,7 +2670,7 @@ async function generateDemoCourse() {
     await addLes(m2, {title:'Hands-On: Build a Mini Course',slug:'exercise-build-'+Date.now().toString(36),sort_order:2,content_type:'assignment',estimated_minutes:20,is_required:true,require_previous:true,
       content_markdown:'## Exercise: Build a Mini Course\n\nCreate a test course with:\n\n1. A compelling title and subtitle\n2. 2 modules with descriptive titles\n3. At least 3 lessons using different types\n\n### Checklist\n- [ ] Course created with title + description\n- [ ] Price and enrollment type set\n- [ ] Module 1 has at least 1 lesson\n- [ ] Module 2 has at least 2 lessons\n- [ ] One lesson marked "Free Preview"\n- [ ] Quiz has correct answers set\n- [ ] Hit "Save Changes"'});
     await addLes(m2, {title:'Using the Quiz Builder',slug:'quiz-builder-'+Date.now().toString(36),sort_order:3,content_type:'text',estimated_minutes:7,is_required:true,require_previous:true,
-      content_markdown:'## The Quiz Builder: 5 Types\n\n### 1. Multiple Choice\nStudents pick the correct answer. Best for knowledge checks.\n\n### 2. True / False\nBinary questions. Great for myths vs. facts.\n\n### 3. Open Reflection\nNo right answer — students write freely. Perfect for healing courses.\n\n### 4. Self-Rating Scale\nStudents rate on a spectrum. Customize low/high labels.\n\n### 5. Checklist / Self-Assessment\nStudents check off items. Great for readiness assessments.\n\n### Pro Tips\n- Mix types for variety\n- Use reflections in wellness courses\n- Keep MC to 3-4 options\n- Write questions that teach, not just test'});
+      content_markdown:'## The Quiz Builder: 5 Types\n\n![Quiz types overview](https://images.unsplash.com/photo-1606326608606-aa0b62935f2b?w=700&q=80)\n\n### 1. Multiple Choice\nStudents pick the correct answer. Best for knowledge checks.\n\n### 2. True / False\nBinary questions. Great for myths vs. facts.\n\n### 3. Open Reflection\nNo right answer — students write freely. Perfect for healing courses.\n\n> 💡 Open reflections are incredibly powerful for wellness and personal growth courses. Students process their emotions through writing.\n\n### 4. Self-Rating Scale\nStudents rate on a spectrum. Customize low/high labels.\n\n### 5. Checklist / Self-Assessment\nStudents check off items. Great for readiness assessments.\n\n---\n\n### Pro Tips\n- Mix types for variety\n- Use reflections in wellness courses\n- Keep MC to 3-4 options\n- Write questions that teach, not just test\n\n> ✅ A well-designed quiz can increase course completion rates by up to 40%. Students who engage with quizzes retain more information.\n\n=== The best quizzes feel like a conversation, not an exam. Use them to reinforce learning and build confidence. ==='});
     await addLes(m2, {title:'Check-In: Course Building Confidence',slug:'quiz-confidence-'+Date.now().toString(36),sort_order:4,content_type:'quiz',estimated_minutes:3,is_required:false,
       content_html:quizJson('rating',[{question:'How confident do you feel creating a course from scratch?',scale_low:'Not confident',scale_high:'Very confident'},{question:'How comfortable are you with different lesson types?',scale_low:'Still learning',scale_high:'I\'ve got this'},{question:'How well do you understand the quiz builder?',scale_low:'Need practice',scale_high:'Crystal clear'}]),
       content_markdown:quizJson('rating',[{question:'How confident do you feel creating a course from scratch?',scale_low:'Not confident',scale_high:'Very confident'},{question:'How comfortable are you with different lesson types?',scale_low:'Still learning',scale_high:'I\'ve got this'},{question:'How well do you understand the quiz builder?',scale_low:'Need practice',scale_high:'Crystal clear'}])});
@@ -2640,9 +2680,9 @@ async function generateDemoCourse() {
     await addLes(m3, {title:'The Admin Panel: Your Command Center',slug:'admin-tour-'+Date.now().toString(36),sort_order:0,content_type:'video',estimated_minutes:10,is_required:true,require_previous:false,video_url:VIDS.admin,video_thumbnail_url:IMG.v4,
       content_markdown:'## Admin Panel Overview\n\n### Key Sections\n- **Dashboard** — Quick stats, recent activity\n- **Customers** — Student profiles, enrollments\n- **Academy** — Course management\n- **Emails** — Composer, campaigns, tracking\n- **Promotions** — Discount codes, referrals\n- **Analytics** — Revenue, engagement\n- **Settings** — Admin users, config'});
     await addLes(m3, {title:'Student Management & Enrollments',slug:'student-mgmt-'+Date.now().toString(36),sort_order:1,content_type:'text',estimated_minutes:8,is_required:true,require_previous:true,
-      content_markdown:'## Managing Students\n\n### Manual Enrollment\n1. Go to Academy → Students\n2. Click "Enroll Student"\n3. Enter email + select course\n\n### Bulk Enrollment\n1. Prepare CSV with emails\n2. Use "Bulk Enroll" button\n3. Select target course\n\n### Progress Tracking\nFor each student see:\n- Lessons completed\n- Quiz responses\n- Last accessed date\n- Completion percentage'});
+      content_markdown:'## Managing Students\n\n![Student dashboard](https://images.unsplash.com/photo-1552664730-d307ca884978?w=700&q=80)\n\n### Viewing Students\nThe Customers tab shows all registered students with:\n- Name, email, enrollment status\n- Course progress (lessons completed)\n- Last active date\n- Enrollment history\n\n---\n\n### Manual Enrollment\n1. Go to Academy → Students\n2. Click "Enroll Student"\n3. Enter email + select course\n\n> 💡 Manual enrollment is perfect for VIP students, beta testers, or scholarship recipients who shouldn\'t go through the payment flow.\n\n### Bulk Enrollment\n1. Prepare CSV with emails\n2. Use "Bulk Enroll" button\n3. Select target course\n\n---\n\n### Progress Tracking\nFor each student see:\n- Lessons completed\n- Quiz responses\n- Last accessed date\n- Completion percentage\n\n> ✅ Students who complete 80% of a course are 5x more likely to purchase another course. Track progress to identify engaged students.\n\n=== Your students are your community. Know where they are in their journey so you can support them at every step. ==='});
     await addLes(m3, {title:'Payment Setup & Stripe Integration',slug:'stripe-setup-'+Date.now().toString(36),sort_order:2,content_type:'text',estimated_minutes:6,is_required:true,require_previous:true,
-      content_markdown:'## Stripe Integration\n\n### Payment Flow\n1. Student clicks "Enroll Now"\n2. Stripe Checkout opens\n3. Payment completes\n4. Webhook → auto-enrollment\n5. Confirmation email sent\n\n### Setting Up\n- Set Price in cents (4900 = $49)\n- Set Enrollment Type to "Paid"\n- Add Stripe Product ID + Price ID\n\n### Sale Pricing\n- Set Sale Price lower than regular\n- Set Sale End Date\n- Badge appears automatically'});
+      content_markdown:'## Stripe Integration\n\n![Payment flow](https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=700&q=80)\n\n### Payment Flow\n1. Student clicks "Enroll Now"\n2. Stripe Checkout opens\n3. Payment completes\n4. Webhook → auto-enrollment\n5. Confirmation email sent\n\n> 💡 The entire flow is automated. Once set up, you never have to manually process a payment or enrollment.\n\n---\n\n### Setting Up\n- Set Price in cents (4900 = $49)\n- Set Enrollment Type to "Paid"\n- Add Stripe Product ID + Price ID\n\n> ⚠️ Always test your checkout flow with Stripe\'s test mode before going live. A broken checkout means lost revenue.\n\n### Sale Pricing\n- Set Sale Price lower than regular\n- Set Sale End Date\n- Badge appears automatically\n\n=== Price your courses based on the transformation they provide, not the time they take. A 2-hour course that changes someone\'s life is worth more than a 20-hour course that doesn\'t. ==='});
     await addLes(m3, {title:'Email Campaigns & Automation',slug:'email-campaigns-'+Date.now().toString(36),sort_order:3,content_type:'video',estimated_minutes:10,is_required:true,require_previous:true,video_url:VIDS.email,video_thumbnail_url:IMG.v5,
       content_markdown:'## The Email System\n\n### Composer Features\n- Rich HTML templates\n- Card Library — pre-built blocks\n- Merge Tags — {first_name}, {course_title}\n- Audience Targeting\n\n### Campaign Types\n- Broadcast — one-time\n- Scheduled — future date\n- Automated — triggered by events\n\n### Best Practices\n1. Preview before sending\n2. Use merge tags\n3. Subject lines under 50 chars\n4. Clear call-to-action\n5. Send Tue-Thu, 10am-2pm'});
     await addLes(m3, {title:'Knowledge Check: Admin Operations',slug:'quiz-admin-'+Date.now().toString(36),sort_order:4,content_type:'quiz',estimated_minutes:4,is_required:true,require_previous:true,
@@ -2656,7 +2696,7 @@ async function generateDemoCourse() {
     await addLes(m4, {title:'Bundles: Packaging Multiple Courses',slug:'bundles-'+Date.now().toString(36),sort_order:1,content_type:'text',estimated_minutes:5,is_required:true,require_previous:true,
       content_markdown:'## Course Bundles\n\n### Creating a Bundle\n1. In sidebar under "Bundles," click +\n2. Name it and add description\n3. Set bundle price (lower than total)\n4. Add courses\n\n### Strategy\n- **Beginner Pack** — Intro courses discounted\n- **Complete Series** — All courses in a topic\n- **Seasonal Special** — Limited-time\n\n### Technical\n- Own Stripe Product/Price IDs\n- Auto-enrolls in ALL included courses\n- Individual access preserved'});
     await addLes(m4, {title:'Landing Page Optimization',slug:'landing-pages-'+Date.now().toString(36),sort_order:2,content_type:'text',estimated_minutes:6,is_required:true,require_previous:true,
-      content_markdown:'## Optimizing Your Landing Page\n\n### What You\'ll Learn Section\n- 6-8 outcome-focused bullets\n- Start with action verbs\n- Be specific\n\n### Testimonials\n- Minimum 3\n- Include names\n- Highlight results\n- 5-star ratings add credibility\n\n### FAQ\n- Address top 3-4 objections\n- Keep answers concise\n\n### SEO\n- Meta Title with keyword + brand\n- Meta Description 150-160 chars\n- OG Image for social sharing'});
+      content_markdown:'## Optimizing Your Landing Page\n\n![Landing page design](https://images.unsplash.com/photo-1432888622747-4eb9a8efeb07?w=700&q=80)\n\n### What You\'ll Learn Section\n- 6-8 outcome-focused bullets\n- Start with action verbs\n- Be specific\n\n> 💡 Instead of "Learn about emails" write "Create automated email sequences that nurture leads while you sleep."\n\n---\n\n### Testimonials\n- Minimum 3\n- Include names\n- Highlight results\n- 5-star ratings add credibility\n\n### FAQ\n- Address top 3-4 objections\n- Keep answers concise\n\n> ✅ The FAQ section is secretly your best sales tool. Every unanswered objection is a lost student.\n\n---\n\n### SEO\n- Meta Title with keyword + brand\n- Meta Description 150-160 chars\n- OG Image for social sharing\n\n=== Your landing page has one job: turn a visitor into a student. Every element should serve that goal. ==='});
     await addLes(m4, {title:'Course Launch Checklist',slug:'launch-checklist-'+Date.now().toString(36),sort_order:3,content_type:'pdf',estimated_minutes:2,is_required:false,
       content_markdown:'## Launch Checklist\n\n**Content**\n- [ ] All modules and lessons created\n- [ ] Videos uploaded and tested\n- [ ] Quizzes have correct answers\n- [ ] Resources attached\n\n**Settings**\n- [ ] Price + Stripe IDs configured\n- [ ] Enrollment type set\n- [ ] Thumbnail + description added\n- [ ] Landing page filled in\n\n**Marketing**\n- [ ] Announcement email drafted\n- [ ] Social posts prepared\n- [ ] Referral codes created\n\n**Final**\n- [ ] Preview looks good\n- [ ] Test purchase done\n- [ ] Welcome email configured\n- [ ] Status → Published',
       file_name:'Course-Launch-Checklist.pdf'});
