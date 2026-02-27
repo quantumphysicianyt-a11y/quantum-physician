@@ -2629,3 +2629,30 @@ async function ecSendTestEmail(){
     }catch(sendErr){showToast('Logged to email_log — send function unavailable','warning')}
   }catch(err){showToast('Error: '+err.message,'error')}
 }
+
+/* ---------- CTA Button Insert ---------- */
+var EC_CTA_BUTTONS={
+  watch:{label:'Watch Your Sessions',url:'https://fusionsessions.quantumphysician.com/dashboard'},
+  dashboard:{label:'Go to Dashboard',url:'https://fusionsessions.quantumphysician.com/dashboard'},
+  referral:{label:'Visit Referral Hub',url:'https://fusionsessions.quantumphysician.com/referral-hub'},
+  academy:{label:'Explore Academy',url:'https://academy.quantumphysician.com'},
+  community:{label:'Join the Community',url:'https://fusionsessions.quantumphysician.com/community'}
+};
+function ecInsertCTA(key){
+  var ta=document.getElementById('email-body');if(!ta)return;
+  var cta;
+  if(key==='custom'){
+    var label=prompt('Button text:','Learn More');
+    if(!label)return;
+    var url=prompt('Button URL:','https://');
+    if(!url)return;
+    cta='['+label+']('+url+')';
+  }else{
+    var btn=EC_CTA_BUTTONS[key];if(!btn)return;
+    cta='['+btn.label+']('+btn.url+')';
+  }
+  var s=ta.selectionStart,e=ta.selectionEnd,t=ta.value;
+  ta.value=t.substring(0,s)+cta+t.substring(e);
+  ta.focus();ta.selectionStart=ta.selectionEnd=s+cta.length;
+  ecAutoPreview();showToast('CTA inserted','success');
+}
