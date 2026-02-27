@@ -611,7 +611,7 @@ function renderNotesPanel(){
   document.getElementById('stPanelTitle').textContent='My Notes';
   const notes=getAllNotes();
   const filtered=(notesView==='all')?notes:notes.filter(n=>n.lessonId===currentLessonId);
-  let tabs='<div class="st-tabs"><div class="st-tab'+(notesView==='lesson'?' active':'')+'" onclick="notesView='lesson';renderNotesPanel()">This Lesson</div><div class="st-tab'+(notesView==='all'?' active':'')+'" onclick="notesView='all';renderNotesPanel()">All Notes ('+notes.length+')</div></div>';
+  let tabs='<div class="st-tabs"><div class="st-tab'+(notesView==='lesson'?' active':'')+'" onclick="notesView=\'lesson\';renderNotesPanel()">This Lesson</div><div class="st-tab'+(notesView==='all'?' active':'')+'" onclick="notesView=\'all\';renderNotesPanel()">All Notes ('+notes.length+')</div></div>';
   let body='';
   if(!filtered.length){body='<div class="st-empty">No notes yet. Add one below!</div>'}
   else{body=filtered.map(function(n,i){
@@ -619,9 +619,10 @@ function renderNotesPanel(){
     var mod=ALL_MODS.find(function(m){return m.lessons.some(function(l){return l.id===n.lessonId})});
     var les=ALL_LESSONS.find(function(l){return l.id===n.lessonId});
     var canNav=notesView==='all'&&n.lessonId!==currentLessonId;
-    return '<div class="st-note"'+(canNav?' onclick="viewLesson(''+n.lessonId+'');openTool('notes')" style="cursor:pointer"':'')+'><span class="st-note-del" onclick="event.stopPropagation();deleteNote('+gi+')">x</span>'+e(n.text)+'<div class="st-note-meta">'+(mod?e(mod.title)+' > ':'')+( les?e(les.title):'')+' · '+timeAgo(n.ts)+'</div></div>';
+    var click=canNav?' onclick="viewLesson(\''+n.lessonId+'\');openTool(\'notes\')" style="cursor:pointer"':'';
+    return '<div class="st-note"'+click+'><span class="st-note-del" onclick="event.stopPropagation();deleteNote('+gi+')">✕</span>'+e(n.text)+'<div class="st-note-meta">'+(mod?e(mod.title)+' → ':'')+( les?e(les.title):'')+' · '+timeAgo(n.ts)+'</div></div>';
   }).join('')}
-  document.getElementById('stPanelContent').innerHTML=tabs+'<div class="st-panel-body">'+body+'</div><div class="st-note-input"><textarea id="stNoteText" placeholder="Add a note..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();addNote()}"></textarea><button onclick="addNote()">Save</button></div><div class="st-panel-footer"><button onclick="exportNotes()">Copy All</button><button onclick="printNotes()">Print</button><button onclick="clearNotes()">Clear</button></div>';
+  document.getElementById('stPanelContent').innerHTML=tabs+'<div class="st-panel-body">'+body+'</div><div class="st-note-input"><textarea id="stNoteText" placeholder="Add a note..." rows="1" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();addNote()}"></textarea><button onclick="addNote()">Save</button></div><div class="st-panel-footer"><button onclick="exportNotes()">Copy All</button><button onclick="printNotes()">Print</button><button onclick="clearNotes()">Clear</button></div>';
 }
 
 function addNote(){
@@ -636,12 +637,8 @@ function timeAgo(ts){var d=Date.now()-ts,m=Math.floor(d/60000);if(m<1)return 'ju
 
 function exportNotes(){
   var notes=getAllNotes();if(!notes.length){showToastPreview('No notes');return}
-  var text=(COURSE?COURSE.title:'')+'
-';var lastMod='';
-  notes.forEach(function(n){var mod=ALL_MODS.find(function(m){return m.lessons.some(function(l){return l.id===n.lessonId})});var les=ALL_LESSONS.find(function(l){return l.id===n.lessonId});var mt=mod?mod.title:'';if(mt!==lastMod){text+='
-'+mt+'
-';lastMod=mt}text+='  '+(les?les.title:'')+': '+n.text+'
-'});
+  var text=(COURSE?COURSE.title:'')+'\n';var lastMod='';
+  notes.forEach(function(n){var mod=ALL_MODS.find(function(m){return m.lessons.some(function(l){return l.id===n.lessonId})});var les=ALL_LESSONS.find(function(l){return l.id===n.lessonId});var mt=mod?mod.title:'';if(mt!==lastMod){text+='\n'+mt+'\n';lastMod=mt}text+='  '+(les?les.title:'')+': '+n.text+'\n'});
   navigator.clipboard.writeText(text).then(function(){showToastPreview('Copied!')}).catch(function(){});
 }
 function printNotes(){
