@@ -187,7 +187,7 @@
 <!-- Discount Card Controls -->
 <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap">
 <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0"><input type="checkbox" id="discount-toggle" onchange="toggleDiscountConfig()"><span style="font-size:12px;font-weight:600;color:var(--warning)">Include Discount Card</span></label>
-<button class="btn btn-ghost btn-sm" onclick="ecInsertDiscountBlock()" style="font-size:11px" title="Inserts a --- divider and discount template at the end of your email body">Insert into Body</button>
+<button class="btn btn-ghost btn-sm" onclick="insertDiscountBlock()" style="font-size:11px" title="Inserts a --- divider and discount template at the end of your email body">Insert into Body</button>
 </div>
 <div id="discount-config" style="display:none;gap:10px;flex-wrap:wrap;align-items:end">
 <div style="flex:1;min-width:150px"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px">Promo Code</label>
@@ -206,9 +206,9 @@
 <!-- Body with merge tag toolbar -->
 <div class="form-group" style="margin-bottom:16px"><label>Email Body</label>
 <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;align-items:center">
-<button class="btn btn-ghost btn-sm" type="button" onclick="ecInsertVar('{{name}}')">Name</button>
-<button class="btn btn-ghost btn-sm" type="button" onclick="ecInsertVar('{{email}}')">Email</button>
-<button class="btn btn-ghost btn-sm" type="button" onclick="ecInsertVar('{{referral_code}}')">Referral Code</button>
+<button class="btn btn-ghost btn-sm" type="button" onclick="insertEmailVar('{{name}}')">Name</button>
+<button class="btn btn-ghost btn-sm" type="button" onclick="insertEmailVar('{{email}}')">Email</button>
+<button class="btn btn-ghost btn-sm" type="button" onclick="insertEmailVar('{{referral_code}}')">Referral Code</button>
 <span style="flex:1"></span>
 </div>
 <textarea class="input" id="email-body" placeholder="Write your email message here...&#10;&#10;Use {{name}} to personalize with recipient's name.&#10;Use {{referral_code}} to include their referral code." rows="10" oninput="ecAutoPreview()"></textarea>

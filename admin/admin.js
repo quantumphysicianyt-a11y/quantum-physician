@@ -852,7 +852,7 @@ async function updateAudiencePreview(){var audience=document.getElementById('ema
 function updateSendCount(){var el=document.getElementById('send-count');if(el)el.textContent=currentAudience.length}
 function copyAllEmails(){var emails=currentAudience.map(function(r){return r.email}).join('\n');navigator.clipboard.writeText(emails).then(function(){showToast('Copied '+currentAudience.length+' emails','success')}).catch(function(){showToast('Copy failed','error')})}
 function toggleAudienceExpand(el,count){var hidden=el.parentElement.querySelector('.ec-hidden');if(!hidden)return;var showing=hidden.style.display!=='none';hidden.style.display=showing?'none':'block';el.textContent=showing?'...and '+count+' more ▼':'show less ▲'}
-function insertEmailVar(v){var ta=document.getElementById('email-body');var s=ta.selectionStart,e=ta.selectionEnd,t=ta.value;ta.value=t.substring(0,s)+v+t.substring(e);ta.focus();ta.selectionStart=ta.selectionEnd=s+v.length}
+function insertEmailVar(v){var ta=document.getElementById('email-body');if(!ta)return;var s=ta.selectionStart,e=ta.selectionEnd,t=ta.value;ta.value=t.substring(0,s)+v+t.substring(e);ta.focus();ta.selectionStart=ta.selectionEnd=s+v.length;ecAutoPreview()}
 
 function updateEmailTypeHint(){var type=document.getElementById('email-type-select').value;var hint=document.getElementById('email-type-hint');if(type==='promotional'){hint.style.color='var(--warning)';hint.textContent='Promotional emails count toward the weekly limit and respect opt-out preferences.'}else if(type==='automated'){hint.style.color='var(--teal)';hint.textContent='Automated/Course emails are NOT limited and sent regardless of opt-out.'}else{hint.style.color='var(--success)';hint.textContent='Transactional emails are NOT limited and sent regardless of opt-out.'}}
 
@@ -964,9 +964,15 @@ else if(promo.discount_type==='set_price') discountText='Special price: **$'+pro
 }else{discountText='Special discount on your next purchase!'}
 var block='\n---\n'+discountText+'\n\nYour code: **'+code+'**\n\nThis offer is applied automatically when you use the link below.';
 var textarea=document.getElementById('email-body');
-textarea.value=textarea.value.trimEnd()+'\n'+block;
+/* Strip existing discount section first */
+var body=textarea.value;
+var parts=body.split('\n---\n');
+var kept=[parts[0]];var removed=false;
+for(var i=1;i<parts.length;i++){if(!removed&&parts[i].match(/Limited Time:|Your code:|discount/i)){removed=true}else{kept.push(parts[i])}}
+textarea.value=kept.join('\n---\n').trimEnd()+'\n'+block;
 textarea.scrollTop=textarea.scrollHeight;
-showToast('Discount card inserted into body','success')
+showToast('Discount card inserted into body','success');
+ecAutoPreview();
 }
 
 function loadPromoSelect(){
