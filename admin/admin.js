@@ -2393,3 +2393,239 @@ sgAutoPreview();
 sgUpdateSectionControls();
 showToast("Added: "+card.name,"success");
 }
+
+/* ================================================================
+   EMAIL CENTER — Card Library, Live Preview, Drag Reorder, Test Email
+   Session 19 features ported from recovery popup
+   ================================================================ */
+
+/* ---------- Card Library Templates ---------- */
+var cardLibraryTemplates=[
+{name:'Referral Invite',icon:'share',desc:'Invite friends, earn credits',body:'**Share the Healing — Earn $10**\n\nKnow someone who could benefit from Fusion Sessions? Share your personal referral link and you\'ll both be rewarded.\n\nYour referral code: **{{referral_code}}**\n\n[Share My Link](https://fusionsessions.quantumphysician.com?ref={{referral_code}})'},
+{name:'Community Invite',icon:'users',desc:'Join the discussion community',body:'**Join Our Healing Community**\n\nConnect with others on the same journey. Share experiences, ask questions, and grow together.\n\n[Visit the Community](https://fusionsessions.quantumphysician.com/community)'},
+{name:'Upcoming Session',icon:'calendar',desc:'Next live session reminder',body:'**Next Live Session**\n\nDr. Tracey Clark\'s next live healing session is coming soon. Mark your calendar and join us.\n\n[View Schedule](https://fusionsessions.quantumphysician.com)'},
+{name:'Testimonial',icon:'quote',desc:'Social proof card',body:'**What Our Members Say**\n\n*"Fusion Sessions helped me understand my body in ways I never thought possible. The monthly sessions have become my anchor."*\n\n— A Fusion Sessions Member'},
+{name:'Bold CTA',icon:'zap',desc:'Strong call-to-action card',body:'**Ready to Transform Your Health?**\n\nStart your healing journey today with Fusion Sessions. Evidence-based, practitioner-guided wellness.\n\n[Get Started Now](https://fusionsessions.quantumphysician.com)'},
+{name:'Academy Promo',icon:'book',desc:'Promote Quantum Academy courses',body:'**Quantum Academy**\n\nDeepen your understanding with self-paced courses from Dr. Tracey Clark. Interactive lessons, quizzes, and practical tools.\n\n[Explore Courses](https://academy.quantumphysician.com)'},
+{name:'QR Code Only',icon:'qr',desc:'Just the QR code block',body:'{{qr_code}}'},
+{name:'Purchase Confirmation',icon:'check',desc:'Thank you + next steps',body:'**Thank You for Your Purchase!**\n\nYour access is ready. Log in to start your healing journey right away.\n\n[Access My Sessions](https://fusionsessions.quantumphysician.com/dashboard)'},
+{name:'Getting Started',icon:'play',desc:'Tips for new members',body:'**Getting Started Tips**\n\n1. Find a quiet, comfortable space\n2. Use headphones for the best experience\n3. Keep a journal nearby for reflections\n4. Be patient with yourself — healing takes time\n\n[Go to My Dashboard](https://fusionsessions.quantumphysician.com/dashboard)'},
+{name:'Session Product',icon:'image',desc:'Session card with image',body:'{{session_image:session-02}}\n\n**Session 2: Anxiety & Overwhelm**\n\nRelease the patterns of anxiety and overwhelm that keep you stuck. This powerful BodyTalk session helps restore calm and clarity.\n\n[Learn More](https://fusionsessions.quantumphysician.com/#sessions)'},
+{name:'Bundle Product',icon:'image',desc:'Bundle card with image',body:'{{session_image:session-01}}\n\n**Complete Fusion Bundle — All 12 Sessions**\n\nGet the full transformational experience. All 12 healing sessions plus bonus community access.\n\n[View Bundle](https://fusionsessions.quantumphysician.com/#bundle)'}
+];
+
+/* ---------- Card Library SVG helper ---------- */
+function clSvg(name,color){
+  var c=color||'currentColor',s='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="'+c+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">';
+  var paths={share:'<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>',users:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',calendar:'<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',quote:'<path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V21z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3z"/>',zap:'<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',book:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>',qr:'<rect x="2" y="2" width="8" height="8" rx="1"/><rect x="14" y="2" width="8" height="8" rx="1"/><rect x="2" y="14" width="8" height="8" rx="1"/><rect x="14" y="14" width="4" height="4"/>',check:'<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',play:'<polygon points="5 3 19 12 5 21 5 3"/>',image:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>'};
+  return s+(paths[name]||paths.zap)+'</svg>';
+}
+
+/* ---------- Drag helpers (shared names with popup) ---------- */
+var sgDragFrom=null;
+function sgStartDrag(e){sgDragFrom=parseInt(e.target.closest('[data-idx]').getAttribute('data-idx'));e.dataTransfer.effectAllowed='move'}
+function sgOverDrag(e){e.preventDefault();e.currentTarget.style.borderColor='var(--teal)'}
+function sgLeaveDrag(e){e.currentTarget.style.borderColor='var(--border)'}
+function sgCardLabel(text){var l=text.trim().split('\n')[0].replace(/[*#_\[\]>]/g,'').trim();return l.length>28?l.substring(0,28)+'…':l}
+
+/* ---------- Auto Preview (debounced) ---------- */
+var _ecPreviewTimer=null;
+function ecAutoPreview(){
+  ecUpdateSectionControls();
+  clearTimeout(_ecPreviewTimer);
+  _ecPreviewTimer=setTimeout(function(){ecPreview();ecUpdateSectionControls()},800);
+}
+
+/* ---------- Section Controls (card pills) ---------- */
+function ecUpdateSectionControls(){
+  var textarea=document.getElementById('email-body');
+  var ctrl=document.getElementById('ec-section-controls');
+  if(!textarea||!ctrl)return;
+  var parts=textarea.value.split('\n---\n');
+  if(parts.length<2){ctrl.style.display='none';return}
+  ctrl.style.display='block';
+  var pills=document.getElementById('ec-card-pills');
+  if(!pills)return;
+  var h='';
+  for(var i=1;i<parts.length;i++){
+    var label=sgCardLabel(parts[i]);
+    h+='<div draggable="true" data-idx="'+i+'" ondragstart="sgStartDrag(event)" ondragover="sgOverDrag(event)" ondragleave="sgLeaveDrag(event)" ondrop="ecDropCard(event)" style="display:inline-flex;align-items:center;gap:4px;background:var(--navy-card);border:1px solid var(--border);border-radius:8px;padding:4px 8px 4px 10px;font-size:11px;color:var(--text);cursor:grab;user-select:none;transition:border-color .2s"><span style="opacity:.4;font-size:10px;margin-right:2px">\u2630</span>'+label+'<button onclick="ecDeleteCard('+i+')" style="background:none;border:none;color:var(--text-dim);cursor:pointer;padding:0 0 0 4px;font-size:14px;line-height:1;opacity:.5" onmouseover="this.style.opacity=1;this.style.color=\'#ff4d6a\'" onmouseout="this.style.opacity=.5;this.style.color=\'var(--text-dim)\'" title="Remove card">&times;</button></div>';
+  }
+  pills.innerHTML=h;
+}
+
+/* ---------- Delete / Drop card ---------- */
+function ecDeleteCard(idx){
+  var textarea=document.getElementById('email-body');if(!textarea)return;
+  var parts=textarea.value.split('\n---\n');
+  if(idx<1||idx>=parts.length)return;
+  parts.splice(idx,1);
+  textarea.value=parts.join('\n---\n');
+  ecAutoPreview();showToast('Card removed','success');
+}
+function ecDropCard(e){
+  e.preventDefault();
+  e.currentTarget.style.borderColor='var(--border)';
+  var to=parseInt(e.currentTarget.getAttribute('data-idx'));
+  if(sgDragFrom===null||sgDragFrom===to)return;
+  var textarea=document.getElementById('email-body');if(!textarea)return;
+  var parts=textarea.value.split('\n---\n');
+  var cards=parts.slice(1);
+  var moved=cards.splice(sgDragFrom-1,1)[0];
+  cards.splice(to-1,0,moved);
+  textarea.value=parts[0]+'\n---\n'+cards.join('\n---\n');
+  sgDragFrom=null;
+  ecAutoPreview();showToast('Cards reordered','success');
+}
+
+/* ---------- Build HTML for preview ---------- */
+function ecGetBrand(){
+  var sel=document.getElementById('email-brand-select');
+  return sel?sel.value:'fusion';
+}
+function ecBuildHtml(bodyText){
+  var brand=ecGetBrand();
+  var discCfg=null;
+  var discTog=document.getElementById('discount-toggle');
+  if(discTog&&discTog.checked){
+    var code=(document.getElementById('discount-promo-select')||{}).value||(document.getElementById('discount-promo-custom')||{}).value;
+    if(code){
+      var promo=promotionsData.find(function(p){return p.coupon_id===code});
+      if(promo)discCfg={couponId:code,percent:promo.discount_percent||0,product:promo.applies_to||'any'};
+    }
+  }
+  var siteUrl=brand==='academy'?'https://academy.quantumphysician.com':'https://fusionsessions.com';
+  var html;
+  try{
+    html=brand==='academy'?buildAcademyEmail(bodyText,null,siteUrl,discCfg):buildRichEmail(bodyText,null,siteUrl,discCfg);
+  }catch(ex){html='<pre>'+bodyText+'</pre>'}
+  /* Safety-net image token replacement */
+  html=html.replace(/\{\{session_image:([^}]+)\}\}/g,function(_,sid){
+    var img=typeof FUSION_IMAGES!=='undefined'&&FUSION_IMAGES[sid];
+    if(!img)return '';
+    return '<img src="'+img+'" width="350" height="250" alt="Fusion Sessions" style="display:block;margin:10px auto 15px;border-radius:12px;max-width:100%;">';
+  });
+  return html;
+}
+
+/* ---------- Live Inline Preview ---------- */
+function ecPreview(){
+  var subject=(document.getElementById('email-subject')||{}).value||'';
+  var body=(document.getElementById('email-body')||{}).value||'';
+  var from=(document.getElementById('email-from')||{}).value||'';
+  if(!body)return;
+  var pb=body.replace(/\{\{name\}\}/g,'Friend').replace(/\{\{email\}\}/g,'preview@example.com').replace(/\{\{referral_code\}\}/g,'XXXXXX');
+  try{
+    var richHtml=ecBuildHtml(pb);
+    richHtml=richHtml.replace(/REFCODE/g,'XXXXXX');
+    var area=document.getElementById('ec-preview-area');
+    if(!area)return;
+    area.innerHTML='<div style="border-top:2px solid rgba(91,168,178,.3);padding-top:14px"><div style="font-size:12px;color:var(--text-muted);margin-bottom:8px"><strong>From:</strong> '+esc(from)+' &nbsp; <strong>Subject:</strong> <span style="color:var(--teal)">'+esc(subject||'(no subject)')+'</span> <button class="btn btn-ghost btn-sm" style="font-size:10px;margin-left:8px" onclick="document.getElementById(\'ec-preview-area\').innerHTML=\'\'">Close Preview</button></div><iframe id="ec-preview-iframe" style="width:100%;min-height:500px;border:none;border-radius:8px;background:#1a1a2e"></iframe></div>';
+    var fr=document.getElementById('ec-preview-iframe');
+    var iDoc=fr.contentDocument||fr.contentWindow.document;
+    iDoc.open();iDoc.write(richHtml);iDoc.close();
+    setTimeout(function(){try{fr.style.height=Math.max(500,iDoc.body.scrollHeight+20)+'px'}catch(e){}},400);
+  }catch(ex){console.error('ecPreview error:',ex)}
+}
+
+/* ---------- Card Library Panel ---------- */
+function ecOpenCardLibrary(){
+  var existing=document.getElementById('ec-card-library-panel');
+  if(existing){existing.remove();return}
+  var panel=document.createElement('div');
+  panel.id='ec-card-library-panel';
+  panel.style.cssText='background:var(--navy-deep,#071825);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px;';
+  var h='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><span style="font-size:13px;font-weight:600;color:var(--text)">Card Library</span><button class="btn btn-ghost btn-sm" style="font-size:11px;padding:2px 8px" onclick="document.getElementById(\'ec-card-library-panel\').remove()">Close</button></div>';
+  h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px">';
+  cardLibraryTemplates.forEach(function(card,i){
+    var iconSvg=clSvg(card.icon,'var(--teal)');
+    h+='<div onclick="ecInsertLibraryCard('+i+')" style="cursor:pointer;background:var(--navy-card);border:1px solid var(--border);border-radius:10px;padding:12px;transition:all .2s;display:flex;flex-direction:column;gap:6px" onmouseover="this.style.borderColor=\'var(--teal)\';this.style.transform=\'translateY(-1px)\'" onmouseout="this.style.borderColor=\'var(--border)\';this.style.transform=\'none\'">';
+    h+='<div style="display:flex;align-items:center;gap:6px"><span style="width:24px;height:24px;display:flex;align-items:center;justify-content:center;background:rgba(91,168,178,.12);border-radius:6px">'+iconSvg+'</span><span style="font-size:12px;font-weight:600;color:var(--text)">'+card.name+'</span></div>';
+    h+='<span style="font-size:11px;color:var(--text-dim);line-height:1.3">'+card.desc+'</span>';
+    h+='</div>';
+  });
+  h+='</div>';
+  panel.innerHTML=h;
+  var slot=document.getElementById('ec-card-library-slot');
+  if(slot)slot.appendChild(panel);
+}
+
+/* ---------- Insert Library Card ---------- */
+function ecInsertLibraryCard(index){
+  var card=cardLibraryTemplates[index];if(!card)return;
+  var textarea=document.getElementById('email-body');if(!textarea)return;
+  var body=textarea.value.trimEnd();
+  textarea.value=body+'\n---\n'+card.body;
+  textarea.scrollTop=textarea.scrollHeight;
+  ecAutoPreview();showToast('Added: '+card.name,'success');
+}
+
+/* ---------- Enhanced Merge Tag Insert (cursor position) ---------- */
+var _origInsertEmailVar=typeof insertEmailVar==='function'?insertEmailVar:null;
+function insertEmailVar(v){
+  var ta=document.getElementById('email-body');if(!ta)return;
+  var s=ta.selectionStart,e=ta.selectionEnd,t=ta.value;
+  ta.value=t.substring(0,s)+v+t.substring(e);
+  ta.focus();ta.selectionStart=ta.selectionEnd=s+v.length;
+  ecAutoPreview();
+}
+
+/* ---------- Enhanced Discount Insert (auto-strip old) ---------- */
+var _origInsertDiscountBlock=typeof insertDiscountBlock==='function'?insertDiscountBlock:null;
+function insertDiscountBlock(){
+  var code=(document.getElementById('discount-promo-select')||{}).value||(document.getElementById('discount-promo-custom')||{}).value;
+  if(!code){showToast('Select or enter a promo code first','error');return}
+  var promo=promotionsData.find(function(p){return p.coupon_id===code});
+  var discLabel=code;
+  if(promo){
+    if(promo.discount_type==='percent')discLabel=(promo.discount_percent||0)+'% off';
+    else if(promo.discount_type==='fixed')discLabel='$'+(promo.discount_fixed||0)+' off';
+    else if(promo.discount_type==='set_price')discLabel='Only $'+(promo.discount_set_price||0);
+  }
+  var textarea=document.getElementById('email-body');if(!textarea)return;
+  var body=textarea.value;
+  var parts=body.split('\n---\n');
+  var kept=[parts[0]];var removed=false;
+  for(var i=1;i<parts.length;i++){
+    if(!removed&&parts[i].match(/Limited Time:/i)){removed=true}else{kept.push(parts[i])}
+  }
+  body=kept.join('\n---\n');
+  var discSection='\n---\n**Limited Time: '+discLabel+'**\n\nYour code: **'+code+'**\nYour discount applies automatically at checkout';
+  textarea.value=body.trimEnd()+discSection;
+  textarea.scrollTop=textarea.scrollHeight;
+  ecAutoPreview();showToast('Discount card added: '+code,'success');
+}
+
+/* ---------- Send Test Email ---------- */
+async function ecSendTestEmail(){
+  var subject=(document.getElementById('email-subject')||{}).value;
+  var body=(document.getElementById('email-body')||{}).value;
+  var from=(document.getElementById('email-from')||{}).value;
+  if(!subject||!body){showToast('Subject and body required','error');return}
+  var testEmail=prompt('Send test email to:',currentAdmin?currentAdmin.email:'');
+  if(!testEmail)return;
+  showToast('Sending test...','info');
+  try{
+    var pb=body.replace(/\{\{name\}\}/g,'Test User').replace(/\{\{email\}\}/g,testEmail).replace(/\{\{referral_code\}\}/g,'TESTCODE');
+    var richToggle=document.getElementById('rich-email-toggle');
+    var htmlBody=null;
+    if(richToggle&&richToggle.checked){
+      try{htmlBody=ecBuildHtml(pb)}catch(ex){htmlBody=null}
+    }
+    var res=await adminProxy({type:'insert',table:'email_log',data:{
+      to_email:testEmail,from_email:from,subject:'[TEST] '+subject,
+      body:htmlBody||pb,status:'pending',email_type:'test',
+      created_at:new Date().toISOString()
+    }});
+    /* Actually send via the send-email function if available */
+    try{
+      var sendRes=await fetch('/.netlify/functions/send-email',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+currentSession.access_token},
+        body:JSON.stringify({to:testEmail,from:from,subject:'[TEST] '+subject,html:htmlBody||pb,text:pb})
+      });
+      if(sendRes.ok){showToast('Test email sent to '+testEmail,'success')}
+      else{showToast('Logged but send may have failed — check email','warning')}
+    }catch(sendErr){showToast('Logged to email_log — send function unavailable','warning')}
+  }catch(err){showToast('Error: '+err.message,'error')}
+}

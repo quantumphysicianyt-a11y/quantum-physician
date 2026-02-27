@@ -151,8 +151,8 @@
 <!-- From Address -->
 <div class="form-group" style="margin-bottom:16px"><label>From Address</label>
 <select class="input" id="email-from">
-<option value="hello@quantumphysician.com"><template class="__cf_email__" data-cfemail="48202d24242708393d29263c3d253820313b212b212926662b2725">[email&#160;protected]</template> (Marketing)</option>
-<option value="tracey@quantumphysician.com"><template class="__cf_email__" data-cfemail="98eceaf9fbfde1d8e9edf9f6ecedf5e8f0e1ebf1fbf1f9f6b6fbf7f5">[email&#160;protected]</template> (Personal)</option>
+<option value="hello@quantumphysician.com">hello@quantumphysician.com (Marketing)</option>
+<option value="tracey@quantumphysician.com">tracey@quantumphysician.com (Personal)</option>
 </select></div>
 
 <!-- Email Type -->
@@ -210,16 +210,26 @@
 <button class="btn btn-ghost btn-sm" type="button" onclick="insertEmailVar('{{email}}')">Email</button>
 <button class="btn btn-ghost btn-sm" type="button" onclick="insertEmailVar('{{referral_code}}')">Referral Code</button>
 </div>
-<textarea class="input" id="email-body" placeholder="Write your email message here...&#10;&#10;Use {{name}} to personalize with recipient's name.&#10;Use {{referral_code}} to include their referral code." rows="10"></textarea></div>
+<textarea class="input" id="email-body" placeholder="Write your email message here...&#10;&#10;Use {{name}} to personalize with recipient's name.&#10;Use {{referral_code}} to include their referral code." rows="10" oninput="ecAutoPreview()"></textarea>
+<div id="ec-section-controls" style="display:none;margin-top:8px;margin-bottom:8px"><div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">Cards <span style="opacity:.5">(drag to reorder)</span></div><div id="ec-card-pills" style="display:flex;flex-wrap:wrap;gap:6px"></div></div>
+</div>
 
 <!-- Actions -->
 <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
 <button class="btn btn-ghost" onclick="previewEmail()">Preview</button>
+<button class="btn btn-ghost" onclick="ecSendTestEmail()" style="border-color:var(--warning);color:var(--warning)">Send Test</button>
 <button class="btn btn-primary" onclick="prepareToSend()" id="send-btn">Send to <span id="send-count">0</span> Recipients</button>
 </div>
 
 
 
+
+<!-- Card Library Button -->
+<div style="margin-bottom:16px;padding-top:12px;border-top:1px solid var(--border)"><button class="btn btn-sm" style="background:linear-gradient(135deg,var(--purple),#8338ec);color:#fff;font-weight:600;letter-spacing:.5px;border:none" onclick="ecOpenCardLibrary()">CARD LIBRARY</button><span style="font-size:11px;color:var(--text-dim);margin-left:8px">Pre-built card blocks to add to your email</span></div>
+<div id="ec-card-library-slot"></div>
+
+<!-- Live Preview -->
+<div id="ec-preview-area" style="margin-bottom:16px"></div>
 
 <!-- Send Progress Log -->
 <div id="email-log" style="display:none;margin-bottom:16px">
@@ -534,7 +544,7 @@
 <div class="card"><div class="card-header"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Activity Log</div><div style="display:flex;gap:8px"><select class="input" style="width:160px" id="audit-filter" onchange="loadAuditLog()"><option value="all">All Actions</option><option value="grant_access">Grant Access</option><option value="revoke_access">Revoke Access</option><option value="block_user">Block/Unblock</option><option value="adjust_credit">Credit Adjust</option><option value="set_credit">Credit Set</option><option value="create_referral">Create Referral</option><option value="enroll_student">Enroll</option><option value="unenroll_student">Unenroll</option><option value="reset_password">Reset Password</option><option value="reset_progress">Reset Progress</option><option value="delete_account">Archive Account</option><option value="revoke_all">Revoke All</option><option value="add_note">Add Note</option><option value="delete_note">Delete Note</option><option value="bulk_enroll">Bulk Enroll</option><option value="send_email">Send Email</option><option value="create_promo">Create Promo</option><option value="update_promo">Update Promo</option><option value="delete_promo">Delete Promo</option><option value="assign_mod">Assign Mod</option><option value="remove_mod">Remove Mod</option><option value="add_admin">Add Admin</option><option value="edit_admin">Edit Admin</option><option value="login_as">Login As</option></select><div class="ac-wrap" style="position:relative;display:inline-block"><input type="text" class="input" style="width:200px" id="audit-search" placeholder="Search by email..." autocomplete="off" oninput="handleAuditAC()" onkeydown="handleAuditKeydown(event)"><div class="ac-dropdown" id="audit-ac"></div></div></form><button class="btn btn-ghost btn-sm" onclick="loadAuditLog()">Refresh</button></div></div><div class="card-body"><div id="audit-log-content"><div class="loading-center"><div class="spinner"></div>Loading...</div></div><div class="pagination" id="audit-pagination"></div></div></div></div>
 
 </div></div>
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="admin.js"></script>
 
 </body>
