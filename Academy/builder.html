@@ -2584,12 +2584,22 @@ function collectLandingPageData() {
 // ============================================================
 async function generateDemoCourse() {
   // Check if it already exists
-  const existing = allCourses.find(c => c.slug === 'mastering-qa-backend');
+  const existing = allCourses.find(c => c.title === 'Mastering Your Quantum Academy Backend');
   if (existing) {
-    if (!await qpConfirm('Demo Course Exists', 'The demo course "Mastering Your QA Backend" already exists. Select it instead?', {okText: 'Open It'})) return;
-    selectedCourseId = existing.id;
-    await loadCourses();
-    return;
+    if (existing.total_lessons === 0 || !existing.total_lessons) {
+      // Incomplete demo — offer to delete and regenerate
+      if (!await qpConfirm('Incomplete Demo Course', 'A demo course exists but has no lessons (likely from a failed generation). Delete it and regenerate?', {okText: 'Delete & Regenerate', danger: true})) return;
+      // Delete orphaned course
+      await proxyFrom('qa_lessons').delete().eq('course_id', existing.id);
+      await proxyFrom('qa_modules').delete().eq('course_id', existing.id);
+      await proxyFrom('qa_courses').delete().eq('id', existing.id);
+      await loadCourses();
+    } else {
+      if (!await qpConfirm('Demo Course Exists', 'The demo course already exists with ' + existing.total_lessons + ' lessons. Select it instead?', {okText: 'Open It'})) return;
+      selectedCourseId = existing.id;
+      await loadCourses();
+      return;
+    }
   }
   if (!await qpConfirm('Generate Demo Course', 'This will create a full 4-module, 17-lesson demo course with quizzes, assignments, and landing page content.\n\nIt takes about 10 seconds.', {okText: 'Generate'})) return;
 
@@ -2619,7 +2629,7 @@ async function generateDemoCourse() {
     // CREATE COURSE
     const cRes = await proxyFrom('qa_courses').insert({
       title: 'Mastering Your Quantum Academy Backend',
-      slug: 'mastering-qa-backend',
+      slug: 'mastering-qa-backend-'+Date.now().toString(36),
       subtitle: 'A hands-on guide to building, managing, and optimizing your online courses',
       description: 'Learn everything about running your Quantum Academy — from creating courses to managing students, payments, and analytics.\n\nThis walks you through the Course Builder, Admin Panel, student dashboard, email system, and more.',
       short_description: JSON.stringify({
@@ -2638,16 +2648,19 @@ async function generateDemoCourse() {
       total_modules: 4, total_lessons: 17, total_duration_minutes: 132,
     }).select('*');
     if (cRes.error) throw new Error(cRes.error.message);
+    if (!cRes.data || !cRes.data[0]) throw new Error('Course creation failed — check if slug already exists in database');
     const courseId = cRes.data[0].id;
 
     // Helper
     async function addMod(title, desc, order, reqPrev) {
       const r = await proxyFrom('qa_modules').insert({course_id:courseId,title,description:desc,sort_order:order,require_previous:reqPrev}).select('*');
+      if (!r.data || !r.data[0]) throw new Error('Module creation failed: ' + title);
       return r.data[0].id;
     }
     async function addLes(modId, data) {
       data.module_id = modId; data.course_id = courseId;
-      await proxyFrom('qa_lessons').insert(data);
+      const r = await proxyFrom('qa_lessons').insert(data);
+      if (r.error) throw new Error('Lesson failed: ' + (data.title || '') + ' - ' + r.error.message);
     }
     function quizJson(type, questions) { return JSON.stringify({quiz_type:type,questions}); }
 

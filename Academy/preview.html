@@ -13,10 +13,34 @@
   --taupe:#c4ad94;--gold:#d4a853;--warn:#f0b429;--danger:#ef5350;--success:#3dd68c;--pink:#ff5e94;
 }
 body.light{
-  --bg:#f5f3ef;--bg-card:#ffffff;--text:rgba(15,25,40,.9);--text-muted:rgba(15,25,40,.6);
-  --text-dim:rgba(15,25,40,.35);--border:rgba(91,168,178,.18);--teal:#3a9aa5;--purple:#7c5cbf;
-  --taupe:#8a7560;--gold:#b8912e;
+  --bg:#f4f1ec;--bg-card:#ffffff;--text:#1a2332;--text-muted:#3d4f63;
+  --text-dim:#7a8a9e;--border:rgba(26,35,50,.1);--teal:#2a8f9a;--purple:#6b46b0;
+  --taupe:#6b5a48;--gold:#a07d2e;
 }
+body.light .hero-img{box-shadow:0 4px 20px rgba(0,0,0,.08)}
+body.light .card,body.light .mod,body.light .faq,body.light .qq{box-shadow:0 1px 4px rgba(0,0,0,.04)}
+body.light .learn-item:nth-child(odd){background:rgba(42,143,154,.06);border-left-color:rgba(42,143,154,.4)}
+body.light .learn-item:nth-child(even){background:rgba(107,70,176,.05);border-left-color:rgba(107,70,176,.3)}
+body.light .lv-content-card{background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.05)}
+body.light .lv-tip.tip-info{background:rgba(42,143,154,.06);border-color:rgba(42,143,154,.2)}
+body.light .lv-tip.tip-warn{background:rgba(240,180,41,.06);border-color:rgba(240,180,41,.25)}
+body.light .lv-tip.tip-success{background:rgba(34,160,100,.06);border-color:rgba(34,160,100,.2)}
+body.light .lv-takeaway{background:rgba(34,160,100,.05);border-color:rgba(34,160,100,.15)}
+body.light .badge{color:#a07d2e;background:rgba(160,125,46,.08);border-color:rgba(160,125,46,.2)}
+body.light .badge.published{color:#1a8a5a;background:rgba(26,138,90,.08);border-color:rgba(26,138,90,.2)}
+body.light .price-big{color:var(--teal)}
+body.light .progress-fill{background:linear-gradient(90deg,var(--teal),#35b8c5)}
+body.light .btn-teal{background:linear-gradient(135deg,#2a8f9a,#35b8c5)}
+body.light .btn-ghost{border-color:rgba(26,35,50,.12);color:var(--text-muted)}
+body.light .btn-ghost:hover{border-color:var(--teal);color:var(--teal)}
+body.light .bar{background:#fff;border-bottom-color:rgba(26,35,50,.08)}
+body.light .les:hover{background:rgba(42,143,154,.04)}
+body.light .mod-h:hover{background:rgba(42,143,154,.02)}
+body.light .faq-q:hover{background:rgba(42,143,154,.02)}
+body.light .cb-box{border-color:rgba(42,143,154,.3)}
+body.light .qo{border-color:rgba(26,35,50,.08);background:rgba(26,35,50,.015)}
+body.light .qo.right{background:rgba(34,160,100,.06);border-color:rgba(34,160,100,.2);color:#1a6b40}
+body.light hr{border-top-color:rgba(26,35,50,.08)!important}
 body{font-family:Inter,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;transition:background .3s,color .3s}
 h1,h2{font-family:'Playfair Display',serif}
 a{color:var(--teal);text-decoration:none}
@@ -25,8 +49,8 @@ a{color:var(--teal);text-decoration:none}
 .bar{background:var(--bg-card);border-bottom:1px solid var(--border);padding:8px 24px;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--purple);position:sticky;top:0;z-index:50;transition:background .3s}
 .bar b{text-transform:uppercase;letter-spacing:.05em}
 .bar a{margin-left:auto;color:var(--teal);font-weight:600}
-.bar .mode-toggle{margin-left:12px;background:none;border:1px solid var(--border);color:var(--text-dim);cursor:pointer;padding:4px 10px;border-radius:6px;font-size:11px;font-family:inherit;font-weight:600;transition:all .15s}
-.bar .mode-toggle:hover{border-color:var(--teal);color:var(--teal)}
+.bar .mode-toggle{margin-left:12px;background:none;border:1px solid var(--border);color:var(--text-dim);cursor:pointer;width:36px;height:36px;border-radius:50%;font-size:16px;display:flex;align-items:center;justify-content:center;padding:0;transition:all .15s;line-height:1}
+.bar .mode-toggle:hover{border-color:var(--teal);color:var(--teal);background:rgba(91,184,194,.05)}
 
 /* Shared */
 .container{max-width:900px;margin:0 auto;padding:0 24px}
@@ -268,7 +292,7 @@ a{color:var(--teal);text-decoration:none}
 </style>
 </head>
 <body>
-<div class="bar"><b>Admin Preview</b><span style="color:var(--text-dim)">— Student view</span><a href="javascript:history.back()">← Builder</a><button class="mode-toggle" onclick="toggleMode()">☀ Light</button></div>
+<div class="bar"><b>Admin Preview</b><span style="color:var(--text-dim)">— Student view</span><a href="javascript:history.back()">← Builder</a><button class="mode-toggle" onclick="toggleMode()" title="Toggle light/dark mode">☀️</button></div>
 
 <div id="landing"><div class="loading"><div class="spin"></div>Loading…</div></div>
 <div id="lessonView"></div>
@@ -286,11 +310,10 @@ function icon(t){return IC[t]||IC.text}
 function toggleMode(){
   document.body.classList.toggle('light');
   const btn=document.querySelector('.mode-toggle');
-  btn.textContent=document.body.classList.contains('light')?'🌙 Dark':'☀ Light';
+  btn.textContent=document.body.classList.contains('light')?'🌙':'☀️';
   localStorage.setItem('qp_preview_mode',document.body.classList.contains('light')?'light':'dark');
 }
-// Restore saved mode
-if(localStorage.getItem('qp_preview_mode')==='light'){document.body.classList.add('light');document.querySelector('.mode-toggle').textContent='🌙 Dark'}
+if(localStorage.getItem('qp_preview_mode')==='light'){document.body.classList.add('light');document.querySelector('.mode-toggle').textContent='🌙'}
 
 let ALL_LESSONS=[], ALL_MODS=[], COURSE=null;
 
