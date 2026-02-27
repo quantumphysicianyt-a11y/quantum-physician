@@ -2482,7 +2482,14 @@ function ecBuildHtml(bodyText){
     if(mp)discCfg={couponId:dm[1],percent:mp.discount_percent||0,product:mp.applies_to||'any'}}
   }
   var siteUrl=brand==='academy'?'https://academy.quantumphysician.com':'https://fusionsessions.com';
-  return brand==='academy'?buildAcademyEmail(bodyText,null,siteUrl,discCfg):buildRichEmail(bodyText,null,siteUrl,discCfg);
+  var html=brand==='academy'?buildAcademyEmail(bodyText,null,siteUrl,discCfg):buildRichEmail(bodyText,null,siteUrl,discCfg);
+  /* Safety: replace any remaining session_image tokens that buildRichEmail might have missed */
+  html=html.replace(/\{\{session_image:([^}]+)\}\}/g,function(_,sid){
+    var img=typeof FUSION_IMAGES!=='undefined'&&FUSION_IMAGES[sid];
+    if(!img)return '';
+    return '<img src="'+img+'" width="350" height="250" alt="Fusion Sessions" style="display:block;margin:10px auto 15px;border-radius:12px;max-width:100%;">';
+  });
+  return html;
 }
 
 function ecPreview(){
@@ -2556,7 +2563,3 @@ function ecInsertDiscountBlock(){
   textarea.scrollTop=textarea.scrollHeight;
   ecAutoPreview();showToast('Discount card added: '+code,'success');
 }
-
-/* Also update the existing previewEmail to use live preview */
-var _origPreviewEmail=typeof previewEmail==='function'?previewEmail:null;
-function previewEmail(){ecPreview()}
