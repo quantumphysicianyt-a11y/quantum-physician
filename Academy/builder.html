@@ -2586,13 +2586,16 @@ async function generateDemoCourse() {
   // Check if it already exists
   const existing = allCourses.find(c => c.title === 'Mastering Your Quantum Academy Backend');
   if (existing) {
-    if (existing.total_lessons === 0 || !existing.total_lessons) {
-      // Incomplete demo — offer to delete and regenerate
-      if (!await qpConfirm('Incomplete Demo Course', 'A demo course exists but has no lessons (likely from a failed generation). Delete it and regenerate?', {okText: 'Delete & Regenerate', danger: true})) return;
-      // Delete orphaned course
-      await proxyFrom('qa_lessons').delete().eq('course_id', existing.id);
-      await proxyFrom('qa_modules').delete().eq('course_id', existing.id);
-      await proxyFrom('qa_courses').delete().eq('id', existing.id);
+    if ((existing.total_lessons || 0) < 10) {
+      // Incomplete or empty demo — offer to delete and regenerate
+      if (!await qpConfirm('Incomplete Demo Course', 'A demo course exists but appears incomplete (' + (existing.total_lessons||0) + ' lessons). Delete it and regenerate fresh?', {okText: 'Delete & Regenerate', danger: true})) return;
+      console.log('Deleting orphaned demo course:', existing.id, existing.slug);
+      const d1 = await proxyFrom('qa_lessons').delete().eq('course_id', existing.id);
+      console.log('Deleted lessons:', d1);
+      const d2 = await proxyFrom('qa_modules').delete().eq('course_id', existing.id);
+      console.log('Deleted modules:', d2);
+      const d3 = await proxyFrom('qa_courses').delete().eq('id', existing.id);
+      console.log('Deleted course:', d3);
       await loadCourses();
     } else {
       if (!await qpConfirm('Demo Course Exists', 'The demo course already exists with ' + existing.total_lessons + ' lessons. Select it instead?', {okText: 'Open It'})) return;
@@ -2647,9 +2650,11 @@ async function generateDemoCourse() {
       meta_description: 'Learn to build courses, manage students, and grow your education business.',
       total_modules: 4, total_lessons: 17, total_duration_minutes: 132,
     }).select('*');
+    console.log('Course insert result:', JSON.stringify(cRes).substring(0,200));
     if (cRes.error) throw new Error(cRes.error.message);
-    if (!cRes.data || !cRes.data[0]) throw new Error('Course creation failed — check if slug already exists in database');
+    if (!cRes.data || !cRes.data[0]) throw new Error('Course creation failed — server returned no data. Check console for details.');
     const courseId = cRes.data[0].id;
+    console.log('Course created:', courseId);
 
     // Helper
     async function addMod(title, desc, order, reqPrev) {
