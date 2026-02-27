@@ -210,16 +210,7 @@
 <button class="btn btn-ghost btn-sm" type="button" onclick="insertEmailVar('{{email}}')">Email</button>
 <button class="btn btn-ghost btn-sm" type="button" onclick="insertEmailVar('{{referral_code}}')">Referral Code</button>
 </div>
-<textarea class="input" id="email-body" placeholder="Write your email message here...&#10;&#10;Use {{name}} to personalize with recipient's name.&#10;Use {{referral_code}} to include their referral code." rows="10" oninput="ecAutoPreview()"></textarea>
-<div id="ec-section-controls" style="display:none;margin-top:8px;margin-bottom:8px"><div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">Cards <span style="opacity:.5">(drag to reorder)</span></div><div id="ec-card-pills" style="display:flex;flex-wrap:wrap;gap:6px"></div></div>
-</div>
-
-<!-- Card Library Button -->
-<div style="margin-bottom:16px;padding-top:12px;border-top:1px solid var(--border)"><button class="btn btn-sm" style="background:linear-gradient(135deg,var(--purple),#8338ec);color:#fff;font-weight:600;letter-spacing:.5px;border:none" onclick="ecOpenCardLibrary()">CARD LIBRARY</button><span style="font-size:11px;color:var(--text-dim);margin-left:8px">Pre-built card blocks to add to your email</span></div>
-<div id="ec-card-library-slot"></div>
-
-<!-- Live Preview -->
-<div id="ec-preview-area" style="margin-bottom:16px"></div>
+<textarea class="input" id="email-body" placeholder="Write your email message here...&#10;&#10;Use {{name}} to personalize with recipient's name.&#10;Use {{referral_code}} to include their referral code." rows="10"></textarea></div>
 
 <!-- Actions -->
 <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
