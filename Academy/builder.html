@@ -724,7 +724,7 @@ function proxyFrom(table) {
       return {
         select(s) { sel = s; return this; },
         then(resolve, reject) {
-          return adminProxy({type:'insert', table:t, data:rows, select: sel !== '*' ? sel : undefined})
+          return adminProxy({type:'insert', table:t, data:rows, select: sel || '*'})
             .then(r => ({data:r.data, error:null}))
             .then(resolve, e => resolve ? resolve({data:null, error:{message:e.message}}) : reject ? reject(e) : null);
         }
