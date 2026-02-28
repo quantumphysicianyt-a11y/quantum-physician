@@ -304,7 +304,7 @@ function _reRestoreSelection(inst){
 }
 
 function _reSync(inst){
-  if(inst.sourceMode)return;
+  if(inst.sourceMode||inst._syncing)return;
   var editor=inst.el;
   var textarea=inst.textarea;
   if(!editor||!textarea)return;
@@ -334,6 +334,7 @@ function _reTextareaToRich(inst){
   var textarea=inst.textarea;
   var editor=inst.el;
   if(!editor||!textarea)return;
+  inst._syncing=true;
   var md=textarea.value;
   var h=md;
   h=h.replace(/\n---\n/g,'<hr>');
@@ -346,6 +347,7 @@ function _reTextareaToRich(inst){
   h=h.replace(/\{\{session_image:([^}]+)\}\}/g,'<span style="display:inline-block;background:rgba(131,56,236,.15);color:var(--purple);padding:4px 10px;border-radius:6px;font-size:11px;border:1px dashed var(--purple)">\ud83d\udcf7 $1</span>');
   h=h.replace(/\n/g,'<br>');
   editor.innerHTML=h;
+  inst._syncing=false;
 }
 
 function _reAction(inst,action){
@@ -597,9 +599,16 @@ async function _reInsertCTA(inst,key){
     ta.value=t.substring(0,s)+md+t.substring(e);
     ta.focus();ta.selectionStart=ta.selectionEnd=s+md.length;
   }else{
-    /* Append CTA link at end of editor */
-    var link='<a href="'+cta.url+'" style="color:var(--purple);font-weight:600">'+(typeof esc==='function'?esc(cta.label):cta.label)+'</a>';
-    inst.el.innerHTML=inst.el.innerHTML+'<p>'+link+'</p>';
+    /* Insert as markdown link into textarea at cursor, then re-render */
+    var md='['+cta.label+']('+cta.url+')';
+    var ta=inst.textarea;
+    var body=ta.value.trimEnd();
+    ta.value=body+(body?'\n\n':'')+md;
+    /* Update rich editor without triggering input loop */
+    var oldOnInput=inst._onInput;
+    inst._onInput=null;
+    _reTextareaToRich(inst);
+    inst._onInput=oldOnInput;
   }
   _reSync(inst);
   showToast('CTA inserted','success');
