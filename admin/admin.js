@@ -2670,19 +2670,10 @@ async function ecDoSendTest(overlay){
     if(richToggle&&richToggle.checked){
       try{htmlBody=ecBuildHtml(pb)}catch(ex){htmlBody=null}
     }
-    var sendRes=await fetch('/.netlify/functions/send-email',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+(sessionStorage.getItem('qp_admin_token')||'')},
-      body:JSON.stringify({to:testEmail,from:from,subject:'[TEST] '+subject,html:htmlBody||pb,text:pb})
-    });
-    if(sendRes.ok){
-      showToast('Test email sent to '+testEmail,'success');
-      overlay.remove();
-    }else{
-      var errData=await sendRes.json().catch(function(){return{}});
-      showToast('Send failed: '+(errData.error||sendRes.status),'error');
-      btn.disabled=false;btn.textContent='Send Test';
-    }
+    var sendPayload={to:testEmail,from:from,subject:'[TEST] '+subject,body:htmlBody||pb,isHtml:!!htmlBody};
+    await fetch(APPS_SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify(sendPayload)});
+    showToast('Test email sent to '+testEmail,'success');
+    overlay.remove();
   }catch(err){
     showToast('Error: '+err.message,'error');
     btn.disabled=false;btn.textContent='Send Test';
