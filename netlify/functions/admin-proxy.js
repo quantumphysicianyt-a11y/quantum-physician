@@ -5,7 +5,9 @@ const ALLOWED_TABLES = [
   "admin_audit_log", "admin_notes", "admin_users",
   "email_campaigns", "email_log", "email_tracking", "profiles",
   "promotions", "purchases", "qa_enrollments", "qa_profiles",
-  "referral_codes", "qa_bundles", "qa_bundle_courses", "qa_courses", "qa_lessons", "qa_modules", "scheduled_emails", "session_schedule"
+  "referral_codes", "qa_bundles", "qa_bundle_courses", "qa_courses", "qa_lessons", "qa_modules", "scheduled_emails", "session_schedule",
+  "session_config", "session_cycles", "session_availability",
+  "session_clients", "session_bookings", "session_waitlist"
 ];
 
 const WRITABLE_TABLES = [...ALLOWED_TABLES];
