@@ -151,8 +151,8 @@
 <!-- From Address -->
 <div class="form-group" style="margin-bottom:16px"><label>From Address</label>
 <select class="input" id="email-from">
-<option value="hello@quantumphysician.com"><template class="__cf_email__" data-cfemail="39515c55555679484c58574d4c544951404a505a505857175a5654">[email&#160;protected]</template> (Marketing)</option>
-<option value="tracey@quantumphysician.com"><template class="__cf_email__" data-cfemail="0a7e786b696f734a7b7f6b647e7f677a6273796369636b6424696567">[email&#160;protected]</template> (Personal)</option>
+<option value="hello@quantumphysician.com">hello@quantumphysician.com (Marketing)</option>
+<option value="tracey@quantumphysician.com">tracey@quantumphysician.com (Personal)</option>
 </select></div>
 
 <!-- Email Type -->
@@ -219,8 +219,93 @@
 <button class="btn btn-ghost btn-sm" type="button" onclick="ecInsertCTA('community')" style="font-size:10px;border-color:var(--taupe);color:var(--taupe)">Join Community</button>
 <button class="btn btn-ghost btn-sm" type="button" onclick="ecInsertCTA('custom')" style="font-size:10px">Custom CTA...</button>
 </div>
-<div id="ec-editor-mount"></div>
-<textarea class="input" id="email-body" style="display:none"></textarea>
+<div id="ec-editor-toolbar" style="display:flex;flex-wrap:wrap;gap:3px;padding:6px 8px;background:var(--navy-deep,#071825);border:1px solid var(--border);border-bottom:none;border-radius:var(--radius-sm) var(--radius-sm) 0 0;align-items:center">
+<!-- Undo/Redo -->
+<button type="button" onclick="ecExec('undo')" class="ec-tb-btn" title="Undo">↩</button>
+<button type="button" onclick="ecExec('redo')" class="ec-tb-btn" title="Redo">↪</button>
+<div class="ec-tb-sep"></div>
+<!-- Heading -->
+<select id="ec-tb-heading" onchange="ecHeading(this.value)" style="background:var(--navy-card);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:3px 4px;font-size:11px;width:70px;cursor:pointer">
+<option value="p">Normal</option>
+<option value="h1">H1</option>
+<option value="h2">H2</option>
+<option value="h3">H3</option>
+</select>
+<!-- Font Family -->
+<select id="ec-tb-font" onchange="ecExec('fontName',this.value)" style="background:var(--navy-card);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:3px 4px;font-size:11px;width:85px;cursor:pointer">
+<option value="Arial">Arial</option>
+<option value="Georgia">Georgia</option>
+<option value="Playfair Display">Playfair</option>
+<option value="Courier New">Courier</option>
+<option value="Verdana">Verdana</option>
+<option value="Trebuchet MS">Trebuchet</option>
+</select>
+<!-- Font Size -->
+<select id="ec-tb-size" onchange="ecExec('fontSize',this.value)" style="background:var(--navy-card);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:3px 4px;font-size:11px;width:44px;cursor:pointer">
+<option value="1">XS</option>
+<option value="2">S</option>
+<option value="3" selected>M</option>
+<option value="4">L</option>
+<option value="5">XL</option>
+<option value="6">2X</option>
+</select>
+<div class="ec-tb-sep"></div>
+<!-- Bold / Italic / Underline / Strike -->
+<button type="button" onclick="ecExec('bold')" class="ec-tb-btn" title="Bold"><b>B</b></button>
+<button type="button" onclick="ecExec('italic')" class="ec-tb-btn" title="Italic"><i>I</i></button>
+<button type="button" onclick="ecExec('underline')" class="ec-tb-btn" title="Underline"><u>U</u></button>
+<button type="button" onclick="ecExec('strikeThrough')" class="ec-tb-btn" title="Strikethrough"><s>S</s></button>
+<div class="ec-tb-sep"></div>
+<!-- Text Color & Highlight -->
+<label title="Text Color" class="ec-tb-color-wrap">
+<span class="ec-tb-btn" id="ec-tb-color-preview" style="font-weight:700">A</span>
+<input type="color" id="ec-tb-color" value="#00f5ff" onchange="ecExec('foreColor',this.value);document.getElementById('ec-tb-color-preview').style.color=this.value" style="position:absolute;opacity:0;width:0;height:0;pointer-events:none">
+</label>
+<label title="Highlight" class="ec-tb-color-wrap">
+<span class="ec-tb-btn" style="font-size:11px;position:relative">H<span id="ec-tb-hl-bar" style="position:absolute;bottom:2px;left:4px;right:4px;height:3px;background:#ffff00;border-radius:2px"></span></span>
+<input type="color" id="ec-tb-highlight" value="#ffff00" onchange="ecExec('hiliteColor',this.value);document.getElementById('ec-tb-hl-bar').style.background=this.value" style="position:absolute;opacity:0;width:0;height:0;pointer-events:none">
+</label>
+<div class="ec-tb-sep"></div>
+<!-- Alignment -->
+<button type="button" onclick="ecExec('justifyLeft')" class="ec-tb-btn ec-tb-align" title="Left">
+<svg width="14" height="14" viewBox="0 0 14 14"><rect x="1" y="2" width="12" height="1.5" rx=".5" fill="currentColor"/><rect x="1" y="5.5" width="8" height="1.5" rx=".5" fill="currentColor"/><rect x="1" y="9" width="10" height="1.5" rx=".5" fill="currentColor"/></svg>
+</button>
+<button type="button" onclick="ecExec('justifyCenter')" class="ec-tb-btn ec-tb-align" title="Center">
+<svg width="14" height="14" viewBox="0 0 14 14"><rect x="1" y="2" width="12" height="1.5" rx=".5" fill="currentColor"/><rect x="3" y="5.5" width="8" height="1.5" rx=".5" fill="currentColor"/><rect x="2" y="9" width="10" height="1.5" rx=".5" fill="currentColor"/></svg>
+</button>
+<button type="button" onclick="ecExec('justifyRight')" class="ec-tb-btn ec-tb-align" title="Right">
+<svg width="14" height="14" viewBox="0 0 14 14"><rect x="1" y="2" width="12" height="1.5" rx=".5" fill="currentColor"/><rect x="5" y="5.5" width="8" height="1.5" rx=".5" fill="currentColor"/><rect x="3" y="9" width="10" height="1.5" rx=".5" fill="currentColor"/></svg>
+</button>
+<div class="ec-tb-sep"></div>
+<!-- Lists -->
+<button type="button" onclick="ecExec('insertUnorderedList')" class="ec-tb-btn" title="Bullet List">&bull;</button>
+<button type="button" onclick="ecExec('insertOrderedList')" class="ec-tb-btn" title="Numbered">1.</button>
+<!-- Link -->
+<button type="button" onclick="ecInsertLink()" class="ec-tb-btn" title="Link" style="color:var(--purple)">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+</button>
+<!-- Divider -->
+<button type="button" onclick="ecInsertDivider()" class="ec-tb-btn" title="Card Divider" style="font-size:9px;letter-spacing:1px">—</button>
+<!-- MORE dropdown -->
+<div style="position:relative;margin-left:auto" id="ec-more-wrap">
+<button type="button" onclick="ecToggleMore()" class="ec-tb-btn" title="More tools" id="ec-more-btn" style="font-size:11px">More ▾</button>
+<div id="ec-more-dropdown" style="display:none;position:absolute;right:0;top:32px;background:var(--navy-card);border:1px solid var(--border);border-radius:10px;padding:6px;min-width:180px;z-index:99;box-shadow:0 8px 24px rgba(0,0,0,.4)">
+<button type="button" onclick="ecInsertImage()" class="ec-tb-dd">🖼 Insert Image</button>
+<button type="button" onclick="ecInsertEmoji()" class="ec-tb-dd">😊 Emoji</button>
+<button type="button" onclick="ecInsertBlockquote()" class="ec-tb-dd">❝ Blockquote</button>
+<button type="button" onclick="ecInsertTable()" class="ec-tb-dd">▦ Insert Table</button>
+<button type="button" onclick="ecExec('indent')" class="ec-tb-dd">→ Indent</button>
+<button type="button" onclick="ecExec('outdent')" class="ec-tb-dd">← Outdent</button>
+<button type="button" onclick="ecLineSpacing()" class="ec-tb-dd">↕ Line Spacing</button>
+<button type="button" onclick="ecExec('removeFormat')" class="ec-tb-dd">✕ Clear Formatting</button>
+<div style="border-top:1px solid var(--border);margin:4px 0"></div>
+<button type="button" onclick="ecToggleSource();ecToggleMore()" class="ec-tb-dd" id="ec-more-source">{ } Source Code</button>
+</div>
+</div>
+</div>
+<div id="ec-editor-rich"<div id="ec-editor-rich" contenteditable="true" style="min-height:200px;max-height:400px;overflow-y:auto;padding:14px;background:var(--navy-card);border:1px solid var(--border);border-radius:0 0 var(--radius-sm) var(--radius-sm);color:var(--text);font-size:14px;line-height:1.6;outline:none" oninput="ecRichSync()" onpaste="setTimeout(ecRichSync,50)"></div>
+<textarea class="input" id="email-body" placeholder="Write your email message here..." rows="10" oninput="ecAutoPreview()" style="display:none"></textarea>
+<div id="ec-section-controls" style="display:none;margin-top:8px;margin-bottom:8px"><div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">Cards <span style="opacity:.5">(drag to reorder)</span></div><div id="ec-card-pills" style="display:flex;flex-wrap:wrap;gap:6px"></div></div>
 </div>
 
 <!-- Actions -->
@@ -235,7 +320,7 @@
 
 <!-- Card Library Button -->
 <div style="margin-bottom:16px;padding-top:12px;border-top:1px solid var(--border)"><button class="btn btn-sm" style="background:linear-gradient(135deg,var(--purple),#8338ec);color:#fff;font-weight:600;letter-spacing:.5px;border:none" onclick="ecOpenCardLibrary()">CARD LIBRARY</button><span style="font-size:11px;color:var(--text-dim);margin-left:8px">Pre-built card blocks to add to your email</span></div>
-
+<div id="ec-card-library-slot"></div>
 
 <!-- Live Preview -->
 <div id="ec-preview-area" style="margin-bottom:16px"></div>
@@ -550,4 +635,11 @@
 
 <div class="page" id="page-audit">
 <div class="stats-grid" id="audit-stats"></div>
-<div class="card"><div class="card-header"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Activity Log</div><div style="display:flex;gap:8px"><select class="input" style="width:160px" id="audit-filter" onchange="loadAuditLog()"><option value="all">All Actions</option><option value="grant_access">Grant Access</option><option value="revoke_access">Revoke Access</option><option value="block_user">Block/Unblock</option><option value="adjust_credit">Credit Adjust</option><option value="set_credit">Credit Set</option><option value="create_referral">Create Referral</option><option value="enroll_student">Enroll</option><option value="unenroll_student">Unenroll</option><option value="reset_password">Reset Password</option><option value="reset_progress">Reset Progress</option><option value="delete_account">Archive Account</option><option value="revoke_all">Revoke All</option><option value="add_note">Add Note</option><option value="delete_note">Delete Note</option><option value="bulk_enroll">Bulk Enroll</option><option value="send_email">Send Email</option><option value="create_promo">Create Promo</option><option value="update_promo">Update Promo</option><option value="delete_promo">Delete Promo</option><option value="assign_mod">Assign Mod</option><option value="remove_mod">Remove Mod</option><option value="add_admin">Add Admin</option><option value="edit_admin">Edit Admin</option><option value="login_as">Login As</option></select><div class="ac-wrap" style="position:relative;display:inline-block"><input type="text" class="input" style="width:200px" id="audit-search" placeholder="Search by email..." autocomplete="off" oninput="handleAuditAC()" onkeydown="handleAuditKeydown(event)"><div class="ac-dropdown" id="audit-ac"></div></div></form><button class="btn btn-ghost btn-sm" onclick="loadAuditLog()">Refresh</button></div></div><div class="card-body"><div id="audit-log-content"><div class="loading-center"><div class="spinner"></div>Loading...</div><
+<div class="card"><div class="card-header"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Activity Log</div><div style="display:flex;gap:8px"><select class="input" style="width:160px" id="audit-filter" onchange="loadAuditLog()"><option value="all">All Actions</option><option value="grant_access">Grant Access</option><option value="revoke_access">Revoke Access</option><option value="block_user">Block/Unblock</option><option value="adjust_credit">Credit Adjust</option><option value="set_credit">Credit Set</option><option value="create_referral">Create Referral</option><option value="enroll_student">Enroll</option><option value="unenroll_student">Unenroll</option><option value="reset_password">Reset Password</option><option value="reset_progress">Reset Progress</option><option value="delete_account">Archive Account</option><option value="revoke_all">Revoke All</option><option value="add_note">Add Note</option><option value="delete_note">Delete Note</option><option value="bulk_enroll">Bulk Enroll</option><option value="send_email">Send Email</option><option value="create_promo">Create Promo</option><option value="update_promo">Update Promo</option><option value="delete_promo">Delete Promo</option><option value="assign_mod">Assign Mod</option><option value="remove_mod">Remove Mod</option><option value="add_admin">Add Admin</option><option value="edit_admin">Edit Admin</option><option value="login_as">Login As</option></select><div class="ac-wrap" style="position:relative;display:inline-block"><input type="text" class="input" style="width:200px" id="audit-search" placeholder="Search by email..." autocomplete="off" oninput="handleAuditAC()" onkeydown="handleAuditKeydown(event)"><div class="ac-dropdown" id="audit-ac"></div></div></form><button class="btn btn-ghost btn-sm" onclick="loadAuditLog()">Refresh</button></div></div><div class="card-body"><div id="audit-log-content"><div class="loading-center"><div class="spinner"></div>Loading...</div></div><div class="pagination" id="audit-pagination"></div></div></div></div>
+
+</div></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="admin.js"></script>
+
+</body>
+</html>
