@@ -1030,13 +1030,8 @@ function buildRichEmail(bodyText,trackingId,siteUrl,discountConfig){
 var trackBase=siteUrl+'/.netlify/functions/email-track';
 var wrapLink=function(url){return trackingId?trackBase+'?action=click&tid='+trackingId+'&url='+encodeURIComponent(url):url};
 var traceyImg='https://fusionsessions.com/dr-tracey-clark.jpg';
-/* Strip emojis */
-var cleanBody=bodyText
-.replace(/[\u{1F600}-\u{1F64F}]/gu,'').replace(/[\u{1F300}-\u{1F5FF}]/gu,'')
-.replace(/[\u{1F680}-\u{1F6FF}]/gu,'').replace(/[\u{2600}-\u{26FF}]/gu,'')
-.replace(/[\u{2700}-\u{27BF}]/gu,'').replace(/[\u{1F900}-\u{1F9FF}]/gu,'')
-.replace(/[\u{FE00}-\u{FE0F}]/gu,'').replace(/[\u{1F1E0}-\u{1F1FF}]/gu,'')
-.replace(/  +/g,' ');
+/* Preserve emojis — they render fine in modern email clients */
+var cleanBody=bodyText;
 /* Split at --- divider */
 var parts=cleanBody.split(/\n---\n/);
 var mainBody=parts[0].trim();
@@ -1044,14 +1039,20 @@ var discountBody=parts[1]?parts[1].trim():'';
 /* Strip signature block */
 mainBody=mainBody.replace(/\n\n(With warmth,|With healing energy,|With gratitude,)\n.*$/s,'');
 /* Remove raw URLs */
-mainBody=mainBody.replace(/\n.*https?:\/\/[^\s]*/g,'');
-mainBody=mainBody.replace(/^.*https?:\/\/[^\s]*/gm,'');
+/* Convert markdown links FIRST — before any URL stripping */
+mainBody=mainBody.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'%%LINK%%<a href="$2" style="color:#8338ec;text-decoration:underline;">$1</a>%%/LINK%%');
+/* Now safely strip raw URLs (but not our converted links) */
+mainBody=mainBody.replace(/\n(?!.*%%LINK%%).*https?:\/\/[^\s]*/g,'');
+mainBody=mainBody.replace(/^(?!.*%%LINK%%).*https?:\/\/[^\s]*/gm,'');
 mainBody=mainBody.replace(/\n(Your link|Share your link|Claim your|Share it|Your share link|Visit the community|Our community|Join the conversation)[^\n]*/gi,'');
 mainBody=mainBody.replace(/\n- /g,'\n\u2022 ').replace(/^- /gm,'\u2022 ');
+/* Convert blockquotes: > text → styled blockquote */
+mainBody=mainBody.replace(/(?:^|\n)> ([^\n]+)/g,'\n<blockquote style="border-left:3px solid #5ba8b2;padding:8px 14px;margin:8px 0;background:rgba(91,168,178,.08);border-radius:0 6px 6px 0;color:#8899aa;font-style:italic;">$1</blockquote>');
 /* Markdown to HTML */
 var mainHtml=mainBody
-.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" style="color:#8338ec;text-decoration:underline;">$1</a>')
+.replace(/%%\/?LINK%%/g,'')
 .replace(/\*\*([^*]+)\*\*/g,'<strong style="color:#00f5ff;">$1</strong>')
+.replace(/__([^_]+)__/g,'<u>$1</u>')
 .replace(/~~([^~]+)~~/g,'<span style="text-decoration:line-through;color:#ff4466;">$1</span>')
 .replace(/\n/g,'<br>').replace(/(<br>){3,}/g,'<br><br>').replace(/^(<br>)+/,'').replace(/(<br>)+$/,'');
 /* Session image tokens: {{session_image:session-XX}} */
@@ -1128,21 +1129,22 @@ var trackBase='https://fusionsessions.com/.netlify/functions/email-track';
 var wrapLink=function(url){return trackingId?trackBase+'?action=click&tid='+trackingId+'&url='+encodeURIComponent(url):url};
 var traceyImg='https://qp-homepage.netlify.app/assets/images/tracey-about-me.png';
 var logoImg='https://qp-homepage.netlify.app/assets/images/QuantumPhysAcad_STACKED-RGB.png';
-var cleanBody=bodyText
-.replace(/[\u{1F600}-\u{1F64F}]/gu,'').replace(/[\u{1F300}-\u{1F5FF}]/gu,'')
-.replace(/[\u{1F680}-\u{1F6FF}]/gu,'').replace(/[\u{2600}-\u{26FF}]/gu,'')
-.replace(/[\u{2700}-\u{27BF}]/gu,'').replace(/[\u{1F900}-\u{1F9FF}]/gu,'')
-.replace(/[\u{FE00}-\u{FE0F}]/gu,'').replace(/[\u{1F1E0}-\u{1F1FF}]/gu,'')
-.replace(/  +/g,' ');
+/* Preserve emojis */
+var cleanBody=bodyText;
 var parts=cleanBody.split(/\n---\n/);
 var mainBody=parts[0].trim();
 var discountBody=parts[1]?parts[1].trim():'';
 mainBody=mainBody.replace(/\n\n(With warmth,|With healing energy,|With gratitude,)\n.*$/s,'');
-mainBody=mainBody.replace(/\n.*https?:\/\/[^\s]*/g,'');
-mainBody=mainBody.replace(/^.*https?:\/\/[^\s]*/gm,'');
+/* Convert markdown links FIRST */
+mainBody=mainBody.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'%%LINK%%<a href="$2" style="color:#5ba8b2;text-decoration:underline;">$1</a>%%/LINK%%');
+mainBody=mainBody.replace(/\n(?!.*%%LINK%%).*https?:\/\/[^\s]*/g,'');
+mainBody=mainBody.replace(/^(?!.*%%LINK%%).*https?:\/\/[^\s]*/gm,'');
 mainBody=mainBody.replace(/\n- /g,'\n\u2022 ').replace(/^- /gm,'\u2022 ');
+mainBody=mainBody.replace(/(?:^|\n)> ([^\n]+)/g,'\n<blockquote style="border-left:3px solid #5ba8b2;padding:8px 14px;margin:8px 0;background:rgba(91,168,178,.06);border-radius:0 6px 6px 0;color:#8899aa;font-style:italic;">$1</blockquote>');
 var mainHtml=mainBody
+.replace(/%%\/?LINK%%/g,'')
 .replace(/\*\*([^*]+)\*\*/g,'<strong style="color:#5ba8b2;">$1</strong>')
+.replace(/__([^_]+)__/g,'<u>$1</u>')
 .replace(/~~([^~]+)~~/g,'<span style="text-decoration:line-through;color:#ad9b84;">$1</span>')
 .replace(/\n/g,'<br>').replace(/(<br>){3,}/g,'<br><br>').replace(/^(<br>)+/,'').replace(/(<br>)+$/,'');
 /* Discount card - academy styled */
@@ -2959,6 +2961,8 @@ function _reSync(id){
   md=md.replace(/<u[^>]*>(.*?)<\/u>/gi,'__$1__');
   md=md.replace(/<(s|strike|del)[^>]*>(.*?)<\/(s|strike|del)>/gi,'~~$2~~');
   md=md.replace(/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi,'[$2]($1)');
+  /* Blockquote → > prefix */
+  md=md.replace(/<blockquote[^>]*>(.*?)<\/blockquote>/gi,'\n> $1\n');
   md=md.replace(/<\/(div|p|h[1-6]|li)>/gi,'\n');
   md=md.replace(/<(div|p|h[1-6])[^>]*>/gi,'');
   md=md.replace(/<li[^>]*>/gi,'- ');
