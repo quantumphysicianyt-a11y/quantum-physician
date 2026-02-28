@@ -140,3 +140,27 @@ input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus
 .ec-emoji-btn:hover{background:rgba(91,168,178,.15)}
 .ec-tb-dd{display:block;width:100%;text-align:left;background:none;border:none;color:var(--text);cursor:pointer;padding:6px 10px;border-radius:6px;font-size:12px;transition:background .15s}
 .ec-tb-dd:hover{background:rgba(91,168,178,.12)}
+
+/* ============================================================================
+   SESSION 23 — 1-on-1 Sessions Calendar & Styles
+   Append to the end of admin.css
+   ============================================================================ */
+
+/* Calendar Grid */
+.sess-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.sess-cal-head{text-align:center;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);padding:8px 0}
+.sess-cal-empty{min-height:70px}
+.sess-cal-day{min-height:70px;border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 8px;cursor:pointer;transition:all .15s;position:relative;background:rgba(0,0,0,.05)}
+.sess-cal-day:hover{border-color:var(--teal);background:rgba(91,168,178,.04);transform:translateY(-1px)}
+.sess-cal-day.past{opacity:.45;pointer-events:none}
+.sess-cal-num{font-size:13px;font-weight:600;margin-bottom:2px}
+.sess-cal-dot{width:8px;height:8px;border-radius:50%;margin-top:2px}
+.sess-cal-time{font-size:9px;color:var(--text-dim);margin-top:2px}
+.sess-cal-books{font-size:9px;color:var(--teal);font-weight:600;margin-top:1px}
+
+@media(max-width:700px){
+  .sess-cal-grid{grid-template-columns:repeat(7,1fr);gap:2px}
+  .sess-cal-day{min-height:50px;padding:4px}
+  .sess-cal-num{font-size:11px}
+  .sess-cal-time,.sess-cal-books{font-size:8px}
+}

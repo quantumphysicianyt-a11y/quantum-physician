@@ -79,7 +79,7 @@ async function loadAllData(){try{var r=await Promise.all([sb.from('purchases').s
 async function loadAuthUsers(){try{var page=1,allUsers=[];while(true){var r=await authAdminAPI('list_users',{page:page,per_page:500});var data=r.data;var users=data.users||data||[];if(!Array.isArray(users)||!users.length)break;allUsers=allUsers.concat(users);if(users.length<500)break;page++}authUsersMap=new Map();allUsers.forEach(function(u){if(u.email)authUsersMap.set(u.email.toLowerCase(),u)})}catch(e){console.error('Auth users load error:',e)}}
 function buildCustomerList(){var map=new Map();profilesData.forEach(function(p){if(!p.email)return;var k=p.email.toLowerCase();map.set(k,{email:p.email,name:p.full_name||'',userId:p.id,hasAccount:true,isBlocked:p.is_blocked||false,createdAt:p.created_at,purchases:[],academyPurchases:[],fusionPurchases:[],hasBundle:false,hasAcademyBundle:false,creditBalance:0,referralCount:0,referralCode:'',totalEarned:0,totalSpent:0})});purchasesData.forEach(function(p){if(!p.email)return;var k=p.email.toLowerCase();if(!map.has(k))map.set(k,{email:p.email,name:'',userId:null,hasAccount:false,isBlocked:false,createdAt:p.purchased_at,purchases:[],academyPurchases:[],fusionPurchases:[],hasBundle:false,hasAcademyBundle:false,creditBalance:0,referralCount:0,referralCode:'',totalEarned:0,totalSpent:0});var c=map.get(k);if(!c.purchases.includes(p.product_id)){c.purchases.push(p.product_id);if(isFusion(p.product_id))c.fusionPurchases.push(p.product_id);if(isAcademy(p.product_id))c.academyPurchases.push(p.product_id)}if(p.product_id==='bundle-all')c.hasBundle=true;if(p.product_id==='transformational-mastery')c.hasAcademyBundle=true;c.totalSpent+=(Number(p.amount_paid)||0)});referralData.forEach(function(r){if(!r.email)return;var k=r.email.toLowerCase();if(!map.has(k))map.set(k,{email:r.email,name:'',userId:null,hasAccount:false,isBlocked:false,createdAt:null,purchases:[],academyPurchases:[],fusionPurchases:[],hasBundle:false,hasAcademyBundle:false,creditBalance:0,referralCount:0,referralCode:'',totalEarned:0,totalSpent:0});var c=map.get(k);c.creditBalance=Number(r.credit_balance)||0;c.referralCount=r.successful_referrals||0;c.referralCode=r.code||'';c.totalEarned=Number(r.total_earned)||0});allCustomers=Array.from(map.values())}
 async function initAdmin(){document.addEventListener('keydown',function(e){if(e.ctrlKey&&e.shiftKey&&e.key==='R'){e.preventDefault();webhookRecovery()}});await loadAllData();loadPageData('dashboard')}
-function loadPageData(page){if(!dataLoaded&&page!=='dashboard')return;switch(page){case'dashboard':loadDashboard();break;case'customers':loadCustomerBrowser();break;case'academy':loadAcademyData();break;case'fusion':loadFusionData();break;case'referrals':loadReferralData();break;case'community':loadCommunityData();break;case'email':loadEmailPage();break;case'automation':loadAutomationPage();break;case'promotions':loadPromotionsPage();break;case'orders':loadOrdersPage();break;case'audit':loadAuditLog();break;case'analytics':loadAnalyticsPage();break;case'admin-users':loadAdminUsers();break}}
+function loadPageData(page){if(!dataLoaded&&page!=='dashboard')return;switch(page){case'dashboard':loadDashboard();break;case'customers':loadCustomerBrowser();break;case'academy':loadAcademyData();break;case'fusion':loadFusionData();break;case'referrals':loadReferralData();break;case'community':loadCommunityData();break;case'email':loadEmailPage();break;case'automation':loadAutomationPage();break;case'promotions':loadPromotionsPage();break;case'orders':loadOrdersPage();break;case'audit':loadAuditLog();break;case'analytics':loadAnalyticsPage();break;case'admin-users':loadAdminUsers();break;case'sessions':loadSessionsData();break}}
 function getAdminNotes(email){return adminNotesData.filter(function(n){return n.target_email&&n.target_email.toLowerCase()===email.toLowerCase()})}
 async function saveAdminNote(email,text){try{await proxyFrom('admin_notes').insert({target_email:email.toLowerCase(),note_text:text});await logAudit('add_note',email,'Added note: '+text.substring(0,80));var r=await proxyFrom('admin_notes').select('*').order('created_at',{ascending:false});adminNotesData=r.data||[]}catch(e){showToast('Error saving note: '+e.message,'error')}}
 async function deleteAdminNote(email,id){try{await proxyFrom('admin_notes').delete().eq('id',id);await logAudit('delete_note',email,'Deleted a note');var r=await proxyFrom('admin_notes').select('*').order('created_at',{ascending:false});adminNotesData=r.data||[]}catch(e){showToast('Error deleting note: '+e.message,'error')}}
@@ -3392,4 +3392,712 @@ function loadTemplate(key){
   ecAutoPreview();
   document.getElementById('email-subject').scrollIntoView({behavior:'smooth',block:'center'});
   document.getElementById('email-subject').focus();
+}
+
+/* ============================================================================
+   SESSION 23 — 1-on-1 Sessions System
+   Append this entire block to the end of admin.js
+   ============================================================================ */
+
+/* ---------- State ---------- */
+var sessConfigData=null, sessCyclesData=[], sessAvailData=[], sessClientsData=[], sessBookingsData=[], sessWaitlistData=[];
+var sessAvailMonth=new Date().getMonth(), sessAvailYear=new Date().getFullYear();
+var sessBookPage=1, sessBookPS=20;
+
+/* ---------- Tab Switching ---------- */
+function switchSessTab(tab,btn){
+  document.querySelectorAll('#page-sessions .tab-content').forEach(function(t){t.classList.remove('active')});
+  document.getElementById('sess-tab-'+tab).classList.add('active');
+  btn.closest('.tab-nav').querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active')});
+  btn.classList.add('active');
+  if(tab==='availability') loadAvailabilityCalendar();
+  if(tab==='clients') renderClientRoster();
+  if(tab==='bookings') loadBookingsForCycle();
+  if(tab==='public') renderPublicWaitlist();
+}
+
+/* ---------- Data Loading ---------- */
+async function loadSessionsData(){
+  try{
+    var r=await Promise.all([
+      proxyFrom('session_config').select('*').limit(1),
+      proxyFrom('session_cycles').select('*').order('start_date',{ascending:false}),
+      proxyFrom('session_availability').select('*').order('date',{ascending:true}),
+      proxyFrom('session_clients').select('*').order('priority',{ascending:true}),
+      proxyFrom('session_bookings').select('*').order('date',{ascending:true}),
+      proxyFrom('session_waitlist').select('*').order('created_at',{ascending:true})
+    ]);
+    sessConfigData=(r[0].data&&r[0].data[0])||null;
+    sessCyclesData=r[1].data||[];
+    sessAvailData=r[2].data||[];
+    sessClientsData=r[3].data||[];
+    sessBookingsData=r[4].data||[];
+    sessWaitlistData=r[5].data||[];
+    renderSessionsStats();
+    renderCycleBanner();
+    renderCyclesList();
+    populateCycleDropdowns();
+  }catch(e){console.error('Sessions load error:',e);showToast('Error loading sessions: '+e.message,'error')}
+}
+
+/* ---------- Stats ---------- */
+function renderSessionsStats(){
+  var active=sessCyclesData.find(function(c){return c.status==='active'||c.status==='client_confirmation'||c.status==='public_open'});
+  var totalClients=sessClientsData.filter(function(c){return c.status==='active'}).length;
+  var totalBookings=sessBookingsData.filter(function(b){return b.status==='confirmed'||b.status==='proposed'}).length;
+  var waitlist=sessWaitlistData.filter(function(w){return w.status==='waiting'}).length;
+  var el=document.getElementById('sess-stats');
+  el.innerHTML='<div class="stat-card"><div class="stat-ico teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div><div class="stat-val">'+(active?active.name:'None')+'</div><div class="stat-lbl">Active Cycle</div></div></div>'
+  +'<div class="stat-card"><div class="stat-ico green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div><div class="stat-val">'+totalClients+'</div><div class="stat-lbl">Active Clients</div></div></div>'
+  +'<div class="stat-card"><div class="stat-ico purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div><div class="stat-val">'+totalBookings+'</div><div class="stat-lbl">Upcoming Bookings</div></div></div>'
+  +'<div class="stat-card"><div class="stat-ico warm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><div><div class="stat-val">'+waitlist+'</div><div class="stat-lbl">On Waitlist</div></div></div>';
+}
+
+/* ---------- Cycle Banner ---------- */
+function renderCycleBanner(){
+  var banner=document.getElementById('sess-cycle-banner');
+  var active=sessCyclesData.find(function(c){return c.status!=='completed'&&c.status!=='planning'});
+  if(!active) active=sessCyclesData.find(function(c){return c.status==='planning'});
+  if(!active){banner.style.display='none';return}
+  banner.style.display='block';
+  document.getElementById('sess-cycle-name-display').textContent=active.name;
+  document.getElementById('sess-cycle-dates').textContent=fmtDate(active.start_date)+' → '+fmtDate(active.end_date);
+  var statusColors={planning:'var(--text-dim)',client_confirmation:'var(--warning)',public_open:'var(--purple)',active:'var(--success)',completed:'var(--text-dim)'};
+  var statusLabels={planning:'Planning',client_confirmation:'Client Confirmation',public_open:'Public Booking Open',active:'Active',completed:'Completed'};
+  document.getElementById('sess-cycle-status-wrap').innerHTML='<span class="badge" style="background:'+statusColors[active.status]+'22;color:'+statusColors[active.status]+'">'+statusLabels[active.status]+'</span>'
+    +'<button class="btn btn-ghost btn-sm" onclick="advanceCycleStatus(\''+active.id+'\',\''+active.status+'\')">Advance →</button>';
+  var stages=['planning','client_confirmation','public_open','active','completed'];
+  var pipeHtml='';
+  stages.forEach(function(s,i){
+    var isCurrent=s===active.status;
+    var isPast=stages.indexOf(active.status)>i;
+    var color=isPast?'var(--success)':(isCurrent?statusColors[s]:'var(--border)');
+    pipeHtml+='<div style="flex:1;height:6px;border-radius:3px;background:'+color+';transition:background .3s" title="'+statusLabels[s]+'"></div>';
+  });
+  document.getElementById('sess-cycle-pipeline').innerHTML=pipeHtml;
+}
+
+/* ---------- Cycle Management ---------- */
+function renderCyclesList(){
+  var c=document.getElementById('sess-cycles-list');
+  if(!sessCyclesData.length){c.innerHTML='<div class="empty"><p>No cycles created yet. Create your first 4-month cycle above.</p></div>';return}
+  var statusLabels={planning:'Planning',client_confirmation:'Confirming',public_open:'Public Open',active:'Active',completed:'Completed'};
+  var statusColors={planning:'muted',client_confirmation:'yellow',public_open:'purple',active:'green',completed:'muted'};
+  c.innerHTML=sessCyclesData.map(function(cy){
+    var bookCount=sessBookingsData.filter(function(b){return b.cycle_id===cy.id}).length;
+    var confirmedCount=sessBookingsData.filter(function(b){return b.cycle_id===cy.id&&b.status==='confirmed'}).length;
+    var availCount=sessAvailData.filter(function(a){return a.cycle_id===cy.id&&a.status==='available'}).length;
+    return'<div style="padding:14px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px;background:rgba(0,0,0,.1)">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">'
+      +'<div><div style="font-weight:600;font-size:14px">'+esc(cy.name)+'</div>'
+      +'<div style="font-size:12px;color:var(--text-dim);margin-top:2px">'+fmtDate(cy.start_date)+' → '+fmtDate(cy.end_date)+'</div>'
+      +'<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap"><span class="badge '+statusColors[cy.status]+'">'+statusLabels[cy.status]+'</span>'
+      +'<span style="font-size:11px;color:var(--text-dim)">'+availCount+' avail days · '+bookCount+' bookings · '+confirmedCount+' confirmed</span></div></div>'
+      +'<div style="display:flex;gap:6px;flex-wrap:wrap">'
+      +(cy.status!=='completed'?'<button class="btn btn-ghost btn-sm" onclick="editCycle(\''+cy.id+'\')">Edit</button>'
+      +'<button class="btn btn-ghost btn-sm" onclick="advanceCycleStatus(\''+cy.id+'\',\''+cy.status+'\')">Advance →</button>':'')
+      +'<button class="btn btn-danger btn-sm" onclick="deleteCycle(\''+cy.id+'\',\''+esc(cy.name.replace(/'/g,"\\'"))+'\')">Delete</button>'
+      +'</div></div></div>';
+  }).join('');
+}
+
+async function createCycle(){
+  var name=document.getElementById('sess-cycle-name-input').value.trim();
+  var start=document.getElementById('sess-cycle-start').value;
+  var end=document.getElementById('sess-cycle-end').value;
+  if(!name||!start||!end){showToast('Fill in all cycle fields','error');return}
+  if(new Date(end)<=new Date(start)){showToast('End date must be after start date','error');return}
+  try{
+    var r=await proxyFrom('session_cycles').insert({name:name,start_date:start,end_date:end,status:'planning'}).select('*');
+    if(r.error) throw new Error(r.error.message);
+    await logAudit('create_cycle',null,'Created booking cycle: '+name,{start:start,end:end});
+    showToast('Cycle "'+name+'" created','success');
+    document.getElementById('sess-cycle-name-input').value='';
+    document.getElementById('sess-cycle-start').value='';
+    document.getElementById('sess-cycle-end').value='';
+    await loadSessionsData();
+  }catch(e){showToast('Error: '+e.message,'error')}
+}
+
+async function advanceCycleStatus(id,current){
+  var order=['planning','client_confirmation','public_open','active','completed'];
+  var idx=order.indexOf(current);
+  if(idx>=order.length-1){showToast('Cycle already completed','info');return}
+  var next=order[idx+1];
+  var labels={client_confirmation:'Client Confirmation',public_open:'Public Booking Open',active:'Active',completed:'Completed'};
+  if(!await qpConfirm('Advance Cycle','Move this cycle to "'+labels[next]+'"?',{okText:'Advance'}))return;
+  try{
+    var updates={status:next};
+    if(next==='client_confirmation') updates.client_confirmation_sent_at=new Date().toISOString();
+    if(next==='public_open') updates.public_opens_at=new Date().toISOString();
+    var r=await proxyFrom('session_cycles').update(updates).eq('id',id);
+    if(r.error) throw new Error(r.error.message);
+    await logAudit('advance_cycle',null,'Advanced cycle to '+next,{cycle_id:id});
+    showToast('Cycle advanced to '+labels[next],'success');
+    await loadSessionsData();
+  }catch(e){showToast('Error: '+e.message,'error')}
+}
+
+async function deleteCycle(id,name){
+  if(!await qpConfirm('Delete Cycle','Delete "'+name+'" and all its availability/bookings? This cannot be undone.',{okText:'Delete',danger:true}))return;
+  try{
+    await proxyFrom('session_bookings').delete().eq('cycle_id',id);
+    await proxyFrom('session_availability').delete().eq('cycle_id',id);
+    await proxyFrom('session_cycles').delete().eq('id',id);
+    await logAudit('delete_cycle',null,'Deleted cycle: '+name,{});
+    showToast('Cycle deleted','success');
+    await loadSessionsData();
+  }catch(e){showToast('Error: '+e.message,'error')}
+}
+
+async function editCycle(id){
+  var cy=sessCyclesData.find(function(c){return c.id===id});
+  if(!cy) return;
+  var name=prompt('Cycle name:',cy.name);
+  if(!name) return;
+  try{
+    await proxyFrom('session_cycles').update({name:name}).eq('id',id);
+    showToast('Cycle updated','success');
+    await loadSessionsData();
+  }catch(e){showToast('Error: '+e.message,'error')}
+}
+
+/* ---------- Cycle Dropdowns ---------- */
+function populateCycleDropdowns(){
+  var opts=sessCyclesData.map(function(c){return'<option value="'+c.id+'">'+esc(c.name)+' ('+c.status+')</option>'}).join('');
+  var noOpt='<option value="">Select cycle…</option>';
+  ['sess-avail-cycle','sess-book-cycle'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el){el.innerHTML=noOpt+opts;if(sessCyclesData.length)el.value=sessCyclesData[0].id}
+  });
+}
+
+/* ---------- Availability Calendar ---------- */
+function sessAvailPrevMonth(){sessAvailMonth--;if(sessAvailMonth<0){sessAvailMonth=11;sessAvailYear--}loadAvailabilityCalendar()}
+function sessAvailNextMonth(){sessAvailMonth++;if(sessAvailMonth>11){sessAvailMonth=0;sessAvailYear++}loadAvailabilityCalendar()}
+
+function loadAvailabilityCalendar(){
+  var months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('sess-avail-month-label').textContent=months[sessAvailMonth]+' '+sessAvailYear;
+  var cycleId=document.getElementById('sess-avail-cycle').value;
+  var cal=document.getElementById('sess-avail-calendar');
+  var year=sessAvailYear, month=sessAvailMonth;
+  var firstDay=new Date(year,month,1).getDay();
+  var daysInMonth=new Date(year,month+1,0).getDate();
+  var dayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var statusColors={available:'var(--success)',blocked:'var(--danger)',teaching:'var(--warning)',travel:'var(--teal)',personal:'var(--purple)'};
+
+  var html='<div class="sess-cal-grid">';
+  dayNames.forEach(function(d){html+='<div class="sess-cal-head">'+d+'</div>'});
+  for(var i=0;i<firstDay;i++) html+='<div class="sess-cal-empty"></div>';
+  for(var d=1;d<=daysInMonth;d++){
+    var dateStr=year+'-'+String(month+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    var avail=sessAvailData.find(function(a){return a.date===dateStr&&(!cycleId||a.cycle_id===cycleId)});
+    var status=avail?avail.status:'';
+    var color=status?statusColors[status]:'transparent';
+    var borderColor=status?color:'var(--border)';
+    var isPast=new Date(dateStr)<new Date(new Date().toDateString());
+    var bookCount=sessBookingsData.filter(function(b){return b.date===dateStr}).length;
+    html+='<div class="sess-cal-day'+(isPast?' past':'')+'" style="border-color:'+borderColor+'" onclick="toggleDayAvail(\''+dateStr+'\',\''+cycleId+'\')" title="'+(status||'No status')+'">'
+      +'<div class="sess-cal-num">'+d+'</div>'
+      +(status?'<div class="sess-cal-dot" style="background:'+color+'"></div>':'')
+      +(avail&&avail.start_time?'<div class="sess-cal-time">'+avail.start_time.slice(0,5)+'-'+avail.end_time.slice(0,5)+'</div>':'')
+      +(bookCount?'<div class="sess-cal-books">'+bookCount+' appt'+(bookCount>1?'s':'')+'</div>':'')
+      +'</div>';
+  }
+  html+='</div>';
+  cal.innerHTML=html;
+}
+
+async function toggleDayAvail(dateStr,cycleId){
+  if(!cycleId){showToast('Select a cycle first','error');return}
+  var existing=sessAvailData.find(function(a){return a.date===dateStr&&a.cycle_id===cycleId});
+  var statuses=['available','blocked','teaching','travel','personal'];
+  var labels=['✅ Available','🚫 Blocked','📚 Teaching','✈️ Travel','🔒 Personal','❌ Remove'];
+  var currentIdx=existing?statuses.indexOf(existing.status):-1;
+
+  // Build quick-select popup
+  var old=document.getElementById('sess-day-popup');if(old)old.remove();
+  var ov=document.createElement('div');ov.id='sess-day-popup';
+  ov.className='modal-overlay';
+  ov.onclick=function(e){if(e.target===ov)ov.remove()};
+  var box=document.createElement('div');
+  box.style.cssText='background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;max-width:320px;width:90%';
+  box.innerHTML='<div style="font-weight:600;margin-bottom:4px">'+new Date(dateStr+'T12:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})+'</div>'
+    +'<div style="font-size:12px;color:var(--text-dim);margin-bottom:14px">Set availability status:</div>'
+    +'<div style="display:flex;gap:6px;margin-bottom:14px"><label style="font-size:11px;color:var(--text-dim)">Start</label><input type="time" class="input" id="sess-day-start" value="'+(existing&&existing.start_time?existing.start_time.slice(0,5):'09:00')+'" style="width:120px">'
+    +'<label style="font-size:11px;color:var(--text-dim)">End</label><input type="time" class="input" id="sess-day-end" value="'+(existing&&existing.end_time?existing.end_time.slice(0,5):'17:00')+'" style="width:120px"></div>'
+    +'<div style="display:flex;gap:6px;margin-bottom:10px"><input type="text" class="input" id="sess-day-notes" placeholder="Notes (optional)" value="'+esc(existing&&existing.notes||'')+'"></div>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:6px">'+labels.map(function(l,i){
+      var isRemove=i===5;
+      return'<button class="btn '+(isRemove?'btn-danger':'btn-ghost')+' btn-sm" onclick="saveDayAvail(\''+dateStr+'\',\''+cycleId+'\','+(isRemove?'null':'\\''+statuses[i]+'\\'')+')">'+ l+'</button>';
+    }).join('')+'</div>';
+  ov.appendChild(box);document.body.appendChild(ov);
+}
+
+async function saveDayAvail(dateStr,cycleId,status){
+  var popup=document.getElementById('sess-day-popup');
+  var startTime=document.getElementById('sess-day-start')?document.getElementById('sess-day-start').value:'09:00';
+  var endTime=document.getElementById('sess-day-end')?document.getElementById('sess-day-end').value:'17:00';
+  var notes=document.getElementById('sess-day-notes')?document.getElementById('sess-day-notes').value:'';
+  if(popup)popup.remove();
+  try{
+    var existing=sessAvailData.find(function(a){return a.date===dateStr&&a.cycle_id===cycleId});
+    if(status===null||status==='null'){
+      if(existing){await proxyFrom('session_availability').delete().eq('id',existing.id)}
+    }else if(existing){
+      await proxyFrom('session_availability').update({status:status,start_time:startTime,end_time:endTime,notes:notes||null}).eq('id',existing.id);
+    }else{
+      await proxyFrom('session_availability').insert({cycle_id:cycleId,date:dateStr,start_time:startTime,end_time:endTime,status:status,notes:notes||null});
+    }
+    // Reload just availability
+    var r=await proxyFrom('session_availability').select('*').order('date',{ascending:true});
+    sessAvailData=r.data||[];
+    loadAvailabilityCalendar();
+    showToast(status?'Day set to '+status:'Day cleared','success');
+  }catch(e){showToast('Error: '+e.message,'error')}
+}
+
+/* ---------- Bulk Availability ---------- */
+document.addEventListener('change',function(e){
+  if(e.target&&e.target.id==='sess-bulk-target'){
+    document.getElementById('sess-bulk-range-wrap').style.display=e.target.value==='range'?'block':'none';
+  }
+});
+
+async function bulkAvailability(){
+  var cycleId=document.getElementById('sess-avail-cycle').value;
+  if(!cycleId){showToast('Select a cycle first','error');return}
+  var cycle=sessCyclesData.find(function(c){return c.id===cycleId});
+  if(!cycle){showToast('Cycle not found','error');return}
+  var action=document.getElementById('sess-bulk-action').value;
+  var target=document.getElementById('sess-bulk-target').value;
+  var startTime=document.getElementById('sess-bulk-start').value||'09:00';
+  var endTime=document.getElementById('sess-bulk-end').value||'17:00';
+  var notes=document.getElementById('sess-bulk-notes').value||null;
+
+  var startDate=new Date(cycle.start_date+'T12:00');
+  var endDate=new Date(cycle.end_date+'T12:00');
+  if(target==='range'){
+    var from=document.getElementById('sess-bulk-from').value;
+    var to=document.getElementById('sess-bulk-to').value;
+    if(!from||!to){showToast('Select date range','error');return}
+    startDate=new Date(from+'T12:00');
+    endDate=new Date(to+'T12:00');
+  }
+
+  var dayMap={'all-tue':2,'all-wed':3,'all-thu':4};
+  var targetDays=[];
+  if(target==='all-twt') targetDays=[2,3,4];
+  else if(dayMap[target]!==undefined) targetDays=[dayMap[target]];
+
+  var dates=[];
+  var d=new Date(startDate);
+  while(d<=endDate){
+    var dateStr=d.toISOString().slice(0,10);
+    if(target==='range'||targetDays.length===0||targetDays.indexOf(d.getDay())>=0){
+      dates.push(dateStr);
+    }
+    d.setDate(d.getDate()+1);
+  }
+
+  if(!dates.length){showToast('No matching dates found','error');return}
+  if(!await qpConfirm('Bulk Availability','Set '+dates.length+' days to "'+action+'" for this cycle?',{okText:'Apply'}))return;
+
+  try{
+    var rows=dates.map(function(dt){return{cycle_id:cycleId,date:dt,start_time:startTime,end_time:endTime,status:action,notes:notes}});
+    // Delete existing entries for these dates first
+    for(var i=0;i<dates.length;i++){
+      var ex=sessAvailData.find(function(a){return a.date===dates[i]&&a.cycle_id===cycleId});
+      if(ex) await proxyFrom('session_availability').delete().eq('id',ex.id);
+    }
+    // Batch insert in chunks of 50
+    for(var j=0;j<rows.length;j+=50){
+      await proxyFrom('session_availability').insert(rows.slice(j,j+50));
+    }
+    await logAudit('bulk_availability',null,'Set '+dates.length+' days to '+action,{cycle:cycle.name});
+    showToast(dates.length+' days updated','success');
+    var r=await proxyFrom('session_availability').select('*').order('date',{ascending:true});
+    sessAvailData=r.data||[];
+    loadAvailabilityCalendar();
+  }catch(e){showToast('Error: '+e.message,'error')}
+}
+
+async function importPrevCycleAvailability(){
+  var cycleId=document.getElementById('sess-avail-cycle').value;
+  if(!cycleId){showToast('Select a target cycle first','error');return}
+  var currentCycle=sessCyclesData.find(function(c){return c.id===cycleId});
+  var prevCycle=sessCyclesData.find(function(c){return c.id!==cycleId&&c.status!=='planning'});
+  if(!prevCycle){showToast('No previous cycle found to import from','error');return}
+  if(!await qpConfirm('Import Availability','Import availability from "'+prevCycle.name+'" into "'+currentCycle.name+'"? This will not overwrite existing entries.',{okText:'Import'}))return;
+  try{
+    var prevAvail=sessAvailData.filter(function(a){return a.cycle_id===prevCycle.id});
+    var existingDates=sessAvailData.filter(function(a){return a.cycle_id===cycleId}).map(function(a){return a.date});
+    // Calculate day offset between cycles
+    var dayOffset=Math.round((new Date(currentCycle.start_date)-new Date(prevCycle.start_date))/(1000*60*60*24));
+    var rows=[];
+    prevAvail.forEach(function(a){
+      var newDate=new Date(new Date(a.date+'T12:00').getTime()+dayOffset*24*60*60*1000);
+      var newDateStr=newDate.toISOString().slice(0,10);
+      if(newDateStr>=currentCycle.start_date&&newDateStr<=currentCycle.end_date&&existingDates.indexOf(newDateStr)<0){
+        rows.push({cycle_id:cycleId,date:newDateStr,start_time:a.start_time,end_time:a.end_time,status:a.status,notes:a.notes});
+      }
+    });
+    if(!rows.length){showToast('No new entries to import','info');return}
+    for(var j=0;j<rows.length;j+=50){
+      await proxyFrom('session_availability').insert(rows.slice(j,j+50));
+    }
+    showToast('Imported '+rows.length+' availability entries','success');
+    var r=await proxyFrom('session_availability').select('*').order('date',{ascending:true});
+    sessAvailData=r.data||[];
+    loadAvailabilityCalendar();
+  }catch(e){showToast('Error: '+e.message,'error')}
+}
+
+/* ---------- Client Roster ---------- */
+async function addSessionClient(){
+  var email=document.getElementById('sess-client-email').value.trim().toLowerCase();
+  var name=document.getElementById('sess-client-name').value.trim();
+  var freq=document.getElementById('sess-client-freq').value;
+  var day=document.getElementById('sess-client-day').value;
+  var time=document.getElementById('sess-client-time').value;
+  if(!email){showToast('Email is required','error');return}
+  try{
+    var prof=profilesData.find(function(p){return p.email&&p.email.toLowerCase()===email});
+    var r=await proxyFrom('session_clients').insert({
+      email:email,name:name||'',profile_id:prof?prof.id:null,
+      frequency:freq,preferred_day:day,preferred_time:time,
+      status:'active',priority:100,started_at:new Date().toISOString()
+    }).select('*');
+    if(r.error){
+      if(r.error.code==='23505'||r.error.message.indexOf('duplicate')>=0){showToast('Client already exists','error');return}
+      throw new Error(r.error.message);
+    }
+    await logAudit('add_session_client',email,'Added to session client roster',{frequency:freq,day:day});
+    showToast('Client added','success');
+    document.getElementById('sess-client-email').value='';
+    document.getElementById('sess-client-name').value='';
+    var rr=await proxyFrom('session_clients').select('*').order('priority',{ascending:true});
+    sessClientsData=rr.data||[];
+    renderClientRoster();
+    renderSessionsStats();
+  }catch(e){showToast('Error: '+e.message,'error')}
+}
+
+function renderClientRoster(){
+  var c=document.getElementById('sess-clients-list');
+  var filter=document.getElementById('sess-client-filter').value;
+  var clients=sessClientsData;
+  if(filter!=='all') clients=clients.filter(function(cl){return cl.status===filter});
+  if(!clients.length){c.innerHTML='<div class="empty"><p>No '+filter+' clients.</p></div>';return}
+  var freqLabels={weekly:'Weekly',biweekly:'Biweekly',monthly:'Monthly',every_2_months:'Every 2 Mo'};
+  var dayLabels={monday:'Mon',tuesday:'Tue',wednesday:'Wed',thursday:'Thu',friday:'Fri',saturday:'Sat',sunday:'Sun'};
+  c.innerHTML='<table class="tbl"><thead><tr><th>Email</th><th>Name</th><th>Frequency</th><th>Preferred</th><th>Status</th><th>Priority</th><th></th></tr></thead><tbody>'
+    +clients.map(function(cl){
+      var statusBadge=cl.status==='active'?'<span class="badge green">Active</span>':(cl.status==='paused'?'<span class="badge yellow">Paused</span>':'<span class="badge muted">'+cl.status+'</span>');
+      return'<tr><td class="email">'+esc(cl.email)+'</td><td class="name">'+esc(cl.name||'—')+'</td>'
+        +'<td>'+freqLabels[cl.frequency]+'</td>'
+        +'<td>'+(dayLabels[cl.preferred_day]||cl.preferred_day)+' '+cl.preferred_time.slice(0,5)+'</td>'
+        +'<td>'+statusBadge+'</td><td>'+cl.priority+'</td>'
+        +'<td><div style="display:flex;gap:4px">'
+        +(cl.status==='active'?'<button class="btn btn-ghost btn-sm" onclick="pauseClient(\''+cl.id+'\')">Pause</button>':'<button class="btn btn-success btn-sm" onclick="activateClient(\''+cl.id+'\')">Activate</button>')
+        +'<button class="btn btn-ghost btn-sm" onclick="editClient(\''+cl.id+'\')">Edit</button>'
+        +'<button class="btn btn-danger btn-sm" onclick="removeClient(\''+cl.id+'\',\''+esc(cl.email)+'\')">Remove</button>'
+        +'</div></td></tr>';
+    }).join('')+'</tbody></table>';
+}
+
+async function pauseClient(id){
+  try{await proxyFrom('session_clients').update({status:'paused'}).eq('id',id);showToast('Client paused','success');
+  var r=await proxyFrom('session_clients').select('*').order('priority',{ascending:true});sessClientsData=r.data||[];renderClientRoster();renderSessionsStats()}catch(e){showToast('Error: '+e.message,'error')}
+}
+async function activateClient(id){
+  try{await proxyFrom('session_clients').update({status:'active'}).eq('id',id);showToast('Client activated','success');
+  var r=await proxyFrom('session_clients').select('*').order('priority',{ascending:true});sessClientsData=r.data||[];renderClientRoster();renderSessionsStats()}catch(e){showToast('Error: '+e.message,'error')}
+}
+async function removeClient(id,email){
+  if(!await qpConfirm('Remove Client','Remove '+email+' from the recurring client roster?',{okText:'Remove',danger:true}))return;
+  try{await proxyFrom('session_clients').delete().eq('id',id);await logAudit('remove_session_client',email,'Removed from client roster');showToast('Client removed','success');
+  var r=await proxyFrom('session_clients').select('*').order('priority',{ascending:true});sessClientsData=r.data||[];renderClientRoster();renderSessionsStats()}catch(e){showToast('Error: '+e.message,'error')}
+}
+async function editClient(id){
+  var cl=sessClientsData.find(function(c){return c.id===id});if(!cl)return;
+  // Simple edit via prompts (can upgrade to modal later)
+  var freq=prompt('Frequency (weekly/biweekly/monthly/every_2_months):',cl.frequency);if(!freq)return;
+  var day=prompt('Preferred day (monday-friday):',cl.preferred_day);if(!day)return;
+  var time=prompt('Preferred time (HH:MM):',cl.preferred_time.slice(0,5));if(!time)return;
+  var priority=prompt('Priority (lower = higher priority):',cl.priority);
+  try{await proxyFrom('session_clients').update({frequency:freq,preferred_day:day,preferred_time:time,priority:parseInt(priority)||100}).eq('id',id);showToast('Client updated','success');
+  var r=await proxyFrom('session_clients').select('*').order('priority',{ascending:true});sessClientsData=r.data||[];renderClientRoster()}catch(e){showToast('Error: '+e.message,'error')}
+}
+
+/* ---------- Auto-Populate Engine ---------- */
+async function autoPopulate(){
+  var cycleId=document.getElementById('sess-book-cycle').value;
+  if(!cycleId){showToast('Select a cycle first','error');return}
+  var cycle=sessCyclesData.find(function(c){return c.id===cycleId});
+  if(!cycle){showToast('Cycle not found','error');return}
+  var activeClients=sessClientsData.filter(function(c){return c.status==='active'});
+  if(!activeClients.length){showToast('No active clients to populate','error');return}
+  var cycleAvail=sessAvailData.filter(function(a){return a.cycle_id===cycleId&&a.status==='available'});
+  if(!cycleAvail.length){showToast('No available days in this cycle. Set availability first.','error');return}
+
+  if(!await qpConfirm('Auto-Populate','Place '+activeClients.length+' active clients into "'+cycle.name+'"? This will create proposed bookings based on each client\'s preferred schedule.',{okText:'Populate'}))return;
+
+  var duration=sessConfigData?sessConfigData.session_duration_minutes:60;
+  var buffer=sessConfigData?sessConfigData.booking_buffer_minutes:15;
+  var dayMap={sunday:0,monday:1,tuesday:2,wednesday:3,thursday:4,friday:5,saturday:6};
+  var existingBookings=sessBookingsData.filter(function(b){return b.cycle_id===cycleId&&b.status!=='cancelled'&&b.status!=='declined'});
+  var proposed=[];
+  var conflicts=[];
+
+  activeClients.sort(function(a,b){return a.priority-b.priority});
+
+  activeClients.forEach(function(client){
+    var prefDayNum=dayMap[client.preferred_day];
+    var prefTime=client.preferred_time.slice(0,5);
+    var freqWeeks=client.frequency==='weekly'?1:(client.frequency==='biweekly'?2:(client.frequency==='monthly'?4:8));
+
+    // Find all matching available days
+    var matchDays=cycleAvail.filter(function(a){return new Date(a.date+'T12:00').getDay()===prefDayNum});
+    if(!matchDays.length){
+      // Fallback: find nearest available day
+      matchDays=cycleAvail.slice();
+    }
+
+    var lastBooked=null;
+    matchDays.forEach(function(day){
+      if(lastBooked){
+        var gap=Math.round((new Date(day.date)-new Date(lastBooked))/(1000*60*60*24*7));
+        if(gap<freqWeeks) return; // Skip — too soon
+      }
+
+      // Check if slot is free
+      var slotTaken=existingBookings.concat(proposed).some(function(b){
+        return b.date===day.date&&b.start_time.slice(0,5)===prefTime;
+      });
+
+      if(!slotTaken&&prefTime>=day.start_time.slice(0,5)&&prefTime<day.end_time.slice(0,5)){
+        var endHour=parseInt(prefTime.split(':')[0]);
+        var endMin=parseInt(prefTime.split(':')[1])+duration;
+        endHour+=Math.floor(endMin/60);endMin=endMin%60;
+        var endTimeStr=String(endHour).padStart(2,'0')+':'+String(endMin).padStart(2,'0');
+
+        proposed.push({
+          cycle_id:cycleId,client_id:client.id,email:client.email,name:client.name,
+          date:day.date,start_time:prefTime,end_time:endTimeStr,
+          status:'proposed',type:'recurring',
+          zoom_link:sessConfigData?sessConfigData.zoom_link:null,
+          proposed_at:new Date().toISOString()
+        });
+        lastBooked=day.date;
+      }else if(slotTaken){
+        conflicts.push(client.email+' on '+day.date);
+      }
+    });
+  });
+
+  if(!proposed.length){showToast('No bookings could be generated. Check availability and client preferences.','error');return}
+
+  try{
+    for(var j=0;j<proposed.length;j+=50){
+      await proxyFrom('session_bookings').insert(proposed.slice(j,j+50));
+    }
+    await logAudit('auto_populate',null,'Auto-populated '+proposed.length+' bookings for '+cycle.name,{conflicts:conflicts.length});
+    showToast(proposed.length+' bookings proposed'+(conflicts.length?' ('+conflicts.length+' conflicts skipped)':''),'success');
+    var r=await proxyFrom('session_bookings').select('*').order('date',{ascending:true});
+    sessBookingsData=r.data||[];
+    renderBookingsGrid();
+    renderSessionsStats();
+  }catch(e){showToast('Error: '+e.message,'error')}
+}
+
+/* ---------- Bookings Grid ---------- */
+function loadBookingsForCycle(){renderBookingsGrid()}
+
+function renderBookingsGrid(){
+  var c=document.getElementById('sess-bookings-grid');
+  var cycleId=document.getElementById('sess-book-cycle').value;
+  var statusFilter=document.getElementById('sess-book-status').value;
+  var typeFilter=document.getElementById('sess-book-type').value;
+  var search=(document.getElementById('sess-book-search').value||'').toLowerCase();
+
+  var bookings=sessBookingsData.filter(function(b){
+    if(cycleId&&b.cycle_id!==cycleId) return false;
+    if(statusFilter!=='all'&&b.status!==statusFilter) return false;
+    if(typeFilter!=='all'&&b.type!==typeFilter) return false;
+    if(search&&b.email.toLowerCase().indexOf(search)<0&&(b.name||'').toLowerCase().indexOf(search)<0) return false;
+    return true;
+  });
+
+  // Render confirmation tracker stats
+  var confirmTracker=document.getElementById('sess-confirm-tracker');
+  if(confirmTracker){
+    var proposed=bookings.filter(function(b){return b.status==='proposed'}).length;
+    var confirmed=bookings.filter(function(b){return b.status==='confirmed'}).length;
+    var declined=bookings.filter(function(b){return b.status==='declined'}).length;
+    confirmTracker.innerHTML='<div style="display:flex;gap:12px;flex-wrap:wrap;font-size:13px">'
+      +'<span style="color:var(--warning)">⏳ '+proposed+' proposed</span>'
+      +'<span style="color:var(--success)">✅ '+confirmed+' confirmed</span>'
+      +'<span style="color:var(--danger)">❌ '+declined+' declined</span>'
+      +'</div>';
+  }
+
+  if(!bookings.length){c.innerHTML='<div class="empty"><p>No bookings match filters.</p></div>';return}
+
+  var tp=Math.ceil(bookings.length/sessBookPS)||1;
+  var start=(sessBookPage-1)*sessBookPS;
+  var page=bookings.slice(start,start+sessBookPS);
+
+  var statusBadges={proposed:'<span class="badge yellow">Proposed</span>',confirmed:'<span class="badge green">Confirmed</span>',declined:'<span class="badge danger">Declined</span>',rescheduled:'<span class="badge purple">Rescheduled</span>',cancelled:'<span class="badge muted">Cancelled</span>',completed:'<span class="badge teal">Completed</span>',no_show:'<span class="badge danger">No Show</span>'};
+  var typeBadges={recurring:'<span class="badge teal">Recurring</span>',public:'<span class="badge purple">Public</span>',manual:'<span class="badge muted">Manual</span>'};
+
+  c.innerHTML='<table class="tbl"><thead><tr><th>Date</th><th>Time</th><th>Client</th><th>Type</th><th>Status</th><th></th></tr></thead><tbody>'
+    +page.map(function(b){
+      return'<tr><td style="white-space:nowrap">'+fmtDate(b.date)+'</td>'
+        +'<td>'+b.start_time.slice(0,5)+'–'+b.end_time.slice(0,5)+'</td>'
+        +'<td class="email">'+esc(b.email)+(b.name?'<br><span class="name" style="font-size:11px">'+esc(b.name)+'</span>':'')+'</td>'
+        +'<td>'+typeBadges[b.type]+'</td>'
+        +'<td>'+statusBadges[b.status]+'</td>'
+        +'<td><div style="display:flex;gap:4px;flex-wrap:wrap">'
+        +(b.status==='proposed'?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'confirmed\')">Confirm</button><button class="btn btn-danger btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'declined\')">Decline</button>':'')
+        +(b.status==='confirmed'?'<button class="btn btn-ghost btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'completed\')">Complete</button><button class="btn btn-ghost btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'no_show\')">No Show</button><button class="btn btn-danger btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'cancelled\')">Cancel</button>':'')
+        +'<button class="btn btn-ghost btn-sm" onclick="deleteBooking(\''+b.id+'\')">🗑</button>'
+        +'</div></td></tr>';
+    }).join('')+'</tbody></table>';
+
+  document.getElementById('sess-book-pagination').innerHTML='<span>'+bookings.length+' bookings · Page '+sessBookPage+'/'+tp+'</span><div class="page-btns"><button class="btn btn-ghost btn-sm" onclick="sessBookPage=Math.max(1,sessBookPage-1);renderBookingsGrid()" '+(sessBookPage<=1?'disabled':'')+'>Prev</button><button class="btn btn-ghost btn-sm" onclick="sessBookPage=Math.min('+tp+',sessBookPage+1);renderBookingsGrid()" '+(sessBookPage>=tp?'disabled':'')+'>Next</button></div>';
+}
+
+async function updateBookingStatus(id,status){
+  try{
+    var updates={status:status};
+    if(status==='confirmed') updates.confirmed_at=new Date().toISOString();
+    if(status==='cancelled') updates.cancelled_at=new Date().toISOString();
+    await proxyFrom('session_bookings').update(updates).eq('id',id);
+    var b=sessBookingsData.find(function(x){return x.id===id});
+    if(b) await logAudit('update_booking',b.email,'Booking '+status+' for '+b.date,{});
+    showToast('Booking '+status,'success');
+    var r=await proxyFrom('session_bookings').select('*').order('date',{ascending:true});
+    sessBookingsData=r.data||[];
+    renderBookingsGrid();renderSessionsStats();
+  }catch(e){showToast('Error: '+e.message,'error')}
+}
+
+async function deleteBooking(id){
+  if(!await qpConfirm('Delete Booking','Delete this booking permanently?',{okText:'Delete',danger:true}))return;
+  try{await proxyFrom('session_bookings').delete().eq('id',id);showToast('Booking deleted','success');
+  var r=await proxyFrom('session_bookings').select('*').order('date',{ascending:true});sessBookingsData=r.data||[];renderBookingsGrid();renderSessionsStats()}catch(e){showToast('Error: '+e.message,'error')}
+}
+
+/* ---------- Send Confirmations ---------- */
+async function sendAllConfirmations(){
+  var cycleId=document.getElementById('sess-book-cycle').value;
+  if(!cycleId){showToast('Select a cycle','error');return}
+  var cycle=sessCyclesData.find(function(c){return c.id===cycleId});
+  var proposed=sessBookingsData.filter(function(b){return b.cycle_id===cycleId&&b.status==='proposed'});
+  if(!proposed.length){showToast('No proposed bookings to confirm','error');return}
+
+  // Group by client email
+  var byClient={};
+  proposed.forEach(function(b){
+    if(!byClient[b.email]) byClient[b.email]={name:b.name,bookings:[]};
+    byClient[b.email].bookings.push(b);
+  });
+  var clientCount=Object.keys(byClient).length;
+
+  if(!await qpConfirm('Send Confirmations','Send confirmation emails to '+clientCount+' clients with '+proposed.length+' proposed appointments?',{okText:'Send All'}))return;
+
+  // Build emails list and pre-fill the Email Center
+  var emails=Object.keys(byClient);
+  var body='Hi {{name}},\n\nYour next appointments with Dr. Tracey Clark are ready!\n\n**'+cycle.name+'** — Here are your proposed session dates:\n\n';
+  // Note: personalization per-client would need individual sends. For now, compose a general one.
+  body+='Please review your proposed dates and confirm by replying to this email or clicking the confirmation link below.\n\n';
+  body+='If any dates don\'t work, just let me know and we\'ll find an alternative.\n\nWith care,\nDr. Tracey Clark';
+  var subject='Your '+cycle.name+' Session Dates Are Ready — Please Confirm';
+
+  // Route to Email Center
+  sgSetupEmail({
+    customEmails:emails.join('\n'),
+    brand:'fusion',
+    type:'transactional',
+    from:'tracey@quantumphysician.com',
+    subject:subject,
+    body:body
+  });
+
+  // Advance cycle to client_confirmation if still planning
+  if(cycle.status==='planning'){
+    await proxyFrom('session_cycles').update({status:'client_confirmation',client_confirmation_sent_at:new Date().toISOString()}).eq('id',cycleId);
+    await loadSessionsData();
+  }
+}
+
+/* ---------- Public & Waitlist Tab ---------- */
+function renderPublicWaitlist(){
+  var configEl=document.getElementById('sess-public-config');
+  var waitlistEl=document.getElementById('sess-waitlist-list');
+  if(!configEl||!waitlistEl) return;
+
+  // Config section
+  var status=sessConfigData?sessConfigData.public_booking_status:'closed';
+  var statusColors={closed:'var(--danger)',open:'var(--success)',coming_soon:'var(--warning)'};
+  var statusLabels={closed:'Closed',open:'Open',coming_soon:'Coming Soon'};
+  configEl.innerHTML='<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'
+    +'<span style="font-size:13px;font-weight:600">Public Booking:</span>'
+    +'<span class="badge" style="background:'+statusColors[status]+'22;color:'+statusColors[status]+'">'+statusLabels[status]+'</span>'
+    +'<button class="btn btn-ghost btn-sm" onclick="togglePublicBooking(\'open\')">Open</button>'
+    +'<button class="btn btn-ghost btn-sm" onclick="togglePublicBooking(\'coming_soon\')">Coming Soon</button>'
+    +'<button class="btn btn-danger btn-sm" onclick="togglePublicBooking(\'closed\')">Close</button>'
+    +'</div>';
+
+  // Waitlist
+  var waiting=sessWaitlistData.filter(function(w){return w.status==='waiting'});
+  if(!waiting.length){waitlistEl.innerHTML='<div class="empty"><p>No one on the waitlist yet.</p></div>';return}
+  waitlistEl.innerHTML='<table class="tbl"><thead><tr><th>Email</th><th>Name</th><th>Preferred</th><th>Message</th><th>Signed Up</th><th></th></tr></thead><tbody>'
+    +waiting.map(function(w){
+      var days=(w.preferred_days||[]).join(', ');
+      var times=(w.preferred_times||[]).join(', ');
+      return'<tr><td class="email">'+esc(w.email)+'</td><td class="name">'+esc(w.name||'—')+'</td>'
+        +'<td style="font-size:12px">'+esc(days||'—')+' '+esc(times||'')+'</td>'
+        +'<td style="font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis">'+esc(w.message||'—')+'</td>'
+        +'<td>'+timeAgo(w.created_at)+'</td>'
+        +'<td><button class="btn btn-success btn-sm" onclick="offerSlot(\''+w.id+'\',\''+esc(w.email)+'\')">Offer Slot</button>'
+        +'<button class="btn btn-danger btn-sm" onclick="removeFromWaitlist(\''+w.id+'\')">Remove</button></td></tr>';
+    }).join('')+'</tbody></table>';
+}
+
+async function togglePublicBooking(status){
+  try{
+    if(!sessConfigData){showToast('Session config not found','error');return}
+    await proxyFrom('session_config').update({public_booking_status:status}).eq('id',sessConfigData.id);
+    sessConfigData.public_booking_status=status;
+    await logAudit('toggle_public_booking',null,'Public booking set to '+status,{});
+    showToast('Public booking: '+status,'success');
+    renderPublicWaitlist();
+  }catch(e){showToast('Error: '+e.message,'error')}
+}
+
+async function offerSlot(waitlistId,email){
+  showToast('Opening email composer for '+email,'info');
+  sgSetupEmail({
+    customEmails:email,
+    brand:'fusion',
+    type:'transactional',
+    from:'tracey@quantumphysician.com',
+    subject:'A Session Slot Has Opened — Book Now!',
+    body:'Hi {{name}},\n\nGreat news! A session slot has opened up with Dr. Tracey Clark.\n\nVisit our booking page to reserve your appointment before it fills up.\n\nWith care,\nDr. Tracey Clark'
+  });
+}
+
+async function removeFromWaitlist(id){
+  if(!await qpConfirm('Remove from Waitlist','Remove this person from the waitlist?',{okText:'Remove',danger:true}))return;
+  try{await proxyFrom('session_waitlist').delete().eq('id',id);showToast('Removed from waitlist','success');
+  var r=await proxyFrom('session_waitlist').select('*').order('created_at',{ascending:true});sessWaitlistData=r.data||[];renderPublicWaitlist();renderSessionsStats()}catch(e){showToast('Error: '+e.message,'error')}
+}
+
+/* ---------- Helpers ---------- */
+function fmtDate(d){
+  if(!d) return '—';
+  return new Date(d+'T12:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
 }

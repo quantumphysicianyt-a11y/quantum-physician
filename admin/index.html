@@ -69,7 +69,145 @@
 <div class="page" id="page-fusion"><div class="stats-grid" id="fusion-stats"></div><div class="card"><div class="card-header"><div class="card-title">Session Purchases</div><button class="btn btn-ghost btn-sm" onclick="loadFusionData()">Refresh</button></div><div class="card-body" id="fusion-content"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div></div>
 
 <!-- PLACEHOLDERS -->
-<div class="page" id="page-sessions"><div class="card"><div class="card-body"><div class="empty"><p>Session booking system coming soon.</p></div></div></div></div>
+<!-- 1-ON-1 SESSIONS (Session 23) -->
+<div class="page" id="page-sessions">
+<div class="stats-grid" id="sess-stats"></div>
+
+<!-- Cycle Status Banner -->
+<div class="card" id="sess-cycle-banner" style="margin-bottom:20px;display:none">
+<div class="card-body" style="padding:16px 20px">
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+<div><div style="font-size:16px;font-weight:600;color:var(--text)" id="sess-cycle-name-display">No Active Cycle</div>
+<div style="font-size:12px;color:var(--text-dim);margin-top:2px" id="sess-cycle-dates"></div></div>
+<div style="display:flex;align-items:center;gap:8px" id="sess-cycle-status-wrap"></div></div>
+<div id="sess-cycle-pipeline" style="display:flex;gap:4px;margin-top:14px"></div>
+</div></div>
+
+<!-- Tabs -->
+<div class="tab-nav">
+<button class="tab-btn active" onclick="switchSessTab('cycles',this)">Cycles</button>
+<button class="tab-btn" onclick="switchSessTab('availability',this)">Availability</button>
+<button class="tab-btn" onclick="switchSessTab('clients',this)">Clients</button>
+<button class="tab-btn" onclick="switchSessTab('bookings',this)">Bookings</button>
+<button class="tab-btn" onclick="switchSessTab('public',this)">Public &amp; Waitlist</button>
+</div>
+
+<!-- TAB: Cycles -->
+<div class="tab-content active" id="sess-tab-cycles">
+<div class="card" style="margin-bottom:20px">
+<div class="card-header"><div class="card-title">Create New Cycle</div></div>
+<div class="card-body">
+<div class="form-row">
+<div class="form-group"><label>Cycle Name</label><input type="text" class="input" id="sess-cycle-name-input" placeholder="e.g. Spring 2026"></div>
+<div class="form-group"><label>Start Date</label><input type="date" class="input" id="sess-cycle-start"></div>
+<div class="form-group"><label>End Date</label><input type="date" class="input" id="sess-cycle-end"></div>
+<button class="btn btn-primary" onclick="createCycle()">Create Cycle</button>
+</div></div></div>
+<div class="card">
+<div class="card-header"><div class="card-title">All Cycles</div><button class="btn btn-ghost btn-sm" onclick="loadSessionsData()">Refresh</button></div>
+<div class="card-body" id="sess-cycles-list"><div class="loading-center"><div class="spinner"></div>Loading...</div></div>
+</div></div>
+
+<!-- TAB: Availability -->
+<div class="tab-content" id="sess-tab-availability">
+<div class="card" style="margin-bottom:16px">
+<div class="card-header">
+<div class="card-title">Availability Calendar</div>
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+<select class="input" style="width:200px" id="sess-avail-cycle" onchange="loadAvailabilityCalendar()"></select>
+<button class="btn btn-ghost btn-sm" onclick="sessAvailPrevMonth()">&#9664;</button>
+<span id="sess-avail-month-label" style="font-size:13px;font-weight:600;min-width:120px;text-align:center"></span>
+<button class="btn btn-ghost btn-sm" onclick="sessAvailNextMonth()">&#9654;</button>
+</div></div>
+<div class="card-body">
+<div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;font-size:11px;color:var(--text-dim)">
+<span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--success);vertical-align:middle;margin-right:4px"></span>Available</span>
+<span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--danger);vertical-align:middle;margin-right:4px"></span>Blocked</span>
+<span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--warning);vertical-align:middle;margin-right:4px"></span>Teaching</span>
+<span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--teal);vertical-align:middle;margin-right:4px"></span>Travel</span>
+<span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--purple);vertical-align:middle;margin-right:4px"></span>Personal</span>
+</div>
+<div id="sess-avail-calendar" class="sess-calendar"></div>
+</div></div>
+<div class="card">
+<div class="card-header"><div class="card-title">Bulk Actions</div></div>
+<div class="card-body">
+<div class="form-row">
+<div class="form-group"><label>Action</label>
+<select class="input" id="sess-bulk-action"><option value="available">Mark Available</option><option value="blocked">Mark Blocked</option><option value="teaching">Mark Teaching</option><option value="travel">Mark Travel</option><option value="personal">Mark Personal</option></select></div>
+<div class="form-group"><label>Apply To</label>
+<select class="input" id="sess-bulk-target"><option value="all-tue">All Tuesdays</option><option value="all-wed">All Wednesdays</option><option value="all-thu">All Thursdays</option><option value="all-twt">All Tue/Wed/Thu</option><option value="range">Date Range&#8230;</option></select></div>
+<div class="form-group" id="sess-bulk-range-wrap" style="display:none"><label>From / To</label>
+<div style="display:flex;gap:6px"><input type="date" class="input" id="sess-bulk-from"><input type="date" class="input" id="sess-bulk-to"></div></div>
+<div class="form-group"><label>Time Slots</label>
+<div style="display:flex;gap:6px"><input type="time" class="input" id="sess-bulk-start" value="09:00"><input type="time" class="input" id="sess-bulk-end" value="17:00"></div></div>
+<button class="btn btn-primary" onclick="bulkAvailability()">Apply</button>
+</div>
+<div class="form-row" style="margin-top:8px">
+<div class="form-group"><label>Notes (optional)</label><input type="text" class="input" id="sess-bulk-notes" placeholder="e.g. Teaching BodyTalk Access in Toronto"></div>
+<button class="btn btn-ghost" onclick="importPrevCycleAvailability()">Import from Previous Cycle</button>
+</div></div></div>
+</div>
+
+<!-- TAB: Clients -->
+<div class="tab-content" id="sess-tab-clients">
+<div class="card" style="margin-bottom:16px">
+<div class="card-header"><div class="card-title">Add Client</div></div>
+<div class="card-body">
+<div class="form-row">
+<div class="form-group"><label>Email</label><input type="email" class="input" id="sess-client-email" placeholder="client@example.com"></div>
+<div class="form-group"><label>Name</label><input type="text" class="input" id="sess-client-name" placeholder="Full name"></div>
+<div class="form-group" style="min-width:130px"><label>Frequency</label>
+<select class="input" id="sess-client-freq"><option value="weekly">Weekly</option><option value="biweekly">Biweekly</option><option value="monthly" selected>Monthly</option><option value="every_2_months">Every 2 Months</option></select></div>
+<div class="form-group" style="min-width:120px"><label>Preferred Day</label>
+<select class="input" id="sess-client-day"><option value="monday">Monday</option><option value="tuesday" selected>Tuesday</option><option value="wednesday">Wednesday</option><option value="thursday">Thursday</option><option value="friday">Friday</option></select></div>
+<div class="form-group" style="min-width:100px"><label>Preferred Time</label>
+<input type="time" class="input" id="sess-client-time" value="10:00"></div>
+<button class="btn btn-primary" onclick="addSessionClient()">Add Client</button>
+</div></div></div>
+<div class="card">
+<div class="card-header"><div class="card-title">Client Roster</div>
+<div style="display:flex;gap:8px">
+<select class="input" style="width:130px" id="sess-client-filter" onchange="renderClientRoster()"><option value="active">Active</option><option value="paused">Paused</option><option value="all">All</option></select>
+<button class="btn btn-ghost btn-sm" onclick="loadSessionsData()">Refresh</button>
+</div></div>
+<div class="card-body" id="sess-clients-list"><div class="loading-center"><div class="spinner"></div>Loading...</div></div>
+</div></div>
+
+<!-- TAB: Bookings -->
+<div class="tab-content" id="sess-tab-bookings">
+<div class="card" style="margin-bottom:16px">
+<div class="card-header"><div class="card-title">Auto-Populate &amp; Manage</div>
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+<select class="input" style="width:200px" id="sess-book-cycle" onchange="loadBookingsForCycle()"></select>
+<button class="btn btn-primary btn-sm" onclick="autoPopulate()">&#9889; Auto-Populate</button>
+<button class="btn btn-ghost btn-sm" onclick="sendAllConfirmations()">&#9993; Send Confirmations</button>
+</div></div>
+<div class="card-body">
+<div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+<select class="input" style="width:140px" id="sess-book-status" onchange="renderBookingsGrid()"><option value="all">All Status</option><option value="proposed">Proposed</option><option value="confirmed">Confirmed</option><option value="declined">Declined</option><option value="cancelled">Cancelled</option><option value="completed">Completed</option></select>
+<select class="input" style="width:120px" id="sess-book-type" onchange="renderBookingsGrid()"><option value="all">All Types</option><option value="recurring">Recurring</option><option value="public">Public</option><option value="manual">Manual</option></select>
+<input type="text" class="input" style="width:200px" id="sess-book-search" placeholder="Search by email..." oninput="renderBookingsGrid()">
+</div>
+<div id="sess-confirm-tracker" style="margin-bottom:12px"></div>
+<div id="sess-bookings-grid"><div class="loading-center"><div class="spinner"></div>Loading...</div></div>
+<div class="pagination" id="sess-book-pagination"></div>
+</div></div>
+</div>
+
+<!-- TAB: Public & Waitlist -->
+<div class="tab-content" id="sess-tab-public">
+<div class="card" style="margin-bottom:16px">
+<div class="card-header"><div class="card-title">Public Booking Controls</div></div>
+<div class="card-body" id="sess-public-config"><div class="loading-center"><div class="spinner"></div>Loading...</div></div>
+</div>
+<div class="card">
+<div class="card-header"><div class="card-title">Waitlist</div><button class="btn btn-ghost btn-sm" onclick="loadSessionsData()">Refresh</button></div>
+<div class="card-body" id="sess-waitlist-list"><div class="loading-center"><div class="spinner"></div>Loading...</div></div>
+</div>
+</div>
+
+</div>
 <div class="page" id="page-memberships"><div class="card"><div class="card-body"><div class="empty"><p>Membership tiers coming in a future session.</p></div></div></div></div>
 
 <!-- COMMUNITY -->
