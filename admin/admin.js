@@ -2739,3 +2739,214 @@ function ecInsertCTA(key){
   ta.focus();ta.selectionStart=ta.selectionEnd=s+cta.length;
   ecAutoPreview();showToast('CTA inserted','success');
 }
+
+/* ================================================================
+   Rich Text Editor — Toolbar Functions
+   ================================================================ */
+var _ecSourceMode=false;
+
+function ecExec(cmd,val){
+  document.execCommand(cmd,false,val||null);
+  document.getElementById('ec-editor-rich').focus();
+  ecRichSync();
+}
+
+function ecInsertLink(){
+  var url=prompt('Enter URL:','https://');
+  if(!url)return;
+  document.execCommand('createLink',false,url);
+  document.getElementById('ec-editor-rich').focus();
+  ecRichSync();
+}
+
+function ecInsertDivider(){
+  var editor=document.getElementById('ec-editor-rich');
+  /* Insert a visual divider + card separator */
+  var hr=document.createElement('hr');
+  var sel=window.getSelection();
+  if(sel.rangeCount){
+    var range=sel.getRangeAt(0);
+    range.collapse(false);
+    range.insertNode(document.createElement('br'));
+    range.insertNode(hr);
+    range.collapse(false);
+  }else{
+    editor.appendChild(hr);
+  }
+  editor.focus();
+  ecRichSync();
+}
+
+/* Sync rich editor → hidden textarea (converts to markdown-ish format) */
+function ecRichSync(){
+  if(_ecSourceMode)return;
+  var editor=document.getElementById('ec-editor-rich');
+  var textarea=document.getElementById('email-body');
+  if(!editor||!textarea)return;
+  /* Convert HTML to markdown-ish text for the email builder */
+  var html=editor.innerHTML;
+  /* Convert <hr> to --- dividers */
+  var md=html.replace(/<hr[^>]*>/gi,'\n---\n');
+  /* Convert <br> to newlines */
+  md=md.replace(/<br\s*\/?>/gi,'\n');
+  /* Convert <b>/<strong> to **bold** */
+  md=md.replace(/<(b|strong)[^>]*>(.*?)<\/(b|strong)>/gi,'**$2**');
+  /* Convert <i>/<em> to *italic* (we use single star) */
+  md=md.replace(/<(i|em)[^>]*>(.*?)<\/(i|em)>/gi,'*$2*');
+  /* Convert <u> to __underline__ */
+  md=md.replace(/<u[^>]*>(.*?)<\/u>/gi,'__$1__');
+  /* Convert <s>/<strike> to ~~strike~~ */
+  md=md.replace(/<(s|strike|del)[^>]*>(.*?)<\/(s|strike|del)>/gi,'~~$2~~');
+  /* Convert <a href="url">text</a> to [text](url) */
+  md=md.replace(/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi,'[$2]($1)');
+  /* Convert block elements to newlines */
+  md=md.replace(/<\/(div|p|h[1-6]|li)>/gi,'\n');
+  md=md.replace(/<(div|p|h[1-6])[^>]*>/gi,'');
+  md=md.replace(/<li[^>]*>/gi,'- ');
+  md=md.replace(/<\/?(ul|ol)[^>]*>/gi,'\n');
+  /* Strip remaining HTML tags but preserve content */
+  md=md.replace(/<[^>]+>/g,'');
+  /* Decode HTML entities */
+  var tmp=document.createElement('textarea');
+  tmp.innerHTML=md;
+  md=tmp.value;
+  /* Clean up excessive newlines */
+  md=md.replace(/\n{3,}/g,'\n\n');
+  md=md.trim();
+  textarea.value=md;
+  ecAutoPreview();
+}
+
+/* Sync textarea → rich editor (for loading templates etc) */
+function ecTextareaToRich(){
+  var textarea=document.getElementById('email-body');
+  var editor=document.getElementById('ec-editor-rich');
+  if(!editor||!textarea)return;
+  var md=textarea.value;
+  /* Convert markdown to HTML */
+  var h=md;
+  /* --- dividers */
+  h=h.replace(/\n---\n/g,'<hr>');
+  /* **bold** */
+  h=h.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+  /* *italic* (but not ** which is bold) */
+  h=h.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g,'<em>$1</em>');
+  /* __underline__ */
+  h=h.replace(/__([^_]+)__/g,'<u>$1</u>');
+  /* ~~strike~~ */
+  h=h.replace(/~~([^~]+)~~/g,'<s>$1</s>');
+  /* [text](url) → links */
+  h=h.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2">$1</a>');
+  /* {{merge_tags}} → styled spans */
+  h=h.replace(/\{\{(name|email|referral_code)\}\}/g,'<span style="background:rgba(91,168,178,.2);color:var(--teal);padding:1px 6px;border-radius:4px;font-size:12px">{{$1}}</span>');
+  /* {{session_image:...}} → placeholder */
+  h=h.replace(/\{\{session_image:([^}]+)\}\}/g,'<span style="display:inline-block;background:rgba(131,56,236,.15);color:var(--purple);padding:4px 10px;border-radius:6px;font-size:11px;border:1px dashed var(--purple)">📷 $1</span>');
+  /* Newlines to <br> */
+  h=h.replace(/\n/g,'<br>');
+  editor.innerHTML=h;
+}
+
+/* Toggle between rich editor and raw markdown source */
+function ecToggleSource(){
+  var editor=document.getElementById('ec-editor-rich');
+  var textarea=document.getElementById('email-body');
+  var toolbar=document.getElementById('ec-editor-toolbar');
+  var btn=document.getElementById('ec-tb-source-btn');
+  if(!editor||!textarea)return;
+  _ecSourceMode=!_ecSourceMode;
+  if(_ecSourceMode){
+    /* Switch to source mode */
+    ecRichSync();/* save current state */
+    editor.style.display='none';
+    textarea.style.display='block';
+    toolbar.style.opacity='.4';
+    toolbar.style.pointerEvents='none';
+    btn.style.color='var(--teal)';
+    btn.style.borderColor='var(--teal)';
+  }else{
+    /* Switch back to rich mode */
+    ecTextareaToRich();
+    editor.style.display='block';
+    textarea.style.display='none';
+    toolbar.style.opacity='1';
+    toolbar.style.pointerEvents='auto';
+    btn.style.color='var(--text-dim)';
+    btn.style.borderColor='transparent';
+  }
+}
+
+/* Override loadTemplate to also update rich editor */
+var _origLoadTemplate=typeof loadTemplate==='function'?loadTemplate:null;
+function loadTemplate(key){
+  if(_origLoadTemplate)_origLoadTemplate(key);
+  else{
+    var tmpl=getAllTemplates()[key];
+    if(!tmpl)return;
+    document.getElementById('email-subject').value=tmpl.subject;
+    document.getElementById('email-body').value=tmpl.body;
+    document.getElementById('subject-count').textContent=tmpl.subject.length;
+    showToast('Loaded "'+tmpl.name+'" template','success');
+  }
+  if(!_ecSourceMode)ecTextareaToRich();
+  ecAutoPreview();
+}
+
+/* Override insertEmailVar to work with rich editor */
+var _origInsertEmailVar2=typeof insertEmailVar==='function'?insertEmailVar:null;
+function insertEmailVar(v){
+  if(_ecSourceMode){
+    /* Source mode — insert into textarea */
+    var ta=document.getElementById('email-body');if(!ta)return;
+    var s=ta.selectionStart,e=ta.selectionEnd,t=ta.value;
+    ta.value=t.substring(0,s)+v+t.substring(e);
+    ta.focus();ta.selectionStart=ta.selectionEnd=s+v.length;
+  }else{
+    /* Rich mode — insert styled span */
+    var span='<span style="background:rgba(91,168,178,.2);color:var(--teal);padding:1px 6px;border-radius:4px;font-size:12px">'+v+'</span>&nbsp;';
+    document.execCommand('insertHTML',false,span);
+    document.getElementById('ec-editor-rich').focus();
+  }
+  ecRichSync();
+  ecAutoPreview();
+}
+
+/* Override ecInsertCTA to work with rich editor */
+var _origEcInsertCTA=typeof ecInsertCTA==='function'?ecInsertCTA:null;
+function ecInsertCTA(key){
+  var cta;
+  if(key==='custom'){
+    var label=prompt('Button text:','Learn More');
+    if(!label)return;
+    var url=prompt('Button URL:','https://');
+    if(!url)return;
+    cta={label:label,url:url};
+  }else{
+    cta=EC_CTA_BUTTONS[key];if(!cta)return;
+  }
+  if(_ecSourceMode){
+    var ta=document.getElementById('email-body');if(!ta)return;
+    var s=ta.selectionStart,e=ta.selectionEnd,t=ta.value;
+    var md='['+cta.label+']('+cta.url+')';
+    ta.value=t.substring(0,s)+md+t.substring(e);
+    ta.focus();ta.selectionStart=ta.selectionEnd=s+md.length;
+  }else{
+    var link='<a href="'+cta.url+'" style="color:var(--purple);font-weight:600">'+esc(cta.label)+'</a>&nbsp;';
+    document.execCommand('insertHTML',false,link);
+    document.getElementById('ec-editor-rich').focus();
+  }
+  ecRichSync();
+  ecAutoPreview();
+  showToast('CTA inserted','success');
+}
+
+/* Override ecInsertLibraryCard for rich editor */
+var _origEcInsertLibCard=typeof ecInsertLibraryCard==='function'?ecInsertLibraryCard:null;
+function ecInsertLibraryCard(index){
+  var card=cardLibraryTemplates[index];if(!card)return;
+  var textarea=document.getElementById('email-body');if(!textarea)return;
+  var body=textarea.value.trimEnd();
+  textarea.value=body+'\n---\n'+card.body;
+  if(!_ecSourceMode)ecTextareaToRich();
+  textarea.scrollTop=textarea.scrollHeight;
+  ecAutoPreview();showToast('Added: '+card.name,'success');
+}
