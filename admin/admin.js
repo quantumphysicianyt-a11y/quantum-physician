@@ -136,6 +136,14 @@ h+='<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 8px" 
 h+='<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 8px" onclick="reInsertVar(\u0027sg\u0027,\u0027{{referral_code}}\u0027)">Referral Code</button>';
 h+='<span style="flex:1"></span>';
 h+='</div>';
+h+='<div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;align-items:center">';
+h+='<span style="font-size:10px;color:var(--text-dim);margin-right:2px">CTA:</span>';
+h+='<button class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 6px;border-color:var(--purple);color:var(--purple)" onclick="ecInsertCTA(\u0027watch\u0027)">Watch Sessions</button>';
+h+='<button class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 6px;border-color:var(--teal);color:var(--teal)" onclick="ecInsertCTA(\u0027dashboard\u0027)">Dashboard</button>';
+h+='<button class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 6px;border-color:var(--success);color:var(--success)" onclick="ecInsertCTA(\u0027referral\u0027)">Referral Hub</button>';
+h+='<button class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 6px;border-color:var(--warning);color:var(--warning)" onclick="ecInsertCTA(\u0027academy\u0027)">Academy</button>';
+h+='<button class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 6px" onclick="ecInsertCTA(\u0027custom\u0027)">Custom CTA...</button>';
+h+='</div>';
 h+='<div id="sg-editor-mount"></div>';
 h+='<textarea id="sg-body" class="input" rows="10" style="width:100%;font-size:13px;line-height:1.6;display:none" oninput="sgAutoPreview()">'+esc(opts.body||'')+'</textarea>';
 h+='<div id="sg-section-controls" style="display:none;margin-top:8px;margin-bottom:8px"><div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">Cards <span style="opacity:.5">(drag to reorder)</span></div><div id="sg-card-pills" style="display:flex;flex-wrap:wrap;gap:6px"></div></div>';
@@ -3046,19 +3054,19 @@ function _reToggleMore(id){
 }
 
 /* Insert link */
-function _reInsertLink(id){
+async function _reInsertLink(id){
   var inst=_reGetInst(id);if(!inst)return;
   _reCloseMore(id);
   if(inst.sourceMode){
     var ta=_reGetTextarea(id);if(!ta)return;
-    var url=prompt('Enter URL:','https://');if(!url)return;
-    var label=prompt('Link text:','Click here');if(!label)label='Click here';
+    var url=await qpPrompt('Insert Link','Enter URL:','https://');if(!url)return;
+    var label=await qpPrompt('Insert Link','Link text:','Click here');if(!label)label='Click here';
     var s=ta.selectionStart,e=ta.selectionEnd;
     var md='['+label+']('+url+')';
     ta.value=ta.value.substring(0,s)+md+ta.value.substring(e);
     ta.focus();ta.selectionStart=ta.selectionEnd=s+md.length;
   }else{
-    var url=prompt('Enter URL:','https://');if(!url)return;
+    var url=await qpPrompt('Insert Link','Enter URL:','https://');if(!url)return;
     var sel=window.getSelection();
     var linkText=(sel&&sel.toString())||url;
     _reInsertAtCursor(id,'<a href="'+url+'">'+linkText+'</a>&nbsp;');
@@ -3080,10 +3088,10 @@ function _reInsertDivider(id){
 }
 
 /* Insert image */
-function _reInsertImage(id){
+async function _reInsertImage(id){
   _reCloseMore(id);
   var inst=_reGetInst(id);if(!inst)return;
-  var url=prompt('Image URL:','https://');if(!url)return;
+  var url=await qpPrompt('Insert Image','Image URL:','https://');if(!url)return;
   if(inst.sourceMode){
     var ta=_reGetTextarea(id);var s=ta.selectionStart;
     ta.value=ta.value.substring(0,s)+'![Image]('+url+')'+ta.value.substring(ta.selectionEnd);
@@ -3221,12 +3229,12 @@ function reInsertVar(id,v){
 }
 
 /* Insert CTA button */
-function reInsertCTA(id,key){
+async function reInsertCTA(id,key){
   var inst=_reGetInst(id);if(!inst)return;
   var cta;
   if(key==='custom'){
-    var label=prompt('Button text:','Learn More');if(!label)return;
-    var url=prompt('Button URL:','https://');if(!url)return;
+    var label=await qpPrompt('Custom CTA','Button text:','Learn More');if(!label)return;
+    var url=await qpPrompt('Custom CTA','Button URL:','https://');if(!url)return;
     cta={label:label,url:url};
   }else{
     cta=EC_CTA_BUTTONS[key];if(!cta)return;
