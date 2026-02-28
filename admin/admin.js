@@ -1041,8 +1041,8 @@ qrHtml='<table role="presentation" cellspacing="0" cellpadding="0" border="0" st
 /* Style code display */
 discountInner=discountInner.replace(/Your code:\s*<strong>([^<]+)<\/strong>/i,'Your code: <span style="font-family:monospace;font-size:20px;letter-spacing:1px;color:#00f5ff;background:rgba(0,245,255,0.1);padding:5px 15px;border-radius:8px;">$1</span>');
 discountInner=imgTokenReplace(discountInner);
-var ctaLabel=discountInner.indexOf('Collection')>=0||discountInner.indexOf('Upgrade')>=0?'COMPLETE YOUR BUNDLE':(discountInner.indexOf('Dashboard')>=0||discountInner.indexOf('Log In')>=0||discountInner.indexOf('access your')>=0?'GO TO DASHBOARD':(discountInner.indexOf('code')>=0||discountInner.indexOf('Share')>=0||discountInner.indexOf('referral')>=0||discountInner.indexOf('Referral')>=0?'GO TO REFERRAL HUB':'CLAIM YOUR DISCOUNT'));
-var ctaUrl2=ctaLabel==='GO TO REFERRAL HUB'?siteUrl+'/referral-hub.html':(ctaLabel==='GO TO DASHBOARD'?siteUrl+'/login.html':(discountConfig&&discountConfig.couponId?siteUrl+'/?coupon='+discountConfig.couponId:siteUrl));
+var _ecCta1=typeof ecExtractCTA==='function'?ecExtractCTA(parts[1]||''):{label:'LEARN MORE',url:null};var ctaLabel=_ecCta1.label;
+var ctaUrl2=_ecCta1.url||( ctaLabel==='GO TO REFERRAL HUB'?siteUrl+'/referral-hub.html':(ctaLabel==='GO TO DASHBOARD'?siteUrl+'/login.html':(discountConfig&&discountConfig.couponId?siteUrl+'/?coupon='+discountConfig.couponId:siteUrl)));
 discountCardHtml='<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:25px 0 5px;"><tr><td style="background:linear-gradient(135deg,#1a0533,#0f0f23);border:2px solid #ff006e;border-radius:16px;padding:30px 25px;text-align:center;"><p style="margin:0;font-size:16px;color:#fff;line-height:1.5;">'+discountInner+'</p>'+qrHtml+'<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:20px auto 0;"><tr><td style="background:linear-gradient(45deg,#ff006e,#8338ec);border-radius:50px;"><a href="'+wrapLink(ctaUrl2)+'" target="_blank" style="display:inline-block;padding:16px 45px;color:#fff;text-decoration:none;font-weight:700;font-size:16px;letter-spacing:2px;text-transform:uppercase;">'+ctaLabel+'</a></td></tr></table><p style="margin:12px 0 0;font-size:11px;color:#666;">'+(ctaLabel==='GO TO REFERRAL HUB'?'Share your code and start earning':(ctaLabel==='GO TO DASHBOARD'?'Sign in to access your content':'Applied automatically at checkout'))+'</p></td></tr></table>';
 if(cleanBody.indexOf('community')>=0||cleanBody.indexOf('/community')>=0){
 discountCardHtml+='<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:15px 0 0;"><tr><td align="center"><a href="'+wrapLink(siteUrl+'/community')+'" target="_blank" style="color:#8338ec;font-size:14px;font-weight:600;text-decoration:none;">Join the Community &rarr;</a></td></tr></table>'
@@ -1060,8 +1060,8 @@ if(card2Inner.indexOf('{{qr_code}}')>=0){
 card2Inner=card2Inner.replace(/\{\{qr_code\}\}/g,'');
 qr2Html='<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:15px auto 5px;"><tr><td style="background:#fff;border-radius:10px;padding:8px;"><img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data='+encodeURIComponent(siteUrl+'/?ref=REFCODE')+'" width="120" height="120" alt="QR Code" style="display:block;border-radius:4px;"></td></tr></table><p style="margin:6px 0 0;font-size:11px;color:#888;">Scan to share your link</p>'
 }
-var card2Cta=card2Inner.indexOf('Share')>=0||card2Inner.indexOf('referral')>=0||card2Inner.indexOf('Referral')>=0?'GO TO REFERRAL HUB':(card2Inner.indexOf('Dashboard')>=0||card2Inner.indexOf('Log In')>=0||card2Inner.indexOf('access')>=0?'GO TO DASHBOARD':(card2Inner.indexOf('code')>=0?'CLAIM YOUR DISCOUNT':'EXPLORE SESSIONS'));
-var card2Url=card2Cta==='GO TO REFERRAL HUB'?siteUrl+'/referral-hub.html':(card2Cta==='GO TO DASHBOARD'?siteUrl+'/login.html':(discountConfig&&discountConfig.couponId?siteUrl+'/?coupon='+discountConfig.couponId:siteUrl));
+var _ecCta2=typeof ecExtractCTA==='function'?ecExtractCTA(parts[cx]||''):{label:'EXPLORE SESSIONS',url:null};var card2Cta=_ecCta2.label;
+var card2Url=_ecCta2.url||(card2Cta==='GO TO REFERRAL HUB'?siteUrl+'/referral-hub.html':(card2Cta==='GO TO DASHBOARD'?siteUrl+'/login.html':(discountConfig&&discountConfig.couponId?siteUrl+'/?coupon='+discountConfig.couponId:siteUrl)));
 discountCardHtml+='<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:20px 0 5px;"><tr><td style="background:linear-gradient(135deg,#1a0533,#0f0f23);border:2px solid #8338ec;border-radius:16px;padding:25px 20px;text-align:center;"><p style="margin:0;font-size:15px;color:#fff;line-height:1.6;">'+card2Inner+'</p>'+qr2Html+'<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:18px auto 0;"><tr><td style="background:linear-gradient(45deg,#8338ec,#00f5ff);border-radius:50px;"><a href="'+wrapLink(card2Url)+'" target="_blank" style="display:inline-block;padding:14px 40px;color:#fff;text-decoration:none;font-weight:700;font-size:14px;letter-spacing:2px;text-transform:uppercase;">'+card2Cta+'</a></td></tr></table><p style="margin:10px 0 0;font-size:11px;color:#666;">'+(card2Cta==='GO TO DASHBOARD'?'Sign in to access your content':(card2Cta==='GO TO REFERRAL HUB'?'Share your code and start earning':'Applied automatically at checkout'))+'</p></td></tr></table>'
 }
 /* Main CTA (only if no discount card) */
@@ -1112,9 +1112,9 @@ if(discountInner.indexOf('{{qr_code}}')>=0){
 discountInner=discountInner.replace(/\{\{qr_code\}\}/g,'');
 qrHtml='<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:15px auto 5px;"><tr><td style="background:#fff;border-radius:10px;padding:8px;"><img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data='+encodeURIComponent(siteUrl+'/?ref=REFCODE')+'" width="120" height="120" alt="QR Code" style="display:block;border-radius:4px;"></td></tr></table><p style="margin:6px 0 0;font-size:11px;color:rgba(255,255,255,0.4);">Scan to share your link</p>'
 }
-var ctaLabel2=discountInner.indexOf('referral')>=0||discountInner.indexOf('Referral')>=0||discountInner.indexOf('Share')>=0?'GO TO REFERRAL HUB':'CLAIM YOUR DISCOUNT';
+var _ecCtaA1=typeof ecExtractCTA==='function'?ecExtractCTA(parts[1]||''):{label:'LEARN MORE',url:null};var ctaLabel2=_ecCtaA1.label;
 var ctaUrl2=ctaLabel2==='GO TO REFERRAL HUB'?siteUrl+'/referral-hub.html':(discountConfig&&discountConfig.couponId?'https://fusionsessions.com/?coupon='+discountConfig.couponId:'https://academy.quantumphysician.com');
-discountCardHtml='<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:25px 0 5px;"><tr><td style="background:linear-gradient(135deg,rgba(91,168,178,0.08),rgba(173,155,132,0.08));border:2px solid rgba(91,168,178,0.3);border-radius:12px;padding:28px 25px;text-align:center;"><p style="margin:0;font-size:15px;color:rgba(255,255,255,0.85);line-height:1.5;font-family:Georgia,serif;">'+discountInner+'</p>'+qrHtml+'<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:20px auto 0;"><tr><td style="background:linear-gradient(135deg,#5ba8b2,#4a97a1);border-radius:50px;"><a href="'+wrapLink(ctaUrl2)+'" target="_blank" style="display:inline-block;padding:14px 40px;color:#fff;text-decoration:none;font-weight:700;font-size:14px;letter-spacing:2px;text-transform:uppercase;font-family:Arial,sans-serif;">'+ctaLabel2+'</a></td></tr></table><p style="margin:10px 0 0;font-size:11px;color:rgba(255,255,255,0.4);">'+(ctaLabel2==='GO TO REFERRAL HUB'?'Share your code and start earning':'Applied automatically at checkout')+'</p></td></tr></table>'
+discountCardHtml='<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:25px 0 5px;"><tr><td style="background:linear-gradient(135deg,rgba(91,168,178,0.08),rgba(173,155,132,0.08));border:2px solid rgba(91,168,178,0.3);border-radius:12px;padding:28px 25px;text-align:center;"><p style="margin:0;font-size:15px;color:rgba(255,255,255,0.85);line-height:1.5;font-family:Georgia,serif;">'+discountInner+'</p>'+qrHtml+'<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:20px auto 0;"><tr><td style="background:linear-gradient(135deg,#5ba8b2,#4a97a1);border-radius:50px;"><a href="'+wrapLink(ctaUrl2)+'" target="_blank" style="display:inline-block;padding:14px 40px;color:#fff;text-decoration:none;font-weight:700;font-size:14px;letter-spacing:2px;text-transform:uppercase;font-family:Arial,sans-serif;">'+ctaLabel2+'</a></td></tr></table><p style="margin:10px 0 0;font-size:11px;color:rgba(255,255,255,0.4);">'+(ctaLabel2==='GO TO REFERRAL HUB'?'Share your code and start earning':'')+'</p></td></tr></table>'
 }
 /* Additional cards */
 for(var cx=2;cx<parts.length;cx++){
@@ -1128,7 +1128,7 @@ if(card2Inner.indexOf('{{qr_code}}')>=0){
 card2Inner=card2Inner.replace(/\{\{qr_code\}\}/g,'');
 qr2Html2='<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:15px auto 5px;"><tr><td style="background:#fff;border-radius:10px;padding:8px;"><img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data='+encodeURIComponent(siteUrl+'/?ref=REFCODE')+'" width="120" height="120" alt="QR Code" style="display:block;border-radius:4px;"></td></tr></table><p style="margin:6px 0 0;font-size:11px;color:rgba(255,255,255,0.4);">Scan to share your link</p>'
 }
-var card2Cta2=card2Inner.indexOf('Share')>=0||card2Inner.indexOf('referral')>=0||card2Inner.indexOf('Referral')>=0?'GO TO REFERRAL HUB':(card2Inner.indexOf('code')>=0?'CLAIM YOUR DISCOUNT':'VISIT ACADEMY');
+var _ecCtaA2=typeof ecExtractCTA==='function'?ecExtractCTA(parts[cx]||''):{label:'VISIT ACADEMY',url:null};var card2Cta2=_ecCtaA2.label;
 var card2Url2=card2Cta2==='GO TO REFERRAL HUB'?siteUrl+'/referral-hub.html':(discountConfig&&discountConfig.couponId?siteUrl+'/?coupon='+discountConfig.couponId:siteUrl);
 discountCardHtml+='<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:20px 0 5px;"><tr><td style="background:linear-gradient(135deg,rgba(91,168,178,0.08),rgba(173,155,132,0.08));border:2px solid rgba(91,168,178,0.3);border-radius:12px;padding:24px 20px;text-align:center;"><p style="margin:0;font-size:15px;color:rgba(255,255,255,0.85);line-height:1.6;font-family:Georgia,serif;">'+card2Inner+'</p>'+qr2Html2+'<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:18px auto 0;"><tr><td style="background:linear-gradient(135deg,#5ba8b2,#4a97a1);border-radius:50px;"><a href="'+wrapLink(card2Url2)+'" target="_blank" style="display:inline-block;padding:14px 40px;color:#fff;text-decoration:none;font-weight:700;font-size:14px;letter-spacing:2px;text-transform:uppercase;font-family:Arial,sans-serif;">'+card2Cta2+'</a></td></tr></table><p style="margin:10px 0 0;font-size:11px;color:rgba(255,255,255,0.4);">Applied automatically at checkout</p></td></tr></table>'
 }
@@ -2348,6 +2348,22 @@ function handleOrdersKeydown(e){var dd=document.getElementById('orders-ac');if(!
 function selOrdersAC(i){var c=ordersACF[i];if(c){document.getElementById('orders-search').value=c.email;document.getElementById('orders-ac').classList.remove('open');filterOrders()}}
 
 function clSvg(name,col){var p={'link':'<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>','users':'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>','calendar':'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>','star':'<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>','zap':'<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>','grad':'<path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>','key':'<path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>'};var d=p[name]||'<circle cx="12" cy="12" r="10"/>';return '<svg viewBox="0 0 24 24" fill="none" stroke="'+(col||'currentColor')+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px">'+d+'</svg>'}
+
+/* ---------- Smart CTA extraction from markdown links ---------- */
+function ecExtractCTA(cardText){
+  /* Check for markdown link [Text](url) and extract label + url */
+  var m=cardText.match(/\[([^\]]+)\]\(([^)]+)\)/);
+  if(m)return{label:m[1].toUpperCase(),url:m[2]};
+  /* Keyword detection */
+  if(cardText.indexOf('Bundle')>=0||cardText.indexOf('Upgrade')>=0)return{label:'COMPLETE YOUR BUNDLE',url:null};
+  if(cardText.indexOf('Dashboard')>=0||cardText.indexOf('Log In')>=0||cardText.indexOf('access your')>=0)return{label:'GO TO DASHBOARD',url:null};
+  if(cardText.indexOf('Share')>=0||cardText.indexOf('referral')>=0||cardText.indexOf('Referral')>=0)return{label:'GO TO REFERRAL HUB',url:null};
+  if(cardText.indexOf('Academy')>=0||cardText.indexOf('academy')>=0||cardText.indexOf('Course')>=0)return{label:'EXPLORE ACADEMY',url:null};
+  if(cardText.indexOf('Community')>=0||cardText.indexOf('community')>=0)return{label:'JOIN COMMUNITY',url:null};
+  if(cardText.indexOf('Watch')>=0||cardText.indexOf('Session')>=0)return{label:'WATCH NOW',url:null};
+  return{label:'LEARN MORE',url:null};
+}
+
 var cardLibraryTemplates=[
 {name:"Referral Invite",icon:"link",desc:"Invite friends & earn credits",body:"**Share the Healing Journey**\n\nKnow someone who could benefit? Share your personal referral link and earn credits toward future sessions.\n\nYour link: **https://fusionsessions.com/?ref={{referral_code}}**\n\n{{qr_code}}\n\nCredits work like cash toward any session or course"},
 {name:"Community Invite",icon:"users",desc:"Join the discussion forum",body:"**Join Our Healing Community**\n\nConnect with fellow members, share insights, and get support on your wellness journey.\n\nOur community is a safe space for growth, questions, and celebration."},
@@ -2400,6 +2416,22 @@ showToast("Added: "+card.name,"success");
    ================================================================ */
 
 /* ---------- Card Library Templates ---------- */
+
+/* ---------- Smart CTA extraction from markdown links ---------- */
+function ecExtractCTA(cardText){
+  /* Check for markdown link [Text](url) and extract label + url */
+  var m=cardText.match(/\[([^\]]+)\]\(([^)]+)\)/);
+  if(m)return{label:m[1].toUpperCase(),url:m[2]};
+  /* Keyword detection */
+  if(cardText.indexOf('Bundle')>=0||cardText.indexOf('Upgrade')>=0)return{label:'COMPLETE YOUR BUNDLE',url:null};
+  if(cardText.indexOf('Dashboard')>=0||cardText.indexOf('Log In')>=0||cardText.indexOf('access your')>=0)return{label:'GO TO DASHBOARD',url:null};
+  if(cardText.indexOf('Share')>=0||cardText.indexOf('referral')>=0||cardText.indexOf('Referral')>=0)return{label:'GO TO REFERRAL HUB',url:null};
+  if(cardText.indexOf('Academy')>=0||cardText.indexOf('academy')>=0||cardText.indexOf('Course')>=0)return{label:'EXPLORE ACADEMY',url:null};
+  if(cardText.indexOf('Community')>=0||cardText.indexOf('community')>=0)return{label:'JOIN COMMUNITY',url:null};
+  if(cardText.indexOf('Watch')>=0||cardText.indexOf('Session')>=0)return{label:'WATCH NOW',url:null};
+  return{label:'LEARN MORE',url:null};
+}
+
 var cardLibraryTemplates=[
 {name:'Referral Invite',icon:'share',desc:'Invite friends, earn credits',body:'**Share the Healing — Earn $10**\n\nKnow someone who could benefit from Fusion Sessions? Share your personal referral link and you\'ll both be rewarded.\n\nYour referral code: **{{referral_code}}**\n\n[Share My Link](https://fusionsessions.quantumphysician.com?ref={{referral_code}})'},
 {name:'Community Invite',icon:'users',desc:'Join the discussion community',body:'**Join Our Healing Community**\n\nConnect with others on the same journey. Share experiences, ask questions, and grow together.\n\n[Visit the Community](https://fusionsessions.quantumphysician.com/community)'},
