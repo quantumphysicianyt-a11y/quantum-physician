@@ -1006,6 +1006,7 @@ mainBody=mainBody.replace(/\n(Your link|Share your link|Claim your|Share it|Your
 mainBody=mainBody.replace(/\n- /g,'\n\u2022 ').replace(/^- /gm,'\u2022 ');
 /* Markdown to HTML */
 var mainHtml=mainBody
+.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" style="color:#8338ec;text-decoration:underline;">$1</a>')
 .replace(/\*\*([^*]+)\*\*/g,'<strong style="color:#00f5ff;">$1</strong>')
 .replace(/~~([^~]+)~~/g,'<span style="text-decoration:line-through;color:#ff4466;">$1</span>')
 .replace(/\n/g,'<br>').replace(/(<br>){3,}/g,'<br><br>').replace(/^(<br>)+/,'').replace(/(<br>)+$/,'');
@@ -1039,6 +1040,7 @@ discountInner=discountInner.replace(/\{\{qr_code\}\}/g,'');
 qrHtml='<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:15px auto 5px;"><tr><td style="background:#fff;border-radius:10px;padding:8px;"><img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data='+encodeURIComponent(siteUrl+'/?ref=REFCODE')+'" width="120" height="120" alt="QR Code" style="display:block;border-radius:4px;"></td></tr></table><p style="margin:6px 0 0;font-size:11px;color:#888;">Scan to share your link</p>'
 }
 /* Style code display */
+discountInner=discountInner.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'');
 discountInner=discountInner.replace(/Your code:\s*<strong>([^<]+)<\/strong>/i,'Your code: <span style="font-family:monospace;font-size:20px;letter-spacing:1px;color:#00f5ff;background:rgba(0,245,255,0.1);padding:5px 15px;border-radius:8px;">$1</span>');
 discountInner=imgTokenReplace(discountInner);
 var _ecCta1=typeof ecExtractCTA==='function'?ecExtractCTA(parts[1]||''):{label:'LEARN MORE',url:null};var ctaLabel=_ecCta1.label;
@@ -1053,6 +1055,7 @@ var card2Body=parts[cx].trim();
 var card2Inner=card2Body
 .replace(/\*\*([^*]+)\*\*/g,'<strong style="color:#00f5ff;">$1</strong>')
 .replace(/\n/g,'<br>').replace(/(<br>){3,}/g,'<br><br>').replace(/^(<br>)+/,'').replace(/(<br>)+$/,'');
+card2Inner=card2Inner.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'');
 card2Inner=card2Inner.replace(/Your code:\s*<strong[^>]*>([^<]+)<\/strong>/i,'Your code: <span style="font-family:monospace;font-size:20px;letter-spacing:1px;color:#00f5ff;background:rgba(0,245,255,0.1);padding:5px 15px;border-radius:8px;">$1</span>');
 card2Inner=imgTokenReplace(card2Inner);
 var qr2Html='';
@@ -1102,6 +1105,7 @@ var mainHtml=mainBody
 var discountCardHtml='';
 if(discountBody){
 var discountInner=discountBody
+.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'')
 .replace(/\*\*([^*]+)\*\*/g,'<strong style="color:#5ba8b2;">$1</strong>')
 .replace(/~~([^~]+)~~/g,'<span style="text-decoration:line-through;color:#ad9b84;">$1</span>')
 .replace(/\n- /g,'\n\u2022 ').replace(/^- /gm,'\u2022 ')
@@ -1113,13 +1117,14 @@ discountInner=discountInner.replace(/\{\{qr_code\}\}/g,'');
 qrHtml='<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:15px auto 5px;"><tr><td style="background:#fff;border-radius:10px;padding:8px;"><img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data='+encodeURIComponent(siteUrl+'/?ref=REFCODE')+'" width="120" height="120" alt="QR Code" style="display:block;border-radius:4px;"></td></tr></table><p style="margin:6px 0 0;font-size:11px;color:rgba(255,255,255,0.4);">Scan to share your link</p>'
 }
 var _ecCtaA1=typeof ecExtractCTA==='function'?ecExtractCTA(parts[1]||''):{label:'LEARN MORE',url:null};var ctaLabel2=_ecCtaA1.label;
-var ctaUrl2=ctaLabel2==='GO TO REFERRAL HUB'?siteUrl+'/referral-hub.html':(discountConfig&&discountConfig.couponId?'https://fusionsessions.com/?coupon='+discountConfig.couponId:'https://academy.quantumphysician.com');
+var ctaUrl2=_ecCtaA1.url||(ctaLabel2==='GO TO REFERRAL HUB'?siteUrl+'/referral-hub.html':(discountConfig&&discountConfig.couponId?'https://fusionsessions.com/?coupon='+discountConfig.couponId:'https://academy.quantumphysician.com'));
 discountCardHtml='<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:25px 0 5px;"><tr><td style="background:linear-gradient(135deg,rgba(91,168,178,0.08),rgba(173,155,132,0.08));border:2px solid rgba(91,168,178,0.3);border-radius:12px;padding:28px 25px;text-align:center;"><p style="margin:0;font-size:15px;color:rgba(255,255,255,0.85);line-height:1.5;font-family:Georgia,serif;">'+discountInner+'</p>'+qrHtml+'<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:20px auto 0;"><tr><td style="background:linear-gradient(135deg,#5ba8b2,#4a97a1);border-radius:50px;"><a href="'+wrapLink(ctaUrl2)+'" target="_blank" style="display:inline-block;padding:14px 40px;color:#fff;text-decoration:none;font-weight:700;font-size:14px;letter-spacing:2px;text-transform:uppercase;font-family:Arial,sans-serif;">'+ctaLabel2+'</a></td></tr></table><p style="margin:10px 0 0;font-size:11px;color:rgba(255,255,255,0.4);">'+(ctaLabel2==='GO TO REFERRAL HUB'?'Share your code and start earning':'')+'</p></td></tr></table>'
 }
 /* Additional cards */
 for(var cx=2;cx<parts.length;cx++){
 var card2Body=parts[cx].trim();
 var card2Inner=card2Body
+.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'')
 .replace(/\*\*([^*]+)\*\*/g,'<strong style="color:#5ba8b2;">$1</strong>')
 .replace(/\n/g,'<br>').replace(/(<br>){3,}/g,'<br><br>').replace(/^(<br>)+/,'').replace(/(<br>)+$/,'');
 card2Inner=card2Inner.replace(/Your code:\s*<strong[^>]*>([^<]+)<\/strong>/i,'Your code: <span style="font-family:monospace;font-size:20px;letter-spacing:1px;color:#5ba8b2;background:rgba(91,168,178,0.1);padding:5px 15px;border-radius:8px;">$1</span>');
