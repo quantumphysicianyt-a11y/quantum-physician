@@ -1182,7 +1182,7 @@ discountCardHtml='<table role="presentation" cellspacing="0" cellpadding="0" bor
 for(var cx=2;cx<parts.length;cx++){
 var card2Body=parts[cx].trim();
 var card2Inner=card2Body
-.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'')
+.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank" style="color:#5ba8b2;text-decoration:underline;font-weight:600;">$1</a>')
 .replace(/\*\*([^*]+)\*\*/g,'<strong style="color:#5ba8b2;">$1</strong>')
 .replace(/\n/g,'<br>').replace(/(<br>){3,}/g,'<br><br>').replace(/^(<br>)+/,'').replace(/(<br>)+$/,'');
 card2Inner=card2Inner.replace(/Your code:\s*<strong[^>]*>([^<]+)<\/strong>/i,'Your code: <span style="font-family:monospace;font-size:20px;letter-spacing:1px;color:#5ba8b2;background:rgba(91,168,178,0.1);padding:5px 15px;border-radius:8px;">$1</span>');
@@ -2997,7 +2997,7 @@ function _reTextareaToRich(id){
   var h=textarea.value;
   h=h.replace(/\n---\n/g,'<hr>');
   h=h.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
-  h=h.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g,'<em>$1</em>');
+  h=h.replace(/(?:^|([^*]))\*([^*]+)\*(?!\*)/g,function(_,pre,txt){return(pre||'')+'<em>'+txt+'</em>'});
   h=h.replace(/__([^_]+)__/g,'<u>$1</u>');
   h=h.replace(/~~([^~]+)~~/g,'<s>$1</s>');
   h=h.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2">$1</a>');

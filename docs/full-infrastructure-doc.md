@@ -188,11 +188,13 @@ Two SEPARATE key systems (Session 20 learning):
 
 ---
 
-## Known Issues (Session 22)
+## Known Issues (Session 22 + Hotfix 7)
 1. **✅ Fusion Sessions domain**: `fusionsessions.com` confirmed working.
 2. **✅ CTA buttons + rich editor**: Fixed in Session 22 — selection save/restore handles focus loss.
 3. **✅ Session 21 rebuilt**: Unified editor component working in Session 22.
-4. **email-decode.min.js 404**: Netlify phantom, harmless.
+4. **✅ Safari lookbehind crash**: Replaced `(?<!\*)` in `_reTextareaToRich` with Safari-safe `(?:^|([^*]))` alternation. Was likely cause of SG popup crash.
+5. **✅ Academy email card links**: `buildAcademyEmail` additional cards now convert markdown links to styled `<a>` tags instead of stripping them.
+6. **email-decode.min.js 404**: Netlify phantom, harmless.
 5. **Test email delivery**: `mode:'no-cors'` means no confirmation. Check inbox manually.
 6. **Rich editor → email fidelity**: Advanced formatting (tables, images) may not render perfectly in email HTML.
 7. **Token refresh first-login**: After deploying auth changes, must log out + back in once to store refresh_token.

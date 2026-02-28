@@ -34,11 +34,13 @@ All features from Fusion admin are now in QP admin. Zero gaps remain.
 - ✅ **Test Email** (SESSION 20) — Themed modal, sends via Apps Script
 - ✅ **Auth Auto-Refresh** (SESSION 20) — onAuthStateChange + 45-min interval + 401 retry
 
-### Unified Rich Editor (Session 22) ✅
+### Unified Rich Editor (Session 22 + Hotfix 7) ✅
 - ✅ `createRichEditor(config)` reusable component with instance-based state
 - ✅ Mounted in Email Center (inline), SG popup, and Recovery popup
 - ✅ Selection save/restore fixes CTA focus-loss bug
 - ✅ Syncing guard prevents infinite input loops
+- ✅ Safari-safe italic regex (no lookbehinds)
+- ✅ Academy email builder converts markdown links in card sections to styled links
 
 ### Course Builder (Sessions 14-18)
 - ✅ Full course builder with lesson creation, ordering, management

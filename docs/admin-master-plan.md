@@ -201,6 +201,11 @@ Commit `86eeaa7` — Pre-Session 21 state. Both admin.js and index.html restored
 - `admin/admin.js` — Added `createRichEditor()` component (~300 lines), EC bridge code (~80 lines), SG popup mount integration. Removed 388 lines of old Session 20 EC-specific editor code. Total: 3290 lines (was 3132).
 - `admin/admin.css` — Updated `.re-toolbar`, `.re-editor`, `.re-select`, `.ec-tb-sep`, `.ec-tb-color-wrap`, `.ec-emoji-btn` styles. Replaced old Session 21 `.re-editable` styles.
 
+### Hotfix 7 — Applied (Session 22 continuation)
+1. ✅ **Safari-safe regex**: Replaced `(?<!\*)` lookbehind in `_reTextareaToRich()` line 3000 with `(?:^|([^*]))` alternation pattern. Lookbehinds crash Safari/WebKit. This was likely the SG popup crash cause.
+2. ✅ **CTA insert before first `---`**: Already implemented in Session 22 (lines 3246-3250). No change needed.
+3. ✅ **Academy email card links**: `buildAcademyEmail()` additional cards (line 1185) were stripping `[text](url)` with `.replace(/…/g,'')`. Now converts to styled `<a>` tags matching Fusion builder behavior (line 1113).
+
 ### Known Cleanup (Low Priority)
 - Old Session 19-20 `ecInsertLibraryCard` / `insertEmailVar` / `ecInsertCTA` definitions (lines ~2635-2744) are now dead code, overridden by bridge functions. Can be removed in a future cleanup pass.
 - `prompt()` used for link/image/CTA URLs. Could be upgraded to `qpPrompt()` for themed modals in a future pass.
