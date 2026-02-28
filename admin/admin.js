@@ -68,7 +68,8 @@ function doLogout(){sessionStorage.removeItem('qp_admin_auth');currentAdmin=null
 try{var savedAdmin=sessionStorage.getItem('qp_admin_auth');if(savedAdmin){currentAdmin=JSON.parse(savedAdmin);applyPermissions();document.getElementById('auth-screen').style.display='none';document.getElementById('admin-layout').style.display='block';setTimeout(initAdmin,50)}}catch(e){sessionStorage.removeItem('qp_admin_auth')}
 let currentPage='dashboard';
 const TITLES={dashboard:'Dashboard',customers:'Customers',academy:'Academy',fusion:'Fusion Sessions',sessions:'1-on-1 Sessions',memberships:'Memberships',community:'Community',referrals:'Referrals & Credits',email:'Email Campaigns',automation:'Email Automation',promotions:'Promotions',orders:'Orders',analytics:'Analytics',audit:'Audit Log','admin-users':'Admin Users'};
-function go(page,btn){currentPage=page;document.querySelectorAll('.sb-link').forEach(l=>l.classList.remove('active'));if(btn)btn.classList.add('active');document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));var el=document.getElementById('page-'+page);if(el)el.classList.add('active');document.getElementById('topbar-title').textContent=TITLES[page]||page;loadPageData(page);document.getElementById('sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('open')}
+function go(page,btn){
+  _reCleanupPickers();_ecEditor=null;if(_reInstances["ec"])delete _reInstances["ec"];currentPage=page;document.querySelectorAll('.sb-link').forEach(l=>l.classList.remove('active'));if(btn)btn.classList.add('active');document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));var el=document.getElementById('page-'+page);if(el)el.classList.add('active');document.getElementById('topbar-title').textContent=TITLES[page]||page;loadPageData(page);document.getElementById('sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('open')}
 function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sb-overlay').classList.toggle('open')}
 function refreshCurrentPage(){loadAllData().then(function(){loadPageData(currentPage)})}
 let allCustomers=[],purchasesData=[],referralData=[],profilesData=[],creditHistory=[],academyEnrollments=[],academyCourses=[],lessonProgress=[],adminNotesData=[],authUsersMap=new Map(),allFusionPosts=[],allAcadPosts=[],emailCampaignsData=[],emailTrackingData=[],dataLoaded=false;
@@ -130,12 +131,13 @@ h+='<div style="margin-bottom:14px"><label style="font-size:12px;font-weight:600
 h+='<input type="text" id="sg-subject" class="input" value="'+esc(opts.subject||'').replace(/"/g,'&quot;')+'" style="width:100%"></div>';
 h+='<div style="margin-bottom:6px"><label style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:4px;display:block">Body</label>';
 h+='<div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;align-items:center">';
-h+='<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 8px" onclick="sgInsertVar(\u0027{{name}}\u0027)">Name</button>';
-h+='<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 8px" onclick="sgInsertVar(\u0027{{email}}\u0027)">Email</button>';
-h+='<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 8px" onclick="sgInsertVar(\u0027{{referral_code}}\u0027)">Referral Code</button>';
+h+='<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 8px" onclick="reInsertVar(\u0027sg\u0027,\u0027{{name}}\u0027)">Name</button>';
+h+='<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 8px" onclick="reInsertVar(\u0027sg\u0027,\u0027{{email}}\u0027)">Email</button>';
+h+='<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 8px" onclick="reInsertVar(\u0027sg\u0027,\u0027{{referral_code}}\u0027)">Referral Code</button>';
 h+='<span style="flex:1"></span>';
 h+='</div>';
-h+='<textarea id="sg-body" class="input" rows="10" style="width:100%;font-size:13px;line-height:1.6" oninput="sgAutoPreview()">'+esc(opts.body||'')+'</textarea>';
+h+='<div id="sg-editor-mount"></div>';
+h+='<textarea id="sg-body" class="input" rows="10" style="width:100%;font-size:13px;line-height:1.6;display:none" oninput="sgAutoPreview()">'+esc(opts.body||'')+'</textarea>';
 h+='<div id="sg-section-controls" style="display:none;margin-top:8px;margin-bottom:8px"><div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">Cards <span style="opacity:.5">(drag to reorder)</span></div><div id="sg-card-pills" style="display:flex;flex-wrap:wrap;gap:6px"></div></div>';
 h+='</div>';
 h+='<div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap">';
@@ -160,7 +162,13 @@ h+='</div>';
 box.innerHTML=h;
 ov.appendChild(box);document.body.appendChild(ov);
 /* Auto-show preview on open */
-setTimeout(function(){sgPreview();sgUpdateSectionControls()},100);
+setTimeout(function(){
+/* Init SG rich editor */
+if(typeof createRichEditor==='function'){
+  if(_reInstances['sg'])delete _reInstances['sg'];
+  createRichEditor({id:'sg',mountId:'sg-editor-mount',textareaId:'sg-body',onInput:function(){sgAutoPreview()}});
+}
+sgPreview();sgUpdateSectionControls()},100);
 }
 
 function sgRemoveRecipient(btn,email){
@@ -305,7 +313,10 @@ h+='<div draggable="true" data-idx="'+i+'" ondragstart="sgStartDrag(event)" ondr
 }
 pills.innerHTML=h;
 }
-function sgInsertVar(v){var ta=document.getElementById('sg-body');if(!ta)return;var s=ta.selectionStart,e=ta.selectionEnd,t=ta.value;ta.value=t.substring(0,s)+v+t.substring(e);ta.focus();ta.selectionStart=ta.selectionEnd=s+v.length}
+function sgInsertVar(v){
+  if(_reGetInst('sg')){reInsertVar('sg',v);return}
+  var ta=document.getElementById('sg-body');if(!ta)return;var s=ta.selectionStart,e=ta.selectionEnd,t=ta.value;ta.value=t.substring(0,s)+v+t.substring(e);ta.focus();ta.selectionStart=ta.selectionEnd=s+v.length;
+}
 
 function sgGetDiscountConfig(){
 var tog=document.getElementById('sg-discount-toggle');
@@ -867,7 +878,7 @@ const APPS_SCRIPT_URL='https://script.google.com/macros/s/AKfycbxHvXyIybqImwiCkW
 let currentAudience=[],emailStatsUsersCache=[],emailStudentListData=[],currentEmailStudentFilter='total',_campaignHistoryData=[];
 const EMAIL_TEMPLATES={welcome:{name:'Welcome',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:22px;height:22px"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>',subject:'Welcome to the Quantum Physician Family!',body:'Hi {{name}},\n\nWelcome to Quantum Physician! We\'re so excited to have you join our healing community.\n\nYour journey toward balance, vitality, and inner alignment starts now.\n\nIf you have any questions, just reply to this email – we\'re here for you every step of the way.'},newSession:{name:'New Session',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:22px;height:22px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',subject:'New Fusion Session Now Available!',body:'Hi {{name}},\n\nExciting news! A new Fusion Session is now available.\n\nLog in to your dashboard to learn more and secure your spot.'},reminder:{name:'Session Reminder',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:22px;height:22px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',subject:'Your Fusion Session is Coming Up!',body:'Hi {{name}},\n\nJust a friendly reminder that your next Fusion Session is coming up soon!\n\nCheck your dashboard for the exact date and time.'},referral:{name:'Referral Promo',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:22px;height:22px"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>',subject:'Share the Healing & Earn Rewards!',body:'Hi {{name}},\n\nDid you know you can earn credits just by sharing Quantum Physician with friends?\n\nYour personal referral code: {{referral_code}}\n\nVisit your Referral Hub to grab your shareable link!'},thankYou:{name:'Thank You',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:22px;height:22px"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>',subject:'Thank You for Being Part of Our Community',body:'Hi {{name}},\n\nWe just wanted to take a moment to say THANK YOU.\n\nThank you for trusting us with your healing journey.\n\nWith gratitude and healing energy.'},academyWelcome:{name:'Academy Welcome',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:22px;height:22px"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>',subject:'Welcome to the Self-H.O.P.E. Academy!',body:'Hi {{name}},\n\nWelcome to the Self-H.O.P.E. Academy! Your courses are ready and waiting for you.\n\nLog in to your student dashboard to start learning today.'}};
 
-function loadEmailPage(){loadEmailStats();updateAudiencePreview();renderTemplateGrid();loadCampaignHistory();loadWeeklyEmailLimit();var si=document.getElementById('email-subject');if(si)si.oninput=function(){document.getElementById('subject-count').textContent=this.value.length}}
+function loadEmailPage(){initECEditor();loadEmailStats();updateAudiencePreview();renderTemplateGrid();loadCampaignHistory();loadWeeklyEmailLimit();var si=document.getElementById('email-subject');if(si)si.oninput=function(){document.getElementById('subject-count').textContent=this.value.length}}
 
 function loadEmailStats(){var optedIn=0,optedOut=0,total=0;authUsersMap.forEach(function(u){total++;var oi=true;if(((u.user_metadata||u.raw_user_meta_data||{}).marketing_opt_in===false))oi=false;if(oi)optedIn++;else optedOut++});document.getElementById('email-stats').innerHTML='<div class="stat-card" style="cursor:pointer" onclick="toggleEmailStudentList(\'opted-in\')"><div class="stat-ico green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div><div><div class="stat-val">'+optedIn+'</div><div class="stat-lbl">Opted In</div></div></div><div class="stat-card" style="cursor:pointer" onclick="toggleEmailStudentList(\'opted-out\')"><div class="stat-ico warm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></div><div><div class="stat-val">'+optedOut+'</div><div class="stat-lbl">Opted Out</div></div></div><div class="stat-card" style="cursor:pointer" onclick="toggleEmailStudentList(\'total\')"><div class="stat-ico teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div><div class="stat-val">'+total+'</div><div class="stat-lbl">Total Users</div></div></div><div class="stat-card"><div class="stat-ico purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div><div><div class="stat-val">'+emailCampaignsData.length+'</div><div class="stat-lbl">Campaigns Sent</div></div></div>'}
 
@@ -2743,390 +2754,537 @@ function ecInsertCTA(key){
 /* ================================================================
    Rich Text Editor — Toolbar Functions
    ================================================================ */
-var _ecSourceMode=false;
 
-function ecExec(cmd,val){
-  document.execCommand(cmd,false,val||null);
-  document.getElementById('ec-editor-rich').focus();
-  ecRichSync();
-}
+/* ================================================================
+   UNIFIED RICH EDITOR COMPONENT — Session 22
+   createRichEditor(config) returns an instance object.
+   Used by: Email Center (inline), SG popup, Recovery popup.
+   All three share this one factory function with instance-based state.
+   ================================================================ */
+var _reInstances={};
+var _RE_EMOJIS=['😊','😄','🎉','✨','💜','❤️','🙏','👋','🎯','💡','🔥','⭐','🌟','💫','🚀','✅','📣','📧','🎁','💪','🌈','☀️','🌙','🎵','📚','🧠','💎','🏆','👏','🤝','💐','🌺','🍃','🦋','🕊️','🌊','⚡','🔔','📌','🎬','📍','📅','🕐','🔗','⏰','💖','🧪'];
 
-function ecInsertLink(){
-  var url=prompt('Enter URL:','https://');
-  if(!url)return;
-  document.execCommand('createLink',false,url);
-  document.getElementById('ec-editor-rich').focus();
-  ecRichSync();
-}
-
-function ecInsertDivider(){
-  var editor=document.getElementById('ec-editor-rich');
-  /* Insert a visual divider + card separator */
-  var hr=document.createElement('hr');
-  var sel=window.getSelection();
-  if(sel.rangeCount){
-    var range=sel.getRangeAt(0);
-    range.collapse(false);
-    range.insertNode(document.createElement('br'));
-    range.insertNode(hr);
-    range.collapse(false);
+function createRichEditor(config){
+  /* config: { id, mountId, textareaId, onInput, initialContent } */
+  var inst={
+    id:config.id,
+    mountId:config.mountId,
+    textareaId:config.textareaId,
+    onInput:config.onInput||function(){},
+    sourceMode:false,
+    _syncing:false,
+    _savedRange:null
+  };
+  _reInstances[config.id]=inst;
+  var mount=document.getElementById(config.mountId);
+  if(!mount){console.warn('createRichEditor: mount not found:',config.mountId);return null}
+  var cid=config.id;
+  /* Build toolbar */
+  var tb='<div id="re-toolbar-'+cid+'" class="re-toolbar">';
+  tb+='<button type="button" onclick="_reExec(\''+cid+'\',\'undo\')" class="ec-tb-btn" title="Undo">\u21a9</button>';
+  tb+='<button type="button" onclick="_reExec(\''+cid+'\',\'redo\')" class="ec-tb-btn" title="Redo">\u21aa</button>';
+  tb+='<span class="ec-tb-sep"></span>';
+  tb+='<select id="re-heading-'+cid+'" onchange="_reHeading(\''+cid+'\',this.value)" class="re-select" style="width:70px"><option value="p">Normal</option><option value="h1">H1</option><option value="h2">H2</option><option value="h3">H3</option></select>';
+  tb+='<select onchange="_reExec(\''+cid+'\',\'fontName\',this.value)" class="re-select" style="width:85px"><option value="Arial">Arial</option><option value="Georgia">Georgia</option><option value="Playfair Display">Playfair</option><option value="Courier New">Courier</option><option value="Verdana">Verdana</option><option value="Trebuchet MS">Trebuchet</option></select>';
+  tb+='<select onchange="_reExec(\''+cid+'\',\'fontSize\',this.value)" class="re-select" style="width:44px"><option value="1">XS</option><option value="2">S</option><option value="3" selected>M</option><option value="4">L</option><option value="5">XL</option><option value="6">2X</option></select>';
+  tb+='<span class="ec-tb-sep"></span>';
+  tb+='<button type="button" onclick="_reExec(\''+cid+'\',\'bold\')" class="ec-tb-btn" title="Bold"><b>B</b></button>';
+  tb+='<button type="button" onclick="_reExec(\''+cid+'\',\'italic\')" class="ec-tb-btn" title="Italic"><i>I</i></button>';
+  tb+='<button type="button" onclick="_reExec(\''+cid+'\',\'underline\')" class="ec-tb-btn" title="Underline"><u>U</u></button>';
+  tb+='<button type="button" onclick="_reExec(\''+cid+'\',\'strikeThrough\')" class="ec-tb-btn" title="Strikethrough"><s>S</s></button>';
+  tb+='<span class="ec-tb-sep"></span>';
+  tb+='<div class="ec-tb-color-wrap" title="Text Color" onclick="this.querySelector(\'input\').click()"><input type="color" id="re-color-'+cid+'" value="#00f5ff" onchange="_reExec(\''+cid+'\',\'foreColor\',this.value);this.nextElementSibling.style.color=this.value" style="position:absolute;opacity:0;width:0;height:0;pointer-events:none"><span style="color:#00f5ff;font-weight:700;font-size:14px;cursor:pointer">A</span></div>';
+  tb+='<div class="ec-tb-color-wrap" title="Highlight" onclick="this.querySelector(\'input\').click()"><input type="color" id="re-hl-'+cid+'" value="#ffff00" onchange="_reExec(\''+cid+'\',\'hiliteColor\',this.value);this.nextElementSibling.querySelector(\'span\').style.background=this.value" style="position:absolute;opacity:0;width:0;height:0;pointer-events:none"><span style="font-size:12px;cursor:pointer;position:relative">ab<span style="position:absolute;bottom:-1px;left:0;right:0;height:3px;background:#ffff00;border-radius:2px"></span></span></div>';
+  tb+='<span class="ec-tb-sep"></span>';
+  tb+='<button type="button" onclick="_reExec(\''+cid+'\',\'justifyLeft\')" class="ec-tb-btn ec-tb-align" title="Left"><span style="display:flex;flex-direction:column;gap:1.5px;width:14px"><span style="height:1.5px;background:currentColor;width:100%"></span><span style="height:1.5px;background:currentColor;width:70%"></span><span style="height:1.5px;background:currentColor;width:85%"></span></span></button>';
+  tb+='<button type="button" onclick="_reExec(\''+cid+'\',\'justifyCenter\')" class="ec-tb-btn ec-tb-align" title="Center"><span style="display:flex;flex-direction:column;gap:1.5px;width:14px;align-items:center"><span style="height:1.5px;background:currentColor;width:100%"></span><span style="height:1.5px;background:currentColor;width:70%"></span><span style="height:1.5px;background:currentColor;width:85%"></span></span></button>';
+  tb+='<button type="button" onclick="_reExec(\''+cid+'\',\'justifyRight\')" class="ec-tb-btn ec-tb-align" title="Right"><span style="display:flex;flex-direction:column;gap:1.5px;width:14px;align-items:flex-end"><span style="height:1.5px;background:currentColor;width:100%"></span><span style="height:1.5px;background:currentColor;width:70%"></span><span style="height:1.5px;background:currentColor;width:85%"></span></span></button>';
+  tb+='<span class="ec-tb-sep"></span>';
+  tb+='<button type="button" onclick="_reExec(\''+cid+'\',\'insertUnorderedList\')" class="ec-tb-btn" title="Bullet List">&bull;</button>';
+  tb+='<button type="button" onclick="_reExec(\''+cid+'\',\'insertOrderedList\')" class="ec-tb-btn" title="Numbered">1.</button>';
+  tb+='<button type="button" onclick="_reInsertLink(\''+cid+'\')" class="ec-tb-btn" title="Link" style="color:var(--purple)"><span style="font-size:12px;text-decoration:underline">\uD83D\uDD17</span></button>';
+  tb+='<button type="button" onclick="_reInsertDivider(\''+cid+'\')" class="ec-tb-btn" title="Card Divider" style="font-size:9px;letter-spacing:1px">\u2014</button>';
+  tb+='<span style="flex:1"></span>';
+  tb+='<div id="re-more-wrap-'+cid+'" style="position:relative">';
+  tb+='<button type="button" onclick="_reToggleMore(\''+cid+'\')" class="ec-tb-btn" id="re-more-btn-'+cid+'" title="More tools" style="font-size:11px">More \u25be</button>';
+  tb+='<div id="re-more-'+cid+'" class="ec-more-dropdown" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;background:var(--navy-card);border:1px solid var(--border);border-radius:10px;padding:6px;min-width:180px;z-index:100;box-shadow:0 8px 30px rgba(0,0,0,.4)">';
+  tb+='<button type="button" onclick="_reInsertImage(\''+cid+'\')" class="ec-tb-dd">\uD83D\uDCF7 Insert Image</button>';
+  tb+='<button type="button" onclick="_reInsertEmoji(\''+cid+'\')" class="ec-tb-dd">\uD83D\uDE0A Emoji</button>';
+  tb+='<button type="button" onclick="_reInsertBlockquote(\''+cid+'\')" class="ec-tb-dd">\u275D Blockquote</button>';
+  tb+='<button type="button" onclick="_reInsertTable(\''+cid+'\')" class="ec-tb-dd">\u25A6 Table</button>';
+  tb+='<button type="button" onclick="_reExec(\''+cid+'\',\'indent\')" class="ec-tb-dd">\u2192 Indent</button>';
+  tb+='<button type="button" onclick="_reExec(\''+cid+'\',\'outdent\')" class="ec-tb-dd">\u2190 Outdent</button>';
+  tb+='<button type="button" onclick="_reLineSpacing(\''+cid+'\')" class="ec-tb-dd">\u2195 Line Spacing</button>';
+  tb+='<button type="button" onclick="_reExec(\''+cid+'\',\'removeFormat\')" class="ec-tb-dd">\u2715 Clear Formatting</button>';
+  tb+='<button type="button" onclick="_reToggleSource(\''+cid+'\')" class="ec-tb-dd" id="re-src-btn-'+cid+'">{ } Source Code</button>';
+  tb+='</div></div>';
+  tb+='</div>';
+  var ed='<div id="re-editor-'+cid+'" contenteditable="true" class="re-editor" oninput="_reOnInput(\''+cid+'\')" onpaste="setTimeout(function(){_reOnInput(\''+cid+'\')},50)"></div>';
+  mount.innerHTML=tb+ed;
+  /* Save selection on blur */
+  var editorEl=document.getElementById('re-editor-'+cid);
+  editorEl.addEventListener('blur',function(){
+    var sel=window.getSelection();
+    if(sel.rangeCount&&editorEl.contains(sel.anchorNode)){
+      inst._savedRange=sel.getRangeAt(0).cloneRange();
+    }
+  });
+  /* Load initial content */
+  if(config.initialContent){
+    var ta=document.getElementById(config.textareaId);
+    if(ta&&!ta.value)ta.value=config.initialContent;
+    _reTextareaToRich(cid);
   }else{
-    editor.appendChild(hr);
+    var ta=document.getElementById(config.textareaId);
+    if(ta&&ta.value.trim())_reTextareaToRich(cid);
   }
-  editor.focus();
-  ecRichSync();
+  return inst;
 }
 
-/* Sync rich editor → hidden textarea (converts to markdown-ish format) */
-function ecRichSync(){
-  if(_ecSourceMode)return;
-  var editor=document.getElementById('ec-editor-rich');
-  var textarea=document.getElementById('email-body');
-  if(!editor||!textarea)return;
-  /* Convert HTML to markdown-ish text for the email builder */
+function _reGetInst(id){return _reInstances[id]||null}
+function _reGetEditor(id){return document.getElementById('re-editor-'+id)}
+function _reGetTextarea(id){var inst=_reGetInst(id);return inst?document.getElementById(inst.textareaId):null}
+function _reRestoreSelection(id){
+  var inst=_reGetInst(id);if(!inst)return;
+  var editor=_reGetEditor(id);if(!editor)return;
+  editor.focus();
+  if(inst._savedRange){
+    try{var sel=window.getSelection();sel.removeAllRanges();sel.addRange(inst._savedRange)}catch(e){}
+  }
+}
+function _reCloseMore(id){var dd=document.getElementById('re-more-'+id);if(dd)dd.style.display='none'}
+
+function _reExec(id,cmd,val){
+  _reRestoreSelection(id);
+  document.execCommand(cmd,false,val||null);
+  _reGetEditor(id).focus();
+  _reSync(id);
+}
+
+function _reOnInput(id){
+  var inst=_reGetInst(id);
+  if(!inst||inst._syncing)return;
+  _reSync(id);
+}
+
+function _reHeading(id,tag){
+  _reRestoreSelection(id);
+  document.execCommand('formatBlock',false,tag==='p'?'<p>':'<'+tag+'>');
+  _reGetEditor(id).focus();
+  _reSync(id);
+  var sel=document.getElementById('re-heading-'+id);if(sel)sel.value=tag;
+}
+
+/* Sync: rich → textarea */
+function _reSync(id){
+  var inst=_reGetInst(id);
+  if(!inst||inst.sourceMode||inst._syncing)return;
+  inst._syncing=true;
+  var editor=_reGetEditor(id);
+  var textarea=_reGetTextarea(id);
+  if(!editor||!textarea){inst._syncing=false;return}
   var html=editor.innerHTML;
-  /* Convert <hr> to --- dividers */
   var md=html.replace(/<hr[^>]*>/gi,'\n---\n');
-  /* Convert <br> to newlines */
   md=md.replace(/<br\s*\/?>/gi,'\n');
-  /* Convert <b>/<strong> to **bold** */
   md=md.replace(/<(b|strong)[^>]*>(.*?)<\/(b|strong)>/gi,'**$2**');
-  /* Convert <i>/<em> to *italic* (we use single star) */
   md=md.replace(/<(i|em)[^>]*>(.*?)<\/(i|em)>/gi,'*$2*');
-  /* Convert <u> to __underline__ */
   md=md.replace(/<u[^>]*>(.*?)<\/u>/gi,'__$1__');
-  /* Convert <s>/<strike> to ~~strike~~ */
   md=md.replace(/<(s|strike|del)[^>]*>(.*?)<\/(s|strike|del)>/gi,'~~$2~~');
-  /* Convert <a href="url">text</a> to [text](url) */
   md=md.replace(/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi,'[$2]($1)');
-  /* Convert block elements to newlines */
   md=md.replace(/<\/(div|p|h[1-6]|li)>/gi,'\n');
   md=md.replace(/<(div|p|h[1-6])[^>]*>/gi,'');
   md=md.replace(/<li[^>]*>/gi,'- ');
   md=md.replace(/<\/?(ul|ol)[^>]*>/gi,'\n');
-  /* Strip remaining HTML tags but preserve content */
   md=md.replace(/<[^>]+>/g,'');
-  /* Decode HTML entities */
-  var tmp=document.createElement('textarea');
-  tmp.innerHTML=md;
-  md=tmp.value;
-  /* Clean up excessive newlines */
-  md=md.replace(/\n{3,}/g,'\n\n');
-  md=md.trim();
+  var tmp=document.createElement('textarea');tmp.innerHTML=md;md=tmp.value;
+  md=md.replace(/\n{3,}/g,'\n\n').trim();
   textarea.value=md;
-  ecAutoPreview();
+  inst._syncing=false;
+  inst.onInput();
 }
 
-/* Sync textarea → rich editor (for loading templates etc) */
-function ecTextareaToRich(){
-  var textarea=document.getElementById('email-body');
-  var editor=document.getElementById('ec-editor-rich');
-  if(!editor||!textarea)return;
-  var md=textarea.value;
-  /* Convert markdown to HTML */
-  var h=md;
-  /* --- dividers */
+/* Sync: textarea → rich */
+function _reTextareaToRich(id){
+  var inst=_reGetInst(id);if(!inst)return;
+  inst._syncing=true;
+  var editor=_reGetEditor(id);
+  var textarea=_reGetTextarea(id);
+  if(!editor||!textarea){inst._syncing=false;return}
+  var h=textarea.value;
   h=h.replace(/\n---\n/g,'<hr>');
-  /* **bold** */
   h=h.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
-  /* *italic* (but not ** which is bold) */
   h=h.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g,'<em>$1</em>');
-  /* __underline__ */
   h=h.replace(/__([^_]+)__/g,'<u>$1</u>');
-  /* ~~strike~~ */
   h=h.replace(/~~([^~]+)~~/g,'<s>$1</s>');
-  /* [text](url) → links */
   h=h.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2">$1</a>');
-  /* {{merge_tags}} → styled spans */
   h=h.replace(/\{\{(name|email|referral_code)\}\}/g,'<span style="background:rgba(91,168,178,.2);color:var(--teal);padding:1px 6px;border-radius:4px;font-size:12px">{{$1}}</span>');
-  /* {{session_image:...}} → placeholder */
-  h=h.replace(/\{\{session_image:([^}]+)\}\}/g,'<span style="display:inline-block;background:rgba(131,56,236,.15);color:var(--purple);padding:4px 10px;border-radius:6px;font-size:11px;border:1px dashed var(--purple)">📷 $1</span>');
-  /* Newlines to <br> */
+  h=h.replace(/\{\{session_image:([^}]+)\}\}/g,'<span style="display:inline-block;background:rgba(131,56,236,.15);color:var(--purple);padding:4px 10px;border-radius:6px;font-size:11px;border:1px dashed var(--purple)">\uD83D\uDCF7 $1</span>');
   h=h.replace(/\n/g,'<br>');
   editor.innerHTML=h;
+  inst._syncing=false;
 }
 
-/* Toggle between rich editor and raw markdown source */
-function ecToggleSource(){
-  var editor=document.getElementById('ec-editor-rich');
-  var textarea=document.getElementById('email-body');
-  var toolbar=document.getElementById('ec-editor-toolbar');
-  var btn=document.getElementById('ec-tb-source-btn');
+/* Source toggle */
+function _reToggleSource(id){
+  var inst=_reGetInst(id);if(!inst)return;
+  var editor=_reGetEditor(id);
+  var textarea=_reGetTextarea(id);
+  var toolbar=document.getElementById('re-toolbar-'+id);
+  var srcBtn=document.getElementById('re-src-btn-'+id);
   if(!editor||!textarea)return;
-  _ecSourceMode=!_ecSourceMode;
-  if(_ecSourceMode){
-    ecRichSync();
+  _reCloseMore(id);
+  inst.sourceMode=!inst.sourceMode;
+  if(inst.sourceMode){
+    _reSync(id);
     editor.style.display='none';
     textarea.style.display='block';
     textarea.style.borderRadius='0 0 var(--radius-sm) var(--radius-sm)';
-    /* Dim toolbar buttons but keep source btn clickable */
-    toolbar.querySelectorAll('.ec-tb-btn,select').forEach(function(el){
-      if(el.id!=='ec-tb-source-btn'){el.style.opacity='.3';el.style.pointerEvents='none'}
+    toolbar.querySelectorAll('.ec-tb-btn,.re-select,.ec-tb-color-wrap').forEach(function(el){
+      if(!el.id||(!el.id.includes('re-src-btn')&&!el.id.includes('re-more-btn'))){el.style.opacity='.3';el.style.pointerEvents='none'}
     });
-    btn.style.color='var(--teal)';btn.style.borderColor='var(--teal)';btn.textContent='Rich';
+    if(srcBtn){srcBtn.style.color='var(--teal)';srcBtn.textContent='Rich'}
   }else{
-    ecTextareaToRich();
+    _reTextareaToRich(id);
     editor.style.display='block';
     textarea.style.display='none';
-    toolbar.querySelectorAll('.ec-tb-btn,select').forEach(function(el){
+    toolbar.querySelectorAll('.ec-tb-btn,.re-select,.ec-tb-color-wrap').forEach(function(el){
       el.style.opacity='1';el.style.pointerEvents='auto';
     });
-    btn.style.color='var(--text-dim)';btn.style.borderColor='transparent';btn.textContent='{ }';
+    if(srcBtn){srcBtn.style.color='';srcBtn.textContent='{ } Source Code'}
   }
-}
-
-/* Override loadTemplate to also update rich editor */
-var _origLoadTemplate=typeof loadTemplate==='function'?loadTemplate:null;
-function loadTemplate(key){
-  if(_origLoadTemplate)_origLoadTemplate(key);
-  else{
-    var tmpl=getAllTemplates()[key];
-    if(!tmpl)return;
-    document.getElementById('email-subject').value=tmpl.subject;
-    document.getElementById('email-body').value=tmpl.body;
-    document.getElementById('subject-count').textContent=tmpl.subject.length;
-    showToast('Loaded "'+tmpl.name+'" template','success');
-  }
-  if(!_ecSourceMode)ecTextareaToRich();
-  ecAutoPreview();
-}
-
-/* Override insertEmailVar to work with rich editor */
-var _origInsertEmailVar2=typeof insertEmailVar==='function'?insertEmailVar:null;
-function insertEmailVar(v){
-  if(_ecSourceMode){
-    /* Source mode — insert into textarea */
-    var ta=document.getElementById('email-body');if(!ta)return;
-    var s=ta.selectionStart,e=ta.selectionEnd,t=ta.value;
-    ta.value=t.substring(0,s)+v+t.substring(e);
-    ta.focus();ta.selectionStart=ta.selectionEnd=s+v.length;
-  }else{
-    /* Rich mode — insert styled span */
-    var span='<span style="background:rgba(91,168,178,.2);color:var(--teal);padding:1px 6px;border-radius:4px;font-size:12px">'+v+'</span>&nbsp;';
-    document.execCommand('insertHTML',false,span);
-    document.getElementById('ec-editor-rich').focus();
-  }
-  ecRichSync();
-  ecAutoPreview();
-}
-
-/* Override ecInsertCTA to work with rich editor */
-var _origEcInsertCTA=typeof ecInsertCTA==='function'?ecInsertCTA:null;
-function ecInsertCTA(key){
-  var cta;
-  if(key==='custom'){
-    var label=prompt('Button text:','Learn More');
-    if(!label)return;
-    var url=prompt('Button URL:','https://');
-    if(!url)return;
-    cta={label:label,url:url};
-  }else{
-    cta=EC_CTA_BUTTONS[key];if(!cta)return;
-  }
-  if(_ecSourceMode){
-    var ta=document.getElementById('email-body');if(!ta)return;
-    var s=ta.selectionStart,e=ta.selectionEnd,t=ta.value;
-    var md='['+cta.label+']('+cta.url+')';
-    ta.value=t.substring(0,s)+md+t.substring(e);
-    ta.focus();ta.selectionStart=ta.selectionEnd=s+md.length;
-  }else{
-    var link='<a href="'+cta.url+'" style="color:var(--purple);font-weight:600">'+esc(cta.label)+'</a>&nbsp;';
-    document.execCommand('insertHTML',false,link);
-    document.getElementById('ec-editor-rich').focus();
-  }
-  ecRichSync();
-  ecAutoPreview();
-  showToast('CTA inserted','success');
-}
-
-/* Override ecInsertLibraryCard for rich editor */
-var _origEcInsertLibCard=typeof ecInsertLibraryCard==='function'?ecInsertLibraryCard:null;
-function ecInsertLibraryCard(index){
-  var card=cardLibraryTemplates[index];if(!card)return;
-  var textarea=document.getElementById('email-body');if(!textarea)return;
-  var body=textarea.value.trimEnd();
-  textarea.value=body+'\n---\n'+card.body;
-  if(!_ecSourceMode)ecTextareaToRich();
-  textarea.scrollTop=textarea.scrollHeight;
-  ecAutoPreview();showToast('Added: '+card.name,'success');
-}
-
-
-/* ================================================================
-   Rich Editor — Extended Features
-   ================================================================ */
-
-/* Heading selector */
-function ecHeading(tag){
-  if(tag==='p'){document.execCommand('formatBlock',false,'<p>')}
-  else{document.execCommand('formatBlock',false,'<'+tag+'>')}
-  document.getElementById('ec-editor-rich').focus();
-  ecRichSync();
-  document.getElementById('ec-tb-heading').value=tag;
 }
 
 /* More dropdown toggle */
-function ecToggleMore(){
-  var dd=document.getElementById('ec-more-dropdown');
-  if(!dd)return;
+function _reToggleMore(id){
+  var dd=document.getElementById('re-more-'+id);if(!dd)return;
   var show=dd.style.display==='none';
   dd.style.display=show?'block':'none';
   if(show){
-    /* Close when clicking outside */
     setTimeout(function(){
       document.addEventListener('click',function _close(e){
-        if(!document.getElementById('ec-more-wrap').contains(e.target)){
-          dd.style.display='none';
-          document.removeEventListener('click',_close);
-        }
+        var wrap=document.getElementById('re-more-wrap-'+id);
+        if(!wrap||!wrap.contains(e.target)){dd.style.display='none';document.removeEventListener('click',_close)}
       });
     },10);
   }
 }
 
-/* Insert image from URL */
-function ecInsertImage(){
-  ecToggleMore();
-  var url=prompt('Image URL:','https://');
-  if(!url)return;
-  if(_ecSourceMode){
-    var ta=document.getElementById('email-body');
+/* Insert link */
+function _reInsertLink(id){
+  var inst=_reGetInst(id);if(!inst)return;
+  _reCloseMore(id);
+  if(inst.sourceMode){
+    var ta=_reGetTextarea(id);if(!ta)return;
+    var url=prompt('Enter URL:','https://');if(!url)return;
+    var label=prompt('Link text:','Click here');if(!label)label='Click here';
+    var s=ta.selectionStart,e=ta.selectionEnd;
+    var md='['+label+']('+url+')';
+    ta.value=ta.value.substring(0,s)+md+ta.value.substring(e);
+    ta.focus();ta.selectionStart=ta.selectionEnd=s+md.length;
+  }else{
+    var url=prompt('Enter URL:','https://');if(!url)return;
+    _reRestoreSelection(id);
+    document.execCommand('createLink',false,url);
+    _reGetEditor(id).focus();
+  }
+  _reSync(id);
+}
+
+/* Insert divider */
+function _reInsertDivider(id){
+  var inst=_reGetInst(id);if(!inst)return;
+  _reCloseMore(id);
+  if(inst.sourceMode){
+    var ta=_reGetTextarea(id);if(!ta)return;
     var s=ta.selectionStart;
+    ta.value=ta.value.substring(0,s)+'\n---\n'+ta.value.substring(ta.selectionEnd);
+    ta.focus();ta.selectionStart=ta.selectionEnd=s+5;
+  }else{
+    _reRestoreSelection(id);
+    var editor=_reGetEditor(id);
+    var hr=document.createElement('hr');
+    var sel=window.getSelection();
+    if(sel.rangeCount){var range=sel.getRangeAt(0);range.collapse(false);range.insertNode(document.createElement('br'));range.insertNode(hr);range.collapse(false)}
+    else{editor.appendChild(hr)}
+    editor.focus();
+  }
+  _reSync(id);
+}
+
+/* Insert image */
+function _reInsertImage(id){
+  _reCloseMore(id);
+  var inst=_reGetInst(id);if(!inst)return;
+  var url=prompt('Image URL:','https://');if(!url)return;
+  if(inst.sourceMode){
+    var ta=_reGetTextarea(id);var s=ta.selectionStart;
     ta.value=ta.value.substring(0,s)+'![Image]('+url+')'+ta.value.substring(ta.selectionEnd);
   }else{
+    _reRestoreSelection(id);
     document.execCommand('insertHTML',false,'<img src="'+url+'" style="max-width:100%;border-radius:8px;margin:8px 0" alt="Image">');
-    document.getElementById('ec-editor-rich').focus();
+    _reGetEditor(id).focus();
   }
-  ecRichSync();
+  _reSync(id);
 }
 
 /* Emoji picker */
-var EC_EMOJIS=['😊','😄','🎉','✨','💜','❤️','🙏','👋','🎯','💡','🔥','⭐','🌟','💫','🚀','✅','📣','📧','🎁','💪','🌈','☀️','🌙','🎵','📚','🧠','💎','🏆','👏','🤝','💐','🌺','🍃','🦋','🕊️','🌊','⚡','🔔','📌','🎬','📍','📅','🕐','🔗','⏰','💖','🧪'];
-
-function ecInsertEmoji(){
-  ecToggleMore();
-  /* Show emoji picker overlay */
-  var old=document.getElementById('ec-emoji-picker');
-  if(old){old.remove();return}
+function _reInsertEmoji(id){
+  _reCloseMore(id);
+  var old=document.getElementById('re-emoji-picker');if(old){old.remove();return}
   var picker=document.createElement('div');
-  picker.id='ec-emoji-picker';
-  picker.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--navy-card);border:1px solid var(--border);border-radius:14px;padding:4px;z-index:9999;box-shadow:0 12px 40px rgba(0,0,0,.5);width:320px';
-  var header='<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px"><span style="font-size:13px;font-weight:600;color:var(--text)">Emoji</span><button onclick="ecCloseEmoji()" style="background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer">&times;</button></div>';
-  var grid='<div class="ec-emoji-grid">';
-  EC_EMOJIS.forEach(function(e,i){
-    grid+='<button class="ec-emoji-btn" data-idx="'+i+'" onclick="ecDoInsertEmoji(EC_EMOJIS['+i+'])">'+e+'</button>';
-  });
-  grid+='</div>';
-  picker.innerHTML=header+grid;
+  picker.id='re-emoji-picker';picker.dataset.editorId=id;
+  picker.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--navy-card);border:1px solid var(--border);border-radius:14px;padding:4px;z-index:99999;box-shadow:0 12px 40px rgba(0,0,0,.5);width:320px';
+  var h='<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px"><span style="font-size:13px;font-weight:600;color:var(--text)">Emoji</span><button onclick="document.getElementById(\'re-emoji-picker\').remove()" style="background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer">&times;</button></div>';
+  h+='<div class="ec-emoji-grid">';
+  _RE_EMOJIS.forEach(function(e,i){h+='<button class="ec-emoji-btn" data-idx="'+i+'" onclick="_reDoInsertEmoji()">'+e+'</button>'});
+  h+='</div>';
+  picker.innerHTML=h;
   document.body.appendChild(picker);
 }
-
-function ecDoInsertEmoji(emoji){
-  document.getElementById('ec-emoji-picker').remove();
-  if(_ecSourceMode){
-    var ta=document.getElementById('email-body');
-    var s=ta.selectionStart;
+function _reDoInsertEmoji(){
+  var btn=event.currentTarget;var emoji=btn.textContent;
+  var picker=document.getElementById('re-emoji-picker');
+  var id=picker?picker.dataset.editorId:'ec';
+  if(picker)picker.remove();
+  var inst=_reGetInst(id);if(!inst)return;
+  if(inst.sourceMode){
+    var ta=_reGetTextarea(id);var s=ta.selectionStart;
     ta.value=ta.value.substring(0,s)+emoji+ta.value.substring(ta.selectionEnd);
     ta.focus();ta.selectionStart=ta.selectionEnd=s+emoji.length;
   }else{
-    document.getElementById('ec-editor-rich').focus();
+    _reRestoreSelection(id);
     document.execCommand('insertText',false,emoji);
   }
-  ecRichSync();
+  _reSync(id);
 }
 
 /* Blockquote */
-function ecInsertBlockquote(){
-  ecToggleMore();
-  if(_ecSourceMode){
-    var ta=document.getElementById('email-body');
-    var s=ta.selectionStart,e=ta.selectionEnd;
+function _reInsertBlockquote(id){
+  _reCloseMore(id);
+  var inst=_reGetInst(id);if(!inst)return;
+  if(inst.sourceMode){
+    var ta=_reGetTextarea(id);var s=ta.selectionStart,e=ta.selectionEnd;
     var selected=ta.value.substring(s,e)||'Your quote here';
     ta.value=ta.value.substring(0,s)+'> '+selected+ta.value.substring(e);
   }else{
-    var sel=window.getSelection();
-    var text=sel.toString()||'Your quote here';
-    var bq='<blockquote style="border-left:3px solid #5ba8b2;padding:8px 14px;margin:8px 0;background:rgba(91,168,178,.06);border-radius:0 6px 6px 0;color:#8899aa;font-style:italic">'+text+'</blockquote><p><br></p>';
-    document.execCommand('insertHTML',false,bq);
-    document.getElementById('ec-editor-rich').focus();
+    _reRestoreSelection(id);
+    var sel=window.getSelection();var text=sel.toString()||'Your quote here';
+    document.execCommand('insertHTML',false,'<blockquote style="border-left:3px solid #5ba8b2;padding:8px 14px;margin:8px 0;background:rgba(91,168,178,.06);border-radius:0 6px 6px 0;color:#8899aa;font-style:italic">'+text+'</blockquote><p><br></p>');
+    _reGetEditor(id).focus();
   }
-  ecRichSync();
+  _reSync(id);
 }
 
-/* Insert table */
-function ecInsertTable(){
-  ecToggleMore();
-  /* Quick table picker overlay */
-  var old=document.getElementById('ec-table-picker');
-  if(old){old.remove();return}
+/* Table picker */
+function _reInsertTable(id){
+  _reCloseMore(id);
+  var old=document.getElementById('re-table-picker');if(old){old.remove();return}
   var picker=document.createElement('div');
-  picker.id='ec-table-picker';
-  picker.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--navy-card);border:1px solid var(--border);border-radius:14px;padding:16px;z-index:9999;box-shadow:0 12px 40px rgba(0,0,0,.5)';
+  picker.id='re-table-picker';picker.dataset.editorId=id;
+  picker.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--navy-card);border:1px solid var(--border);border-radius:14px;padding:16px;z-index:99999;box-shadow:0 12px 40px rgba(0,0,0,.5)';
   picker.innerHTML='<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:12px">Insert Table</div>'+
     '<div style="display:flex;gap:10px;align-items:center;margin-bottom:12px">'+
-    '<label style="font-size:12px;color:var(--text-dim)">Rows <input type="number" id="ec-tbl-rows" value="3" min="1" max="20" style="width:50px;background:var(--navy-deep);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px;margin-left:4px;font-size:12px"></label>'+
-    '<label style="font-size:12px;color:var(--text-dim)">Cols <input type="number" id="ec-tbl-cols" value="3" min="1" max="10" style="width:50px;background:var(--navy-deep);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px;margin-left:4px;font-size:12px"></label>'+
+    '<label style="font-size:12px;color:var(--text-dim)">Rows <input type="number" id="re-tbl-rows" value="3" min="1" max="20" style="width:50px;background:var(--navy-deep);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px;margin-left:4px;font-size:12px"></label>'+
+    '<label style="font-size:12px;color:var(--text-dim)">Cols <input type="number" id="re-tbl-cols" value="3" min="1" max="10" style="width:50px;background:var(--navy-deep);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px;margin-left:4px;font-size:12px"></label>'+
     '</div>'+
     '<div style="display:flex;gap:8px;justify-content:flex-end">'+
-    '<button class="btn btn-ghost btn-sm" onclick="ecCloseTablePicker()">Cancel</button>'+
-    '<button class="btn btn-primary btn-sm" onclick="ecDoInsertTable()">Insert</button>'+
+    '<button class="btn btn-ghost btn-sm" onclick="document.getElementById(\'re-table-picker\').remove()">Cancel</button>'+
+    '<button class="btn btn-primary btn-sm" onclick="_reDoInsertTable()">Insert</button>'+
     '</div>';
   document.body.appendChild(picker);
 }
-
-function ecDoInsertTable(){
-  var rows=parseInt(document.getElementById('ec-tbl-rows').value)||3;
-  var cols=parseInt(document.getElementById('ec-tbl-cols').value)||3;
-  document.getElementById('ec-table-picker').remove();
+function _reDoInsertTable(){
+  var picker=document.getElementById('re-table-picker');
+  var id=picker?picker.dataset.editorId:'ec';
+  var rows=parseInt(document.getElementById('re-tbl-rows').value)||3;
+  var cols=parseInt(document.getElementById('re-tbl-cols').value)||3;
+  if(picker)picker.remove();
   if(rows>20)rows=20;if(cols>10)cols=10;
+  var inst=_reGetInst(id);if(!inst)return;
   var html='<table style="border-collapse:collapse;width:100%;margin:10px 0"><thead><tr>';
   for(var c=0;c<cols;c++)html+='<th style="border:1px solid #334;padding:6px 10px;background:rgba(91,168,178,.1);color:#5ba8b2;font-weight:600;font-size:13px">Header '+(c+1)+'</th>';
   html+='</tr></thead><tbody>';
-  for(var r=0;r<rows;r++){
-    html+='<tr>';
-    for(var c=0;c<cols;c++)html+='<td style="border:1px solid #334;padding:6px 10px;font-size:13px">&nbsp;</td>';
-    html+='</tr>';
-  }
+  for(var r=0;r<rows;r++){html+='<tr>';for(var c=0;c<cols;c++)html+='<td style="border:1px solid #334;padding:6px 10px;font-size:13px">&nbsp;</td>';html+='</tr>'}
   html+='</tbody></table><p><br></p>';
-  document.getElementById('ec-editor-rich').focus();
+  _reRestoreSelection(id);
   document.execCommand('insertHTML',false,html);
-  ecRichSync();
+  _reGetEditor(id).focus();
+  _reSync(id);
 }
 
-/* Line spacing */
-function ecLineSpacing(){
-  ecToggleMore();
-  var old=document.getElementById('ec-spacing-picker');
-  if(old){old.remove();return}
+/* Line spacing picker */
+function _reLineSpacing(id){
+  _reCloseMore(id);
+  var old=document.getElementById('re-spacing-picker');if(old){old.remove();return}
   var picker=document.createElement('div');
-  picker.id='ec-spacing-picker';
-  picker.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--navy-card);border:1px solid var(--border);border-radius:14px;padding:16px;z-index:9999;box-shadow:0 12px 40px rgba(0,0,0,.5)';
+  picker.id='re-spacing-picker';picker.dataset.editorId=id;
+  picker.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--navy-card);border:1px solid var(--border);border-radius:14px;padding:16px;z-index:99999;box-shadow:0 12px 40px rgba(0,0,0,.5)';
   picker.innerHTML='<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:12px">Line Spacing</div>'+
     '<div style="display:flex;flex-direction:column;gap:4px">'+
-    [1,1.2,1.4,1.6,1.8,2,2.5].map(function(v){
-      return '<button class="ec-tb-dd" onclick="ecSetSpacing('+v+')">'+v+'x'+(v===1.6?' (default)':'')+'</button>';
-    }).join('')+
+    [1,1.2,1.4,1.6,1.8,2,2.5].map(function(v){return '<button class="ec-tb-dd" onclick="_reSetSpacing('+v+')">'+v+'x'+(v===1.6?' (default)':'')+'</button>'}).join('')+
     '</div>';
   document.body.appendChild(picker);
 }
-
-function ecSetSpacing(val){
-  document.getElementById('ec-spacing-picker').remove();
-  var editor=document.getElementById('ec-editor-rich');
-  editor.style.lineHeight=val;
-  editor.focus();
+function _reSetSpacing(val){
+  var picker=document.getElementById('re-spacing-picker');
+  var id=picker?picker.dataset.editorId:'ec';
+  if(picker)picker.remove();
+  var editor=_reGetEditor(id);if(editor){editor.style.lineHeight=val;editor.focus()}
 }
 
-/* Make color picker labels clickable to open the hidden input */
-document.addEventListener('DOMContentLoaded',function(){
-  var labels=document.querySelectorAll('.ec-tb-color-wrap');
-  labels.forEach(function(label){
-    label.addEventListener('click',function(){
-      var input=label.querySelector('input[type=color]');
-      if(input)input.click();
-    });
-  });
-});
+/* ---- Public API for inserting merge tags, CTAs, cards into any instance ---- */
 
-function ecCloseEmoji(){var el=document.getElementById('ec-emoji-picker');if(el)el.remove()}
-function ecCloseTablePicker(){var el=document.getElementById('ec-table-picker');if(el)el.remove()}
+/* Insert merge tag ({{name}}, {{email}}, etc) */
+function reInsertVar(id,v){
+  var inst=_reGetInst(id);if(!inst)return;
+  if(inst.sourceMode){
+    var ta=_reGetTextarea(id);if(!ta)return;
+    var s=ta.selectionStart,e=ta.selectionEnd;
+    ta.value=ta.value.substring(0,s)+v+ta.value.substring(e);
+    ta.focus();ta.selectionStart=ta.selectionEnd=s+v.length;
+  }else{
+    var span='<span style="background:rgba(91,168,178,.2);color:var(--teal);padding:1px 6px;border-radius:4px;font-size:12px">'+v+'</span>&nbsp;';
+    _reRestoreSelection(id);
+    document.execCommand('insertHTML',false,span);
+    _reGetEditor(id).focus();
+  }
+  _reSync(id);
+}
+
+/* Insert CTA button */
+function reInsertCTA(id,key){
+  var inst=_reGetInst(id);if(!inst)return;
+  var cta;
+  if(key==='custom'){
+    var label=prompt('Button text:','Learn More');if(!label)return;
+    var url=prompt('Button URL:','https://');if(!url)return;
+    cta={label:label,url:url};
+  }else{
+    cta=EC_CTA_BUTTONS[key];if(!cta)return;
+  }
+  if(inst.sourceMode){
+    var ta=_reGetTextarea(id);if(!ta)return;
+    var s=ta.selectionStart,e=ta.selectionEnd;
+    var md='['+cta.label+']('+cta.url+')';
+    ta.value=ta.value.substring(0,s)+md+ta.value.substring(e);
+    ta.focus();ta.selectionStart=ta.selectionEnd=s+md.length;
+  }else{
+    var link='<a href="'+cta.url+'" style="color:var(--purple);font-weight:600">'+cta.label+'</a>&nbsp;';
+    _reRestoreSelection(id);
+    document.execCommand('insertHTML',false,link);
+    _reGetEditor(id).focus();
+  }
+  _reSync(id);
+  showToast('CTA inserted','success');
+}
+
+/* Insert library card (appends to textarea, refreshes rich editor) */
+function reInsertLibraryCard(id,index){
+  var card=cardLibraryTemplates[index];if(!card)return;
+  var textarea=_reGetTextarea(id);if(!textarea)return;
+  var body=textarea.value.trimEnd();
+  textarea.value=body+'\n---\n'+card.body;
+  var inst=_reGetInst(id);
+  if(inst&&!inst.sourceMode)_reTextareaToRich(id);
+  inst.onInput();
+  showToast('Added: '+card.name,'success');
+}
+
+/* Cleanup floating pickers (call from go() on page navigation) */
+function _reCleanupPickers(){
+  ['re-emoji-picker','re-table-picker','re-spacing-picker'].forEach(function(pid){
+    var el=document.getElementById(pid);if(el)el.remove();
+  });
+}
+/* END UNIFIED RICH EDITOR COMPONENT */
+
+
+/* ================================================================
+   EMAIL CENTER — Bridge to Unified Rich Editor (Session 22)
+   EC editor is created on page load / navigation to email-center.
+   ================================================================ */
+var _ecEditor=null;
+
+function initECEditor(){
+  if(_ecEditor)return;
+  var mount=document.getElementById('ec-editor-mount');
+  if(!mount)return;
+  _ecEditor=createRichEditor({
+    id:'ec',
+    mountId:'ec-editor-mount',
+    textareaId:'email-body',
+    onInput:function(){ecAutoPreview()}
+  });
+}
+
+/* Legacy EC function wrappers — so existing onclick handlers still work */
+function ecExec(cmd,val){_reExec('ec',cmd,val)}
+function ecHeading(tag){_reHeading('ec',tag)}
+function ecToggleSource(){_reToggleSource('ec')}
+function ecToggleMore(){_reToggleMore('ec')}
+function ecInsertLink(){_reInsertLink('ec')}
+function ecInsertDivider(){_reInsertDivider('ec')}
+function ecInsertImage(){_reInsertImage('ec')}
+function ecInsertEmoji(){_reInsertEmoji('ec')}
+function ecInsertBlockquote(){_reInsertBlockquote('ec')}
+function ecInsertTable(){_reInsertTable('ec')}
+function ecLineSpacing(){_reLineSpacing('ec')}
+function ecRichSync(){_reSync('ec')}
+function ecTextareaToRich(){_reTextareaToRich('ec')}
+
+/* EC-specific _ecSourceMode getter for code that checks it */
+function _ecIsSourceMode(){var inst=_reGetInst('ec');return inst?inst.sourceMode:false}
+
+/* insertEmailVar — works with whichever editor is active (EC or SG) */
+function insertEmailVar(v){
+  /* Check if SG modal is open — if so, insert there */
+  var sgModal=document.getElementById('sg-email-modal');
+  if(sgModal&&_reGetInst('sg')){
+    reInsertVar('sg',v);
+  }else if(_reGetInst('ec')){
+    reInsertVar('ec',v);
+  }else{
+    /* Fallback: plain textarea insert (pre-editor code) */
+    var ta=document.getElementById('email-body');
+    if(!ta)return;
+    var s=ta.selectionStart,e=ta.selectionEnd,t=ta.value;
+    ta.value=t.substring(0,s)+v+t.substring(e);
+    ta.focus();ta.selectionStart=ta.selectionEnd=s+v.length;
+  }
+}
+
+/* ecInsertCTA — routes to active editor */
+function ecInsertCTA(key){
+  var sgModal=document.getElementById('sg-email-modal');
+  if(sgModal&&_reGetInst('sg')){
+    reInsertCTA('sg',key);
+  }else if(_reGetInst('ec')){
+    reInsertCTA('ec',key);
+  }
+}
+
+/* ecInsertLibraryCard — routes to active editor */
+function ecInsertLibraryCard(index){
+  var sgModal=document.getElementById('sg-email-modal');
+  if(sgModal&&_reGetInst('sg')){
+    reInsertLibraryCard('sg',index);
+  }else if(_reGetInst('ec')){
+    reInsertLibraryCard('ec',index);
+  }
+}
+
+/* loadTemplate — override to update rich editor */
+var _origLoadTemplate2=typeof loadTemplate==='function'?loadTemplate:null;
+function loadTemplate(key){
+  var tmpl=getAllTemplates()[key];
+  if(!tmpl)return;
+  document.getElementById('email-subject').value=tmpl.subject;
+  document.getElementById('email-body').value=tmpl.body;
+  document.getElementById('subject-count').textContent=tmpl.subject.length;
+  showToast('Loaded "'+tmpl.name+'" template','success');
+  var inst=_reGetInst('ec');
+  if(inst&&!inst.sourceMode)_reTextareaToRich('ec');
+  ecAutoPreview();
+  document.getElementById('email-subject').scrollIntoView({behavior:'smooth',block:'center'});
+  document.getElementById('email-subject').focus();
+}

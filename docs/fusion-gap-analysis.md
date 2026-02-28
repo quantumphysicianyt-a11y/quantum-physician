@@ -7,7 +7,7 @@
 - Once QP admin covers everything, fusionsessions.com/admin.html gets decommissioned
 - One admin panel at qp-homepage.netlify.app/admin/ manages both platforms
 
-**Last updated:** Session 21 (Feb 27, 2026)
+**Last updated:** Session 22 (Feb 28, 2026)
 
 ---
 
@@ -34,12 +34,11 @@ All features from Fusion admin are now in QP admin. Zero gaps remain.
 - ✅ **Test Email** (SESSION 20) — Themed modal, sends via Apps Script
 - ✅ **Auth Auto-Refresh** (SESSION 20) — onAuthStateChange + 45-min interval + 401 retry
 
-### Unified Rich Editor (Session 21)
-- ✅ `createRichEditor(config)` — reusable WYSIWYG component for any container
-- ✅ Instance-based design with unique IDs, own source mode, own DOM
-- ✅ Full toolbar in SG popup + Recovery popup (was plain textarea before)
-- ✅ CTA button row, merge tags, Card Library, source toggle in all editors
-- ✅ EC editor mounted via `initECEditor()` with override wrappers
+### Unified Rich Editor (Session 22) ✅
+- ✅ `createRichEditor(config)` reusable component with instance-based state
+- ✅ Mounted in Email Center (inline), SG popup, and Recovery popup
+- ✅ Selection save/restore fixes CTA focus-loss bug
+- ✅ Syncing guard prevents infinite input loops
 
 ### Course Builder (Sessions 14-18)
 - ✅ Full course builder with lesson creation, ordering, management
@@ -68,14 +67,7 @@ All features from Fusion admin are now in QP admin. Zero gaps remain.
 
 ## Planned Features (Not Yet Built)
 
-### Session 21 — Unified Rich Editor ✅
-- ✅ Refactored into `createRichEditor(config)` reusable component
-- ✅ Mounted in Email Center (inline), SG popup, Recovery popup
-- ✅ All three share same toolbar, cards, CTA buttons, source toggle
-- ✅ SG + Recovery stay as popups, EC stays as page
-- ✅ Dead code cleanup: removed 37 lines of Session 19-20 duplicates
-
-### Session 22 — Live Event Page
+### Session 23 — Live Event Page
 - ⬜ Branded live Zoom experience page (pre/during/post states)
 - ⬜ Countdown timer, embedded Zoom (Web SDK), live reactions
 - ⬜ Session replay (Vimeo), product cards, referral widget

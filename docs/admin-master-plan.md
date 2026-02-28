@@ -32,7 +32,7 @@ Todd (the founder/developer of Quantum Physician) and Claude have built this adm
 - These 3 docs + the current `admin/index.html`, `admin/admin.js`, `admin/admin.css`
 - Claude reads all docs BEFORE writing any code
 
-**Last updated:** Session 21 (Feb 27, 2026)
+**Last updated:** Session 22 (Feb 28, 2026)
 
 ---
 
@@ -133,71 +133,93 @@ These sessions focused on the **Quantum Academy Course Builder** and student exp
 
 ---
 
-## Session 21 Completion Summary — Unified Rich Editor Component + Dead Code Cleanup (Feb 27, 2026)
+## Session 21 Summary — Unified Rich Editor (ROLLED BACK) (Feb 27, 2026)
 
-### Unified Rich Editor Component ✅
-- **`createRichEditor(config)`** — Reusable WYSIWYG editor component that mounts into any container
-- **Config**: `{containerId, onInput, placeholder, initialValue}`
-- **Returns API**: `{getMarkdown(), setMarkdown(md), insertMergeTag(tag), insertCTA(key), insertCard(index), openCardLibrary(), updateSections(), destroy()}`
-- **Full toolbar**: Undo/Redo, Heading, Font, Size, B/I/U/S, Text color, Highlight, Align, Lists, Link, Card Divider, More dropdown (Image/Emoji/Blockquote/Table/Indent/Outdent/Line Spacing/Clear Format/Source Code)
-- **Internal functions**: All `_re*` prefixed — `_reExec`, `_reSync`, `_reTextareaToRich`, `_reAction`, `_reInsertLink`, `_reInsertDivider`, `_reToggleSource`, `_reToggleMore`, `_reInsertImage`, `_reInsertEmoji`, `_reInsertBlockquote`, `_reInsertTable`, `_reLineSpacing`, `_reInsertMergeTag`, `_reInsertCTA`, `_reInsertCard`, `_reOpenCardLibrary`, `_reUpdateSections`, `_reDeleteCard`, `_reDropCard`
-- **Instance tracking**: `_richEditorInstances` map + `_richEditorCounter` for unique IDs
+### What Was Attempted
+- Built `createRichEditor(config)` reusable WYSIWYG component
+- Mounted in Email Center (inline), SG popup, Recovery popup
+- All three sharing one component with instance-based state
 
-### SG Popup Upgrade ✅
-- **Before**: Plain textarea with 3 merge tag buttons
-- **After**: Full rich editor with complete toolbar, CTA button row (Watch Sessions, Dashboard, Referral Hub, Academy, Custom), merge tag buttons, Card Library button, source toggle, card pills with drag-reorder
-- `_sgEditor` global holds the popup editor instance
-- `sgCloseModal()` properly destroys the editor instance on close
-- Recovery popup gets same editor for free (uses `sgSetupEmail()`)
-- All SG functions (`sgInsertDiscountPitch`, `sgAutoPreview`, `sgPreview`, `sgTestEmail`, `sgSendAll`) now sync from `_sgEditor.textarea` → hidden `sg-body` textarea
+### Why It Was Rolled Back
+The unified editor code existed in admin.js but was never tested against the live HTML. When deployed, cascading issues emerged:
+1. `_ecEditor`/`_sgEditor` declared inside `onAuthStateChange` callback (not global scope)
+2. `_reTextareaToRich()` setting innerHTML triggered input events → `_reSync` → infinite callback loops
+3. CTA buttons lost cursor position (contenteditable focus loss when clicking toolbar buttons)
+4. Old index.html had hardcoded `onclick="ecToggleMore()"` etc. calling dead functions
+5. Floating pickers (line spacing, emoji, table) persisted across page navigation
+6. Browser `prompt()` calls needed `qpPrompt()` for themed modals
 
-### Email Center Wiring ✅
-- **HTML**: Old hardcoded toolbar replaced with `<div id="ec-editor-mount"></div>`
-- `initECEditor()` called on page show and DOMContentLoaded
-- `_ecEditor` global holds the EC editor instance
-- Override wrappers route `insertEmailVar()`, `ecInsertCTA()`, `ecOpenCardLibrary()`, `loadTemplate()`, `ecAutoPreview()` to the active editor instance
-- EC editor textarea syncs to hidden `#email-body` for compatibility with existing preview/send pipeline
+### Rolled Back To
+Commit `86eeaa7` — Pre-Session 21 state. Both admin.js and index.html restored.
 
-### Dead Code Cleanup ✅
-- Removed 37 lines of duplicate code from Session 19-20 that was superseded by the unified editor
-- Removed duplicates: `ecExtractCTA`, `clSvg`, `sgStartDrag`, `sgOverDrag`, `sgLeaveDrag`, `sgCardLabel`, `sgDragFrom`, old `insertEmailVar`
-- **Pre-existing duplicates left untouched** (not Session 21 related): `insertDiscountBlock` (lines 1589/3200), `saveScheduledEmail` (lines 1987/2440) — the second definition creates a new scheduled email while the first edits an existing one, sharing the same function name (should be separate names in a future session)
+### Pre-Existing Issue Discovered
+**CTA buttons don't work with rich editor** — This was broken BEFORE Session 21. The CTA buttons call `ecInsertCTA()` which writes `[Label](url)` to the hidden `email-body` textarea, but the visible editor is a separate contenteditable `ec-editor-rich` div. The two are not synced for CTA inserts.
 
-### Files Modified (Session 21)
-- `admin/admin.js` — Unified rich editor component (`createRichEditor` + all `_re*` functions), SG popup rewrite with editor mount, EC wiring with `initECEditor()`, override wrappers, dead code removal. 3451→3414 lines.
-- `admin/index.html` — EC toolbar replaced with `<div id="ec-editor-mount"></div>` (already done, verified)
-- `admin/admin.css` — `.re-editable` placeholder + focus + link + hr styles (already done, verified)
+### Lessons for Next Attempt (Session 22 or dedicated session)
+1. **Build incrementally** — Mount editor in EC first, test thoroughly, THEN add to SG popup
+2. **Global scope** — `_ecEditor`/`_sgEditor` MUST be declared at file top level, not inside any callback
+3. **Syncing guard** — `_reTextareaToRich()` must set `inst._syncing=true` before setting innerHTML, and `_reSync` must check this flag to prevent loops
+4. **Selection save/restore** — Save selection on editor `blur` event, restore before any insert operation (CTA, merge tag, link, image) since toolbar button clicks steal focus
+5. **CTA strategy** — Insert as markdown into textarea, call `_reTextareaToRich()` with syncing guard to update visual editor. Don't use `execCommand('insertHTML')` for CTA/merge tags — unreliable with focus loss
+6. **Use `qpPrompt()`** not `prompt()` for link URL, image URL, custom CTA inputs
+7. **Cleanup on nav** — Add picker removal to `go()` function for floating pickers
+8. **Test the HTML** — The index.html must match the JS. Old inline onclick handlers must be replaced with mount divs.
 
-### Architecture Decisions (Session 21)
-- **Instance-based design** — Each editor has unique ID prefix (`re-1-`, `re-2-`), own source mode state, own DOM elements. No global state conflicts between EC and SG editors.
-- **Event delegation on toolbar** — Single click listener on toolbar uses `data-re-cmd` and `data-re-action` attributes instead of inline onclick handlers. Cleaner and allows dynamic toolbar creation.
-- **Sync-to-textarea pattern preserved** — Rich editor still syncs to hidden textarea in markdown-ish format, preserving the existing email builder HTML pipeline unchanged.
-- **Global `_sgEditor` and `_ecEditor`** — Simple approach for routing. Override wrappers check which editor is active.
+### Files (Rolled Back)
+- `admin/admin.js` — Restored to `86eeaa7`
+- `admin/index.html` — Restored to `86eeaa7`
+- Handoff docs updated with rollback notes
+---
 
-### Bugs Found & Fixed (Session 21)
-1. **Duplicate function definitions** — Session 21 code was added but old Session 19-20 duplicates weren't removed. Functions like `clSvg`, `ecExtractCTA`, `sgStartDrag` etc were defined twice. The JS engine used the last definition, which was the OLD version. Fixed by removing the 37 dead lines.
+## Session 22 Summary — Unified Rich Editor Component (Feb 28, 2026)
 
-### Known Issues (Session 21)
-1. **`fusionsessions.com` now resolves** — Todd confirmed domain works. Session 20 warning is resolved. ✅
-2. **Pre-existing duplicate: `saveScheduledEmail`** — Two functions with same name do different things (edit vs create). Low priority fix for future session.
-3. **Pre-existing duplicate: `insertDiscountBlock`** — Second definition overrides first. Works but messy. Low priority.
+### What Was Built
+- **`createRichEditor(config)` factory function** — Reusable WYSIWYG editor component with instance-based state
+- Mounted in **Email Center** (inline, via `initECEditor()` on page load) and **SG popup + Recovery popup** (via `createRichEditor()` on modal open)
+- All three editors share the same component code with independent state per instance
+
+### Architecture Decisions (Session 22)
+- **Instance registry** (`_reInstances`): Each editor tracked by ID ('ec', 'sg'). Destroyed on page nav (EC) or modal close (SG).
+- **Selection save/restore**: Editor saves cursor range on `blur` event, restores before any insert operation (CTA, merge tag, link, image). Fixes the pre-existing CTA focus-loss bug from Session 20.
+- **Syncing guard** (`inst._syncing`): Prevents infinite loops when `_reTextareaToRich()` sets innerHTML which would trigger `oninput` → `_reSync()` → loop.
+- **Bridge pattern**: Legacy `ecExec()`, `ecInsertCTA()`, `insertEmailVar()`, etc. are thin wrappers that route to the unified `_re*` API. Existing `onclick` handlers in HTML and card library code continue to work unchanged.
+- **Smart routing**: `insertEmailVar()` and `ecInsertCTA()` check if SG modal is open and route to the SG editor instance, otherwise use EC.
+- **Cleanup on nav**: `go()` function calls `_reCleanupPickers()` and destroys EC editor instance. Floating pickers (emoji, table, spacing) are removed.
+- **Mount div pattern**: HTML has `<div id="ec-editor-mount">` (EC) and `<div id="sg-editor-mount">` (SG). Component builds toolbar + contenteditable inside the mount div dynamically.
+
+### Session 21 Lessons Applied
+1. ✅ Built incrementally (component first, then EC mount, then SG mount)
+2. ✅ Global scope — `_reInstances`, `_ecEditor` at file top level, not inside callbacks
+3. ✅ Syncing guard — `inst._syncing` flag prevents infinite loops
+4. ✅ Selection save/restore — `blur` event saves range, `_reRestoreSelection()` before inserts
+5. ✅ CTA strategy — uses `_reRestoreSelection()` + `execCommand('insertHTML')` with focus restored
+6. ✅ Cleanup on nav — `_reCleanupPickers()` in `go()` function
+7. ✅ HTML matches JS — replaced hardcoded toolbar with mount div, fixed broken duplicate `<div>` tag
+
+### Files Modified (Session 22)
+- `admin/index.html` — Replaced ~90 lines of hardcoded EC toolbar/editor HTML with `<div id="ec-editor-mount">`. Fixed broken `<div id="ec-editor-rich"<div id="ec-editor-rich"` duplicate tag.
+- `admin/admin.js` — Added `createRichEditor()` component (~300 lines), EC bridge code (~80 lines), SG popup mount integration. Removed 388 lines of old Session 20 EC-specific editor code. Total: 3290 lines (was 3132).
+- `admin/admin.css` — Updated `.re-toolbar`, `.re-editor`, `.re-select`, `.ec-tb-sep`, `.ec-tb-color-wrap`, `.ec-emoji-btn` styles. Replaced old Session 21 `.re-editable` styles.
+
+### Known Cleanup (Low Priority)
+- Old Session 19-20 `ecInsertLibraryCard` / `insertEmailVar` / `ecInsertCTA` definitions (lines ~2635-2744) are now dead code, overridden by bridge functions. Can be removed in a future cleanup pass.
+- `prompt()` used for link/image/CTA URLs. Could be upgraded to `qpPrompt()` for themed modals in a future pass.
+
+### Testing Notes
+- **EC editor**: Navigate to Email Center page. Toolbar + editor should render in the mount div. All formatting, cards, CTAs, merge tags, source toggle should work.
+- **SG popup**: Click any "Compose Email" button from Smart Suggestions. Modal should open with rich editor instead of plain textarea. Same full toolbar available.
+- **Recovery popup**: Use Webhook Recovery Tool → Compose Email. Should also get rich editor.
+- **Focus test**: Click a CTA button in the toolbar bar — text should insert at cursor position in the editor, not at the end.
+- **Source toggle**: Switch to source mode, edit markdown, switch back — changes should persist.
+- **Page nav**: Navigate away from Email Center and back — editor should re-initialize cleanly.
 
 ---
 
 ## Updated Session Roadmap
 
-### Sessions 3–21 — ALL COMPLETED ✅
+### Sessions 3–22 — ALL COMPLETED ✅
 
-### Session 21 — Unified Rich Editor Component ✅
-- Refactored rich editor into reusable `createRichEditor(config)` component
-- Email Center (inline): Uses `initECEditor()` with `ec-editor-mount` div
-- SG popup: Gets full rich toolbar, CTA buttons, Card Library, source toggle
-- Recovery popup: Gets same editor via `sgSetupEmail()`
-- All three share one `createRichEditor()` function with instance-based state
-- SG + Recovery stay as popups, Email Center stays as page
-- Dead code cleanup: removed 37 lines of Session 19-20 duplicates
-
-### Session 22 — Live Event Page (NEXT — GAME-CHANGER BUILD)
+### Session 23 — Live Event Page (GAME-CHANGER BUILD)
 - **Branded live Zoom experience page** — replaces plain Zoom links
 - **Pre-session**: Animated countdown timer, session details, Dr. Tracey bio, product cards, email capture for non-customers, referral sharing widget, ambient healing-energy animations
 - **During session**: Embedded Zoom (Web SDK), floating reaction buttons (hearts, prayer hands, sparkles), minimized product sidebar

@@ -1,6 +1,6 @@
 # QP Admin Panel — Full Infrastructure Documentation
 
-**Last updated:** Session 21 (Feb 27, 2026)
+**Last updated:** Session 22 (Feb 28, 2026)
 
 ---
 
@@ -153,9 +153,6 @@ Two SEPARATE key systems (Session 20 learning):
 ## Key Constants & Variables
 
 ### admin.js Global State
-- `_ecEditor` — Email Center rich editor instance (line 15)
-- `_sgEditor` — SG/Recovery popup rich editor instance (line 16)
-- `_richEditorInstances` — Map of all editor instances by ID
 - `sb` — Supabase anon client (line 4)
 - `SUPABASE_URL`, `SUPABASE_ANON_KEY` — lines 1-2
 - `APPS_SCRIPT_URL` — Google Apps Script endpoint (~line 833)
@@ -173,10 +170,10 @@ Two SEPARATE key systems (Session 20 learning):
 
 ---
 
-## File Sizes (Session 21)
-- `admin/index.html` — ~67KB
-- `admin/admin.js` — ~3414 lines (was ~3132 pre-S21 + unified editor + cleanup)
-- `admin/admin.css` — ~134 lines + editor styles
+## File Sizes (Session 22)
+- `admin/index.html` — ~555 lines (hardcoded toolbar replaced with mount div)
+- `admin/admin.js` — ~3290 lines (unified editor component + bridge code)
+- `admin/admin.css` — ~142 lines + editor styles
 
 ---
 
@@ -191,10 +188,13 @@ Two SEPARATE key systems (Session 20 learning):
 
 ---
 
-## Known Issues (Session 21)
-1. **✅ Fusion Sessions domain**: `fusionsessions.com` confirmed working (Session 21).
-2. **email-decode.min.js 404**: Netlify phantom, harmless.
-3. **Test email delivery**: `mode:'no-cors'` means no confirmation. Check inbox manually.
-4. **Rich editor → email fidelity**: Advanced formatting (tables, images) may not render perfectly in email HTML.
-5. **Token refresh first-login**: After deploying auth changes, must log out + back in once to store refresh_token.
-6. **Pre-existing duplicate functions**: `saveScheduledEmail` defined twice (edit vs create use different element IDs). `insertDiscountBlock` defined twice (second overrides first). Low priority cleanup.
+## Known Issues (Session 22)
+1. **✅ Fusion Sessions domain**: `fusionsessions.com` confirmed working.
+2. **✅ CTA buttons + rich editor**: Fixed in Session 22 — selection save/restore handles focus loss.
+3. **✅ Session 21 rebuilt**: Unified editor component working in Session 22.
+4. **email-decode.min.js 404**: Netlify phantom, harmless.
+5. **Test email delivery**: `mode:'no-cors'` means no confirmation. Check inbox manually.
+6. **Rich editor → email fidelity**: Advanced formatting (tables, images) may not render perfectly in email HTML.
+7. **Token refresh first-login**: After deploying auth changes, must log out + back in once to store refresh_token.
+8. **Dead code from Session 19-20**: Old `ecInsertLibraryCard`/`insertEmailVar`/`ecInsertCTA` overrides (lines ~2635-2744) are overridden by Session 22 bridge. Low priority cleanup.
+9. **prompt() for URLs**: Link, image, and custom CTA inputs use browser `prompt()` instead of `qpPrompt()`. Low priority upgrade.
