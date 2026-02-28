@@ -288,11 +288,19 @@ function _reSaveSelection(inst){
   }
 }
 function _reRestoreSelection(inst){
-  if(!inst._savedRange)return;
   inst.el.focus();
   var sel=window.getSelection();
-  sel.removeAllRanges();
-  sel.addRange(inst._savedRange);
+  if(inst._savedRange){
+    sel.removeAllRanges();
+    sel.addRange(inst._savedRange);
+  }else{
+    /* No saved range — place cursor at end */
+    var range=document.createRange();
+    range.selectNodeContents(inst.el);
+    range.collapse(false);
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
 }
 
 function _reSync(inst){
