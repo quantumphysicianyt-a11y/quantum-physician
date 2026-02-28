@@ -2672,7 +2672,7 @@ async function ecDoSendTest(overlay){
     }
     var sendRes=await fetch('/.netlify/functions/send-email',{
       method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+currentSession.access_token},
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+(sessionStorage.getItem('qp_admin_token')||'')},
       body:JSON.stringify({to:testEmail,from:from,subject:'[TEST] '+subject,html:htmlBody||pb,text:pb})
     });
     if(sendRes.ok){
