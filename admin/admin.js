@@ -2850,6 +2850,14 @@ function _reRestoreSelection(id){
   editor.focus();
   if(inst._savedRange){
     try{var sel=window.getSelection();sel.removeAllRanges();sel.addRange(inst._savedRange)}catch(e){}
+  }else{
+    /* No saved range — place cursor at end of editor content */
+    var sel=window.getSelection();
+    var range=document.createRange();
+    range.selectNodeContents(editor);
+    range.collapse(false);
+    sel.removeAllRanges();
+    sel.addRange(range);
   }
 }
 function _reCloseMore(id){var dd=document.getElementById('re-more-'+id);if(dd)dd.style.display='none'}
