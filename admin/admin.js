@@ -146,7 +146,7 @@ h+='<button class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 6px" 
 h+='</div>';
 h+='<div id="sg-editor-mount"></div>';
 h+='<textarea id="sg-body" class="input" rows="10" style="width:100%;font-size:13px;line-height:1.6;display:none" oninput="sgAutoPreview()">'+esc(opts.body||'')+'</textarea>';
-h+='<div id="sg-section-controls" style="display:none;margin-top:8px;margin-bottom:8px"><div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">Cards <span style="opacity:.5">(drag to reorder)</span></div><div id="sg-card-pills" style="display:flex;flex-wrap:wrap;gap:6px"></div></div>';
+h+='<div id="sg-section-controls" style="display:none;margin-top:8px;margin-bottom:8px"><div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">Cards & CTAs <span style="opacity:.5">(drag to reorder)</span></div><div id="sg-card-pills" style="display:flex;flex-wrap:wrap;gap:6px"></div></div>';
 h+='</div>';
 h+='<div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap">';
 h+='<div style="flex:1;min-width:140px"><label style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:4px;display:block">Brand</label><select id="sg-brand" class="input" style="width:100%;font-size:12px" onchange="sgAutoPreview()"><option value="fusion"'+(opts.brand==='fusion'?' selected':'')+'>Fusion (Neon)</option><option value="academy"'+(opts.brand==='academy'?' selected':'')+'>Academy (Teal)</option></select></div>';
@@ -317,7 +317,9 @@ if(!pills)return;
 var h='';
 for(var i=1;i<parts.length;i++){
 var label=sgCardLabel(parts[i]);
-h+='<div draggable="true" data-idx="'+i+'" ondragstart="sgStartDrag(event)" ondragover="sgOverDrag(event)" ondragleave="sgLeaveDrag(event)" ondrop="sgDropCard(event)" style="display:inline-flex;align-items:center;gap:4px;background:var(--navy-card);border:1px solid var(--border);border-radius:8px;padding:4px 8px 4px 10px;font-size:11px;color:var(--text);cursor:grab;user-select:none;transition:border-color .2s"><span style="opacity:.4;font-size:10px;margin-right:2px">\u2630</span>'+label+'<button onclick="sgDeleteCard('+i+')" style="background:none;border:none;color:var(--text-dim);cursor:pointer;padding:0 0 0 4px;font-size:14px;line-height:1;opacity:.5" onmouseover="this.style.opacity=1;this.style.color=\'#ff4d6a\'" onmouseout="this.style.opacity=.5;this.style.color=\'var(--text-dim)\'" title="Remove card">&times;</button></div>';
+var isCta=parts[i].trim().match(/^\[CTA:/);
+var pillBorder=isCta?'border-color:var(--purple);background:rgba(131,56,236,.12)':'';
+h+='<div draggable="true" data-idx="'+i+'" ondragstart="sgStartDrag(event)" ondragover="sgOverDrag(event)" ondragleave="sgLeaveDrag(event)" ondrop="sgDropCard(event)" style="display:inline-flex;align-items:center;gap:4px;background:var(--navy-card);border:1px solid var(--border);border-radius:8px;padding:4px 8px 4px 10px;font-size:11px;color:var(--text);cursor:grab;user-select:none;transition:border-color .2s;'+pillBorder+'"><span style="opacity:.4;font-size:10px;margin-right:2px">\u2630</span>'+label+'<button onclick="sgDeleteCard('+i+')" style="background:none;border:none;color:var(--text-dim);cursor:pointer;padding:0 0 0 4px;font-size:14px;line-height:1;opacity:.5" onmouseover="this.style.opacity=1;this.style.color=\'#ff4d6a\'" onmouseout="this.style.opacity=.5;this.style.color=\'var(--text-dim)\'" title="Remove">&times;</button></div>';
 }
 pills.innerHTML=h;
 }
@@ -1043,7 +1045,7 @@ var cleanBody=bodyText;
 /* Split at --- divider */
 var parts=cleanBody.split(/\n---\n/);
 var mainBody=parts[0].trim();
-var discountBody=parts[1]?parts[1].trim():'';
+var discountBody=parts[1]?parts[1].trim():'';var _p1IsCta=discountBody.match(/^\[CTA:([^\]]+)\]\(([^)]+)\)$/);
 /* Strip signature block */
 mainBody=mainBody.replace(/\n\n(With warmth,|With healing energy,|With gratitude,)\n.*$/s,'');
 /* Remove raw URLs */
@@ -1075,7 +1077,10 @@ return'<img src="'+img+'" '+(isBundle?'width="540"':'width="350" height="250"')+
 mainHtml=imgTokenReplace(mainHtml);
 /* Build discount card */
 var discountCardHtml='';
-if(discountBody){
+if(_p1IsCta){
+/* CTA-only section → standalone button, no card box */
+discountCardHtml='<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:25px 0 10px;"><tr><td align="center"><table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr><td style="background:linear-gradient(45deg,#ff006e,#8338ec);border-radius:50px;"><a href="'+_p1IsCta[2]+'" target="_blank" style="display:inline-block;padding:16px 50px;color:#fff;text-decoration:none;font-weight:700;font-size:15px;letter-spacing:2px;text-transform:uppercase;">'+_p1IsCta[1]+'</a></td></tr></table></td></tr></table>';
+}else if(discountBody){
 var discountInner=discountBody
 .replace(/\*\*(10% off)\*\*/g,'<span style="color:#2dff7a;font-size:20px;font-weight:700;">$1</span>')
 .replace(/\*\*(\$\d+)\*\*/g,'<span style="color:#2dff7a;font-size:22px;font-weight:700;">$1</span>')
@@ -1107,6 +1112,12 @@ discountCardHtml+='<table role="presentation" cellspacing="0" cellpadding="0" bo
 /* Additional cards */
 for(var cx=2;cx<parts.length;cx++){
 var card2Body=parts[cx].trim();
+var _cxCta=card2Body.match(/^\[CTA:([^\]]+)\]\(([^)]+)\)$/);
+if(_cxCta){
+/* CTA-only section → standalone button */
+discountCardHtml+='<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:20px 0 10px;"><tr><td align="center"><table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr><td style="background:linear-gradient(45deg,#8338ec,#00f5ff);border-radius:50px;"><a href="'+_cxCta[2]+'" target="_blank" style="display:inline-block;padding:14px 40px;color:#fff;text-decoration:none;font-weight:700;font-size:14px;letter-spacing:2px;text-transform:uppercase;">'+_cxCta[1]+'</a></td></tr></table></td></tr></table>';
+continue;
+}
 var card2Inner=card2Body
 .replace(/\*\*([^*]+)\*\*/g,'<strong style="color:#00f5ff;">$1</strong>')
 .replace(/\n/g,'<br>').replace(/(<br>){3,}/g,'<br><br>').replace(/^(<br>)+/,'').replace(/(<br>)+$/,'');
@@ -1143,7 +1154,7 @@ var logoImg='https://qp-homepage.netlify.app/assets/images/QuantumPhysAcad_STACK
 var cleanBody=bodyText;
 var parts=cleanBody.split(/\n---\n/);
 var mainBody=parts[0].trim();
-var discountBody=parts[1]?parts[1].trim():'';
+var discountBody=parts[1]?parts[1].trim():'';var _p1IsCta=discountBody.match(/^\[CTA:([^\]]+)\]\(([^)]+)\)$/);
 mainBody=mainBody.replace(/\n\n(With warmth,|With healing energy,|With gratitude,)\n.*$/s,'');
 /* Convert markdown links to styled CTA buttons */
 mainBody=mainBody.replace(/\[([^\]]+)\]\(([^)]+)\)/g,function(_,label,url){
@@ -1161,7 +1172,10 @@ var mainHtml=mainBody
 .replace(/\n/g,'<br>').replace(/(<br>){3,}/g,'<br><br>').replace(/^(<br>)+/,'').replace(/(<br>)+$/,'');
 /* Discount card - academy styled */
 var discountCardHtml='';
-if(discountBody){
+if(_p1IsCta){
+/* CTA-only section → standalone button, no card box */
+discountCardHtml='<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:25px 0 10px;"><tr><td align="center"><table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr><td style="background:linear-gradient(45deg,#5ba8b2,#7c4dff);border-radius:50px;"><a href="'+_p1IsCta[2]+'" target="_blank" style="display:inline-block;padding:16px 50px;color:#fff;text-decoration:none;font-weight:700;font-size:15px;letter-spacing:2px;text-transform:uppercase;">'+_p1IsCta[1]+'</a></td></tr></table></td></tr></table>';
+}else if(discountBody){
 var discountInner=discountBody
 .replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank" style="color:#5ba8b2;text-decoration:underline;font-weight:600;">$1</a>')
 .replace(/\*\*([^*]+)\*\*/g,'<strong style="color:#5ba8b2;">$1</strong>')
@@ -1181,8 +1195,14 @@ discountCardHtml='<table role="presentation" cellspacing="0" cellpadding="0" bor
 /* Additional cards */
 for(var cx=2;cx<parts.length;cx++){
 var card2Body=parts[cx].trim();
+var _cxCta=card2Body.match(/^\[CTA:([^\]]+)\]\(([^)]+)\)$/);
+if(_cxCta){
+/* CTA-only section → standalone button (academy teal) */
+discountCardHtml+='<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:20px 0 10px;"><tr><td align="center"><table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr><td style="background:linear-gradient(45deg,#5ba8b2,#7c4dff);border-radius:50px;"><a href="'+_cxCta[2]+'" target="_blank" style="display:inline-block;padding:14px 40px;color:#fff;text-decoration:none;font-weight:700;font-size:14px;letter-spacing:2px;text-transform:uppercase;">'+_cxCta[1]+'</a></td></tr></table></td></tr></table>';
+continue;
+}
 var card2Inner=card2Body
-.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank" style="color:#5ba8b2;text-decoration:underline;font-weight:600;">$1</a>')
+.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'')
 .replace(/\*\*([^*]+)\*\*/g,'<strong style="color:#5ba8b2;">$1</strong>')
 .replace(/\n/g,'<br>').replace(/(<br>){3,}/g,'<br><br>').replace(/^(<br>)+/,'').replace(/(<br>)+$/,'');
 card2Inner=card2Inner.replace(/Your code:\s*<strong[^>]*>([^<]+)<\/strong>/i,'Your code: <span style="font-family:monospace;font-size:20px;letter-spacing:1px;color:#5ba8b2;background:rgba(91,168,178,0.1);padding:5px 15px;border-radius:8px;">$1</span>');
@@ -2521,7 +2541,14 @@ var sgDragFrom=null;
 function sgStartDrag(e){sgDragFrom=parseInt(e.target.closest('[data-idx]').getAttribute('data-idx'));e.dataTransfer.effectAllowed='move'}
 function sgOverDrag(e){e.preventDefault();e.currentTarget.style.borderColor='var(--teal)'}
 function sgLeaveDrag(e){e.currentTarget.style.borderColor='var(--border)'}
-function sgCardLabel(text){var l=text.trim().split('\n')[0].replace(/[*#_\[\]>]/g,'').trim();return l.length>28?l.substring(0,28)+'…':l}
+function sgCardLabel(text){
+  var first=text.trim().split('\n')[0];
+  /* Detect CTA section: [CTA:Label](url) */
+  var ctaMatch=first.match(/^\[CTA:([^\]]+)\]/);
+  if(ctaMatch)return'\ud83d\udd17 '+ctaMatch[1];
+  var l=first.replace(/[*#_\[\]>]/g,'').trim();
+  return l.length>28?l.substring(0,28)+'\u2026':l;
+}
 
 /* ---------- Auto Preview (debounced) ---------- */
 var _ecPreviewTimer=null;
@@ -2544,7 +2571,9 @@ function ecUpdateSectionControls(){
   var h='';
   for(var i=1;i<parts.length;i++){
     var label=sgCardLabel(parts[i]);
-    h+='<div draggable="true" data-idx="'+i+'" ondragstart="sgStartDrag(event)" ondragover="sgOverDrag(event)" ondragleave="sgLeaveDrag(event)" ondrop="ecDropCard(event)" style="display:inline-flex;align-items:center;gap:4px;background:var(--navy-card);border:1px solid var(--border);border-radius:8px;padding:4px 8px 4px 10px;font-size:11px;color:var(--text);cursor:grab;user-select:none;transition:border-color .2s"><span style="opacity:.4;font-size:10px;margin-right:2px">\u2630</span>'+label+'<button onclick="ecDeleteCard('+i+')" style="background:none;border:none;color:var(--text-dim);cursor:pointer;padding:0 0 0 4px;font-size:14px;line-height:1;opacity:.5" onmouseover="this.style.opacity=1;this.style.color=\'#ff4d6a\'" onmouseout="this.style.opacity=.5;this.style.color=\'var(--text-dim)\'" title="Remove card">&times;</button></div>';
+    var isCta=parts[i].trim().match(/^\[CTA:/);
+    var pillBorder=isCta?'border-color:var(--purple);background:rgba(131,56,236,.12)':'';
+    h+='<div draggable="true" data-idx="'+i+'" ondragstart="sgStartDrag(event)" ondragover="sgOverDrag(event)" ondragleave="sgLeaveDrag(event)" ondrop="ecDropCard(event)" style="display:inline-flex;align-items:center;gap:4px;background:var(--navy-card);border:1px solid var(--border);border-radius:8px;padding:4px 8px 4px 10px;font-size:11px;color:var(--text);cursor:grab;user-select:none;transition:border-color .2s;'+pillBorder+'"><span style="opacity:.4;font-size:10px;margin-right:2px">\u2630</span>'+label+'<button onclick="ecDeleteCard('+i+')" style="background:none;border:none;color:var(--text-dim);cursor:pointer;padding:0 0 0 4px;font-size:14px;line-height:1;opacity:.5" onmouseover="this.style.opacity=1;this.style.color=\'#ff4d6a\'" onmouseout="this.style.opacity=.5;this.style.color=\'var(--text-dim)\'" title="Remove">&times;</button></div>';
   }
   pills.innerHTML=h;
 }
@@ -2975,6 +3004,8 @@ function _reSync(id){
   md=md.replace(/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi,'[$2]($1)');
   /* Blockquote → > prefix */
   md=md.replace(/<blockquote[^>]*>(.*?)<\/blockquote>/gi,'\n> $1\n');
+  /* Convert CTA button spans back to [CTA:Label](url) */
+  md=md.replace(/<span[^>]*data-cta-url="([^"]*)"[^>]*>([^<]*)<\/span>/gi,'[CTA:$2]($1)');
   md=md.replace(/<\/(div|p|h[1-6]|li)>/gi,'\n');
   md=md.replace(/<(div|p|h[1-6])[^>]*>/gi,'');
   md=md.replace(/<li[^>]*>/gi,'- ');
@@ -2997,9 +3028,12 @@ function _reTextareaToRich(id){
   var h=textarea.value;
   h=h.replace(/\n---\n/g,'<hr>');
   h=h.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
-  h=h.replace(/(?:^|([^*]))\*([^*]+)\*(?!\*)/g,function(_,pre,txt){return(pre||'')+'<em>'+txt+'</em>'});
+  /* Safari-safe: match single * not preceded/followed by * (no lookbehind) */
+  h=h.replace(/(^|[^*])\*([^*]+)\*(?!\*)/g,'$1<em>$2</em>');
   h=h.replace(/__([^_]+)__/g,'<u>$1</u>');
   h=h.replace(/~~([^~]+)~~/g,'<s>$1</s>');
+  /* Render CTA sections as styled buttons in the rich editor */
+  h=h.replace(/\[CTA:([^\]]+)\]\(([^)]+)\)/g,'<span contenteditable="false" data-cta-url="$2" style="display:inline-block;background:linear-gradient(45deg,#8338ec,#ff006e);color:#fff;padding:8px 24px;border-radius:50px;font-weight:700;font-size:13px;letter-spacing:1px;text-transform:uppercase;margin:4px 0;cursor:default">$1</span>');
   h=h.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2">$1</a>');
   h=h.replace(/\{\{(name|email|referral_code)\}\}/g,'<span style="background:rgba(91,168,178,.2);color:var(--teal);padding:1px 6px;border-radius:4px;font-size:12px">{{$1}}</span>');
   h=h.replace(/\{\{session_image:([^}]+)\}\}/g,'<span style="display:inline-block;background:rgba(131,56,236,.15);color:var(--purple);padding:4px 10px;border-radius:6px;font-size:11px;border:1px dashed var(--purple)">\uD83D\uDCF7 $1</span>');
@@ -3228,7 +3262,7 @@ function reInsertVar(id,v){
   }
 }
 
-/* Insert CTA button */
+/* Insert CTA button as its own --- section (draggable via pill organizer) */
 async function reInsertCTA(id,key){
   var inst=_reGetInst(id);if(!inst)return;
   var cta;
@@ -3239,22 +3273,14 @@ async function reInsertCTA(id,key){
   }else{
     cta=EC_CTA_BUTTONS[key];if(!cta)return;
   }
-  var md='['+cta.label+']('+cta.url+')';
-  /* Always append CTA to the main body section (before first ---) */
+  /* CTA becomes its own section: marker line + markdown link */
+  var ctaSection='[CTA:'+cta.label+']('+cta.url+')';
   var ta=_reGetTextarea(id);if(!ta)return;
-  var body=ta.value;
-  var dividerIdx=body.indexOf('\n---\n');
-  if(dividerIdx>=0){
-    /* Insert before the first card divider */
-    var mainBody=body.substring(0,dividerIdx).trimEnd();
-    ta.value=mainBody+'\n'+md+body.substring(dividerIdx);
-  }else{
-    /* No cards — append to end */
-    ta.value=body.trimEnd()+'\n'+md;
-  }
+  var body=ta.value.trimEnd();
+  ta.value=body+'\n---\n'+ctaSection;
   if(inst&&!inst.sourceMode)_reTextareaToRich(id);
   inst.onInput();
-  showToast('CTA inserted','success');
+  showToast('CTA added — drag to reorder','success');
 }
 
 /* Insert library card (appends to textarea, refreshes rich editor) */
