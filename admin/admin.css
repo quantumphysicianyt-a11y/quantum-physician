@@ -121,7 +121,14 @@ input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus
 .ec-tb-btn{background:none;border:1px solid transparent;color:var(--text);cursor:pointer;padding:3px 7px;border-radius:5px;font-size:13px;line-height:1;transition:all .15s;display:flex;align-items:center;justify-content:center;min-width:28px;height:28px}
 .ec-tb-btn:hover{background:rgba(91,168,178,.15);border-color:var(--border)}
 .ec-tb-btn:active{background:rgba(91,168,178,.25)}
-#ec-editor-rich:empty:before{content:'Write your email message here...\A\AUse the toolbar above to format text.\AUse merge tags (Name, Email) to personalize.';white-space:pre-wrap;color:var(--text-dim);pointer-events:none;font-style:italic;font-size:13px}
-#ec-editor-rich a{color:var(--purple);text-decoration:underline}
-#ec-editor-rich hr{border:none;border-top:2px dashed var(--border);margin:12px 0}
-#ec-editor-rich:focus{border-color:var(--teal)}
+
+
+
+/* Rich Text Editor — Unified Component (Session 21) */
+.re-editable:empty:before{content:'Write your email message here...\A\AUse the toolbar above to format text.\AUse merge tags (Name, Email) to personalize.';white-space:pre-wrap;color:var(--text-dim);pointer-events:none;font-style:italic;font-size:13px}
+.re-editable a{color:var(--purple);text-decoration:underline}
+.re-editable hr{border:none;border-top:2px dashed var(--border);margin:12px 0}
+.re-editable:focus{border-color:var(--teal)}
+.ec-emoji-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:2px;padding:4px 8px 8px}
+.ec-tb-dd{display:block;width:100%;text-align:left;background:none;border:none;color:var(--text);cursor:pointer;padding:6px 10px;border-radius:6px;font-size:12px;transition:background .15s}
+.ec-tb-dd:hover{background:rgba(91,168,178,.12)}

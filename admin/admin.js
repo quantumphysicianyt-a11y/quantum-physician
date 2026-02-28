@@ -8,6 +8,12 @@ sb.auth.onAuthStateChange(function(event,session){
     sessionStorage.setItem('qp_admin_token',session.access_token);
     if(session.refresh_token)sessionStorage.setItem('qp_admin_refresh',session.refresh_token);
   }
+
+/* ================================================================
+   ACTIVE EDITOR REFERENCES — Session 21
+   ================================================================ */
+var _ecEditor=null; /* Email Center editor instance */
+var _sgEditor=null; /* SG/Recovery popup editor instance */
 });
 /* Restore Supabase session from stored token on page load */
 (async function(){try{
@@ -95,6 +101,571 @@ var sgDismissed=JSON.parse(localStorage.getItem('qp_sg_dismissed')||'[]');
 var sgActiveFilter='all';
 
 var _origSgSetupEmail=null;
+
+/* ================================================================
+   UNIFIED RICH EDITOR COMPONENT — Session 21
+   createRichEditor(config) — mounts a full WYSIWYG editor into any container
+   Returns an API: {getMarkdown, setMarkdown, insertText, insertHTML, destroy, el, textarea}
+   ================================================================ */
+
+var _richEditorInstances={};
+var _richEditorCounter=0;
+
+function createRichEditor(config){
+  /* config: {containerId, onInput, placeholder, initialValue} */
+  var id='re-'+(++_richEditorCounter);
+  var container=document.getElementById(config.containerId);
+  if(!container)return null;
+
+  var inst={id:id,sourceMode:false,container:container};
+
+  /* --- Build toolbar HTML --- */
+  var tb='<div id="'+id+'-toolbar" class="re-toolbar" style="display:flex;flex-wrap:wrap;gap:3px;padding:6px 8px;background:var(--navy-deep,#071825);border:1px solid var(--border);border-bottom:none;border-radius:var(--radius-sm,8px) var(--radius-sm,8px) 0 0;align-items:center">';
+  /* Undo/Redo */
+  tb+='<button type="button" class="ec-tb-btn" title="Undo" data-re-cmd="undo">↩</button>';
+  tb+='<button type="button" class="ec-tb-btn" title="Redo" data-re-cmd="redo">↪</button>';
+  tb+='<div class="ec-tb-sep" style="width:1px;height:18px;background:var(--border);margin:0 4px"></div>';
+  /* Heading */
+  tb+='<select id="'+id+'-heading" class="re-sel" style="background:var(--navy-card);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:3px 4px;font-size:11px;width:70px;cursor:pointer">';
+  tb+='<option value="p">Normal</option><option value="h1">H1</option><option value="h2">H2</option><option value="h3">H3</option></select>';
+  /* Font */
+  tb+='<select id="'+id+'-font" class="re-sel" style="background:var(--navy-card);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:3px 4px;font-size:11px;width:85px;cursor:pointer">';
+  tb+='<option value="Arial">Arial</option><option value="Georgia">Georgia</option><option value="Playfair Display">Playfair</option><option value="Courier New">Courier</option><option value="Verdana">Verdana</option><option value="Trebuchet MS">Trebuchet</option></select>';
+  /* Size */
+  tb+='<select id="'+id+'-size" class="re-sel" style="background:var(--navy-card);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:3px 4px;font-size:11px;width:44px;cursor:pointer">';
+  tb+='<option value="1">XS</option><option value="2">S</option><option value="3" selected>M</option><option value="4">L</option><option value="5">XL</option><option value="6">2X</option></select>';
+  tb+='<div class="ec-tb-sep" style="width:1px;height:18px;background:var(--border);margin:0 4px"></div>';
+  /* B/I/U/S */
+  tb+='<button type="button" class="ec-tb-btn" title="Bold" data-re-cmd="bold"><b>B</b></button>';
+  tb+='<button type="button" class="ec-tb-btn" title="Italic" data-re-cmd="italic"><i>I</i></button>';
+  tb+='<button type="button" class="ec-tb-btn" title="Underline" data-re-cmd="underline"><u>U</u></button>';
+  tb+='<button type="button" class="ec-tb-btn" title="Strikethrough" data-re-cmd="strikeThrough"><s>S</s></button>';
+  tb+='<div class="ec-tb-sep" style="width:1px;height:18px;background:var(--border);margin:0 4px"></div>';
+  /* Colors */
+  tb+='<label title="Text Color" class="ec-tb-color-wrap" style="position:relative;display:flex;align-items:center;cursor:pointer">';
+  tb+='<span class="ec-tb-btn" id="'+id+'-color-preview" style="font-weight:700">A</span>';
+  tb+='<input type="color" id="'+id+'-color" value="#00f5ff" style="position:absolute;opacity:0;width:0;height:0;pointer-events:none">';
+  tb+='</label>';
+  tb+='<label title="Highlight" class="ec-tb-color-wrap" style="position:relative;display:flex;align-items:center;cursor:pointer">';
+  tb+='<span class="ec-tb-btn" style="font-size:11px;position:relative">H<span id="'+id+'-hl-bar" style="position:absolute;bottom:2px;left:4px;right:4px;height:3px;background:#ffff00;border-radius:2px"></span></span>';
+  tb+='<input type="color" id="'+id+'-highlight" value="#ffff00" style="position:absolute;opacity:0;width:0;height:0;pointer-events:none">';
+  tb+='</label>';
+  tb+='<div class="ec-tb-sep" style="width:1px;height:18px;background:var(--border);margin:0 4px"></div>';
+  /* Align */
+  tb+='<button type="button" class="ec-tb-btn" title="Left" data-re-cmd="justifyLeft"><svg width="14" height="14" viewBox="0 0 14 14"><rect x="1" y="2" width="12" height="1.5" rx=".5" fill="currentColor"/><rect x="1" y="5.5" width="8" height="1.5" rx=".5" fill="currentColor"/><rect x="1" y="9" width="10" height="1.5" rx=".5" fill="currentColor"/></svg></button>';
+  tb+='<button type="button" class="ec-tb-btn" title="Center" data-re-cmd="justifyCenter"><svg width="14" height="14" viewBox="0 0 14 14"><rect x="1" y="2" width="12" height="1.5" rx=".5" fill="currentColor"/><rect x="3" y="5.5" width="8" height="1.5" rx=".5" fill="currentColor"/><rect x="2" y="9" width="10" height="1.5" rx=".5" fill="currentColor"/></svg></button>';
+  tb+='<button type="button" class="ec-tb-btn" title="Right" data-re-cmd="justifyRight"><svg width="14" height="14" viewBox="0 0 14 14"><rect x="1" y="2" width="12" height="1.5" rx=".5" fill="currentColor"/><rect x="5" y="5.5" width="8" height="1.5" rx=".5" fill="currentColor"/><rect x="3" y="9" width="10" height="1.5" rx=".5" fill="currentColor"/></svg></button>';
+  tb+='<div class="ec-tb-sep" style="width:1px;height:18px;background:var(--border);margin:0 4px"></div>';
+  /* Lists, Link, Divider */
+  tb+='<button type="button" class="ec-tb-btn" title="Bullet List" data-re-cmd="insertUnorderedList">&bull;</button>';
+  tb+='<button type="button" class="ec-tb-btn" title="Numbered" data-re-cmd="insertOrderedList">1.</button>';
+  tb+='<button type="button" class="ec-tb-btn re-link-btn" title="Link" style="color:var(--purple)" data-re-action="link"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>';
+  tb+='<button type="button" class="ec-tb-btn" title="Card Divider" style="font-size:9px;letter-spacing:1px" data-re-action="divider">\u2014</button>';
+  /* More dropdown */
+  tb+='<div style="position:relative;margin-left:auto" id="'+id+'-more-wrap">';
+  tb+='<button type="button" class="ec-tb-btn" title="More tools" id="'+id+'-more-btn" style="font-size:11px" data-re-action="toggleMore">More \u25be</button>';
+  tb+='<div id="'+id+'-more-dd" style="display:none;position:absolute;right:0;top:32px;background:var(--navy-card);border:1px solid var(--border);border-radius:10px;padding:6px;min-width:180px;z-index:99;box-shadow:0 8px 24px rgba(0,0,0,.4)">';
+  tb+='<button type="button" class="ec-tb-dd" data-re-action="image">\ud83d\uddbc Insert Image</button>';
+  tb+='<button type="button" class="ec-tb-dd" data-re-action="emoji">\ud83d\ude0a Emoji</button>';
+  tb+='<button type="button" class="ec-tb-dd" data-re-action="blockquote">\u275d Blockquote</button>';
+  tb+='<button type="button" class="ec-tb-dd" data-re-action="table">\u25a6 Insert Table</button>';
+  tb+='<button type="button" class="ec-tb-dd" data-re-cmd="indent">\u2192 Indent</button>';
+  tb+='<button type="button" class="ec-tb-dd" data-re-cmd="outdent">\u2190 Outdent</button>';
+  tb+='<button type="button" class="ec-tb-dd" data-re-action="lineSpacing">\u2195 Line Spacing</button>';
+  tb+='<button type="button" class="ec-tb-dd" data-re-cmd="removeFormat">\u2715 Clear Formatting</button>';
+  tb+='<div style="border-top:1px solid var(--border);margin:4px 0"></div>';
+  tb+='<button type="button" class="ec-tb-dd" id="'+id+'-source-dd" data-re-action="sourceFromMore">{ } Source Code</button>';
+  tb+='</div></div>';
+  /* Source toggle button (always visible, in toolbar) */
+  tb+='<button type="button" class="ec-tb-btn" id="'+id+'-source-btn" title="Toggle Source" data-re-action="source" style="margin-left:4px;font-size:11px;font-family:monospace">{ }</button>';
+  tb+='</div>';
+
+  /* --- Editor + Textarea --- */
+  var editorHtml='<div id="'+id+'-rich" contenteditable="true" class="re-editable" style="min-height:180px;max-height:400px;overflow-y:auto;padding:14px;background:var(--navy-card);border:1px solid var(--border);border-radius:0 0 var(--radius-sm,8px) var(--radius-sm,8px);color:var(--text);font-size:14px;line-height:1.6;outline:none"></div>';
+  editorHtml+='<textarea id="'+id+'-textarea" class="input" placeholder="'+(config.placeholder||'Write your email message here...')+'" rows="10" style="display:none"></textarea>';
+  /* Section controls (card pills) */
+  editorHtml+='<div id="'+id+'-sections" style="display:none;margin-top:8px;margin-bottom:8px"><div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">Cards <span style="opacity:.5">(drag to reorder)</span></div><div id="'+id+'-pills" style="display:flex;flex-wrap:wrap;gap:6px"></div></div>';
+
+  container.innerHTML=tb+editorHtml;
+
+  /* --- Get DOM refs --- */
+  var richEl=document.getElementById(id+'-rich');
+  var textareaEl=document.getElementById(id+'-textarea');
+  var toolbarEl=document.getElementById(id+'-toolbar');
+  inst.el=richEl;
+  inst.textarea=textareaEl;
+  inst.toolbar=toolbarEl;
+
+  /* --- Set initial value --- */
+  if(config.initialValue){
+    textareaEl.value=config.initialValue;
+    _reTextareaToRich(inst);
+  }
+
+  /* --- Wire events via delegation on toolbar --- */
+  toolbarEl.addEventListener('click',function(e){
+    var btn=e.target.closest('[data-re-cmd],[data-re-action]');
+    if(!btn)return;
+    e.preventDefault();
+    var cmd=btn.getAttribute('data-re-cmd');
+    var action=btn.getAttribute('data-re-action');
+    if(cmd){
+      _reExec(inst,cmd);
+      /* Close more dropdown if it was a dd button */
+      if(btn.classList.contains('ec-tb-dd'))_reCloseMore(inst);
+    }
+    if(action)_reAction(inst,action);
+  });
+
+  /* Heading/Font/Size selects */
+  var headSel=document.getElementById(id+'-heading');
+  if(headSel)headSel.addEventListener('change',function(){
+    var tag=this.value;
+    if(tag==='p')document.execCommand('formatBlock',false,'<p>');
+    else document.execCommand('formatBlock',false,'<'+tag+'>');
+    richEl.focus();_reSync(inst);this.value=tag;
+  });
+  var fontSel=document.getElementById(id+'-font');
+  if(fontSel)fontSel.addEventListener('change',function(){_reExec(inst,'fontName',this.value)});
+  var sizeSel=document.getElementById(id+'-size');
+  if(sizeSel)sizeSel.addEventListener('change',function(){_reExec(inst,'fontSize',this.value)});
+
+  /* Color pickers */
+  var colorIn=document.getElementById(id+'-color');
+  var colorPrev=document.getElementById(id+'-color-preview');
+  if(colorIn)colorIn.addEventListener('change',function(){_reExec(inst,'foreColor',this.value);if(colorPrev)colorPrev.style.color=this.value});
+  var hlIn=document.getElementById(id+'-highlight');
+  var hlBar=document.getElementById(id+'-hl-bar');
+  if(hlIn)hlIn.addEventListener('change',function(){_reExec(inst,'hiliteColor',this.value);if(hlBar)hlBar.style.background=this.value});
+
+  /* Color label click to open hidden input */
+  toolbarEl.querySelectorAll('.ec-tb-color-wrap').forEach(function(label){
+    label.addEventListener('click',function(){var inp=label.querySelector('input[type=color]');if(inp)inp.click()});
+  });
+
+  /* Rich editor input events */
+  richEl.addEventListener('input',function(){_reSync(inst)});
+  richEl.addEventListener('paste',function(){setTimeout(function(){_reSync(inst)},50)});
+
+  /* Textarea input (source mode) */
+  textareaEl.addEventListener('input',function(){if(config.onInput)config.onInput(inst)});
+
+  /* --- Store instance --- */
+  _richEditorInstances[id]=inst;
+
+  /* --- Return public API --- */
+  return {
+    id:id,
+    el:richEl,
+    textarea:textareaEl,
+    getMarkdown:function(){_reSync(inst);return textareaEl.value},
+    setMarkdown:function(md){textareaEl.value=md;if(!inst.sourceMode)_reTextareaToRich(inst);if(config.onInput)config.onInput(inst)},
+    insertMergeTag:function(tag){_reInsertMergeTag(inst,tag)},
+    insertCTA:function(key){_reInsertCTA(inst,key)},
+    insertCard:function(index){_reInsertCard(inst,index)},
+    openCardLibrary:function(){_reOpenCardLibrary(inst)},
+    updateSections:function(){_reUpdateSections(inst)},
+    destroy:function(){container.innerHTML='';delete _richEditorInstances[id]},
+    _inst:inst
+  };
+}
+
+/* --- Core editor operations (internal) --- */
+
+function _reExec(inst,cmd,val){
+  document.execCommand(cmd,false,val||null);
+  inst.el.focus();
+  _reSync(inst);
+}
+
+function _reSync(inst){
+  if(inst.sourceMode)return;
+  var editor=inst.el;
+  var textarea=inst.textarea;
+  if(!editor||!textarea)return;
+  var html=editor.innerHTML;
+  var md=html.replace(/<hr[^>]*>/gi,'\n---\n');
+  md=md.replace(/<br\s*\/?>/gi,'\n');
+  md=md.replace(/<(b|strong)[^>]*>(.*?)<\/(b|strong)>/gi,'**$2**');
+  md=md.replace(/<(i|em)[^>]*>(.*?)<\/(i|em)>/gi,'*$2*');
+  md=md.replace(/<u[^>]*>(.*?)<\/u>/gi,'__$1__');
+  md=md.replace(/<(s|strike|del)[^>]*>(.*?)<\/(s|strike|del)>/gi,'~~$2~~');
+  md=md.replace(/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi,'[$2]($1)');
+  md=md.replace(/<\/(div|p|h[1-6]|li)>/gi,'\n');
+  md=md.replace(/<(div|p|h[1-6])[^>]*>/gi,'');
+  md=md.replace(/<li[^>]*>/gi,'- ');
+  md=md.replace(/<\/?(ul|ol)[^>]*>/gi,'\n');
+  md=md.replace(/<[^>]+>/g,'');
+  var tmp=document.createElement('textarea');
+  tmp.innerHTML=md;md=tmp.value;
+  md=md.replace(/\n{3,}/g,'\n\n').trim();
+  textarea.value=md;
+  /* Trigger callbacks */
+  if(inst._onInput)inst._onInput(inst);
+}
+/* Store onInput in inst for _reSync to call */
+
+function _reTextareaToRich(inst){
+  var textarea=inst.textarea;
+  var editor=inst.el;
+  if(!editor||!textarea)return;
+  var md=textarea.value;
+  var h=md;
+  h=h.replace(/\n---\n/g,'<hr>');
+  h=h.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+  h=h.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g,'<em>$1</em>');
+  h=h.replace(/__([^_]+)__/g,'<u>$1</u>');
+  h=h.replace(/~~([^~]+)~~/g,'<s>$1</s>');
+  h=h.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2">$1</a>');
+  h=h.replace(/\{\{(name|email|referral_code)\}\}/g,'<span style="background:rgba(91,168,178,.2);color:var(--teal);padding:1px 6px;border-radius:4px;font-size:12px">{{$1}}</span>');
+  h=h.replace(/\{\{session_image:([^}]+)\}\}/g,'<span style="display:inline-block;background:rgba(131,56,236,.15);color:var(--purple);padding:4px 10px;border-radius:6px;font-size:11px;border:1px dashed var(--purple)">\ud83d\udcf7 $1</span>');
+  h=h.replace(/\n/g,'<br>');
+  editor.innerHTML=h;
+}
+
+function _reAction(inst,action){
+  var id=inst.id;
+  switch(action){
+    case 'link': _reInsertLink(inst);break;
+    case 'divider': _reInsertDivider(inst);break;
+    case 'source': _reToggleSource(inst);break;
+    case 'sourceFromMore': _reCloseMore(inst);_reToggleSource(inst);break;
+    case 'toggleMore': _reToggleMore(inst);break;
+    case 'image': _reCloseMore(inst);_reInsertImage(inst);break;
+    case 'emoji': _reCloseMore(inst);_reInsertEmoji(inst);break;
+    case 'blockquote': _reCloseMore(inst);_reInsertBlockquote(inst);break;
+    case 'table': _reCloseMore(inst);_reInsertTable(inst);break;
+    case 'lineSpacing': _reCloseMore(inst);_reLineSpacing(inst);break;
+  }
+}
+
+function _reInsertLink(inst){
+  var url=prompt('Enter URL:','https://');
+  if(!url)return;
+  document.execCommand('createLink',false,url);
+  inst.el.focus();_reSync(inst);
+}
+
+function _reInsertDivider(inst){
+  var editor=inst.el;
+  var hr=document.createElement('hr');
+  var sel=window.getSelection();
+  if(sel.rangeCount){
+    var range=sel.getRangeAt(0);
+    range.collapse(false);
+    range.insertNode(document.createElement('br'));
+    range.insertNode(hr);
+    range.collapse(false);
+  }else{editor.appendChild(hr)}
+  editor.focus();_reSync(inst);
+}
+
+function _reToggleSource(inst){
+  var editor=inst.el;
+  var textarea=inst.textarea;
+  var toolbar=inst.toolbar;
+  var btn=document.getElementById(inst.id+'-source-btn');
+  inst.sourceMode=!inst.sourceMode;
+  if(inst.sourceMode){
+    _reSync(inst);
+    editor.style.display='none';
+    textarea.style.display='block';
+    textarea.style.borderRadius='0 0 var(--radius-sm,8px) var(--radius-sm,8px)';
+    toolbar.querySelectorAll('.ec-tb-btn,.re-sel,select').forEach(function(el){
+      if(!el.getAttribute('data-re-action') || el.getAttribute('data-re-action')!=='source'){
+        el.style.opacity='.3';el.style.pointerEvents='none';
+      }
+    });
+    if(btn){btn.style.color='var(--teal)';btn.style.borderColor='var(--teal)';btn.textContent='Rich'}
+  }else{
+    _reTextareaToRich(inst);
+    editor.style.display='block';
+    textarea.style.display='none';
+    toolbar.querySelectorAll('.ec-tb-btn,.re-sel,select').forEach(function(el){
+      el.style.opacity='1';el.style.pointerEvents='auto';
+    });
+    if(btn){btn.style.color='var(--text-dim)';btn.style.borderColor='transparent';btn.textContent='{ }'}
+  }
+}
+
+function _reToggleMore(inst){
+  var dd=document.getElementById(inst.id+'-more-dd');
+  if(!dd)return;
+  var show=dd.style.display==='none';
+  dd.style.display=show?'block':'none';
+  if(show){
+    setTimeout(function(){
+      document.addEventListener('click',function _close(e){
+        var wrap=document.getElementById(inst.id+'-more-wrap');
+        if(!wrap||!wrap.contains(e.target)){
+          dd.style.display='none';
+          document.removeEventListener('click',_close);
+        }
+      });
+    },10);
+  }
+}
+
+function _reCloseMore(inst){
+  var dd=document.getElementById(inst.id+'-more-dd');
+  if(dd)dd.style.display='none';
+}
+
+function _reInsertImage(inst){
+  var url=prompt('Image URL:','https://');
+  if(!url)return;
+  if(inst.sourceMode){
+    var ta=inst.textarea;
+    var s=ta.selectionStart;
+    ta.value=ta.value.substring(0,s)+'![Image]('+url+')'+ta.value.substring(ta.selectionEnd);
+  }else{
+    document.execCommand('insertHTML',false,'<img src="'+url+'" style="max-width:100%;border-radius:8px;margin:8px 0" alt="Image">');
+    inst.el.focus();
+  }
+  _reSync(inst);
+}
+
+/* Emoji picker */
+var RE_EMOJIS=['\ud83d\ude0a','\ud83d\ude04','\ud83c\udf89','\u2728','\ud83d\udc9c','\u2764\ufe0f','\ud83d\ude4f','\ud83d\udc4b','\ud83c\udfaf','\ud83d\udca1','\ud83d\udd25','\u2b50','\ud83c\udf1f','\ud83d\udcab','\ud83d\ude80','\u2705','\ud83d\udce3','\ud83d\udce7','\ud83c\udf81','\ud83d\udcaa','\ud83c\udf08','\u2600\ufe0f','\ud83c\udf19','\ud83c\udfb5','\ud83d\udcda','\ud83e\udde0','\ud83d\udc8e','\ud83c\udfc6','\ud83d\udc4f','\ud83e\udd1d','\ud83d\udc90','\ud83c\udf3a','\ud83c\udf43','\ud83e\udd8b','\ud83d\udd4a\ufe0f','\ud83c\udf0a','\u26a1','\ud83d\udd14','\ud83d\udccc','\ud83c\udfac','\ud83d\udccd','\ud83d\udcc5','\ud83d\udd50','\ud83d\udd17','\u23f0','\ud83d\udc96','\ud83e\uddea'];
+
+function _reInsertEmoji(inst){
+  var old=document.getElementById('re-emoji-picker');
+  if(old){old.remove();return}
+  var picker=document.createElement('div');
+  picker.id='re-emoji-picker';
+  picker.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--navy-card);border:1px solid var(--border);border-radius:14px;padding:4px;z-index:99999;box-shadow:0 12px 40px rgba(0,0,0,.5);width:320px';
+  var header='<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px"><span style="font-size:13px;font-weight:600;color:var(--text)">Emoji</span><button onclick="document.getElementById(\'re-emoji-picker\').remove()" style="background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer">&times;</button></div>';
+  var grid='<div class="ec-emoji-grid">';
+  RE_EMOJIS.forEach(function(e,i){
+    grid+='<button class="ec-emoji-btn" onclick="_reDoInsertEmoji(\''+inst.id+'\','+i+')" style="background:none;border:none;font-size:22px;cursor:pointer;padding:4px;border-radius:6px;transition:background .15s" onmouseover="this.style.background=\'rgba(91,168,178,.15)\'" onmouseout="this.style.background=\'none\'">'+e+'</button>';
+  });
+  grid+='</div>';
+  picker.innerHTML=header+grid;
+  document.body.appendChild(picker);
+}
+
+function _reDoInsertEmoji(instId,idx){
+  var inst=_richEditorInstances[instId];if(!inst)return;
+  var emoji=RE_EMOJIS[idx];
+  document.getElementById('re-emoji-picker').remove();
+  if(inst.sourceMode){
+    var ta=inst.textarea;
+    var s=ta.selectionStart;
+    ta.value=ta.value.substring(0,s)+emoji+ta.value.substring(ta.selectionEnd);
+    ta.focus();ta.selectionStart=ta.selectionEnd=s+emoji.length;
+  }else{
+    inst.el.focus();
+    document.execCommand('insertText',false,emoji);
+  }
+  _reSync(inst);
+}
+
+function _reInsertBlockquote(inst){
+  if(inst.sourceMode){
+    var ta=inst.textarea;
+    var s=ta.selectionStart,e=ta.selectionEnd;
+    var selected=ta.value.substring(s,e)||'Your quote here';
+    ta.value=ta.value.substring(0,s)+'> '+selected+ta.value.substring(e);
+  }else{
+    var sel=window.getSelection();
+    var text=sel.toString()||'Your quote here';
+    var bq='<blockquote style="border-left:3px solid #5ba8b2;padding:8px 14px;margin:8px 0;background:rgba(91,168,178,.06);border-radius:0 6px 6px 0;color:#8899aa;font-style:italic">'+text+'</blockquote><p><br></p>';
+    document.execCommand('insertHTML',false,bq);
+    inst.el.focus();
+  }
+  _reSync(inst);
+}
+
+function _reInsertTable(inst){
+  var old=document.getElementById('re-table-picker');
+  if(old){old.remove();return}
+  var picker=document.createElement('div');
+  picker.id='re-table-picker';
+  picker.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--navy-card);border:1px solid var(--border);border-radius:14px;padding:16px;z-index:99999;box-shadow:0 12px 40px rgba(0,0,0,.5)';
+  picker.innerHTML='<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:12px">Insert Table</div>'+
+    '<div style="display:flex;gap:10px;align-items:center;margin-bottom:12px">'+
+    '<label style="font-size:12px;color:var(--text-dim)">Rows <input type="number" id="re-tbl-rows" value="3" min="1" max="20" style="width:50px;background:var(--navy-deep);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px;margin-left:4px;font-size:12px"></label>'+
+    '<label style="font-size:12px;color:var(--text-dim)">Cols <input type="number" id="re-tbl-cols" value="3" min="1" max="10" style="width:50px;background:var(--navy-deep);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px;margin-left:4px;font-size:12px"></label>'+
+    '</div>'+
+    '<div style="display:flex;gap:8px;justify-content:flex-end">'+
+    '<button class="btn btn-ghost btn-sm" onclick="document.getElementById(\'re-table-picker\').remove()">Cancel</button>'+
+    '<button class="btn btn-primary btn-sm" onclick="_reDoInsertTable(\''+inst.id+'\')">Insert</button>'+
+    '</div>';
+  document.body.appendChild(picker);
+}
+
+function _reDoInsertTable(instId){
+  var inst=_richEditorInstances[instId];if(!inst)return;
+  var rows=parseInt(document.getElementById('re-tbl-rows').value)||3;
+  var cols=parseInt(document.getElementById('re-tbl-cols').value)||3;
+  document.getElementById('re-table-picker').remove();
+  if(rows>20)rows=20;if(cols>10)cols=10;
+  var html='<table style="border-collapse:collapse;width:100%;margin:10px 0"><thead><tr>';
+  for(var c=0;c<cols;c++)html+='<th style="border:1px solid #334;padding:6px 10px;background:rgba(91,168,178,.1);color:#5ba8b2;font-weight:600;font-size:13px">Header '+(c+1)+'</th>';
+  html+='</tr></thead><tbody>';
+  for(var r=0;r<rows;r++){
+    html+='<tr>';
+    for(var c2=0;c2<cols;c2++)html+='<td style="border:1px solid #334;padding:6px 10px;font-size:13px">&nbsp;</td>';
+    html+='</tr>';
+  }
+  html+='</tbody></table><p><br></p>';
+  inst.el.focus();
+  document.execCommand('insertHTML',false,html);
+  _reSync(inst);
+}
+
+function _reLineSpacing(inst){
+  var old=document.getElementById('re-spacing-picker');
+  if(old){old.remove();return}
+  var picker=document.createElement('div');
+  picker.id='re-spacing-picker';
+  picker.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--navy-card);border:1px solid var(--border);border-radius:14px;padding:16px;z-index:99999;box-shadow:0 12px 40px rgba(0,0,0,.5)';
+  picker.innerHTML='<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:12px">Line Spacing</div>'+
+    '<div style="display:flex;flex-direction:column;gap:4px">'+
+    [1,1.2,1.4,1.6,1.8,2,2.5].map(function(v){
+      return '<button class="ec-tb-dd" onclick="_reSetSpacing(\''+inst.id+'\','+v+')">'+v+'x'+(v===1.6?' (default)':'')+'</button>';
+    }).join('')+
+    '</div>';
+  document.body.appendChild(picker);
+}
+
+function _reSetSpacing(instId,val){
+  document.getElementById('re-spacing-picker').remove();
+  var inst=_richEditorInstances[instId];if(!inst)return;
+  inst.el.style.lineHeight=val;
+  inst.el.focus();
+}
+
+/* --- Merge tag insert --- */
+function _reInsertMergeTag(inst,tag){
+  if(inst.sourceMode){
+    var ta=inst.textarea;
+    var s=ta.selectionStart,e=ta.selectionEnd,t=ta.value;
+    ta.value=t.substring(0,s)+tag+t.substring(e);
+    ta.focus();ta.selectionStart=ta.selectionEnd=s+tag.length;
+  }else{
+    var span='<span style="background:rgba(91,168,178,.2);color:var(--teal);padding:1px 6px;border-radius:4px;font-size:12px">'+tag+'</span>&nbsp;';
+    document.execCommand('insertHTML',false,span);
+    inst.el.focus();
+  }
+  _reSync(inst);
+}
+
+/* --- CTA insert --- */
+function _reInsertCTA(inst,key){
+  var cta;
+  if(key==='custom'){
+    var label=prompt('Button text:','Learn More');
+    if(!label)return;
+    var url=prompt('Button URL:','https://');
+    if(!url)return;
+    cta={label:label,url:url};
+  }else{
+    cta=EC_CTA_BUTTONS[key];if(!cta)return;
+  }
+  if(inst.sourceMode){
+    var ta=inst.textarea;
+    var s=ta.selectionStart,e=ta.selectionEnd,t=ta.value;
+    var md='['+cta.label+']('+cta.url+')';
+    ta.value=t.substring(0,s)+md+t.substring(e);
+    ta.focus();ta.selectionStart=ta.selectionEnd=s+md.length;
+  }else{
+    var link='<a href="'+cta.url+'" style="color:var(--purple);font-weight:600">'+(typeof esc==='function'?esc(cta.label):cta.label)+'</a>&nbsp;';
+    document.execCommand('insertHTML',false,link);
+    inst.el.focus();
+  }
+  _reSync(inst);
+  showToast('CTA inserted','success');
+}
+
+/* --- Card Library insert --- */
+function _reInsertCard(inst,index){
+  var card=cardLibraryTemplates[index];if(!card)return;
+  var ta=inst.textarea;if(!ta)return;
+  var body=ta.value.trimEnd();
+  ta.value=body+'\n---\n'+card.body;
+  if(!inst.sourceMode)_reTextareaToRich(inst);
+  ta.scrollTop=ta.scrollHeight;
+  if(inst._onInput)inst._onInput(inst);
+  showToast('Added: '+card.name,'success');
+}
+
+/* --- Card Library panel --- */
+function _reOpenCardLibrary(inst){
+  var panelId=inst.id+'-card-library';
+  var existing=document.getElementById(panelId);
+  if(existing){existing.remove();return}
+  var panel=document.createElement('div');
+  panel.id=panelId;
+  panel.style.cssText='background:var(--navy-deep,#071825);border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:12px;margin-bottom:10px;';
+  var h='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><span style="font-size:13px;font-weight:600;color:var(--text)">Card Library</span><button class="btn btn-ghost btn-sm" style="font-size:11px;padding:2px 8px" onclick="document.getElementById(\''+panelId+'\').remove()">Close</button></div>';
+  h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px">';
+  cardLibraryTemplates.forEach(function(card,i){
+    var iconSvg=clSvg(card.icon,'var(--teal)');
+    h+='<div onclick="_reInsertCard(_richEditorInstances[\''+inst.id+'\'],'+i+')" style="cursor:pointer;background:var(--navy-card);border:1px solid var(--border);border-radius:10px;padding:12px;transition:all .2s;display:flex;flex-direction:column;gap:6px" onmouseover="this.style.borderColor=\'var(--teal)\';this.style.transform=\'translateY(-1px)\'" onmouseout="this.style.borderColor=\'var(--border)\';this.style.transform=\'none\'">';
+    h+='<div style="display:flex;align-items:center;gap:6px"><span style="width:24px;height:24px;display:flex;align-items:center;justify-content:center;background:rgba(91,168,178,.12);border-radius:6px">'+iconSvg+'</span><span style="font-size:12px;font-weight:600;color:var(--text)">'+card.name+'</span></div>';
+    h+='<span style="font-size:11px;color:var(--text-dim);line-height:1.3">'+card.desc+'</span>';
+    h+='</div>';
+  });
+  h+='</div>';
+  panel.innerHTML=h;
+  /* Insert after sections div */
+  var sectionsEl=document.getElementById(inst.id+'-sections');
+  if(sectionsEl)sectionsEl.parentNode.insertBefore(panel,sectionsEl.nextSibling);
+  else inst.container.appendChild(panel);
+}
+
+/* --- Section controls (card pills with drag reorder) --- */
+function _reUpdateSections(inst){
+  var textarea=inst.textarea;
+  var ctrl=document.getElementById(inst.id+'-sections');
+  if(!textarea||!ctrl)return;
+  var parts=textarea.value.split('\n---\n');
+  if(parts.length<2){ctrl.style.display='none';return}
+  ctrl.style.display='block';
+  var pills=document.getElementById(inst.id+'-pills');
+  if(!pills)return;
+  var h='';
+  for(var i=1;i<parts.length;i++){
+    var label=sgCardLabel(parts[i]);
+    h+='<div draggable="true" data-idx="'+i+'" data-re-inst="'+inst.id+'" ondragstart="sgStartDrag(event)" ondragover="sgOverDrag(event)" ondragleave="sgLeaveDrag(event)" ondrop="_reDropCard(event)" style="display:inline-flex;align-items:center;gap:4px;background:var(--navy-card);border:1px solid var(--border);border-radius:8px;padding:4px 8px 4px 10px;font-size:11px;color:var(--text);cursor:grab;user-select:none;transition:border-color .2s"><span style="opacity:.4;font-size:10px;margin-right:2px">\u2630</span>'+label+'<button onclick="_reDeleteCard(\''+inst.id+'\','+i+')" style="background:none;border:none;color:var(--text-dim);cursor:pointer;padding:0 0 0 4px;font-size:14px;line-height:1;opacity:.5" onmouseover="this.style.opacity=1;this.style.color=\'#ff4d6a\'" onmouseout="this.style.opacity=.5;this.style.color=\'var(--text-dim)\'" title="Remove card">&times;</button></div>';
+  }
+  pills.innerHTML=h;
+}
+
+function _reDeleteCard(instId,idx){
+  var inst=_richEditorInstances[instId];if(!inst)return;
+  var ta=inst.textarea;if(!ta)return;
+  var parts=ta.value.split('\n---\n');
+  if(idx<1||idx>=parts.length)return;
+  parts.splice(idx,1);
+  ta.value=parts.join('\n---\n');
+  if(!inst.sourceMode)_reTextareaToRich(inst);
+  if(inst._onInput)inst._onInput(inst);
+  showToast('Card removed','success');
+}
+
+function _reDropCard(e){
+  e.preventDefault();
+  e.currentTarget.style.borderColor='var(--border)';
+  var to=parseInt(e.currentTarget.getAttribute('data-idx'));
+  var instId=e.currentTarget.getAttribute('data-re-inst');
+  var inst=_richEditorInstances[instId];
+  if(!inst||sgDragFrom===null||sgDragFrom===to)return;
+  var ta=inst.textarea;if(!ta)return;
+  var parts=ta.value.split('\n---\n');
+  var cards=parts.slice(1);
+  var moved=cards.splice(sgDragFrom-1,1)[0];
+  cards.splice(to-1,0,moved);
+  ta.value=parts[0]+'\n---\n'+cards.join('\n---\n');
+  sgDragFrom=null;
+  if(!inst.sourceMode)_reTextareaToRich(inst);
+  if(inst._onInput)inst._onInput(inst);
+  showToast('Cards reordered','success');
+}
+
+/* End of Unified Rich Editor Component */
+
 function sgSetupEmail(opts){
 _sgSetupEmailInner(opts);
 }
@@ -111,7 +682,7 @@ recipients.push({email:e,name:prof?(prof.full_name||''):'',referral_code:ref?(re
 window._sgRecipients=recipients;window._sgOpts=opts;
 var ov=document.createElement('div');ov.id='sg-email-modal';
 ov.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';
-ov.onclick=function(e){if(e.target===ov)ov.remove()};
+ov.onclick=function(e){if(e.target===ov)sgCloseModal()};
 var box=document.createElement('div');
 box.style.cssText='background:var(--navy-card,#112a42);border:1px solid rgba(91,168,178,.25);border-radius:16px;padding:28px;width:95%;max-width:720px;max-height:90vh;overflow-y:auto;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.5)';
 var promoOpts='';
@@ -121,7 +692,7 @@ var disc=p.discount_type==='percent'?(p.discount_percent||0)+'% off':(p.discount
 promoOpts+='<option value="'+esc(p.coupon_id)+'"'+sel+'>'+esc(p.coupon_id)+' \u2014 '+esc(p.name)+' ('+disc+')</option>'});
 var recipList=recipients.map(function(r){return '<div style="display:inline-flex;align-items:center;gap:4px;background:rgba(91,168,178,.1);border:1px solid rgba(91,168,178,.2);border-radius:20px;padding:3px 10px;margin:2px;font-size:11px;color:var(--teal)">'+esc(r.email)+'<button style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:13px;padding:0 2px" onclick="sgRemoveRecipient(this,\u0027'+esc(r.email)+'\u0027)">\u00d7</button></div>'}).join('');
 var h='';
-h+='<button class="sg-modal-close" onclick="document.getElementById(\u0027sg-email-modal\u0027).remove()">&times;</button>';
+h+='<button class="sg-modal-close" onclick="sgCloseModal()">&times;</button>';
 h+='<h3 style="margin:0 0 6px;font-size:17px;color:var(--text)">Compose Email</h3>';
 h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:12px;color:var(--text-muted)">Sending to <span id="sg-recip-count" style="color:var(--teal);font-weight:600;cursor:pointer" onclick="var el=document.getElementById(\u0027sg-recipient-list\u0027);el.style.display=el.style.display===\u0027block\u0027?\u0027none\u0027:\u0027block\u0027">'+recipients.length+'</span> recipient'+(recipients.length!==1?'s':'')+' ';
 h+='<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 10px" onclick="var el=document.getElementById(\u0027sg-recipient-list\u0027);el.style.display=el.style.display===\u0027block\u0027?\u0027none\u0027:\u0027block\u0027">View/Edit List</button></div>';
@@ -130,12 +701,21 @@ h+='<div style="margin-bottom:14px"><label style="font-size:12px;font-weight:600
 h+='<input type="text" id="sg-subject" class="input" value="'+esc(opts.subject||'').replace(/"/g,'&quot;')+'" style="width:100%"></div>';
 h+='<div style="margin-bottom:6px"><label style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:4px;display:block">Body</label>';
 h+='<div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;align-items:center">';
-h+='<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 8px" onclick="sgInsertVar(\u0027{{name}}\u0027)">Name</button>';
-h+='<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 8px" onclick="sgInsertVar(\u0027{{email}}\u0027)">Email</button>';
-h+='<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 8px" onclick="sgInsertVar(\u0027{{referral_code}}\u0027)">Referral Code</button>';
+h+='<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 8px" onclick="if(_sgEditor)_sgEditor.insertMergeTag(\u0027{{name}}\u0027)">Name</button>';
+h+='<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 8px" onclick="if(_sgEditor)_sgEditor.insertMergeTag(\u0027{{email}}\u0027)">Email</button>';
+h+='<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 8px" onclick="if(_sgEditor)_sgEditor.insertMergeTag(\u0027{{referral_code}}\u0027)">Referral Code</button>';
 h+='<span style="flex:1"></span>';
 h+='</div>';
-h+='<textarea id="sg-body" class="input" rows="10" style="width:100%;font-size:13px;line-height:1.6" oninput="sgAutoPreview()">'+esc(opts.body||'')+'</textarea>';
+h+='<div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">';
+h+='<span style="font-size:10px;color:var(--text-dim);align-self:center;margin-right:2px">CTA:</span>';
+h+='<button class="btn btn-ghost btn-sm" type="button" onclick="if(_sgEditor)_sgEditor.insertCTA(\u0027watch\u0027)" style="font-size:10px;border-color:var(--purple);color:var(--purple)">Watch Sessions</button>';
+h+='<button class="btn btn-ghost btn-sm" type="button" onclick="if(_sgEditor)_sgEditor.insertCTA(\u0027dashboard\u0027)" style="font-size:10px;border-color:var(--teal);color:var(--teal)">Dashboard</button>';
+h+='<button class="btn btn-ghost btn-sm" type="button" onclick="if(_sgEditor)_sgEditor.insertCTA(\u0027referral\u0027)" style="font-size:10px;border-color:var(--success);color:var(--success)">Referral Hub</button>';
+h+='<button class="btn btn-ghost btn-sm" type="button" onclick="if(_sgEditor)_sgEditor.insertCTA(\u0027academy\u0027)" style="font-size:10px;border-color:var(--warning);color:var(--warning)">Academy</button>';
+h+='<button class="btn btn-ghost btn-sm" type="button" onclick="if(_sgEditor)_sgEditor.insertCTA(\u0027custom\u0027)" style="font-size:10px">Custom CTA...</button>';
+h+='</div>';
+h+='<div id="sg-editor-mount" style="width:100%"></div>';
+h+='<textarea id="sg-body" class="input" style="display:none">'+esc(opts.body||'')+'</textarea>';
 h+='<div id="sg-section-controls" style="display:none;margin-top:8px;margin-bottom:8px"><div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">Cards <span style="opacity:.5">(drag to reorder)</span></div><div id="sg-card-pills" style="display:flex;flex-wrap:wrap;gap:6px"></div></div>';
 h+='</div>';
 h+='<div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap">';
@@ -149,16 +729,34 @@ h+='<select id="sg-promo-select" class="input" style="width:100%;font-size:12px"
 h+='<button class="btn btn-sm" style="background:linear-gradient(135deg,var(--teal),var(--teal-glow,#4acfd9));color:#fff;font-weight:600;letter-spacing:.5px;align-self:flex-start;border:none" onclick="sgInsertDiscountPitch()">ADD DISCOUNT PITCH &amp; LINK TO EMAIL</button>';
 h+='<div style="font-size:11px;color:var(--text-dim)">Appends a discount section with checkout link to your email body.</div>';
 h+='</div></div>';
-h+='<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)"><button class="btn btn-sm" style="background:linear-gradient(135deg,var(--purple),#8338ec);color:#fff;font-weight:600;letter-spacing:.5px;border:none" onclick="openCardLibrary()">CARD LIBRARY</button><span style="font-size:11px;color:var(--text-dim);margin-left:8px">Pre-built card blocks to add to your email</span></div>';
+h+='<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)"><button class="btn btn-sm" style="background:linear-gradient(135deg,var(--purple),#8338ec);color:#fff;font-weight:600;letter-spacing:.5px;border:none" onclick="if(_sgEditor)_sgEditor.openCardLibrary()">CARD LIBRARY</button><span style="font-size:11px;color:var(--text-dim);margin-left:8px">Pre-built card blocks to add to your email</span></div>';
 h+='<div id="sg-preview-area" style="margin-bottom:16px"></div>';
 h+='<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;padding-top:8px;border-top:1px solid var(--border)">';
-h+='<button class="btn btn-ghost btn-sm" onclick="document.getElementById(\u0027sg-email-modal\u0027).remove()">Cancel</button>';
+h+='<button class="btn btn-ghost btn-sm" onclick="sgCloseModal()">Cancel</button>';
 h+='<button class="btn btn-primary btn-sm" onclick="sgPreview()">Preview</button>';
 h+='<button class="btn btn-primary btn-sm" style="background:var(--purple);border-color:var(--purple)" onclick="sgTestEmail()">Send Test</button>';
 h+='<button class="btn btn-success btn-sm" onclick="sgSendAll()">Send to All</button>';
 h+='</div>';
 box.innerHTML=h;
 ov.appendChild(box);document.body.appendChild(ov);
+/* Initialize rich editor in popup */
+if(_sgEditor){_sgEditor.destroy();_sgEditor=null}
+_sgEditor=createRichEditor({
+  containerId:'sg-editor-mount',
+  placeholder:'Write your email message here...',
+  initialValue:opts.body||'',
+  onInput:function(inst){
+    /* Sync to hidden sg-body textarea */
+    var sgBody=document.getElementById('sg-body');
+    if(sgBody&&inst.textarea)sgBody.value=inst.textarea.value;
+    sgAutoPreview();
+  }
+});
+if(_sgEditor)_sgEditor._inst._onInput=function(inst){
+  var sgBody=document.getElementById('sg-body');
+  if(sgBody&&inst.textarea)sgBody.value=inst.textarea.value;
+  sgAutoPreview();
+};
 /* Auto-show preview on open */
 setTimeout(function(){sgPreview();sgUpdateSectionControls()},100);
 }
@@ -202,6 +800,7 @@ body=sgStripDiscount(body);
 var discSection='\n---\n**Limited Time: '+discLabel+'**\n\nYour code: **'+code+'**\nYour discount applies automatically at checkout';
 textarea.value=body.trimEnd()+discSection;
 textarea.scrollTop=textarea.scrollHeight;
+if(_sgEditor)_sgEditor.setMarkdown(textarea.value);
 showToast('Discount card added: '+code,'success');
 sgAutoPreview();
 }
@@ -227,6 +826,7 @@ function sgRemoveDiscountPitch(){
 var textarea=document.getElementById('sg-body');
 if(!textarea)return;
 textarea.value=sgStripDiscount(textarea.value);
+if(_sgEditor)_sgEditor.setMarkdown(textarea.value);
 sgAutoPreview();
 }
 
@@ -305,7 +905,7 @@ h+='<div draggable="true" data-idx="'+i+'" ondragstart="sgStartDrag(event)" ondr
 }
 pills.innerHTML=h;
 }
-function sgInsertVar(v){var ta=document.getElementById('sg-body');if(!ta)return;var s=ta.selectionStart,e=ta.selectionEnd,t=ta.value;ta.value=t.substring(0,s)+v+t.substring(e);ta.focus();ta.selectionStart=ta.selectionEnd=s+v.length}
+function sgInsertVar(v){if(_sgEditor){_sgEditor.insertMergeTag(v);return}var ta=document.getElementById('sg-body');if(!ta)return;var s=ta.selectionStart,e=ta.selectionEnd,t=ta.value;ta.value=t.substring(0,s)+v+t.substring(e);ta.focus();ta.selectionStart=ta.selectionEnd=s+v.length}
 
 function sgGetDiscountConfig(){
 var tog=document.getElementById('sg-discount-toggle');
@@ -341,6 +941,7 @@ sgUpdateSectionControls();
 }
 
 function sgPreview(){
+if(_sgEditor&&_sgEditor.textarea){document.getElementById('sg-body').value=_sgEditor.textarea.value}
 var subject=document.getElementById('sg-subject').value;
 var body=document.getElementById('sg-body').value;
 var from=document.getElementById('sg-from').value;
@@ -358,6 +959,7 @@ setTimeout(function(){try{fr.style.height=Math.max(500,iDoc.body.scrollHeight+20
 }
 
 async function sgTestEmail(){
+if(_sgEditor&&_sgEditor.textarea){document.getElementById('sg-body').value=_sgEditor.textarea.value}
 var subject=document.getElementById('sg-subject').value;
 var body=document.getElementById('sg-body').value;
 var from=document.getElementById('sg-from').value;
@@ -384,6 +986,7 @@ logAudit('suggestion_test_email','Test to '+testAddr+': '+subject);
 }
 
 async function sgSendAll(){
+if(_sgEditor&&_sgEditor.textarea){document.getElementById('sg-body').value=_sgEditor.textarea.value}
 var subject=document.getElementById('sg-subject').value;
 var body=document.getElementById('sg-body').value;
 var from=document.getElementById('sg-from').value;
@@ -394,7 +997,7 @@ if(!subject||!body){showToast('Fill in subject and body first','error');return}
 if(!recipients.length){showToast('No recipients','error');return}
 var ok=await qpConfirm('Send Campaign','Send this email to '+recipients.length+' recipient'+(recipients.length>1?'s':'')+'?\n\nSubject: '+subject+'\nFrom: '+from);
 if(!ok)return;
-document.getElementById('sg-email-modal').remove();
+sgCloseModal();
 showToast('Sending to '+recipients.length+' recipients...','info');
 var sent=0,failed=0;
 try{
@@ -885,15 +1488,14 @@ async function updateAudiencePreview(){var audience=document.getElementById('ema
 function updateSendCount(){var el=document.getElementById('send-count');if(el)el.textContent=currentAudience.length}
 function copyAllEmails(){var emails=currentAudience.map(function(r){return r.email}).join('\n');navigator.clipboard.writeText(emails).then(function(){showToast('Copied '+currentAudience.length+' emails','success')}).catch(function(){showToast('Copy failed','error')})}
 function toggleAudienceExpand(el,count){var hidden=el.parentElement.querySelector('.ec-hidden');if(!hidden)return;var showing=hidden.style.display!=='none';hidden.style.display=showing?'none':'block';el.textContent=showing?'...and '+count+' more ▼':'show less ▲'}
-function insertEmailVar(v){var ta=document.getElementById('email-body');var s=ta.selectionStart,e=ta.selectionEnd,t=ta.value;ta.value=t.substring(0,s)+v+t.substring(e);ta.focus();ta.selectionStart=ta.selectionEnd=s+v.length}
 
 function updateEmailTypeHint(){var type=document.getElementById('email-type-select').value;var hint=document.getElementById('email-type-hint');if(type==='promotional'){hint.style.color='var(--warning)';hint.textContent='Promotional emails count toward the weekly limit and respect opt-out preferences.'}else if(type==='automated'){hint.style.color='var(--teal)';hint.textContent='Automated/Course emails are NOT limited and sent regardless of opt-out.'}else{hint.style.color='var(--success)';hint.textContent='Transactional emails are NOT limited and sent regardless of opt-out.'}}
 
-function previewEmail(){var fromEmail=document.getElementById('email-from').value;var subject=document.getElementById('email-subject').value;var body=document.getElementById('email-body').value;if(!subject||!body){showToast('Fill in subject and body','error');return}if(document.getElementById('email-audience').value==='custom'){var cust=document.getElementById('custom-emails').value.split('\n').map(function(e){return e.trim().toLowerCase()}).filter(function(e){return e&&e.indexOf('@')>=0});currentAudience=cust.map(function(email){return{email:email,name:'',referral_code:''}});updateSendCount()}var s=currentAudience.length?currentAudience[0]:{email:'preview@example.com',name:'Friend',referral_code:'ABC123'};var pb=body.replace(/\{\{name\}\}/g,s.name||'Friend').replace(/\{\{email\}\}/g,s.email).replace(/\{\{referral_code\}\}/g,s.referral_code||'XXXXXX');var toLabel=s.email+(currentAudience.length>1?' (+'+( currentAudience.length-1)+' more)':'');var useRich=document.getElementById('rich-email-toggle').checked;var richHtml=null;if(useRich){var discCfg=getDiscountConfig();var brand=getEmailBrand();richHtml=brand==='academy'?buildAcademyEmail(pb,null,'https://academy.quantumphysician.com',discCfg):buildRichEmail(pb,null,'https://fusionsessions.com',discCfg);if(s.referral_code)richHtml=richHtml.replace(/REFCODE/g,s.referral_code)}var old=document.getElementById('email-preview-modal');if(old)old.remove();var ov=document.createElement('div');ov.id='email-preview-modal';ov.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.8);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';ov.onclick=function(e){if(e.target===ov)ov.remove()};var box=document.createElement('div');box.style.cssText='background:#112a42;border:1px solid rgba(91,168,178,.25);border-radius:16px;padding:28px;width:95%;max-width:900px;max-height:90vh;overflow-y:auto;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.5)';var xBtn=document.createElement('button');xBtn.innerHTML='\u00d7';xBtn.style.cssText='position:absolute;top:14px;right:14px;background:rgba(91,168,178,.1);border:1px solid rgba(91,168,178,.25);color:#5ba8b2;font-size:18px;cursor:pointer;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;padding:0';xBtn.onclick=function(){ov.remove()};box.appendChild(xBtn);var info=document.createElement('div');info.style.cssText='margin-bottom:14px';info.innerHTML='<h3 style="margin:0 0 14px;font-size:16px;color:#e8e8e8">Email Preview</h3><p style="font-size:12px;margin:4px 0;color:#8899aa"><strong>From:</strong> '+fromEmail+'</p><p style="font-size:12px;margin:4px 0;color:#8899aa"><strong>To:</strong> '+toLabel+'</p><p style="font-size:12px;margin:4px 0;color:#8899aa"><strong>Subject:</strong> <span style="color:#5ba8b2">'+subject+'</span></p>';box.appendChild(info);if(richHtml){var fr=document.createElement('iframe');fr.style.cssText='width:100%;min-height:70vh;border:none;border-radius:8px;background:#2f5f7f;margin-top:4px';fr.srcdoc=richHtml;box.appendChild(fr)}else{var txt=document.createElement('div');txt.style.cssText='font-size:13px;color:#8899aa;white-space:pre-wrap;line-height:1.7;padding:16px;background:rgba(0,0,0,.15);border-radius:8px;max-height:60vh;overflow-y:auto;margin-top:4px';txt.textContent=pb;box.appendChild(txt)}ov.appendChild(box);document.body.appendChild(ov)}
+function previewEmail(){if(_ecEditor&&_ecEditor.textarea){document.getElementById('email-body').value=_ecEditor.textarea.value}var fromEmail=document.getElementById('email-from').value;var subject=document.getElementById('email-subject').value;var body=document.getElementById('email-body').value;if(!subject||!body){showToast('Fill in subject and body','error');return}if(document.getElementById('email-audience').value==='custom'){var cust=document.getElementById('custom-emails').value.split('\n').map(function(e){return e.trim().toLowerCase()}).filter(function(e){return e&&e.indexOf('@')>=0});currentAudience=cust.map(function(email){return{email:email,name:'',referral_code:''}});updateSendCount()}var s=currentAudience.length?currentAudience[0]:{email:'preview@example.com',name:'Friend',referral_code:'ABC123'};var pb=body.replace(/\{\{name\}\}/g,s.name||'Friend').replace(/\{\{email\}\}/g,s.email).replace(/\{\{referral_code\}\}/g,s.referral_code||'XXXXXX');var toLabel=s.email+(currentAudience.length>1?' (+'+( currentAudience.length-1)+' more)':'');var useRich=document.getElementById('rich-email-toggle').checked;var richHtml=null;if(useRich){var discCfg=getDiscountConfig();var brand=getEmailBrand();richHtml=brand==='academy'?buildAcademyEmail(pb,null,'https://academy.quantumphysician.com',discCfg):buildRichEmail(pb,null,'https://fusionsessions.com',discCfg);if(s.referral_code)richHtml=richHtml.replace(/REFCODE/g,s.referral_code)}var old=document.getElementById('email-preview-modal');if(old)old.remove();var ov=document.createElement('div');ov.id='email-preview-modal';ov.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.8);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';ov.onclick=function(e){if(e.target===ov)ov.remove()};var box=document.createElement('div');box.style.cssText='background:#112a42;border:1px solid rgba(91,168,178,.25);border-radius:16px;padding:28px;width:95%;max-width:900px;max-height:90vh;overflow-y:auto;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.5)';var xBtn=document.createElement('button');xBtn.innerHTML='\u00d7';xBtn.style.cssText='position:absolute;top:14px;right:14px;background:rgba(91,168,178,.1);border:1px solid rgba(91,168,178,.25);color:#5ba8b2;font-size:18px;cursor:pointer;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;padding:0';xBtn.onclick=function(){ov.remove()};box.appendChild(xBtn);var info=document.createElement('div');info.style.cssText='margin-bottom:14px';info.innerHTML='<h3 style="margin:0 0 14px;font-size:16px;color:#e8e8e8">Email Preview</h3><p style="font-size:12px;margin:4px 0;color:#8899aa"><strong>From:</strong> '+fromEmail+'</p><p style="font-size:12px;margin:4px 0;color:#8899aa"><strong>To:</strong> '+toLabel+'</p><p style="font-size:12px;margin:4px 0;color:#8899aa"><strong>Subject:</strong> <span style="color:#5ba8b2">'+subject+'</span></p>';box.appendChild(info);if(richHtml){var fr=document.createElement('iframe');fr.style.cssText='width:100%;min-height:70vh;border:none;border-radius:8px;background:#2f5f7f;margin-top:4px';fr.srcdoc=richHtml;box.appendChild(fr)}else{var txt=document.createElement('div');txt.style.cssText='font-size:13px;color:#8899aa;white-space:pre-wrap;line-height:1.7;padding:16px;background:rgba(0,0,0,.15);border-radius:8px;max-height:60vh;overflow-y:auto;margin-top:4px';txt.textContent=pb;box.appendChild(txt)}ov.appendChild(box);document.body.appendChild(ov)}
 
-function prepareToSend(){var subject=document.getElementById('email-subject').value;var body=document.getElementById('email-body').value;if(!subject||!body){showToast('Fill in subject and body','error');return}if(document.getElementById('email-audience').value==='custom'){var cust=document.getElementById('custom-emails').value.split('\n').map(function(e){return e.trim().toLowerCase()}).filter(function(e){return e&&e.indexOf('@')>=0});currentAudience=cust.map(function(email){return{email:email,name:'',referral_code:''}});updateSendCount()}if(!currentAudience.length){showToast('No recipients selected','error');return}qpConfirm('Confirm Send','Send this email to '+currentAudience.length+' recipients?\n\nSubject: '+subject+'\nFrom: '+document.getElementById('email-from').value,{okText:'Yes, Send'}).then(function(ok){if(ok)sendEmails()})}
+function prepareToSend(){if(_ecEditor&&_ecEditor.textarea){document.getElementById('email-body').value=_ecEditor.textarea.value}var subject=document.getElementById('email-subject').value;var body=document.getElementById('email-body').value;if(!subject||!body){showToast('Fill in subject and body','error');return}if(document.getElementById('email-audience').value==='custom'){var cust=document.getElementById('custom-emails').value.split('\n').map(function(e){return e.trim().toLowerCase()}).filter(function(e){return e&&e.indexOf('@')>=0});currentAudience=cust.map(function(email){return{email:email,name:'',referral_code:''}});updateSendCount()}if(!currentAudience.length){showToast('No recipients selected','error');return}qpConfirm('Confirm Send','Send this email to '+currentAudience.length+' recipients?\n\nSubject: '+subject+'\nFrom: '+document.getElementById('email-from').value,{okText:'Yes, Send'}).then(function(ok){if(ok)sendEmails()})}
 
-async function sendEmails(){var fromEmail=document.getElementById('email-from').value;var subject=document.getElementById('email-subject').value;var body=document.getElementById('email-body').value;var emailType=document.getElementById('email-type-select').value;var isPromo=emailType==='promotional';document.getElementById('email-log').style.display='block';document.getElementById('send-btn').disabled=true;var logEntries=document.getElementById('email-log-entries');var progressFill=document.getElementById('progress-fill');var progressText=document.getElementById('progress-text');logEntries.innerHTML='';progressFill.style.width='0%';addLogEntry('Starting email send... (type: '+emailType+')','info');var sent=0,failed=0,skippedLimit=0;var total=currentAudience.length;
+async function sendEmails(){if(_ecEditor&&_ecEditor.textarea){document.getElementById('email-body').value=_ecEditor.textarea.value}var fromEmail=document.getElementById('email-from').value;var subject=document.getElementById('email-subject').value;var body=document.getElementById('email-body').value;var emailType=document.getElementById('email-type-select').value;var isPromo=emailType==='promotional';document.getElementById('email-log').style.display='block';document.getElementById('send-btn').disabled=true;var logEntries=document.getElementById('email-log-entries');var progressFill=document.getElementById('progress-fill');var progressText=document.getElementById('progress-text');logEntries.innerHTML='';progressFill.style.width='0%';addLogEntry('Starting email send... (type: '+emailType+')','info');var sent=0,failed=0,skippedLimit=0;var total=currentAudience.length;
 /* Create campaign record */
 var campaignId=null;try{var res=await proxyFrom('email_campaigns').insert([{campaign_type:isPromo?'custom':'automated',campaign_name:subject,subject:subject,from_email:fromEmail,recipient_count:total,status:'sending',sent_at:new Date().toISOString()}]).select().single();if(res.data)campaignId=res.data.id}catch(e){console.error('Campaign insert error:',e)}
 /* Pre-check weekly limits for promos */
@@ -2402,20 +3004,8 @@ function ecExtractCTA(cardText){
   return{label:'LEARN MORE',url:null};
 }
 
-var cardLibraryTemplates=[
-{name:"Referral Invite",icon:"link",desc:"Invite friends & earn credits",body:"**Share the Healing Journey**\n\nKnow someone who could benefit? Share your personal referral link and earn credits toward future sessions.\n\nYour link: **https://fusionsessions.com/?ref={{referral_code}}**\n\n{{qr_code}}\n\nCredits work like cash toward any session or course"},
-{name:"Community Invite",icon:"users",desc:"Join the discussion forum",body:"**Join Our Healing Community**\n\nConnect with fellow members, share insights, and get support on your wellness journey.\n\nOur community is a safe space for growth, questions, and celebration."},
-{name:"Upcoming Session",icon:"calendar",desc:"Highlight next session",body:"**Your Next Session Is Coming Up**\n\nDo not miss our upcoming quantum healing session with Dr. Tracey Clark.\n\nMark your calendar and prepare to go deeper into your healing journey."},
-{name:"Testimonial",icon:"star",desc:"Social proof quote block",body:"**What Members Are Saying**\n\nThis program has completely transformed how I approach my health and wellbeing. The sessions are profound. — Community Member"},
-{name:"Bold CTA",icon:"zap",desc:"Strong call to action",body:"**Ready to Take the Next Step?**\n\nYour transformation is waiting. Whether you are continuing your journey or just beginning, now is the perfect time."},
-{name:"Academy Promo",icon:"grad",desc:"Promote a course",body:"**Level Up Your Knowledge**\n\nExplore our self-paced courses designed to deepen your understanding of quantum healing principles.\n\nLearn at your own pace, on your own schedule."},
-{name:"QR Code Only",icon:"key",desc:"Scannable referral QR",body:"**Scan & Share**\n\nShare your personal referral link with anyone — they scan, you earn credits.\n\n{{qr_code}}"},
-{name:"Purchase Confirmation",icon:"check",desc:"Recovery how-to instructions",body:"**How to access your content:**\n\n**1.** Visit **fusionsessions.com** and click \"Log In\"\n**2.** Create an account using **{{email}}** (the email you purchased with)\n**3.** Go to your **Dashboard** — your purchased content will be waiting\n**4.** Click on your session to begin your healing journey"},
-{name:"Getting Started Tips",icon:"lightbulb",desc:"Quick tips for new customers",body:"**Quick tips to get started:**\n\n• Make sure you sign up with the **exact email** shown above\n• Check your spam folder for the account verification email\n• Once logged in, your sessions appear on your **Dashboard**\n• Sessions are available to watch anytime, on any device\n\nHave questions? Reply to this email anytime."},
-{name:"Session Product",icon:"play_circle",desc:"Individual session with image",body:"{{session_image:session-01}}\n\n**Session 1: Opening & Orientation**\n\nYour session is ready to watch. Log in to your Dashboard to begin your healing journey."},
-{name:"Bundle Product",icon:"library_books",desc:"Full bundle with all 12 sessions",body:"{{session_image:bundle-all}}\n\n**The Complete Fusion Bundle**\n\nAll 12 healing sessions are now available in your Dashboard. Start with Session 1 and work through them at your own pace."}
-];
 function openCardLibrary(){
+if(_sgEditor){_sgEditor.openCardLibrary();return}
 var existing=document.getElementById("card-library-panel");
 if(existing){existing.remove();return}
 var panel=document.createElement("div");
@@ -2436,6 +3026,7 @@ var previewArea=document.getElementById("sg-preview-area");
 if(previewArea)previewArea.parentNode.insertBefore(panel,previewArea);
 }
 function insertLibraryCard(index){
+if(_sgEditor){_sgEditor.insertCard(index);return}
 var card=cardLibraryTemplates[index];
 if(!card)return;
 var textarea=document.getElementById("sg-body");
@@ -2446,28 +3037,6 @@ textarea.scrollTop=textarea.scrollHeight;
 sgAutoPreview();
 sgUpdateSectionControls();
 showToast("Added: "+card.name,"success");
-}
-
-/* ================================================================
-   EMAIL CENTER — Card Library, Live Preview, Drag Reorder, Test Email
-   Session 19 features ported from recovery popup
-   ================================================================ */
-
-/* ---------- Card Library Templates ---------- */
-
-/* ---------- Smart CTA extraction from markdown links ---------- */
-function ecExtractCTA(cardText){
-  /* Check for markdown link [Text](url) and extract label + url */
-  var m=cardText.match(/\[([^\]]+)\]\(([^)]+)\)/);
-  if(m)return{label:m[1].toUpperCase(),url:m[2]};
-  /* Keyword detection */
-  if(cardText.indexOf('Bundle')>=0||cardText.indexOf('Upgrade')>=0)return{label:'COMPLETE YOUR BUNDLE',url:null};
-  if(cardText.indexOf('Dashboard')>=0||cardText.indexOf('Log In')>=0||cardText.indexOf('access your')>=0)return{label:'GO TO DASHBOARD',url:null};
-  if(cardText.indexOf('Share')>=0||cardText.indexOf('referral')>=0||cardText.indexOf('Referral')>=0)return{label:'GO TO REFERRAL HUB',url:null};
-  if(cardText.indexOf('Academy')>=0||cardText.indexOf('academy')>=0||cardText.indexOf('Course')>=0)return{label:'EXPLORE ACADEMY',url:null};
-  if(cardText.indexOf('Community')>=0||cardText.indexOf('community')>=0)return{label:'JOIN COMMUNITY',url:null};
-  if(cardText.indexOf('Watch')>=0||cardText.indexOf('Session')>=0)return{label:'WATCH NOW',url:null};
-  return{label:'LEARN MORE',url:null};
 }
 
 var cardLibraryTemplates=[
@@ -2483,20 +3052,6 @@ var cardLibraryTemplates=[
 {name:'Session Product',icon:'image',desc:'Session card with image',body:'{{session_image:session-02}}\n\n**Session 2: Anxiety & Overwhelm**\n\nRelease the patterns of anxiety and overwhelm that keep you stuck. This powerful BodyTalk session helps restore calm and clarity.\n\n[Learn More](https://fusionsessions.com/#sessions)'},
 {name:'Bundle Product',icon:'image',desc:'Bundle card with image',body:'{{session_image:session-01}}\n\n**Complete Fusion Bundle — All 12 Sessions**\n\nGet the full transformational experience. All 12 healing sessions plus bonus community access.\n\n[View Bundle](https://fusionsessions.com/#bundle)'}
 ];
-
-/* ---------- Card Library SVG helper ---------- */
-function clSvg(name,color){
-  var c=color||'currentColor',s='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="'+c+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">';
-  var paths={share:'<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>',users:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',calendar:'<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',quote:'<path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V21z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3z"/>',zap:'<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',book:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>',qr:'<rect x="2" y="2" width="8" height="8" rx="1"/><rect x="14" y="2" width="8" height="8" rx="1"/><rect x="2" y="14" width="8" height="8" rx="1"/><rect x="14" y="14" width="4" height="4"/>',check:'<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',play:'<polygon points="5 3 19 12 5 21 5 3"/>',image:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>'};
-  return s+(paths[name]||paths.zap)+'</svg>';
-}
-
-/* ---------- Drag helpers (shared names with popup) ---------- */
-var sgDragFrom=null;
-function sgStartDrag(e){sgDragFrom=parseInt(e.target.closest('[data-idx]').getAttribute('data-idx'));e.dataTransfer.effectAllowed='move'}
-function sgOverDrag(e){e.preventDefault();e.currentTarget.style.borderColor='var(--teal)'}
-function sgLeaveDrag(e){e.currentTarget.style.borderColor='var(--border)'}
-function sgCardLabel(text){var l=text.trim().split('\n')[0].replace(/[*#_\[\]>]/g,'').trim();return l.length>28?l.substring(0,28)+'…':l}
 
 /* ---------- Auto Preview (debounced) ---------- */
 var _ecPreviewTimer=null;
@@ -2668,6 +3223,7 @@ function insertDiscountBlock(){
 
 /* ---------- Send Test Email ---------- */
 async function ecSendTestEmail(){
+  if(_ecEditor&&_ecEditor.textarea){document.getElementById('email-body').value=_ecEditor.textarea.value}
   var subject=(document.getElementById('email-subject')||{}).value;
   var body=(document.getElementById('email-body')||{}).value;
   var from=(document.getElementById('email-from')||{}).value;
@@ -2741,392 +3297,118 @@ function ecInsertCTA(key){
 }
 
 /* ================================================================
-   Rich Text Editor — Toolbar Functions
-   ================================================================ */
-var _ecSourceMode=false;
-
-function ecExec(cmd,val){
-  document.execCommand(cmd,false,val||null);
-  document.getElementById('ec-editor-rich').focus();
-  ecRichSync();
-}
-
-function ecInsertLink(){
-  var url=prompt('Enter URL:','https://');
-  if(!url)return;
-  document.execCommand('createLink',false,url);
-  document.getElementById('ec-editor-rich').focus();
-  ecRichSync();
-}
-
-function ecInsertDivider(){
-  var editor=document.getElementById('ec-editor-rich');
-  /* Insert a visual divider + card separator */
-  var hr=document.createElement('hr');
-  var sel=window.getSelection();
-  if(sel.rangeCount){
-    var range=sel.getRangeAt(0);
-    range.collapse(false);
-    range.insertNode(document.createElement('br'));
-    range.insertNode(hr);
-    range.collapse(false);
-  }else{
-    editor.appendChild(hr);
-  }
-  editor.focus();
-  ecRichSync();
-}
-
-/* Sync rich editor → hidden textarea (converts to markdown-ish format) */
-function ecRichSync(){
-  if(_ecSourceMode)return;
-  var editor=document.getElementById('ec-editor-rich');
-  var textarea=document.getElementById('email-body');
-  if(!editor||!textarea)return;
-  /* Convert HTML to markdown-ish text for the email builder */
-  var html=editor.innerHTML;
-  /* Convert <hr> to --- dividers */
-  var md=html.replace(/<hr[^>]*>/gi,'\n---\n');
-  /* Convert <br> to newlines */
-  md=md.replace(/<br\s*\/?>/gi,'\n');
-  /* Convert <b>/<strong> to **bold** */
-  md=md.replace(/<(b|strong)[^>]*>(.*?)<\/(b|strong)>/gi,'**$2**');
-  /* Convert <i>/<em> to *italic* (we use single star) */
-  md=md.replace(/<(i|em)[^>]*>(.*?)<\/(i|em)>/gi,'*$2*');
-  /* Convert <u> to __underline__ */
-  md=md.replace(/<u[^>]*>(.*?)<\/u>/gi,'__$1__');
-  /* Convert <s>/<strike> to ~~strike~~ */
-  md=md.replace(/<(s|strike|del)[^>]*>(.*?)<\/(s|strike|del)>/gi,'~~$2~~');
-  /* Convert <a href="url">text</a> to [text](url) */
-  md=md.replace(/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi,'[$2]($1)');
-  /* Convert block elements to newlines */
-  md=md.replace(/<\/(div|p|h[1-6]|li)>/gi,'\n');
-  md=md.replace(/<(div|p|h[1-6])[^>]*>/gi,'');
-  md=md.replace(/<li[^>]*>/gi,'- ');
-  md=md.replace(/<\/?(ul|ol)[^>]*>/gi,'\n');
-  /* Strip remaining HTML tags but preserve content */
-  md=md.replace(/<[^>]+>/g,'');
-  /* Decode HTML entities */
-  var tmp=document.createElement('textarea');
-  tmp.innerHTML=md;
-  md=tmp.value;
-  /* Clean up excessive newlines */
-  md=md.replace(/\n{3,}/g,'\n\n');
-  md=md.trim();
-  textarea.value=md;
-  ecAutoPreview();
-}
-
-/* Sync textarea → rich editor (for loading templates etc) */
-function ecTextareaToRich(){
-  var textarea=document.getElementById('email-body');
-  var editor=document.getElementById('ec-editor-rich');
-  if(!editor||!textarea)return;
-  var md=textarea.value;
-  /* Convert markdown to HTML */
-  var h=md;
-  /* --- dividers */
-  h=h.replace(/\n---\n/g,'<hr>');
-  /* **bold** */
-  h=h.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
-  /* *italic* (but not ** which is bold) */
-  h=h.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g,'<em>$1</em>');
-  /* __underline__ */
-  h=h.replace(/__([^_]+)__/g,'<u>$1</u>');
-  /* ~~strike~~ */
-  h=h.replace(/~~([^~]+)~~/g,'<s>$1</s>');
-  /* [text](url) → links */
-  h=h.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2">$1</a>');
-  /* {{merge_tags}} → styled spans */
-  h=h.replace(/\{\{(name|email|referral_code)\}\}/g,'<span style="background:rgba(91,168,178,.2);color:var(--teal);padding:1px 6px;border-radius:4px;font-size:12px">{{$1}}</span>');
-  /* {{session_image:...}} → placeholder */
-  h=h.replace(/\{\{session_image:([^}]+)\}\}/g,'<span style="display:inline-block;background:rgba(131,56,236,.15);color:var(--purple);padding:4px 10px;border-radius:6px;font-size:11px;border:1px dashed var(--purple)">📷 $1</span>');
-  /* Newlines to <br> */
-  h=h.replace(/\n/g,'<br>');
-  editor.innerHTML=h;
-}
-
-/* Toggle between rich editor and raw markdown source */
-function ecToggleSource(){
-  var editor=document.getElementById('ec-editor-rich');
-  var textarea=document.getElementById('email-body');
-  var toolbar=document.getElementById('ec-editor-toolbar');
-  var btn=document.getElementById('ec-tb-source-btn');
-  if(!editor||!textarea)return;
-  _ecSourceMode=!_ecSourceMode;
-  if(_ecSourceMode){
-    ecRichSync();
-    editor.style.display='none';
-    textarea.style.display='block';
-    textarea.style.borderRadius='0 0 var(--radius-sm) var(--radius-sm)';
-    /* Dim toolbar buttons but keep source btn clickable */
-    toolbar.querySelectorAll('.ec-tb-btn,select').forEach(function(el){
-      if(el.id!=='ec-tb-source-btn'){el.style.opacity='.3';el.style.pointerEvents='none'}
-    });
-    btn.style.color='var(--teal)';btn.style.borderColor='var(--teal)';btn.textContent='Rich';
-  }else{
-    ecTextareaToRich();
-    editor.style.display='block';
-    textarea.style.display='none';
-    toolbar.querySelectorAll('.ec-tb-btn,select').forEach(function(el){
-      el.style.opacity='1';el.style.pointerEvents='auto';
-    });
-    btn.style.color='var(--text-dim)';btn.style.borderColor='transparent';btn.textContent='{ }';
-  }
-}
-
-/* Override loadTemplate to also update rich editor */
-var _origLoadTemplate=typeof loadTemplate==='function'?loadTemplate:null;
-function loadTemplate(key){
-  if(_origLoadTemplate)_origLoadTemplate(key);
-  else{
-    var tmpl=getAllTemplates()[key];
-    if(!tmpl)return;
-    document.getElementById('email-subject').value=tmpl.subject;
-    document.getElementById('email-body').value=tmpl.body;
-    document.getElementById('subject-count').textContent=tmpl.subject.length;
-    showToast('Loaded "'+tmpl.name+'" template','success');
-  }
-  if(!_ecSourceMode)ecTextareaToRich();
-  ecAutoPreview();
-}
-
-/* Override insertEmailVar to work with rich editor */
-var _origInsertEmailVar2=typeof insertEmailVar==='function'?insertEmailVar:null;
-function insertEmailVar(v){
-  if(_ecSourceMode){
-    /* Source mode — insert into textarea */
-    var ta=document.getElementById('email-body');if(!ta)return;
-    var s=ta.selectionStart,e=ta.selectionEnd,t=ta.value;
-    ta.value=t.substring(0,s)+v+t.substring(e);
-    ta.focus();ta.selectionStart=ta.selectionEnd=s+v.length;
-  }else{
-    /* Rich mode — insert styled span */
-    var span='<span style="background:rgba(91,168,178,.2);color:var(--teal);padding:1px 6px;border-radius:4px;font-size:12px">'+v+'</span>&nbsp;';
-    document.execCommand('insertHTML',false,span);
-    document.getElementById('ec-editor-rich').focus();
-  }
-  ecRichSync();
-  ecAutoPreview();
-}
-
-/* Override ecInsertCTA to work with rich editor */
-var _origEcInsertCTA=typeof ecInsertCTA==='function'?ecInsertCTA:null;
-function ecInsertCTA(key){
-  var cta;
-  if(key==='custom'){
-    var label=prompt('Button text:','Learn More');
-    if(!label)return;
-    var url=prompt('Button URL:','https://');
-    if(!url)return;
-    cta={label:label,url:url};
-  }else{
-    cta=EC_CTA_BUTTONS[key];if(!cta)return;
-  }
-  if(_ecSourceMode){
-    var ta=document.getElementById('email-body');if(!ta)return;
-    var s=ta.selectionStart,e=ta.selectionEnd,t=ta.value;
-    var md='['+cta.label+']('+cta.url+')';
-    ta.value=t.substring(0,s)+md+t.substring(e);
-    ta.focus();ta.selectionStart=ta.selectionEnd=s+md.length;
-  }else{
-    var link='<a href="'+cta.url+'" style="color:var(--purple);font-weight:600">'+esc(cta.label)+'</a>&nbsp;';
-    document.execCommand('insertHTML',false,link);
-    document.getElementById('ec-editor-rich').focus();
-  }
-  ecRichSync();
-  ecAutoPreview();
-  showToast('CTA inserted','success');
-}
-
-/* Override ecInsertLibraryCard for rich editor */
-var _origEcInsertLibCard=typeof ecInsertLibraryCard==='function'?ecInsertLibraryCard:null;
-function ecInsertLibraryCard(index){
-  var card=cardLibraryTemplates[index];if(!card)return;
-  var textarea=document.getElementById('email-body');if(!textarea)return;
-  var body=textarea.value.trimEnd();
-  textarea.value=body+'\n---\n'+card.body;
-  if(!_ecSourceMode)ecTextareaToRich();
-  textarea.scrollTop=textarea.scrollHeight;
-  ecAutoPreview();showToast('Added: '+card.name,'success');
-}
-
-
-/* ================================================================
-   Rich Editor — Extended Features
+   EMAIL CENTER — Editor Wiring (Session 21)
+   Uses createRichEditor for the EC mount point
    ================================================================ */
 
-/* Heading selector */
-function ecHeading(tag){
-  if(tag==='p'){document.execCommand('formatBlock',false,'<p>')}
-  else{document.execCommand('formatBlock',false,'<'+tag+'>')}
-  document.getElementById('ec-editor-rich').focus();
-  ecRichSync();
-  document.getElementById('ec-tb-heading').value=tag;
-}
-
-/* More dropdown toggle */
-function ecToggleMore(){
-  var dd=document.getElementById('ec-more-dropdown');
-  if(!dd)return;
-  var show=dd.style.display==='none';
-  dd.style.display=show?'block':'none';
-  if(show){
-    /* Close when clicking outside */
-    setTimeout(function(){
-      document.addEventListener('click',function _close(e){
-        if(!document.getElementById('ec-more-wrap').contains(e.target)){
-          dd.style.display='none';
-          document.removeEventListener('click',_close);
-        }
-      });
-    },10);
-  }
-}
-
-/* Insert image from URL */
-function ecInsertImage(){
-  ecToggleMore();
-  var url=prompt('Image URL:','https://');
-  if(!url)return;
-  if(_ecSourceMode){
-    var ta=document.getElementById('email-body');
-    var s=ta.selectionStart;
-    ta.value=ta.value.substring(0,s)+'![Image]('+url+')'+ta.value.substring(ta.selectionEnd);
-  }else{
-    document.execCommand('insertHTML',false,'<img src="'+url+'" style="max-width:100%;border-radius:8px;margin:8px 0" alt="Image">');
-    document.getElementById('ec-editor-rich').focus();
-  }
-  ecRichSync();
-}
-
-/* Emoji picker */
-var EC_EMOJIS=['😊','😄','🎉','✨','💜','❤️','🙏','👋','🎯','💡','🔥','⭐','🌟','💫','🚀','✅','📣','📧','🎁','💪','🌈','☀️','🌙','🎵','📚','🧠','💎','🏆','👏','🤝','💐','🌺','🍃','🦋','🕊️','🌊','⚡','🔔','📌','🎬','📍','📅','🕐','🔗','⏰','💖','🧪'];
-
-function ecInsertEmoji(){
-  ecToggleMore();
-  /* Show emoji picker overlay */
-  var old=document.getElementById('ec-emoji-picker');
-  if(old){old.remove();return}
-  var picker=document.createElement('div');
-  picker.id='ec-emoji-picker';
-  picker.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--navy-card);border:1px solid var(--border);border-radius:14px;padding:4px;z-index:9999;box-shadow:0 12px 40px rgba(0,0,0,.5);width:320px';
-  var header='<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px"><span style="font-size:13px;font-weight:600;color:var(--text)">Emoji</span><button onclick="ecCloseEmoji()" style="background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer">&times;</button></div>';
-  var grid='<div class="ec-emoji-grid">';
-  EC_EMOJIS.forEach(function(e,i){
-    grid+='<button class="ec-emoji-btn" data-idx="'+i+'" onclick="ecDoInsertEmoji(EC_EMOJIS['+i+'])">'+e+'</button>';
+/* Initialize EC editor when Email Center page loads */
+function initECEditor(){
+  if(_ecEditor)return; /* already initialized */
+  var mount=document.getElementById('ec-editor-mount');
+  if(!mount)return;
+  _ecEditor=createRichEditor({
+    containerId:'ec-editor-mount',
+    placeholder:'Write your email message here...\n\nUse the toolbar above to format text.\nUse merge tags (Name, Email) to personalize.',
+    onInput:function(inst){ecAutoPreview()},
+    initialValue:''
   });
-  grid+='</div>';
-  picker.innerHTML=header+grid;
-  document.body.appendChild(picker);
+  if(_ecEditor)_ecEditor._inst._onInput=function(){ecAutoPreview()};
 }
 
-function ecDoInsertEmoji(emoji){
-  document.getElementById('ec-emoji-picker').remove();
-  if(_ecSourceMode){
+/* Override insertEmailVar to route to active editor */
+;(function(){
+var _origIEV=insertEmailVar;
+window.insertEmailVar=function(v){
+  /* If SG popup is open, target that editor */
+  if(_sgEditor){_sgEditor.insertMergeTag(v);_sgAutoPreviewFromEditor();return}
+  /* Otherwise target EC editor */
+  if(_ecEditor){_ecEditor.insertMergeTag(v);return}
+  /* Fallback to original */
+  if(_origIEV)_origIEV(v);
+};
+})();
+
+/* Override ecInsertCTA to route to active editor */
+;(function(){
+var _origCTA=ecInsertCTA;
+window.ecInsertCTA=function(key){
+  if(_sgEditor){_sgEditor.insertCTA(key);_sgAutoPreviewFromEditor();return}
+  if(_ecEditor){_ecEditor.insertCTA(key);return}
+  if(_origCTA)_origCTA(key);
+};
+})();
+
+/* Override ecOpenCardLibrary to route to active editor */
+;(function(){
+var _origCL=typeof ecOpenCardLibrary==='function'?ecOpenCardLibrary:null;
+window.ecOpenCardLibrary=function(){
+  if(_ecEditor)_ecEditor.openCardLibrary();
+};
+})();
+
+/* Override loadTemplate to update EC editor */
+;(function(){
+var _origLT=loadTemplate;
+window.loadTemplate=function(key){
+  _origLT(key);
+  if(_ecEditor){
     var ta=document.getElementById('email-body');
-    var s=ta.selectionStart;
-    ta.value=ta.value.substring(0,s)+emoji+ta.value.substring(ta.selectionEnd);
-    ta.focus();ta.selectionStart=ta.selectionEnd=s+emoji.length;
-  }else{
-    document.getElementById('ec-editor-rich').focus();
-    document.execCommand('insertText',false,emoji);
+    /* The original loadTemplate wrote to email-body, sync to editor */
+    if(ta)_ecEditor.setMarkdown(ta.value);
   }
-  ecRichSync();
+};
+})();
+
+/* Helper: when the Email Center page is shown */
+var _origGo=typeof go==='function'?go:null;
+if(_origGo){
+  var __origGo=go;
+  go=function(page,el){
+    __origGo(page,el);
+    if(page==='email')setTimeout(initECEditor,50);
+  };
 }
 
-/* Blockquote */
-function ecInsertBlockquote(){
-  ecToggleMore();
-  if(_ecSourceMode){
-    var ta=document.getElementById('email-body');
-    var s=ta.selectionStart,e=ta.selectionEnd;
-    var selected=ta.value.substring(s,e)||'Your quote here';
-    ta.value=ta.value.substring(0,s)+'> '+selected+ta.value.substring(e);
-  }else{
-    var sel=window.getSelection();
-    var text=sel.toString()||'Your quote here';
-    var bq='<blockquote style="border-left:3px solid #5ba8b2;padding:8px 14px;margin:8px 0;background:rgba(91,168,178,.06);border-radius:0 6px 6px 0;color:#8899aa;font-style:italic">'+text+'</blockquote><p><br></p>';
-    document.execCommand('insertHTML',false,bq);
-    document.getElementById('ec-editor-rich').focus();
-  }
-  ecRichSync();
-}
-
-/* Insert table */
-function ecInsertTable(){
-  ecToggleMore();
-  /* Quick table picker overlay */
-  var old=document.getElementById('ec-table-picker');
-  if(old){old.remove();return}
-  var picker=document.createElement('div');
-  picker.id='ec-table-picker';
-  picker.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--navy-card);border:1px solid var(--border);border-radius:14px;padding:16px;z-index:9999;box-shadow:0 12px 40px rgba(0,0,0,.5)';
-  picker.innerHTML='<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:12px">Insert Table</div>'+
-    '<div style="display:flex;gap:10px;align-items:center;margin-bottom:12px">'+
-    '<label style="font-size:12px;color:var(--text-dim)">Rows <input type="number" id="ec-tbl-rows" value="3" min="1" max="20" style="width:50px;background:var(--navy-deep);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px;margin-left:4px;font-size:12px"></label>'+
-    '<label style="font-size:12px;color:var(--text-dim)">Cols <input type="number" id="ec-tbl-cols" value="3" min="1" max="10" style="width:50px;background:var(--navy-deep);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px;margin-left:4px;font-size:12px"></label>'+
-    '</div>'+
-    '<div style="display:flex;gap:8px;justify-content:flex-end">'+
-    '<button class="btn btn-ghost btn-sm" onclick="ecCloseTablePicker()">Cancel</button>'+
-    '<button class="btn btn-primary btn-sm" onclick="ecDoInsertTable()">Insert</button>'+
-    '</div>';
-  document.body.appendChild(picker);
-}
-
-function ecDoInsertTable(){
-  var rows=parseInt(document.getElementById('ec-tbl-rows').value)||3;
-  var cols=parseInt(document.getElementById('ec-tbl-cols').value)||3;
-  document.getElementById('ec-table-picker').remove();
-  if(rows>20)rows=20;if(cols>10)cols=10;
-  var html='<table style="border-collapse:collapse;width:100%;margin:10px 0"><thead><tr>';
-  for(var c=0;c<cols;c++)html+='<th style="border:1px solid #334;padding:6px 10px;background:rgba(91,168,178,.1);color:#5ba8b2;font-weight:600;font-size:13px">Header '+(c+1)+'</th>';
-  html+='</tr></thead><tbody>';
-  for(var r=0;r<rows;r++){
-    html+='<tr>';
-    for(var c=0;c<cols;c++)html+='<td style="border:1px solid #334;padding:6px 10px;font-size:13px">&nbsp;</td>';
-    html+='</tr>';
-  }
-  html+='</tbody></table><p><br></p>';
-  document.getElementById('ec-editor-rich').focus();
-  document.execCommand('insertHTML',false,html);
-  ecRichSync();
-}
-
-/* Line spacing */
-function ecLineSpacing(){
-  ecToggleMore();
-  var old=document.getElementById('ec-spacing-picker');
-  if(old){old.remove();return}
-  var picker=document.createElement('div');
-  picker.id='ec-spacing-picker';
-  picker.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--navy-card);border:1px solid var(--border);border-radius:14px;padding:16px;z-index:9999;box-shadow:0 12px 40px rgba(0,0,0,.5)';
-  picker.innerHTML='<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:12px">Line Spacing</div>'+
-    '<div style="display:flex;flex-direction:column;gap:4px">'+
-    [1,1.2,1.4,1.6,1.8,2,2.5].map(function(v){
-      return '<button class="ec-tb-dd" onclick="ecSetSpacing('+v+')">'+v+'x'+(v===1.6?' (default)':'')+'</button>';
-    }).join('')+
-    '</div>';
-  document.body.appendChild(picker);
-}
-
-function ecSetSpacing(val){
-  document.getElementById('ec-spacing-picker').remove();
-  var editor=document.getElementById('ec-editor-rich');
-  editor.style.lineHeight=val;
-  editor.focus();
-}
-
-/* Make color picker labels clickable to open the hidden input */
+/* Also init on DOMContentLoaded if email page is visible */
 document.addEventListener('DOMContentLoaded',function(){
-  var labels=document.querySelectorAll('.ec-tb-color-wrap');
-  labels.forEach(function(label){
-    label.addEventListener('click',function(){
-      var input=label.querySelector('input[type=color]');
-      if(input)input.click();
-    });
-  });
+  setTimeout(initECEditor,100);
 });
 
-function ecCloseEmoji(){var el=document.getElementById('ec-emoji-picker');if(el)el.remove()}
-function ecCloseTablePicker(){var el=document.getElementById('ec-table-picker');if(el)el.remove()}
+/* EC editor needs to write to the original email-body textarea for compatibility */
+/* The original ecAutoPreview, ecPreview, ecBuildHtml, prepareToSend etc. all read from #email-body */
+/* Our editor textarea has a different ID, so we need to sync */
+var _origEcAutoPreview=typeof ecAutoPreview==='function'?ecAutoPreview:null;
+;(function(){
+  var _origAP=ecAutoPreview;
+  window.ecAutoPreview=function(){
+    /* Sync EC editor textarea → email-body */
+    if(_ecEditor){
+      var emailBody=document.getElementById('email-body');
+      if(emailBody&&_ecEditor.textarea){
+        emailBody.value=_ecEditor.textarea.value;
+      }
+      _ecEditor.updateSections();
+    }
+    if(_origAP)_origAP();
+  };
+})();
+
+/* SG popup auto-preview helper */
+function _sgAutoPreviewFromEditor(){
+  if(_sgEditor){
+    /* Sync editor textarea → sg-body */
+    var sgBody=document.getElementById('sg-body');
+    if(sgBody&&_sgEditor.textarea){
+      sgBody.value=_sgEditor.textarea.value;
+    }
+    sgAutoPreview();
+  }
+}
+
+/* Clean up SG editor on modal close */
+var _origSGClose=null;
+function sgCloseModal(){
+  if(_sgEditor){_sgEditor.destroy();_sgEditor=null}
+  var m=document.getElementById('sg-email-modal');
+  if(m)m.remove();
+}

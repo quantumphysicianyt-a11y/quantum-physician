@@ -12,7 +12,7 @@ Both sites share the same Supabase project, same Stripe account, same user pool.
 ## 📋 SESSION HANDOFF PROTOCOL — READ THIS FIRST
 
 ### A Note on This Collaboration
-Todd (the founder/developer of Quantum Physician) and Claude have built this admin panel together across 9 intensive sessions. Todd cares deeply about polish, design details, and getting things right. These handoff documents represent a **shared history** — every bug fix, every design decision, every architectural choice was made collaboratively and often through multiple iterations. The next Claude instance inherits this context and trust. **Treat these docs with the same care Todd does**: update them thoroughly at the end of every session, preserve hard-won lessons, and never make changes that contradict documented decisions without discussing with Todd first. This isn't just a codebase — it's a partnership.
+Todd (the founder/developer of Quantum Physician) and Claude have built this admin panel together across 21+ intensive sessions. Todd cares deeply about polish, design details, and getting things right. These handoff documents represent a **shared history** — every bug fix, every design decision, every architectural choice was made collaboratively and often through multiple iterations. The next Claude instance inherits this context and trust. **Treat these docs with the same care Todd does**: update them thoroughly at the end of every session, preserve hard-won lessons, and never make changes that contradict documented decisions without discussing with Todd first. This isn't just a codebase — it's a partnership.
 
 **These 3 docs are the ONLY source of truth across chat sessions. Claude has NO memory between sessions.**
 
@@ -24,379 +24,248 @@ Todd (the founder/developer of Quantum Physician) and Claude have built this adm
 
 ### At the END of every build session, Claude MUST:
 - **Update ALL 3 docs** — not just one. Every session touches multiple concerns.
-- **Mark completed features as ✅** with "SESSION N" label in both master-plan AND gap-analysis
-- **Document every database change**: new tables, altered columns, new/modified RLS policies, new indexes
-- **Document every bug found and how it was fixed** — future sessions will hit similar issues
-- **Document architectural decisions** — e.g., "we use sbAdmin for all writes because RLS blocks anon writes"
-- **Document known issues / tech debt** — things that work but could be improved
-- **Document the session roadmap** with revised priorities based on what was learned
-- **List every RLS policy change** with exact SQL or policy names — these are critical and easy to lose track of
+- **Mark completed features as ✅** with "SESSION N" label
+- **Document every database change, bug fix, architectural decision**
 - **Output all 3 updated docs** as downloadable files
 
 ### At the START of every new chat, Todd uploads:
-- These 3 docs (+ optionally ACADEMY-HANDOFF) + the current `admin/index.html`
-- Any new files if the scope changed (e.g., new Netlify functions, new pages)
-- Claude reads all 3 docs BEFORE writing any code
+- These 3 docs + the current `admin/index.html`, `admin/admin.js`, `admin/admin.css`
+- Claude reads all docs BEFORE writing any code
 
-### Known File Upload Issue:
-- The `admin/index.html` file is heavily minified (~405KB after Session 9) and may truncate on upload
-- The truncation happens mid-function in `showCustomerDetail()` which is an extremely long single line
-- Future sessions should verify the file ending is intact after upload, and reconstruct if needed
-
-**Last updated:** Session 12 (Feb 24, 2026)
+**Last updated:** Session 21 (Feb 27, 2026)
 
 ---
 
-## Session 12 Completion Summary — Security Hardening + Webhook Recovery
+## Sessions 14-19 Summary (Course Builder & Academy)
 
-### Security Hardening
+These sessions focused on the **Quantum Academy Course Builder** and student experience:
 
-#### 1. Service Key Removed from Client-Side ✅
-- **CRITICAL FIX**: `SUPABASE_SERVICE_KEY` was exposed in browser source on line 3 of admin.js
-- Anyone visiting the admin page could copy the "god key" and bypass all RLS policies
-- **Solution**: Built `admin-proxy.js` Netlify function — single server-side endpoint for all admin operations
-- 55 operations migrated: 50 `sbAdmin.from()` calls → `proxyFrom()`, 5 REST API calls → `authAdminAPI()`
-- Every request requires valid Supabase auth token, verified against `admin_users` table
-- Allowlisted 13 tables, writes require filter conditions
+### Session 14-15 — Course Builder v1 ✅
+- Full course builder with lesson creation, ordering, and management
+- Quiz builder with multiple question types
+- Admin preview functionality
+- Lesson templates (text, video, quiz, mixed)
 
-#### 2. Service Key Rotated ✅
-- Generated new secret key in Supabase dashboard ("Publishable and secret API keys" → "+ New secret key" → named "admin-proxy")
-- Updated env vars in QP Netlify: `SUPABASE_SERVICE_ROLE_KEY`
-- Updated env vars in Fusion Netlify: `SUPABASE_SERVICE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_KEY`
-- Deleted old default secret key in Supabase — previously exposed key now dead
-- Google Apps Scripts unaffected (all use anon key only)
+### Session 16-17 — Course Builder v2 + Student Experience ✅
+- Full-page lesson viewer with progress bars, tip boxes, images, key takeaways
+- Sidebar grouping with animations and hover effects
+- Light/dark mode with theme toggle
+- Demo course generator for testing
 
-#### 3. Security Headers Deployed ✅
-- `_headers` file in root of both QP and Fusion repos
-- Headers: X-Frame-Options (SAMEORIGIN), X-Content-Type-Options (nosniff), CSP (frame-ancestors, object-src, base-uri), Referrer-Policy (strict-origin-when-cross-origin), Permissions-Policy (camera/mic/geo blocked), X-XSS-Protection
-- SecurityHeaders.com grade improved from D → should now be A/B
+### Session 18 — Student Tools ✅
+- Student notes panel with print functionality
+- Interactive checkboxes in lessons
+- Focus timer with Pomodoro presets
+- Badge system fixes
 
-#### 4. Admin Auth Deployed ✅
-- `admin-auth.js` Netlify function now primary login path
-- Dual-client pattern: verifies credentials, checks `admin_users` table, returns session token
-- Token stored in `sessionStorage.qp_admin_token`, sent with every proxy request
-- Fallback to direct Supabase `signInWithPassword()` if function fails
-
-### Webhook Recovery
-
-#### 5. Webhook Recovery Tool ✅
-- Built into admin panel — red "⚠ Recovery" button on Customers page, also Ctrl+Shift+R
-- Accepts `email|amount|product` format, cross-references against database
-- Shows missing purchases with checkboxes, auth status, profile status
-- "Grant Access to Selected" creates purchase records + sends branded email
-- "Load Known Missing" pre-fills the 34 customers from Stripe data analysis
-- Audit log entries created for each recovery grant
-
-#### 6. 34 Customers Recovered ✅
-- Webhook was down ~Dec 15, 2025 – Jan 30, 2026
-- 16 bundle buyers ($500) and 18 individual session buyers ($45-50) affected
-- All now have purchase records in Supabase
-- Confirmation emails sent (though template needs redesign — see Session 13)
-
-### Files Modified (Session 12)
-**QP Repo:**
-- `admin/admin.js` — SERVICE_KEY removed, proxy wrappers, recovery tool, range/count support (337KB)
-- `admin/index.html` — Recovery button added to Customers, orders HTML fixed
-- `netlify/functions/admin-auth.js` — Deployed (from Session 9, fixed dual-client pattern)
-- `netlify/functions/admin-proxy.js` — NEW: Server-side proxy for all admin operations
-- `_headers` — NEW: Security headers file
-- `index.html` — Accidentally overwritten then restored from git (homepage)
-
-**Fusion Repo:**
-- `netlify/functions/admin-actions.js` — Hardcoded password removed (uses env var `ADMIN_PASSWORD`)
-- `_headers` — NEW: Security headers file
-
-### Bugs Found & Fixed (Session 12)
-1. **Service key exposure** — CRITICAL. Removed from client JS, rotated key.
-2. **Audit log "q.range is not a function"** — `proxyFrom()` was missing `.range()` method. Added to client wrapper and proxy handler.
-3. **Orders page raw HTML code** — Broken `setTimeout` fragment in index.html. Cleaned up.
-4. **Modal stacking** — Recovery tool opened duplicate modals. Added removal of existing modal before creating new.
-5. **SyntaxError: Unexpected token ':'** — Missing `}` brace in `proxyFrom.range()` function. Fixed.
-6. **Homepage overwritten** — `git add index.html` committed a modified root index.html. Restored from previous commit.
-7. **401 errors after deploy** — Old session tokens from pre-proxy auth. Fixed by clearing sessionStorage.
+### Session 19 — Email Center Card Library Port ✅
+- 11 pre-built card templates ported to Email Center
+- Drag-to-reorder card pills
+- Live auto-preview with 800ms debounce
+- CTA button library (Watch Sessions, Go to Dashboard, Referral Hub, Explore Academy, Join Community, Custom)
+- Cursor-position merge tag insert
+- Discount auto-strip (prevents duplicate discount sections)
+- Session image token rendering in preview
 
 ---
 
-## Session 10 Completion Summary
+## Session 20 Completion Summary — Email Center Full Feature Build (Feb 27, 2026)
 
-### What Was Built (Session 10)
+### Auth Token Auto-Refresh ✅
+- **Problem**: Supabase session tokens expire after 1 hour, causing "0 recipients" and 401 errors
+- **Solution**: Three-layer protection:
+  1. `onAuthStateChange` listener — auto-saves new token whenever Supabase internally refreshes
+  2. `adminProxy` auto-retry on 401 — refreshes token and retries the request once
+  3. Background refresh every 45 minutes — proactive refresh before expiry
+  4. Session restore on page load — restores Supabase session from stored refresh_token
+- **Impact**: No more forced logouts. Session survives indefinitely as long as tab is open
+- **Note**: First login after deploy stores the refresh_token. After that, it self-sustains.
 
-#### 1. Legacy Auth Removal ✅
-- **Removed all legacy authentication fallback** (QPadmin/QPfs#2026) from admin panel
-- Supabase auth is now the ONLY login path
-- 5 legacy code blocks removed from admin.js: constants, login bypass, two session restore fallbacks, session guard
-- File reduced from 313,127 → 311,694 chars (1,433 chars removed)
-- All references to 'LEGACY_USERNAME', 'QPadmin', 'QPfs#2026', 'admin@qp.local' verified gone
+### Test Email Fix ✅
+- **Problem**: Test email tried to insert into `email_log` table (missing `body` column), then tried `/.netlify/functions/send-email` (doesn't exist — returns 404)
+- **Root cause**: Emails are sent via Google Apps Script (`APPS_SCRIPT_URL`), not Netlify functions
+- **Fix**: Removed email_log insert, changed to use `APPS_SCRIPT_URL` with `mode:'no-cors'`
+- **Styled modal**: Replaced browser `prompt()` with themed modal matching admin design (dark card, input field, Cancel/Send buttons, overlay click to close, Enter key support)
 
-#### 2. Unified Referral Hub ✅
-- **New file: `referral-hub.html`** at QP repo root — ONE page serving both platforms
-- **Auto-theming** via `?brand=fusion` or `?brand=academy` query parameter
-  - Fusion: retro neon (Righteous font, cyan/pink/purple gradients, scanline overlay)
-  - Academy: clean modern (Playfair Display + Inter, teal/taupe, navy backgrounds)
-- **Theme toggle button** in header to switch between brands manually
-- **Sign Out button** — allows account switching
-- **Inline login form** for cross-domain auth (no redirect to external login pages)
-  - Shows when no Supabase session exists on QP domain
-  - "Same account you use for Fusion Sessions / Quantum Academy" helper text
-  - Error handling + Enter key support
-- **Generate referral code** button for users without a code (inserts into `referral_codes` table)
-- **Full feature set**: stats cards (credit balance, total earned, referrals), referral link with copy, QR code with download, 3 share message templates (casual, social, email), social sharing buttons (WhatsApp, SMS, Email, Facebook, Twitter), "How It Works" explainer
-- **Shared Supabase tables**: same `referral_codes`, `profiles`, `credit_history` as both platforms
+### URL Corrections ✅
+- **Problem**: CTA buttons and card library templates had stale URLs (`fusionsessions.quantumphysician.com`, `fusionsessions.netlify.app`)
+- **Fix**: All Fusion URLs normalized. HOWEVER — `fusionsessions.com` turned out to NOT be the live domain (ERR_CONNECTION_REFUSED). The correct subdomain needs verification.
+- **⚠️ IMPORTANT**: The live Fusion Sessions site domain needs to be confirmed by Todd. Current URLs in code use `fusionsessions.com` but this may need to be reverted to `fusionsessions.quantumphysician.com` or similar. Check with Todd at start of next session.
 
-#### 3. Fusion Referral Hub Redirect ✅
-- **Fusion repo `referral-hub.html`** replaced with instant redirect to `qp-homepage.netlify.app/referral-hub.html?brand=fusion`
-- Updated directly on GitHub (Fusion repo not on local machine)
+### Rich Text Editor ✅
+- **Full WYSIWYG editor** replaces the plain textarea in Email Center
+- **Pinned toolbar**: Undo/Redo, Heading (Normal/H1/H2/H3), Font family (Arial/Georgia/Playfair/Courier/Verdana/Trebuchet), Font size (XS-2X), Bold/Italic/Underline/Strikethrough, Text color picker, Highlight color picker, Align L/C/R, Bullet list, Numbered list, Insert link, Card divider (---)
+- **"More ▾" dropdown**: Insert Image (URL), Emoji picker (48 emojis in grid), Blockquote, Insert Table (row/col picker), Indent/Outdent, Line Spacing (1x-2.5x), Clear Formatting, Source Code toggle
+- **Source code toggle**: Switch between rich editor and raw markdown. `{ }` button stays clickable in source mode, shows "Rich" to indicate return path
+- **Bi-directional sync**: Rich editor ↔ hidden textarea. Converts bold to `**bold**`, links to `[text](url)`, etc.
+- **Template loading**: Loading a template updates both the textarea and rich editor
+- **Merge tags**: Insert `{{name}}`, `{{email}}`, `{{referral_code}}` as styled inline spans in rich mode
+- **CTA buttons**: Insert as styled links in rich mode, markdown links in source mode
+- **Card library**: Appends card text and updates rich editor
 
-#### 4. Academy Dashboard Integration ✅
-- **"Open Referral Hub →"** link added to Academy dashboard sidebar, below the "Show QR Code" button
-- Links to `/referral-hub.html?brand=academy` for auto-theming
+### Smart CTA Button System ✅ (from Session 19, refined Session 20)
+- **Markdown link detection**: `[Button Text](url)` in card → extracts label + URL for CTA button
+- **Keyword fallback**: Bundle→"COMPLETE YOUR BUNDLE", Dashboard→"GO TO DASHBOARD", etc.
+- **Default**: "LEARN MORE" when no keyword matches
+- Markdown links stripped from card body (CTA button handles the link)
 
-### Bugs Found & Fixed (Session 10)
+### Files Modified (Session 20)
+- `admin/index.html` — Rich text editor toolbar + contenteditable div, card library UI, CTA bar, preview area, test email button, brand/discount onchange handlers, Cloudflare email obfuscation tags removed
+- `admin/admin.js` — Auth auto-refresh (onAuthStateChange, 45-min interval, adminProxy 401 retry, session restore), test email rewrite (styled modal, Apps Script), URL corrections, rich editor functions (ecExec, ecHeading, ecToggleSource, ecRichSync, ecTextareaToRich, ecInsertLink, ecInsertDivider, ecInsertImage, ecInsertEmoji, ecInsertBlockquote, ecInsertTable, ecLineSpacing, ecToggleMore, overrides for insertEmailVar/ecInsertCTA/ecInsertLibraryCard/loadTemplate), EC card library (11 templates, drag-reorder, pills UI), smart CTA extraction
+- `admin/admin.css` — Rich editor toolbar styles, dropdown styles, emoji grid, blockquote/table/image styles in editor
 
-#### Bug 1: showSignOut not defined
-- **Symptom**: Page stuck on "Loading your referral info..." — boot() crashed silently
-- **Cause**: `showSignOut()` was called in boot() but defined as a local function inside an ES module (not accessible from window scope)
-- **Fix**: Changed to `window.showSignOut = function()` to make it accessible across module scope
-- **Lesson**: In ES modules (`type="module"`), all functions are scoped. Use `window.functionName` for functions called from other contexts.
+### Bugs Found & Fixed (Session 20)
+1. **"body column not found"** — email_log table doesn't have a `body` column. Fixed by removing email_log insert from test email flow.
+2. **"currentSession is not defined"** — Admin panel stores token in `sessionStorage.getItem('qp_admin_token')`, not `currentSession.access_token`.
+3. **"Send failed: 404"** — No `send-email` Netlify function exists. Emails sent via Google Apps Script. Fixed to use `APPS_SCRIPT_URL`.
+4. **Token expiry** — Supabase tokens expire in 1 hour. Fixed with auto-refresh system.
+5. **Source toggle stuck** — `{ }` button was inside toolbar with `pointer-events:none`. Fixed by dimming individual buttons but keeping source button clickable.
+6. **Emoji onclick quotes** — Emoji characters in JS string onclick handlers broke syntax. Fixed with data-index approach.
+7. **`fusionsessions.com` unreachable** — Domain doesn't resolve. Replaced stale URLs but correct domain TBD.
 
-#### Bug 2: Cross-domain session mismatch
-- **Symptom**: User signed into Fusion saw $0 balance on QP referral hub
-- **Cause**: Different browser sessions per domain — QP domain had a different Supabase auth session than Fusion domain
-- **Fix**: Added inline login form on referral hub so users can authenticate on QP domain. Added Sign Out button for account switching.
-
-### Architecture Decisions (Session 10)
-- **Unified referral hub replaces separate pages** — one codebase, two themes via CSS class on `<body>`
-- **Query param `?brand=` drives theming** — email links append brand automatically
-- **ES module for Supabase** — referral hub uses `import { createClient }` from CDN ESM, not script tag
-- **Inline auth over redirect** — better UX for cross-domain users, no confusing redirect chain
-- **Legacy auth removed permanently** — all admins must use Supabase auth going forward
-
-### Files Changed (Session 10)
-- `admin/admin.js` — Legacy auth removed (commit 37860c8)
-- `referral-hub.html` — New unified referral hub (multiple commits)
-- `Academy/dashboard.html` — Added Referral Hub link to sidebar
-
----
-
-## Session 9 Completion Summary
-
-### What Was Built (Session 9 Main)
-
-#### 1. Admin Permissions + Login System (Supabase-based)
-- **`admin_users` table** — New Supabase table with roles: `super_admin`, `admin`, `assistant`
-- **12 granular permission flags** per admin: `can_customers`, `can_email`, `can_promotions`, `can_orders`, `can_community`, `can_analytics`, `can_suggestions`, `can_automation`, `can_audit`, `can_system`, `can_refund`, `can_delete`
-- **Email + password login** — Uses `sb.auth.signInWithPassword()` (anon client, NOT service role) + checks `admin_users` table
-- **Legacy fallback** — Old credentials ("QPadmin"/"QPfs#2026") checked BEFORE Supabase auth to prevent lockout
-- **Session persistence** — Admin session stored in `sessionStorage` as JSON with full permissions object
-- **Permission-based sidebar** — Sidebar links auto-hide based on admin's permission flags
-- **Admin Users page** — Super admins can add/edit/disable admin accounts with full permission matrix
-- **Role-based defaults** — Changing role in edit modal auto-fills sensible permission defaults
-- **Dynamic sidebar footer** — Shows logged-in admin's name, avatar initial, and role instead of hardcoded "Dr. Tracey Clark"
-
-#### 2. Moderator Management
-- **New "Moderators" tab** in Community page (alongside Academy Discussions and Fusion Community)
-- **Search + assign** — Email autocomplete search, descriptive role selector ("Moderator — Can moderate posts" / "Community Admin — Full community control"), assign button
-- **Moderator list** — Table showing all users with moderator/admin community_role, with Remove button
-- **Uses `profiles.community_role`** field — Same as Fusion admin (full parity)
-- **Audit logged** — All assign/remove actions logged with admin name
-
-#### 3. Audit Log Redesign (Session 9 Continuation)
-- **Grouped by date** — Entries organized under date headers (e.g., "Monday, Feb 23, 2026")
-- **Human-readable sentences** — "Todd granted access to user@email.com" instead of "[Todd] Granted access"
-- **Color-coded badges** — Green for grants/enrolls, red for revokes/blocks, teal for info, taupe for neutral
-- **Admin name as separate field** — Shown in teal as sentence subject, stored in `admin_user` column
-- **SVG icons** — Consistent feather-style SVG icons in circular containers (replaced emojis)
-- **`auditSvg()` function** — Renders inline SVG icons from a path dictionary (check, x-circle, lock, dollar, link, grad, key, refresh, archive, ban, edit, trash, list, user, mail, tag, shield, bulb, users)
-- **Search expanded** — Now searches details and admin_user fields, not just target_email
-- **Stats cards** — Shows Total Actions + Active Admins count
-- **`logAudit()` rewritten** — Clean details (no `[AdminName]` prefix), admin name stored in `admin_user` column separately
-
-#### 4. RLS Policies Applied
-- SQL provided for `scheduled_emails`, `email_log`, `session_schedule` — all three get `ENABLE ROW LEVEL SECURITY` + permissive "Allow all" policy
-
-#### 5. Documentation Corrections
-- **Edit Promotions** was already built (not documented in Session 8 handoff) — confirmed working
-- **Refund UI** was already built in Orders page (not documented) — confirmed
-- **`stripe-refund.js`** Netlify function already exists in QP repo
-
-### Bugs Found & Fixed (Session 9)
-
-#### Bug 1: Supabase Auth Client Wrong
-- **Symptom**: Login with email+password failed silently
-- **Cause**: `doAuth()` used `sbAdmin.auth.signInWithPassword()` (service role client) which bypasses auth
-- **Fix**: Changed to `sb.auth.signInWithPassword()` (anon client)
-- **Lesson**: ALWAYS use `sb` (anon) for `signInWithPassword()`. Use `sbAdmin` for data operations only.
-
-#### Bug 2: Legacy Fallback Unreachable (LOCKOUT)
-- **Symptom**: Neither Supabase credentials NOR legacy "QPadmin"/"QPfs#2026" worked — total lockout
-- **Cause**: Legacy check was inside `try` block AFTER `signInWithPassword()`. Supabase auth threw first, skipping legacy path
-- **Fix**: Moved legacy credential check BEFORE any Supabase call
-- **Lesson**: ALWAYS check fallback/bypass credentials BEFORE any async operation that could throw
-
-#### Bug 3: Supabase Auth Account Missing
-- **Symptom**: Even with correct client, login failed for `quantumphysicianyt@gmail.com`
-- **Cause**: Email had no password in Supabase Auth (account didn't exist in auth.users)
-- **Fix**: Todd signed up through fusionsessions.com/login.html with that email + password
-- **Lesson**: Admin must have BOTH a Supabase Auth account AND a row in `admin_users` table
-- **Note**: `auth.create_user()` SQL function is NOT available on Supabase free tier
-
-### Architecture Decisions (Session 9)
-- **Use `sb` (anon client) for `signInWithPassword()`** — Service role client bypasses auth entirely
-- **Legacy fallback checks BEFORE Supabase** — Prevents lockout scenarios
-- **Audit log uses `admin_user` column** — Clean storage, no prefix parsing needed
-- **SVG icons via `auditSvg()` function** — No emoji dependency, consistent with site design
-- **Browser autofill left enabled** — After multiple attempts to block (autocomplete=off, readonly trick, data-lpignore), decided to leave autofill working. Fields use `type="email"` where appropriate.
-
-### Known Issues (Session 12)
-1. ~~File size ~405KB~~ — Code splitting done Session 10B (admin.css, admin.js, index.html)
-2. ~~`admin-auth.js` not wired in~~ — **DEPLOYED Session 12.** Now the primary login path.
-3. **Card Library enhancements** — Custom templates (save your own cards), card preview thumbnails in grid. Deferred.
-4. **Referral code generation via anon client** — May need RLS insert policy or Netlify function routing.
-5. **Fusion referral hub redirect** — Dashboard "Open Sharing Tools" still points to old local page (works via redirect).
-6. ~~Service key in client-side JS~~ — **FIXED Session 12.** All admin ops go through `admin-proxy.js`.
-7. **Recovery email template needs redesign** — Currently uses promo template (ugly). Needs clean confirmation template with product images, how-to instructions, and preview pipeline through Email Center.
-8. **Recovery tool needs deduplication** — Can currently double-grant and double-email. Should check for existing `webhook-recovery` purchases before granting.
-9. **Recovery emails not logged** — Emails sent via recovery tool bypass `email_log` table. Should log like Email Center campaigns.
-10. **`email-decode.min.js` 404** — Cloudflare email obfuscation injecting broken script. Disable in Netlify Post Processing settings.
-11. **Missing favicon.ico** — Minor cosmetic 404 on admin page.
+### Architecture Decisions (Session 20)
+- **Google Apps Script for all email sending** — No Netlify send-email function. Both bulk sends and test sends go through `APPS_SCRIPT_URL` with `mode:'no-cors'`.
+- **Refresh token stored separately** — `qp_admin_refresh` in sessionStorage alongside `qp_admin_token`. Enables proactive refresh without re-login.
+- **Rich editor as contenteditable div** — Not a third-party library. Custom sync to markdown-ish textarea format for compatibility with existing email builder pipeline.
+- **Emoji picker as DOM overlay** — Not inline in toolbar (too many emojis). Centered fixed-position modal with grid layout.
 
 ---
 
-## Previous Session Summaries
+---
 
-### Session 8 ✅ — Smart Suggestions + Email Compose + Multi-Card Emails
-### Session 7 ✅ — Analytics Dashboard + Reports + Custom Query
-### Session 6 ✅ — Rich HTML Email + Automation + Academy Template
-### Session 5 ✅ — Promotions & Orders (+ Edit Promotions + Refund UI)
-### Session 4 ✅ — Email Center
-### Session 3 ✅ — Audit, Notes, Danger Zone
+## Session 21 Completion Summary — Unified Rich Editor Component + Dead Code Cleanup (Feb 27, 2026)
 
-### Lessons Learned (IMPORTANT FOR ALL FUTURE SESSIONS)
-1. ~~ALWAYS use `sbAdmin`~~ — **Session 12: `sbAdmin` removed.** All writes now go through `proxyFrom()` → `admin-proxy.js` server-side.
-2. **ALWAYS use `sb` (anon client) for `signInWithPassword()`** — sbAdmin bypasses auth.
-3. **Check RLS policies BEFORE writing to any table for the first time.**
-4. **After admin actions, reload data AND re-render**: `await loadAllData(); showCustomerDetail(email);`
-5. **Use Python for complex replacements, not sed.** sed on minified JS is fragile.
-6. **Never nest modals inside `.page` divs.** Use dynamic JS appended to `document.body`.
-7. **Legacy/fallback auth must be checked BEFORE async operations** — prevents lockout.
-8. **In ES modules (`type="module"`), use `window.fn = function()` for globally accessible functions.** Local `function` declarations are module-scoped and invisible to inline `onclick` handlers.
-9. **Cross-domain Supabase sessions don't share cookies.** Each domain needs its own auth flow. Inline login forms are better than redirects for cross-domain UX.
-10. **Terminal heredoc with HTML/JS is fragile.** Quote escaping breaks with complex content. Use Python base64+zlib for large file writes, or upload+edit workflow.
-11. **Service keys belong server-side ONLY.** Never in browser JS, even behind login screens. If exposed, rotate immediately.
-12. **Key rotation is non-negotiable.** If a key was ever in client-side code (even briefly), generate a new one and delete the old.
-13. **Security audits before deployment.** Todd's instinct to audit before going live caught the critical service key exposure.
-14. **Proxy pattern scales well.** One Netlify function handling 55+ operations is cleaner than 55 separate endpoints.
-15. **`_headers` file in repo root** is the Netlify-native way to add security headers. No netlify.toml needed.
-16. **`git add` specific files only.** Adding `index.html` when it had uncommitted changes from a previous session accidentally overwrote the homepage.
-17. **Always `sessionStorage.clear()` after deploying auth changes.** Old tokens from pre-proxy sessions cause 401 errors.
+### Unified Rich Editor Component ✅
+- **`createRichEditor(config)`** — Reusable WYSIWYG editor component that mounts into any container
+- **Config**: `{containerId, onInput, placeholder, initialValue}`
+- **Returns API**: `{getMarkdown(), setMarkdown(md), insertMergeTag(tag), insertCTA(key), insertCard(index), openCardLibrary(), updateSections(), destroy()}`
+- **Full toolbar**: Undo/Redo, Heading, Font, Size, B/I/U/S, Text color, Highlight, Align, Lists, Link, Card Divider, More dropdown (Image/Emoji/Blockquote/Table/Indent/Outdent/Line Spacing/Clear Format/Source Code)
+- **Internal functions**: All `_re*` prefixed — `_reExec`, `_reSync`, `_reTextareaToRich`, `_reAction`, `_reInsertLink`, `_reInsertDivider`, `_reToggleSource`, `_reToggleMore`, `_reInsertImage`, `_reInsertEmoji`, `_reInsertBlockquote`, `_reInsertTable`, `_reLineSpacing`, `_reInsertMergeTag`, `_reInsertCTA`, `_reInsertCard`, `_reOpenCardLibrary`, `_reUpdateSections`, `_reDeleteCard`, `_reDropCard`
+- **Instance tracking**: `_richEditorInstances` map + `_richEditorCounter` for unique IDs
+
+### SG Popup Upgrade ✅
+- **Before**: Plain textarea with 3 merge tag buttons
+- **After**: Full rich editor with complete toolbar, CTA button row (Watch Sessions, Dashboard, Referral Hub, Academy, Custom), merge tag buttons, Card Library button, source toggle, card pills with drag-reorder
+- `_sgEditor` global holds the popup editor instance
+- `sgCloseModal()` properly destroys the editor instance on close
+- Recovery popup gets same editor for free (uses `sgSetupEmail()`)
+- All SG functions (`sgInsertDiscountPitch`, `sgAutoPreview`, `sgPreview`, `sgTestEmail`, `sgSendAll`) now sync from `_sgEditor.textarea` → hidden `sg-body` textarea
+
+### Email Center Wiring ✅
+- **HTML**: Old hardcoded toolbar replaced with `<div id="ec-editor-mount"></div>`
+- `initECEditor()` called on page show and DOMContentLoaded
+- `_ecEditor` global holds the EC editor instance
+- Override wrappers route `insertEmailVar()`, `ecInsertCTA()`, `ecOpenCardLibrary()`, `loadTemplate()`, `ecAutoPreview()` to the active editor instance
+- EC editor textarea syncs to hidden `#email-body` for compatibility with existing preview/send pipeline
+
+### Dead Code Cleanup ✅
+- Removed 37 lines of duplicate code from Session 19-20 that was superseded by the unified editor
+- Removed duplicates: `ecExtractCTA`, `clSvg`, `sgStartDrag`, `sgOverDrag`, `sgLeaveDrag`, `sgCardLabel`, `sgDragFrom`, old `insertEmailVar`
+- **Pre-existing duplicates left untouched** (not Session 21 related): `insertDiscountBlock` (lines 1589/3200), `saveScheduledEmail` (lines 1987/2440) — the second definition creates a new scheduled email while the first edits an existing one, sharing the same function name (should be separate names in a future session)
+
+### Files Modified (Session 21)
+- `admin/admin.js` — Unified rich editor component (`createRichEditor` + all `_re*` functions), SG popup rewrite with editor mount, EC wiring with `initECEditor()`, override wrappers, dead code removal. 3451→3414 lines.
+- `admin/index.html` — EC toolbar replaced with `<div id="ec-editor-mount"></div>` (already done, verified)
+- `admin/admin.css` — `.re-editable` placeholder + focus + link + hr styles (already done, verified)
+
+### Architecture Decisions (Session 21)
+- **Instance-based design** — Each editor has unique ID prefix (`re-1-`, `re-2-`), own source mode state, own DOM elements. No global state conflicts between EC and SG editors.
+- **Event delegation on toolbar** — Single click listener on toolbar uses `data-re-cmd` and `data-re-action` attributes instead of inline onclick handlers. Cleaner and allows dynamic toolbar creation.
+- **Sync-to-textarea pattern preserved** — Rich editor still syncs to hidden textarea in markdown-ish format, preserving the existing email builder HTML pipeline unchanged.
+- **Global `_sgEditor` and `_ecEditor`** — Simple approach for routing. Override wrappers check which editor is active.
+
+### Bugs Found & Fixed (Session 21)
+1. **Duplicate function definitions** — Session 21 code was added but old Session 19-20 duplicates weren't removed. Functions like `clSvg`, `ecExtractCTA`, `sgStartDrag` etc were defined twice. The JS engine used the last definition, which was the OLD version. Fixed by removing the 37 dead lines.
+
+### Known Issues (Session 21)
+1. **`fusionsessions.com` now resolves** — Todd confirmed domain works. Session 20 warning is resolved. ✅
+2. **Pre-existing duplicate: `saveScheduledEmail`** — Two functions with same name do different things (edit vs create). Low priority fix for future session.
+3. **Pre-existing duplicate: `insertDiscountBlock`** — Second definition overrides first. Works but messy. Low priority.
 
 ---
 
 ## Updated Session Roadmap
 
-**Session 3–9 — ALL COMPLETED ✅**
+### Sessions 3–21 — ALL COMPLETED ✅
 
-**Session 10 — Polish + Referral Hub + Auth Cleanup** ← CURRENT
-- ✅ Remove legacy auth fallback (QPadmin/QPfs#2026) — SESSION 10
-- ✅ Unified Referral Hub (auto-themed, cross-domain auth) — SESSION 10
-- ✅ Academy dashboard referral hub link — SESSION 10
-- ✅ Card Library (pre-built email card blocks) — SESSION 10B
-- ✅ Code splitting: extract CSS and JS into separate files — SESSION 10B
-- ✅ Create Scheduled Email UI — was already built Session 7 (undocumented)
-- ✅ Edit Session Schedule UI — was already built Session 7 (undocumented)
+### Session 21 — Unified Rich Editor Component ✅
+- Refactored rich editor into reusable `createRichEditor(config)` component
+- Email Center (inline): Uses `initECEditor()` with `ec-editor-mount` div
+- SG popup: Gets full rich toolbar, CTA buttons, Card Library, source toggle
+- Recovery popup: Gets same editor via `sgSetupEmail()`
+- All three share one `createRichEditor()` function with instance-based state
+- SG + Recovery stay as popups, Email Center stays as page
+- Dead code cleanup: removed 37 lines of Session 19-20 duplicates
 
-**Session 11 — Weekly Goals + Rich Email Templates + Auto-Promo** ✅ COMPLETED
-- ✅ Weekly Marketing Goals widget on dashboard — 7 goal chips, auto-check from email_campaigns
-- ✅ Clickable goal chips open email compose modals with pre-built templates
-- ✅ Rich email templates with `---` card blocks (session images, strikethrough pricing, bullet lists)
-- ✅ `{{session_image:session-XX}}` token system for session thumbnails in email cards
-- ✅ FUSION_IMAGES map with all 12 session thumbnail URLs
-- ✅ Auto-promo generation per goal (WELCOME###/BUNDLE###/SESSION### unique codes)
-- ✅ filterGoalRecipients() — opt-out + weekly promo limit pre-filtering
-- ✅ sgSetupEmail wrapper auto-filters promotional emails for suggestions too
-- ✅ "Auto" badge on auto-generated promos in Promotions list
-- ✅ Gap analysis audit: Create Scheduled Email + Edit Session Schedule already existed from Session 7
-- ✅ Full Fusion parity achieved — zero gaps remain
+### Session 22 — Live Event Page (NEXT — GAME-CHANGER BUILD)
+- **Branded live Zoom experience page** — replaces plain Zoom links
+- **Pre-session**: Animated countdown timer, session details, Dr. Tracey bio, product cards, email capture for non-customers, referral sharing widget, ambient healing-energy animations
+- **During session**: Embedded Zoom (Web SDK), floating reaction buttons (hearts, prayer hands, sparkles), minimized product sidebar
+- **Post-session**: Auto-switch to replay mode (Vimeo), bundle upsell for single-session owners, related sessions carousel, reflection prompt, community link
+- **Access control**: Free events (email gate), paid sessions (login + purchase check), bundle upsell overlay, non-customer teaser with purchase CTA
+- **Swappable layout templates**: Admin panel gets "Live Event" config section — pick layout (Classic/Immersive/Minimal), set session, Zoom link, toggle widgets
+- **URL**: `fusionsessions.com/live.html` (or similar)
 
-**Session 11B — Critical Bug Fixes**
-- ✅ var hoisting closure bug: all suggestion cards shared same `var emails` — each card now uses unique variable (unusedRefEmails, bundleEmails2, etc.)
-- ✅ marketing_opt_in field: Supabase Auth API returns opt-in in `user_metadata`, NOT `raw_user_meta_data` — all 12 opt-in checks updated to `(u.user_metadata||u.raw_user_meta_data||{}).marketing_opt_in`
-- ✅ filterGoalRecipients: removed `user_metadata` fallback check that was double-counting opt-outs
-- ✅ Debug logging cleaned up for production
-
-**Session 12 — Security Hardening + Webhook Recovery** ✅ COMPLETED
-- ✅ Supabase SERVICE_ROLE_KEY removed from client-side admin.js entirely
-- ✅ New `admin-proxy.js` Netlify function — single endpoint proxying all 55 admin Supabase operations server-side
-- ✅ `proxyFrom()` client wrapper replaces all `sbAdmin.from()` calls
-- ✅ `authAdminAPI()` wrapper replaces all direct `/auth/v1/admin` REST API calls
-- ✅ Token-based auth — every proxy request verified against `admin_users`
-- ✅ Allowlisted tables (13) — proxy rejects operations on non-admin tables
-- ✅ Write operations require filters — no unfiltered bulk ops allowed
-- ✅ Service key rotated in Supabase — old exposed key deleted/invalidated
-- ✅ All Netlify env vars updated (QP + Fusion) with new rotated key
-- ✅ `admin-auth.js` Netlify function deployed and wired as primary login path
-- ✅ Hardcoded password removed from Fusion `admin-actions.js`
-- ✅ Security headers (`_headers` file) deployed to both repos: X-Frame-Options, X-Content-Type-Options, CSP, Referrer-Policy, Permissions-Policy
-- ✅ Security scans clean: Sucuri (no malware, not blacklisted), SecurityHeaders.com (headers applied)
-- ✅ Webhook Recovery Tool built — analyzes Stripe payments vs database, bulk-grants access with email
-- ✅ 34 customers recovered from webhook outage (Dec 15, 2025 – Feb 24, 2026)
-- ✅ Audit log fixed (proxy `.range()` and `.select({count})` support added)
-- ✅ Orders page HTML fixed (broken code fragment removed)
-
-**Session 13 — Recovery Email Redesign + Customer Onboarding** ✅ COMPLETED (Feb 24, 2026)
-- ✅ **Recovery email → Email Center compose flow** — No more blind emails. Recovery tool grants access, then opens sgSetupEmail with pre-loaded template, recipients, subject. Full preview/test/edit/send workflow.
-- ✅ **Recovery email template** — Product name, product image ({{session_image:...}} tokens), 4-step how-to-access instructions, "Quick tips to get started" card with actionable bullet points
-- ✅ **buildRichEmail CTA detection** — Cards containing "Dashboard", "Log In", or "access your" render "GO TO DASHBOARD" button → /login.html instead of "CLAIM YOUR DISCOUNT"
-- ✅ **Recovery tool deduplication** — Checks for existing `webhook-recovery-*` stripe_event_ids, shows "Already Recovered" badge, duplicate warning dialog before re-granting
-- ✅ **Recovery tool UX** — Clear button, "Compose Email for All" button (sends instructions to all listed customers regardless of purchase status), dynamic Grant button text ("Grant Access & Compose Email" when compose checkbox on), helper text clarifying no auto-send
-- ✅ **wrParseName** — Smart first-name extraction from email: strips numbers, splits on dots/underscores/hyphens, capitalizes. "brucekruger@sasktel.net" → "Bruce" not "Brucekruger"
-- ✅ **wrNormalizeProduct** — Converts session-1 → session-01 to match FUSION_NAMES/FUSION_IMAGES keys. All 34 hardcoded recovery entries fixed.
-- ✅ **email_log in proxy allowed tables** — admin-proxy.js updated
-- ✅ **Card Library: 4 new cards** — Purchase Confirmation, Getting Started Tips, Session Product (with image token), Bundle Product (with image token)
-- ✅ **Favicon** — Transparent lotus favicon.ico (16/32/48/256px) + apple-touch-icon.png (180px) deployed to repo root
-- ✅ **netlify.toml** — Added with build config and security headers
-- ⚪ **Email obfuscation 404** — Netlify deprecated the toggle. `email-decode.min.js` 404 is harmless phantom; no fix available in current Netlify UI
-
-### Files Modified (Session 13)
-- `admin/admin.js` — Recovery compose flow, wrParseName, wrNormalizeProduct, wrComposeEmail, wrClear, CTA detection, card library entries (~352KB)
-- `admin-proxy.js` — email_log added to ALLOWED_TABLES
-- `favicon.ico` — NEW: Transparent lotus, multi-size ICO
-- `apple-touch-icon.png` — NEW: 180px lotus PNG
-- `netlify.toml` — NEW: Build config + security headers
-
-### Known Issues (Session 13)
-1. **email-decode.min.js 404** — Netlify phantom. Harmless. No toggle in current UI to disable.
-2. **Recovery emails not yet sent** — 34 recovered customers have purchase records but most haven't received the new how-to email. Use "Compose Email for All" to send.
+### Session 23+ — Future Features
+- **Student tools expansion**: Flashcards, text highlighting, reflection journal, lesson summarizer, student progress dashboard, goal tracking (build into preview toolbar)
+- **Custom card templates**: Save your own cards to library, card preview thumbnails
+- **AI Copilot**: Smart email writing assistance, content suggestions
+- **Memberships / Subscriptions**: Recurring billing integration
+- **Multi-instructor support**: Course creator roles for guest instructors
 
 ---
 
-**Session 14+ — Course Builder, AI Copilot, Memberships, Assessments, Ecommerce, Multi-Instructor**
+## Known Issues (Session 20)
+1. **✅ Fusion Sessions domain confirmed** — `fusionsessions.com` resolves correctly (confirmed Session 21).
+2. **email-decode.min.js 404** — Netlify phantom. Harmless.
+3. **Cloudflare email obfuscation** — Tags stripped from index.html but may reappear on re-deploy if Cloudflare is active.
+4. **Rich editor → email rendering** — The rich editor syncs to markdown format. Some advanced formatting (tables, images, blockquotes) may not render perfectly in the email builder HTML. Email preview should be checked.
+5. **Test email no delivery confirmation** — `mode:'no-cors'` means we can't read the Apps Script response. Toast always says "sent" even if it failed. Check inbox manually.
 
 ---
 
-## Google Apps Script Status
+## Google Apps Script Status (3 scripts)
+1. **Stripe Webhook Handler** — Handles purchases, routes Fusion vs Academy, sends thank-you emails
+2. **Fusion Sessions Email Automation** — Runs every 15 min, processes `scheduled_emails` table
+3. **Bulk Email Sender v3** — Called by QP admin Email Center. Supports `isHtml` flag for pre-built HTML emails. Also handles test emails.
 
-### 3 Scripts in Use:
-1. **Stripe Webhook Handler** — Handles purchases, routes Fusion vs Academy, sends thank-you emails.
-2. **Fusion Sessions Email Automation** — Runs every 15 min, processes `scheduled_emails` table.
-3. **Bulk Email Sender v3** — Called by QP admin. Supports `isHtml` flag.
+### Apps Script URLs
+- Bulk sender: `APPS_SCRIPT_URL` constant in admin.js (line ~833)
+- Automation: Separate Apps Script with its own trigger
 
-### No Apps Script changes needed for Sessions 6–9.
+---
 
-## Session 10B — Card Library Enhancements & Bug Fixes (Feb 23, 2026)
+## Supabase API Key System (CRITICAL — Session 20 Learning)
+Two completely separate key systems:
+1. **Legacy JWT Keys** (Settings → API → "Legacy anon, service_role API keys"):
+   - Format: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` (~170-180 chars)
+   - `anon` (public) — used by all client-side code
+   - `service_role` (secret) — used by admin-proxy.js and Netlify functions
+   - **ALL existing code uses this format**
+2. **New Secret Keys** (Settings → API → "Secret keys"):
+   - Format: `sb_secret_...` (~40 chars)
+   - NOT used by any existing code
+   - Regenerating these does NOT affect legacy keys
 
-### Completed
-- **Fixed Card Library syntax error** — reverted broken commit, rebuilt with `clSvg()` helper instead of scoped `auditSvg()`
-- **Drag-to-reorder card pills** — replaced Swap button with draggable pill tags below textarea; cards show title, hamburger grip icon, × delete button
-- **Delete individual cards** — × button on each pill removes that card section
-- **Multi-insert from Card Library** — panel stays open after inserting, add as many cards as you want
-- **Unlimited cards in email renderer** — `buildRichEmail` and `buildAcademyEmail` now loop through all cards instead of hardcoded max of 2; border colors cycle through pink/purple/teal
+To rotate the service_role key: Settings → JWT Secret (nuclear option — breaks everything until all sites updated).
 
-### Code Split Status
-- `admin/index.html` (~65KB) — HTML structure
-- `admin/admin.css` (~36KB) — All styling
-- `admin/admin.js` (~305KB) — All logic including Card Library
+---
 
-### Future Ideas (Saved)
-- Custom card templates (save your own cards to library)
-- Card preview thumbnails in Card Library grid
+## Lessons Learned (ALL SESSIONS — IMPORTANT)
+1. **All writes go through `proxyFrom()` → `admin-proxy.js`** — No client-side service keys
+2. **Use `sb` (anon) for auth, never sbAdmin** — Service role bypasses authentication
+3. **Check RLS policies before first write to any table**
+4. **After admin actions: `await loadAllData(); re-render()`**
+5. **Python for complex JS replacements, not sed** — Sed on minified JS is fragile
+6. **Never nest modals inside `.page` divs** — Append to `document.body`
+7. **Emails send via Google Apps Script**, not Netlify functions
+8. **`mode:'no-cors'` for Apps Script** — Can't read response, but send works
+9. **Supabase tokens expire in 1 hour** — Must auto-refresh via onAuthStateChange + refresh_token
+10. **Store refresh_token alongside access_token** — Enables proactive refresh
+11. **adminProxy should auto-retry on 401** — Transparent to calling code
+12. **`sessionStorage.getItem('qp_admin_token')` for auth token** — NOT `currentSession.access_token`
+13. **Service keys: legacy JWT vs new sb_secret are SEPARATE systems** — Don't confuse them
+14. **After deploying auth changes: log out and back in once** — To store the new refresh_token
+15. **Rich editor sync: contenteditable → markdown textarea** — Keep email builder pipeline unchanged
+16. **Terminal heredoc for complex HTML/JS is fragile** — Use Python for large edits
+17. **`git add` specific files only** — Prevent accidental overwrites
