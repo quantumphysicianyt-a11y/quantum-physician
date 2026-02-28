@@ -246,6 +246,8 @@ function createRichEditor(config){
   /* Rich editor input events */
   richEl.addEventListener('input',function(){_reSync(inst)});
   richEl.addEventListener('paste',function(){setTimeout(function(){_reSync(inst)},50)});
+  /* Save selection on blur so CTA/merge/link inserts know where cursor was */
+  richEl.addEventListener('blur',function(){_reSaveSelection(inst)});
 
   /* Textarea input (source mode) */
   textareaEl.addEventListener('input',function(){if(config.onInput)config.onInput(inst)});
@@ -276,6 +278,21 @@ function _reExec(inst,cmd,val){
   document.execCommand(cmd,false,val||null);
   inst.el.focus();
   _reSync(inst);
+}
+
+/* Save/restore selection for async operations (prompt dialogs steal focus) */
+function _reSaveSelection(inst){
+  var sel=window.getSelection();
+  if(sel.rangeCount>0&&inst.el.contains(sel.anchorNode)){
+    inst._savedRange=sel.getRangeAt(0).cloneRange();
+  }
+}
+function _reRestoreSelection(inst){
+  if(!inst._savedRange)return;
+  inst.el.focus();
+  var sel=window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(inst._savedRange);
 }
 
 function _reSync(inst){
@@ -339,11 +356,12 @@ function _reAction(inst,action){
   }
 }
 
-function _reInsertLink(inst){
-  var url=prompt('Enter URL:','https://');
+async function _reInsertLink(inst){
+  var url=await qpPrompt('Insert Link','Enter URL:','https://');
   if(!url)return;
+  _reRestoreSelection(inst);
   document.execCommand('createLink',false,url);
-  inst.el.focus();_reSync(inst);
+  _reSync(inst);
 }
 
 function _reInsertDivider(inst){
@@ -411,16 +429,16 @@ function _reCloseMore(inst){
   if(dd)dd.style.display='none';
 }
 
-function _reInsertImage(inst){
-  var url=prompt('Image URL:','https://');
+async function _reInsertImage(inst){
+  var url=await qpPrompt('Insert Image','Image URL:','https://');
   if(!url)return;
   if(inst.sourceMode){
     var ta=inst.textarea;
     var s=ta.selectionStart;
     ta.value=ta.value.substring(0,s)+'![Image]('+url+')'+ta.value.substring(ta.selectionEnd);
   }else{
+    _reRestoreSelection(inst);
     document.execCommand('insertHTML',false,'<img src="'+url+'" style="max-width:100%;border-radius:8px;margin:8px 0" alt="Image">');
-    inst.el.focus();
   }
   _reSync(inst);
 }
@@ -538,6 +556,7 @@ function _reSetSpacing(instId,val){
 
 /* --- Merge tag insert --- */
 function _reInsertMergeTag(inst,tag){
+  if(!inst.sourceMode)_reRestoreSelection(inst);
   if(inst.sourceMode){
     var ta=inst.textarea;
     var s=ta.selectionStart,e=ta.selectionEnd,t=ta.value;
@@ -552,12 +571,12 @@ function _reInsertMergeTag(inst,tag){
 }
 
 /* --- CTA insert --- */
-function _reInsertCTA(inst,key){
+async function _reInsertCTA(inst,key){
   var cta;
   if(key==='custom'){
-    var label=prompt('Button text:','Learn More');
+    var label=await qpPrompt('Custom CTA','Button text:','Learn More');
     if(!label)return;
-    var url=prompt('Button URL:','https://');
+    var url=await qpPrompt('Custom CTA','Button URL:','https://');
     if(!url)return;
     cta={label:label,url:url};
   }else{
@@ -570,9 +589,10 @@ function _reInsertCTA(inst,key){
     ta.value=t.substring(0,s)+md+t.substring(e);
     ta.focus();ta.selectionStart=ta.selectionEnd=s+md.length;
   }else{
+    inst.el.focus();
+    _reRestoreSelection(inst);
     var link='<a href="'+cta.url+'" style="color:var(--purple);font-weight:600">'+(typeof esc==='function'?esc(cta.label):cta.label)+'</a>&nbsp;';
     document.execCommand('insertHTML',false,link);
-    inst.el.focus();
   }
   _reSync(inst);
   showToast('CTA inserted','success');
@@ -3277,13 +3297,13 @@ var EC_CTA_BUTTONS={
   academy:{label:'Explore Academy',url:'https://academy.quantumphysician.com'},
   community:{label:'Join the Community',url:'https://fusionsessions.com/community.html'}
 };
-function ecInsertCTA(key){
+async function ecInsertCTA(key){
   var ta=document.getElementById('email-body');if(!ta)return;
   var cta;
   if(key==='custom'){
-    var label=prompt('Button text:','Learn More');
+    var label=await qpPrompt('Custom CTA','Button text:','Learn More');
     if(!label)return;
-    var url=prompt('Button URL:','https://');
+    var url=await qpPrompt('Custom CTA','Button URL:','https://');
     if(!url)return;
     cta='['+label+']('+url+')';
   }else{
@@ -3364,6 +3384,10 @@ var _origGo=typeof go==='function'?go:null;
 if(_origGo){
   var __origGo=go;
   go=function(page,el){
+    /* Clean up any floating editor pickers */
+    ['re-emoji-picker','re-table-picker','re-spacing-picker'].forEach(function(id){
+      var el2=document.getElementById(id);if(el2)el2.remove();
+    });
     __origGo(page,el);
     if(page==='email')setTimeout(initECEditor,50);
   };
