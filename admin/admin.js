@@ -1094,8 +1094,8 @@ if(discountInner.indexOf('{{qr_code}}')>=0){
 discountInner=discountInner.replace(/\{\{qr_code\}\}/g,'');
 qrHtml='<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:15px auto 5px;"><tr><td style="background:#fff;border-radius:10px;padding:8px;"><img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data='+encodeURIComponent(siteUrl+'/?ref=REFCODE')+'" width="120" height="120" alt="QR Code" style="display:block;border-radius:4px;"></td></tr></table><p style="margin:6px 0 0;font-size:11px;color:#888;">Scan to share your link</p>'
 }
-/* Style code display */
-discountInner=discountInner.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'');
+/* Convert remaining markdown links in card to inline styled links instead of stripping */
+discountInner=discountInner.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank" style="color:#00f5ff;text-decoration:underline;font-weight:600;">$1</a>');
 discountInner=discountInner.replace(/Your code:\s*<strong>([^<]+)<\/strong>/i,'Your code: <span style="font-family:monospace;font-size:20px;letter-spacing:1px;color:#00f5ff;background:rgba(0,245,255,0.1);padding:5px 15px;border-radius:8px;">$1</span>');
 discountInner=imgTokenReplace(discountInner);
 var _ecCta1=typeof ecExtractCTA==='function'?ecExtractCTA(parts[1]||''):{label:'LEARN MORE',url:null};var ctaLabel=_ecCta1.label;
@@ -1110,7 +1110,7 @@ var card2Body=parts[cx].trim();
 var card2Inner=card2Body
 .replace(/\*\*([^*]+)\*\*/g,'<strong style="color:#00f5ff;">$1</strong>')
 .replace(/\n/g,'<br>').replace(/(<br>){3,}/g,'<br><br>').replace(/^(<br>)+/,'').replace(/(<br>)+$/,'');
-card2Inner=card2Inner.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'');
+card2Inner=card2Inner.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank" style="color:#00f5ff;text-decoration:underline;font-weight:600;">$1</a>');
 card2Inner=card2Inner.replace(/Your code:\s*<strong[^>]*>([^<]+)<\/strong>/i,'Your code: <span style="font-family:monospace;font-size:20px;letter-spacing:1px;color:#00f5ff;background:rgba(0,245,255,0.1);padding:5px 15px;border-radius:8px;">$1</span>');
 card2Inner=imgTokenReplace(card2Inner);
 var qr2Html='';
@@ -1163,7 +1163,7 @@ var mainHtml=mainBody
 var discountCardHtml='';
 if(discountBody){
 var discountInner=discountBody
-.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'')
+.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank" style="color:#5ba8b2;text-decoration:underline;font-weight:600;">$1</a>')
 .replace(/\*\*([^*]+)\*\*/g,'<strong style="color:#5ba8b2;">$1</strong>')
 .replace(/~~([^~]+)~~/g,'<span style="text-decoration:line-through;color:#ad9b84;">$1</span>')
 .replace(/\n- /g,'\n\u2022 ').replace(/^- /gm,'\u2022 ')
@@ -3239,16 +3239,21 @@ async function reInsertCTA(id,key){
   }else{
     cta=EC_CTA_BUTTONS[key];if(!cta)return;
   }
-  if(inst.sourceMode){
-    var ta=_reGetTextarea(id);if(!ta)return;
-    var s=ta.selectionStart,e=ta.selectionEnd;
-    var md='['+cta.label+']('+cta.url+')';
-    ta.value=ta.value.substring(0,s)+md+ta.value.substring(e);
-    ta.focus();ta.selectionStart=ta.selectionEnd=s+md.length;
+  var md='['+cta.label+']('+cta.url+')';
+  /* Always append CTA to the main body section (before first ---) */
+  var ta=_reGetTextarea(id);if(!ta)return;
+  var body=ta.value;
+  var dividerIdx=body.indexOf('\n---\n');
+  if(dividerIdx>=0){
+    /* Insert before the first card divider */
+    var mainBody=body.substring(0,dividerIdx).trimEnd();
+    ta.value=mainBody+'\n'+md+body.substring(dividerIdx);
   }else{
-    var link='<a href="'+cta.url+'" style="color:var(--purple);font-weight:600">'+cta.label+'</a>&nbsp;';
-    _reInsertAtCursor(id,link);
+    /* No cards — append to end */
+    ta.value=body.trimEnd()+'\n'+md;
   }
+  if(inst&&!inst.sourceMode)_reTextareaToRich(id);
+  inst.onInput();
   showToast('CTA inserted','success');
 }
 
