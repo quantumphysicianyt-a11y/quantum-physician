@@ -597,12 +597,9 @@ async function _reInsertCTA(inst,key){
     ta.value=t.substring(0,s)+md+t.substring(e);
     ta.focus();ta.selectionStart=ta.selectionEnd=s+md.length;
   }else{
-    /* Insert as markdown into textarea, then re-render to rich */
-    var ta=inst.textarea;
-    var md='['+cta.label+']('+cta.url+')';
-    var body=ta.value.trimEnd();
-    ta.value=body+(body?'\n\n':'')+md;
-    _reTextareaToRich(inst);
+    /* Append CTA link at end of editor */
+    var link='<a href="'+cta.url+'" style="color:var(--purple);font-weight:600">'+(typeof esc==='function'?esc(cta.label):cta.label)+'</a>';
+    inst.el.innerHTML=inst.el.innerHTML+'<p>'+link+'</p>';
   }
   _reSync(inst);
   showToast('CTA inserted','success');
