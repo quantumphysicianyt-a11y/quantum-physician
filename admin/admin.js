@@ -564,13 +564,13 @@ function _reSetSpacing(instId,val){
 
 /* --- Merge tag insert --- */
 function _reInsertMergeTag(inst,tag){
-  if(!inst.sourceMode)_reRestoreSelection(inst);
   if(inst.sourceMode){
     var ta=inst.textarea;
     var s=ta.selectionStart,e=ta.selectionEnd,t=ta.value;
     ta.value=t.substring(0,s)+tag+t.substring(e);
     ta.focus();ta.selectionStart=ta.selectionEnd=s+tag.length;
   }else{
+    _reRestoreSelection(inst);
     var span='<span style="background:rgba(91,168,178,.2);color:var(--teal);padding:1px 6px;border-radius:4px;font-size:12px">'+tag+'</span>&nbsp;';
     document.execCommand('insertHTML',false,span);
     inst.el.focus();
@@ -597,10 +597,12 @@ async function _reInsertCTA(inst,key){
     ta.value=t.substring(0,s)+md+t.substring(e);
     ta.focus();ta.selectionStart=ta.selectionEnd=s+md.length;
   }else{
-    inst.el.focus();
-    _reRestoreSelection(inst);
-    var link='<a href="'+cta.url+'" style="color:var(--purple);font-weight:600">'+(typeof esc==='function'?esc(cta.label):cta.label)+'</a>&nbsp;';
-    document.execCommand('insertHTML',false,link);
+    /* Insert as markdown into textarea, then re-render to rich */
+    var ta=inst.textarea;
+    var md='['+cta.label+']('+cta.url+')';
+    var body=ta.value.trimEnd();
+    ta.value=body+(body?'\n\n':'')+md;
+    _reTextareaToRich(inst);
   }
   _reSync(inst);
   showToast('CTA inserted','success');
