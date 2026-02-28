@@ -2851,7 +2851,6 @@ function _reRestoreSelection(id){
   if(inst._savedRange){
     try{var sel=window.getSelection();sel.removeAllRanges();sel.addRange(inst._savedRange)}catch(e){}
   }else{
-    /* No saved range — place cursor at end of editor content */
     var sel=window.getSelection();
     var range=document.createRange();
     range.selectNodeContents(editor);
@@ -2859,6 +2858,67 @@ function _reRestoreSelection(id){
     sel.removeAllRanges();
     sel.addRange(range);
   }
+}
+
+/* Insert HTML at cursor using direct DOM manipulation — no execCommand needed */
+function _reInsertAtCursor(id,htmlStr){
+  var inst=_reGetInst(id);if(!inst)return;
+  var editor=_reGetEditor(id);if(!editor)return;
+  /* Build nodes from HTML string */
+  var tmp=document.createElement('div');
+  tmp.innerHTML=htmlStr;
+  /* Get or create a range at the right position */
+  var range;
+  if(inst._savedRange){
+    range=inst._savedRange.cloneRange();
+  }else{
+    range=document.createRange();
+    range.selectNodeContents(editor);
+    range.collapse(false);
+  }
+  /* Delete any selected content */
+  range.deleteContents();
+  /* Insert all child nodes */
+  var frag=document.createDocumentFragment();
+  var lastNode;
+  while(tmp.firstChild){lastNode=tmp.firstChild;frag.appendChild(tmp.firstChild)}
+  range.insertNode(frag);
+  /* Move cursor after inserted content */
+  if(lastNode){
+    range=document.createRange();
+    range.setStartAfter(lastNode);
+    range.collapse(true);
+    var sel=window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    inst._savedRange=range.cloneRange();
+  }
+  _reSync(id);
+}
+
+/* Insert plain text at cursor — for emojis etc */
+function _reInsertTextAtCursor(id,text){
+  var inst=_reGetInst(id);if(!inst)return;
+  var editor=_reGetEditor(id);if(!editor)return;
+  var textNode=document.createTextNode(text);
+  var range;
+  if(inst._savedRange){
+    range=inst._savedRange.cloneRange();
+  }else{
+    range=document.createRange();
+    range.selectNodeContents(editor);
+    range.collapse(false);
+  }
+  range.deleteContents();
+  range.insertNode(textNode);
+  range=document.createRange();
+  range.setStartAfter(textNode);
+  range.collapse(true);
+  var sel=window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+  inst._savedRange=range.cloneRange();
+  _reSync(id);
 }
 function _reCloseMore(id){var dd=document.getElementById('re-more-'+id);if(dd)dd.style.display='none'}
 
@@ -2991,11 +3051,10 @@ function _reInsertLink(id){
     ta.focus();ta.selectionStart=ta.selectionEnd=s+md.length;
   }else{
     var url=prompt('Enter URL:','https://');if(!url)return;
-    _reRestoreSelection(id);
-    document.execCommand('createLink',false,url);
-    _reGetEditor(id).focus();
+    var sel=window.getSelection();
+    var linkText=(sel&&sel.toString())||url;
+    _reInsertAtCursor(id,'<a href="'+url+'">'+linkText+'</a>&nbsp;');
   }
-  _reSync(id);
 }
 
 /* Insert divider */
@@ -3008,15 +3067,8 @@ function _reInsertDivider(id){
     ta.value=ta.value.substring(0,s)+'\n---\n'+ta.value.substring(ta.selectionEnd);
     ta.focus();ta.selectionStart=ta.selectionEnd=s+5;
   }else{
-    _reRestoreSelection(id);
-    var editor=_reGetEditor(id);
-    var hr=document.createElement('hr');
-    var sel=window.getSelection();
-    if(sel.rangeCount){var range=sel.getRangeAt(0);range.collapse(false);range.insertNode(document.createElement('br'));range.insertNode(hr);range.collapse(false)}
-    else{editor.appendChild(hr)}
-    editor.focus();
+    _reInsertAtCursor(id,'<hr><br>');
   }
-  _reSync(id);
 }
 
 /* Insert image */
@@ -3028,11 +3080,8 @@ function _reInsertImage(id){
     var ta=_reGetTextarea(id);var s=ta.selectionStart;
     ta.value=ta.value.substring(0,s)+'![Image]('+url+')'+ta.value.substring(ta.selectionEnd);
   }else{
-    _reRestoreSelection(id);
-    document.execCommand('insertHTML',false,'<img src="'+url+'" style="max-width:100%;border-radius:8px;margin:8px 0" alt="Image">');
-    _reGetEditor(id).focus();
+    _reInsertAtCursor(id,'<img src="'+url+'" style="max-width:100%;border-radius:8px;margin:8px 0" alt="Image">');
   }
-  _reSync(id);
 }
 
 /* Emoji picker */
@@ -3048,6 +3097,11 @@ function _reInsertEmoji(id){
   h+='</div>';
   picker.innerHTML=h;
   document.body.appendChild(picker);
+  /* Click outside to close */
+  setTimeout(function(){document.addEventListener('click',function _epClose(e){
+    var p=document.getElementById('re-emoji-picker');
+    if(!p||!p.contains(e.target)){if(p)p.remove();document.removeEventListener('click',_epClose)}
+  })},10);
 }
 function _reDoInsertEmoji(){
   var btn=event.currentTarget;var emoji=btn.textContent;
@@ -3060,10 +3114,8 @@ function _reDoInsertEmoji(){
     ta.value=ta.value.substring(0,s)+emoji+ta.value.substring(ta.selectionEnd);
     ta.focus();ta.selectionStart=ta.selectionEnd=s+emoji.length;
   }else{
-    _reRestoreSelection(id);
-    document.execCommand('insertText',false,emoji);
+    _reInsertTextAtCursor(id,emoji);
   }
-  _reSync(id);
 }
 
 /* Blockquote */
@@ -3075,12 +3127,9 @@ function _reInsertBlockquote(id){
     var selected=ta.value.substring(s,e)||'Your quote here';
     ta.value=ta.value.substring(0,s)+'> '+selected+ta.value.substring(e);
   }else{
-    _reRestoreSelection(id);
-    var sel=window.getSelection();var text=sel.toString()||'Your quote here';
-    document.execCommand('insertHTML',false,'<blockquote style="border-left:3px solid #5ba8b2;padding:8px 14px;margin:8px 0;background:rgba(91,168,178,.06);border-radius:0 6px 6px 0;color:#8899aa;font-style:italic">'+text+'</blockquote><p><br></p>');
-    _reGetEditor(id).focus();
+    var sel=window.getSelection();var text=(sel&&sel.toString())||'Your quote here';
+    _reInsertAtCursor(id,'<blockquote style="border-left:3px solid #5ba8b2;padding:8px 14px;margin:8px 0;background:rgba(91,168,178,.06);border-radius:0 6px 6px 0;color:#8899aa;font-style:italic">'+text+'</blockquote><p><br></p>');
   }
-  _reSync(id);
 }
 
 /* Table picker */
@@ -3100,6 +3149,11 @@ function _reInsertTable(id){
     '<button class="btn btn-primary btn-sm" onclick="_reDoInsertTable()">Insert</button>'+
     '</div>';
   document.body.appendChild(picker);
+  /* Click outside to close */
+  setTimeout(function(){document.addEventListener('click',function _tpClose(e){
+    var p=document.getElementById('re-table-picker');
+    if(!p||!p.contains(e.target)){if(p)p.remove();document.removeEventListener('click',_tpClose)}
+  })},10);
 }
 function _reDoInsertTable(){
   var picker=document.getElementById('re-table-picker');
@@ -3114,10 +3168,7 @@ function _reDoInsertTable(){
   html+='</tr></thead><tbody>';
   for(var r=0;r<rows;r++){html+='<tr>';for(var c=0;c<cols;c++)html+='<td style="border:1px solid #334;padding:6px 10px;font-size:13px">&nbsp;</td>';html+='</tr>'}
   html+='</tbody></table><p><br></p>';
-  _reRestoreSelection(id);
-  document.execCommand('insertHTML',false,html);
-  _reGetEditor(id).focus();
-  _reSync(id);
+  _reInsertAtCursor(id,html);
 }
 
 /* Line spacing picker */
@@ -3132,6 +3183,11 @@ function _reLineSpacing(id){
     [1,1.2,1.4,1.6,1.8,2,2.5].map(function(v){return '<button class="ec-tb-dd" onclick="_reSetSpacing('+v+')">'+v+'x'+(v===1.6?' (default)':'')+'</button>'}).join('')+
     '</div>';
   document.body.appendChild(picker);
+  /* Click outside to close */
+  setTimeout(function(){document.addEventListener('click',function _spClose(e){
+    var p=document.getElementById('re-spacing-picker');
+    if(!p||!p.contains(e.target)){if(p)p.remove();document.removeEventListener('click',_spClose)}
+  })},10);
 }
 function _reSetSpacing(val){
   var picker=document.getElementById('re-spacing-picker');
@@ -3152,11 +3208,8 @@ function reInsertVar(id,v){
     ta.focus();ta.selectionStart=ta.selectionEnd=s+v.length;
   }else{
     var span='<span style="background:rgba(91,168,178,.2);color:var(--teal);padding:1px 6px;border-radius:4px;font-size:12px">'+v+'</span>&nbsp;';
-    _reRestoreSelection(id);
-    document.execCommand('insertHTML',false,span);
-    _reGetEditor(id).focus();
+    _reInsertAtCursor(id,span);
   }
-  _reSync(id);
 }
 
 /* Insert CTA button */
@@ -3178,11 +3231,8 @@ function reInsertCTA(id,key){
     ta.focus();ta.selectionStart=ta.selectionEnd=s+md.length;
   }else{
     var link='<a href="'+cta.url+'" style="color:var(--purple);font-weight:600">'+cta.label+'</a>&nbsp;';
-    _reRestoreSelection(id);
-    document.execCommand('insertHTML',false,link);
-    _reGetEditor(id).focus();
+    _reInsertAtCursor(id,link);
   }
-  _reSync(id);
   showToast('CTA inserted','success');
 }
 
