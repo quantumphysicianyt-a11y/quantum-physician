@@ -219,9 +219,20 @@
 <button class="btn btn-ghost btn-sm" type="button" onclick="ecInsertCTA('community')" style="font-size:10px;border-color:var(--taupe);color:var(--taupe)">Join Community</button>
 <button class="btn btn-ghost btn-sm" type="button" onclick="ecInsertCTA('custom')" style="font-size:10px">Custom CTA...</button>
 </div>
-<div id="ec-editor-toolbar" style="display:flex;flex-wrap:wrap;gap:4px;padding:8px 10px;background:var(--navy-deep,#071825);border:1px solid var(--border);border-bottom:none;border-radius:var(--radius-sm) var(--radius-sm) 0 0;align-items:center">
+<div id="ec-editor-toolbar" style="display:flex;flex-wrap:wrap;gap:3px;padding:6px 8px;background:var(--navy-deep,#071825);border:1px solid var(--border);border-bottom:none;border-radius:var(--radius-sm) var(--radius-sm) 0 0;align-items:center">
+<!-- Undo/Redo -->
+<button type="button" onclick="ecExec('undo')" class="ec-tb-btn" title="Undo">↩</button>
+<button type="button" onclick="ecExec('redo')" class="ec-tb-btn" title="Redo">↪</button>
+<div class="ec-tb-sep"></div>
+<!-- Heading -->
+<select id="ec-tb-heading" onchange="ecHeading(this.value)" style="background:var(--navy-card);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:3px 4px;font-size:11px;width:70px;cursor:pointer">
+<option value="p">Normal</option>
+<option value="h1">H1</option>
+<option value="h2">H2</option>
+<option value="h3">H3</option>
+</select>
 <!-- Font Family -->
-<select id="ec-tb-font" onchange="ecExec('fontName',this.value)" style="background:var(--navy-card);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px 6px;font-size:11px;max-width:110px;cursor:pointer">
+<select id="ec-tb-font" onchange="ecExec('fontName',this.value)" style="background:var(--navy-card);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:3px 4px;font-size:11px;width:85px;cursor:pointer">
 <option value="Arial">Arial</option>
 <option value="Georgia">Georgia</option>
 <option value="Playfair Display">Playfair</option>
@@ -230,49 +241,69 @@
 <option value="Trebuchet MS">Trebuchet</option>
 </select>
 <!-- Font Size -->
-<select id="ec-tb-size" onchange="ecExec('fontSize',this.value)" style="background:var(--navy-card);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px 6px;font-size:11px;width:52px;cursor:pointer">
+<select id="ec-tb-size" onchange="ecExec('fontSize',this.value)" style="background:var(--navy-card);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:3px 4px;font-size:11px;width:44px;cursor:pointer">
+<option value="1">XS</option>
 <option value="2">S</option>
 <option value="3" selected>M</option>
 <option value="4">L</option>
 <option value="5">XL</option>
-<option value="6">2XL</option>
+<option value="6">2X</option>
 </select>
-<div style="width:1px;height:20px;background:var(--border);margin:0 2px"></div>
+<div class="ec-tb-sep"></div>
 <!-- Bold / Italic / Underline / Strike -->
 <button type="button" onclick="ecExec('bold')" class="ec-tb-btn" title="Bold"><b>B</b></button>
 <button type="button" onclick="ecExec('italic')" class="ec-tb-btn" title="Italic"><i>I</i></button>
 <button type="button" onclick="ecExec('underline')" class="ec-tb-btn" title="Underline"><u>U</u></button>
 <button type="button" onclick="ecExec('strikeThrough')" class="ec-tb-btn" title="Strikethrough"><s>S</s></button>
-<div style="width:1px;height:20px;background:var(--border);margin:0 2px"></div>
-<!-- Text Color -->
-<label title="Text Color" style="position:relative;cursor:pointer;display:flex;align-items:center">
-<span class="ec-tb-btn" style="color:var(--teal)">A</span>
-<input type="color" id="ec-tb-color" value="#00f5ff" onchange="ecExec('foreColor',this.value)" style="position:absolute;opacity:0;width:24px;height:24px;cursor:pointer">
+<div class="ec-tb-sep"></div>
+<!-- Text Color & Highlight -->
+<label title="Text Color" class="ec-tb-color-wrap">
+<span class="ec-tb-btn" id="ec-tb-color-preview" style="font-weight:700">A</span>
+<input type="color" id="ec-tb-color" value="#00f5ff" onchange="ecExec('foreColor',this.value);document.getElementById('ec-tb-color-preview').style.color=this.value" style="position:absolute;opacity:0;width:0;height:0;pointer-events:none">
 </label>
-<!-- Highlight -->
-<label title="Highlight" style="position:relative;cursor:pointer;display:flex;align-items:center">
-<span class="ec-tb-btn" style="background:rgba(255,255,0,.2);border-radius:3px;padding:2px 5px">H</span>
-<input type="color" id="ec-tb-highlight" value="#ffff00" onchange="ecExec('hiliteColor',this.value)" style="position:absolute;opacity:0;width:24px;height:24px;cursor:pointer">
+<label title="Highlight" class="ec-tb-color-wrap">
+<span class="ec-tb-btn" style="font-size:11px;position:relative">H<span id="ec-tb-hl-bar" style="position:absolute;bottom:2px;left:4px;right:4px;height:3px;background:#ffff00;border-radius:2px"></span></span>
+<input type="color" id="ec-tb-highlight" value="#ffff00" onchange="ecExec('hiliteColor',this.value);document.getElementById('ec-tb-hl-bar').style.background=this.value" style="position:absolute;opacity:0;width:0;height:0;pointer-events:none">
 </label>
-<div style="width:1px;height:20px;background:var(--border);margin:0 2px"></div>
+<div class="ec-tb-sep"></div>
 <!-- Alignment -->
-<button type="button" onclick="ecExec('justifyLeft')" class="ec-tb-btn" title="Align Left">&#9776;</button>
-<button type="button" onclick="ecExec('justifyCenter')" class="ec-tb-btn" title="Center">&#9776;</button>
-<button type="button" onclick="ecExec('justifyRight')" class="ec-tb-btn" title="Align Right">&#9776;</button>
-<div style="width:1px;height:20px;background:var(--border);margin:0 2px"></div>
+<button type="button" onclick="ecExec('justifyLeft')" class="ec-tb-btn ec-tb-align" title="Left">
+<svg width="14" height="14" viewBox="0 0 14 14"><rect x="1" y="2" width="12" height="1.5" rx=".5" fill="currentColor"/><rect x="1" y="5.5" width="8" height="1.5" rx=".5" fill="currentColor"/><rect x="1" y="9" width="10" height="1.5" rx=".5" fill="currentColor"/></svg>
+</button>
+<button type="button" onclick="ecExec('justifyCenter')" class="ec-tb-btn ec-tb-align" title="Center">
+<svg width="14" height="14" viewBox="0 0 14 14"><rect x="1" y="2" width="12" height="1.5" rx=".5" fill="currentColor"/><rect x="3" y="5.5" width="8" height="1.5" rx=".5" fill="currentColor"/><rect x="2" y="9" width="10" height="1.5" rx=".5" fill="currentColor"/></svg>
+</button>
+<button type="button" onclick="ecExec('justifyRight')" class="ec-tb-btn ec-tb-align" title="Right">
+<svg width="14" height="14" viewBox="0 0 14 14"><rect x="1" y="2" width="12" height="1.5" rx=".5" fill="currentColor"/><rect x="5" y="5.5" width="8" height="1.5" rx=".5" fill="currentColor"/><rect x="3" y="9" width="10" height="1.5" rx=".5" fill="currentColor"/></svg>
+</button>
+<div class="ec-tb-sep"></div>
 <!-- Lists -->
 <button type="button" onclick="ecExec('insertUnorderedList')" class="ec-tb-btn" title="Bullet List">&bull;</button>
-<button type="button" onclick="ecExec('insertOrderedList')" class="ec-tb-btn" title="Numbered List">1.</button>
+<button type="button" onclick="ecExec('insertOrderedList')" class="ec-tb-btn" title="Numbered">1.</button>
 <!-- Link -->
-<button type="button" onclick="ecInsertLink()" class="ec-tb-btn" title="Insert Link" style="color:var(--purple)">&#128279;</button>
-<!-- Divider (---) -->
-<button type="button" onclick="ecInsertDivider()" class="ec-tb-btn" title="Card Divider (---)" style="font-size:10px;letter-spacing:2px">---</button>
-<!-- Clear formatting -->
-<button type="button" onclick="ecExec('removeFormat')" class="ec-tb-btn" title="Clear Formatting" style="font-size:10px;color:var(--text-dim)">&#10005;</button>
-<!-- Toggle source -->
-<button type="button" onclick="ecToggleSource()" class="ec-tb-btn" title="Toggle Markdown Source" id="ec-tb-source-btn" style="font-size:10px;color:var(--text-dim);margin-left:auto">{ }</button>
+<button type="button" onclick="ecInsertLink()" class="ec-tb-btn" title="Link" style="color:var(--purple)">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+</button>
+<!-- Divider -->
+<button type="button" onclick="ecInsertDivider()" class="ec-tb-btn" title="Card Divider" style="font-size:9px;letter-spacing:1px">—</button>
+<!-- MORE dropdown -->
+<div style="position:relative;margin-left:auto" id="ec-more-wrap">
+<button type="button" onclick="ecToggleMore()" class="ec-tb-btn" title="More tools" id="ec-more-btn" style="font-size:11px">More ▾</button>
+<div id="ec-more-dropdown" style="display:none;position:absolute;right:0;top:32px;background:var(--navy-card);border:1px solid var(--border);border-radius:10px;padding:6px;min-width:180px;z-index:99;box-shadow:0 8px 24px rgba(0,0,0,.4)">
+<button type="button" onclick="ecInsertImage()" class="ec-tb-dd">🖼 Insert Image</button>
+<button type="button" onclick="ecInsertEmoji()" class="ec-tb-dd">😊 Emoji</button>
+<button type="button" onclick="ecInsertBlockquote()" class="ec-tb-dd">❝ Blockquote</button>
+<button type="button" onclick="ecInsertTable()" class="ec-tb-dd">▦ Insert Table</button>
+<button type="button" onclick="ecExec('indent')" class="ec-tb-dd">→ Indent</button>
+<button type="button" onclick="ecExec('outdent')" class="ec-tb-dd">← Outdent</button>
+<button type="button" onclick="ecLineSpacing()" class="ec-tb-dd">↕ Line Spacing</button>
+<button type="button" onclick="ecExec('removeFormat')" class="ec-tb-dd">✕ Clear Formatting</button>
+<div style="border-top:1px solid var(--border);margin:4px 0"></div>
+<button type="button" onclick="ecToggleSource();ecToggleMore()" class="ec-tb-dd" id="ec-more-source">{ } Source Code</button>
 </div>
-<div id="ec-editor-rich" contenteditable="true" style="min-height:200px;max-height:400px;overflow-y:auto;padding:14px;background:var(--navy-card);border:1px solid var(--border);border-radius:0 0 var(--radius-sm) var(--radius-sm);color:var(--text);font-size:14px;line-height:1.6;outline:none" oninput="ecRichSync()" onpaste="setTimeout(ecRichSync,50)"></div>
+</div>
+</div>
+<div id="ec-editor-rich"<div id="ec-editor-rich" contenteditable="true" style="min-height:200px;max-height:400px;overflow-y:auto;padding:14px;background:var(--navy-card);border:1px solid var(--border);border-radius:0 0 var(--radius-sm) var(--radius-sm);color:var(--text);font-size:14px;line-height:1.6;outline:none" oninput="ecRichSync()" onpaste="setTimeout(ecRichSync,50)"></div>
 <textarea class="input" id="email-body" placeholder="Write your email message here..." rows="10" oninput="ecAutoPreview()" style="display:none"></textarea>
 <div id="ec-section-controls" style="display:none;margin-top:8px;margin-bottom:8px"><div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">Cards <span style="opacity:.5">(drag to reorder)</span></div><div id="ec-card-pills" style="display:flex;flex-wrap:wrap;gap:6px"></div></div>
 </div>

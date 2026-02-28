@@ -2855,23 +2855,23 @@ function ecToggleSource(){
   if(!editor||!textarea)return;
   _ecSourceMode=!_ecSourceMode;
   if(_ecSourceMode){
-    /* Switch to source mode */
-    ecRichSync();/* save current state */
+    ecRichSync();
     editor.style.display='none';
     textarea.style.display='block';
-    toolbar.style.opacity='.4';
-    toolbar.style.pointerEvents='none';
-    btn.style.color='var(--teal)';
-    btn.style.borderColor='var(--teal)';
+    textarea.style.borderRadius='0 0 var(--radius-sm) var(--radius-sm)';
+    /* Dim toolbar buttons but keep source btn clickable */
+    toolbar.querySelectorAll('.ec-tb-btn,select').forEach(function(el){
+      if(el.id!=='ec-tb-source-btn'){el.style.opacity='.3';el.style.pointerEvents='none'}
+    });
+    btn.style.color='var(--teal)';btn.style.borderColor='var(--teal)';btn.textContent='Rich';
   }else{
-    /* Switch back to rich mode */
     ecTextareaToRich();
     editor.style.display='block';
     textarea.style.display='none';
-    toolbar.style.opacity='1';
-    toolbar.style.pointerEvents='auto';
-    btn.style.color='var(--text-dim)';
-    btn.style.borderColor='transparent';
+    toolbar.querySelectorAll('.ec-tb-btn,select').forEach(function(el){
+      el.style.opacity='1';el.style.pointerEvents='auto';
+    });
+    btn.style.color='var(--text-dim)';btn.style.borderColor='transparent';btn.textContent='{ }';
   }
 }
 
@@ -2950,3 +2950,183 @@ function ecInsertLibraryCard(index){
   textarea.scrollTop=textarea.scrollHeight;
   ecAutoPreview();showToast('Added: '+card.name,'success');
 }
+
+
+/* ================================================================
+   Rich Editor — Extended Features
+   ================================================================ */
+
+/* Heading selector */
+function ecHeading(tag){
+  if(tag==='p'){document.execCommand('formatBlock',false,'<p>')}
+  else{document.execCommand('formatBlock',false,'<'+tag+'>')}
+  document.getElementById('ec-editor-rich').focus();
+  ecRichSync();
+  document.getElementById('ec-tb-heading').value=tag;
+}
+
+/* More dropdown toggle */
+function ecToggleMore(){
+  var dd=document.getElementById('ec-more-dropdown');
+  if(!dd)return;
+  var show=dd.style.display==='none';
+  dd.style.display=show?'block':'none';
+  if(show){
+    /* Close when clicking outside */
+    setTimeout(function(){
+      document.addEventListener('click',function _close(e){
+        if(!document.getElementById('ec-more-wrap').contains(e.target)){
+          dd.style.display='none';
+          document.removeEventListener('click',_close);
+        }
+      });
+    },10);
+  }
+}
+
+/* Insert image from URL */
+function ecInsertImage(){
+  ecToggleMore();
+  var url=prompt('Image URL:','https://');
+  if(!url)return;
+  if(_ecSourceMode){
+    var ta=document.getElementById('email-body');
+    var s=ta.selectionStart;
+    ta.value=ta.value.substring(0,s)+'![Image]('+url+')'+ta.value.substring(ta.selectionEnd);
+  }else{
+    document.execCommand('insertHTML',false,'<img src="'+url+'" style="max-width:100%;border-radius:8px;margin:8px 0" alt="Image">');
+    document.getElementById('ec-editor-rich').focus();
+  }
+  ecRichSync();
+}
+
+/* Emoji picker */
+var EC_EMOJIS=['😊','😄','🎉','✨','💜','❤️','🙏','👋','🎯','💡','🔥','⭐','🌟','💫','🚀','✅','📣','📧','🎁','💪','🌈','☀️','🌙','🎵','📚','🧠','💎','🏆','👏','🤝','💐','🌺','🍃','🦋','🕊️','🌊','⚡','🔔','📌','🎬','📍','📅','🕐','🔗','⏰','💖','🧪'];
+
+function ecInsertEmoji(){
+  ecToggleMore();
+  /* Show emoji picker overlay */
+  var old=document.getElementById('ec-emoji-picker');
+  if(old){old.remove();return}
+  var picker=document.createElement('div');
+  picker.id='ec-emoji-picker';
+  picker.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--navy-card);border:1px solid var(--border);border-radius:14px;padding:4px;z-index:9999;box-shadow:0 12px 40px rgba(0,0,0,.5);width:320px';
+  var header='<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px"><span style="font-size:13px;font-weight:600;color:var(--text)">Emoji</span><button onclick="ecCloseEmoji()" style="background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer">&times;</button></div>';
+  var grid='<div class="ec-emoji-grid">';
+  EC_EMOJIS.forEach(function(e,i){
+    grid+='<button class="ec-emoji-btn" data-idx="'+i+'" onclick="ecDoInsertEmoji(EC_EMOJIS['+i+'])">'+e+'</button>';
+  });
+  grid+='</div>';
+  picker.innerHTML=header+grid;
+  document.body.appendChild(picker);
+}
+
+function ecDoInsertEmoji(emoji){
+  document.getElementById('ec-emoji-picker').remove();
+  if(_ecSourceMode){
+    var ta=document.getElementById('email-body');
+    var s=ta.selectionStart;
+    ta.value=ta.value.substring(0,s)+emoji+ta.value.substring(ta.selectionEnd);
+    ta.focus();ta.selectionStart=ta.selectionEnd=s+emoji.length;
+  }else{
+    document.getElementById('ec-editor-rich').focus();
+    document.execCommand('insertText',false,emoji);
+  }
+  ecRichSync();
+}
+
+/* Blockquote */
+function ecInsertBlockquote(){
+  ecToggleMore();
+  if(_ecSourceMode){
+    var ta=document.getElementById('email-body');
+    var s=ta.selectionStart,e=ta.selectionEnd;
+    var selected=ta.value.substring(s,e)||'Your quote here';
+    ta.value=ta.value.substring(0,s)+'> '+selected+ta.value.substring(e);
+  }else{
+    var sel=window.getSelection();
+    var text=sel.toString()||'Your quote here';
+    var bq='<blockquote style="border-left:3px solid #5ba8b2;padding:8px 14px;margin:8px 0;background:rgba(91,168,178,.06);border-radius:0 6px 6px 0;color:#8899aa;font-style:italic">'+text+'</blockquote><p><br></p>';
+    document.execCommand('insertHTML',false,bq);
+    document.getElementById('ec-editor-rich').focus();
+  }
+  ecRichSync();
+}
+
+/* Insert table */
+function ecInsertTable(){
+  ecToggleMore();
+  /* Quick table picker overlay */
+  var old=document.getElementById('ec-table-picker');
+  if(old){old.remove();return}
+  var picker=document.createElement('div');
+  picker.id='ec-table-picker';
+  picker.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--navy-card);border:1px solid var(--border);border-radius:14px;padding:16px;z-index:9999;box-shadow:0 12px 40px rgba(0,0,0,.5)';
+  picker.innerHTML='<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:12px">Insert Table</div>'+
+    '<div style="display:flex;gap:10px;align-items:center;margin-bottom:12px">'+
+    '<label style="font-size:12px;color:var(--text-dim)">Rows <input type="number" id="ec-tbl-rows" value="3" min="1" max="20" style="width:50px;background:var(--navy-deep);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px;margin-left:4px;font-size:12px"></label>'+
+    '<label style="font-size:12px;color:var(--text-dim)">Cols <input type="number" id="ec-tbl-cols" value="3" min="1" max="10" style="width:50px;background:var(--navy-deep);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px;margin-left:4px;font-size:12px"></label>'+
+    '</div>'+
+    '<div style="display:flex;gap:8px;justify-content:flex-end">'+
+    '<button class="btn btn-ghost btn-sm" onclick="ecCloseTablePicker()">Cancel</button>'+
+    '<button class="btn btn-primary btn-sm" onclick="ecDoInsertTable()">Insert</button>'+
+    '</div>';
+  document.body.appendChild(picker);
+}
+
+function ecDoInsertTable(){
+  var rows=parseInt(document.getElementById('ec-tbl-rows').value)||3;
+  var cols=parseInt(document.getElementById('ec-tbl-cols').value)||3;
+  document.getElementById('ec-table-picker').remove();
+  if(rows>20)rows=20;if(cols>10)cols=10;
+  var html='<table style="border-collapse:collapse;width:100%;margin:10px 0"><thead><tr>';
+  for(var c=0;c<cols;c++)html+='<th style="border:1px solid #334;padding:6px 10px;background:rgba(91,168,178,.1);color:#5ba8b2;font-weight:600;font-size:13px">Header '+(c+1)+'</th>';
+  html+='</tr></thead><tbody>';
+  for(var r=0;r<rows;r++){
+    html+='<tr>';
+    for(var c=0;c<cols;c++)html+='<td style="border:1px solid #334;padding:6px 10px;font-size:13px">&nbsp;</td>';
+    html+='</tr>';
+  }
+  html+='</tbody></table><p><br></p>';
+  document.getElementById('ec-editor-rich').focus();
+  document.execCommand('insertHTML',false,html);
+  ecRichSync();
+}
+
+/* Line spacing */
+function ecLineSpacing(){
+  ecToggleMore();
+  var old=document.getElementById('ec-spacing-picker');
+  if(old){old.remove();return}
+  var picker=document.createElement('div');
+  picker.id='ec-spacing-picker';
+  picker.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--navy-card);border:1px solid var(--border);border-radius:14px;padding:16px;z-index:9999;box-shadow:0 12px 40px rgba(0,0,0,.5)';
+  picker.innerHTML='<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:12px">Line Spacing</div>'+
+    '<div style="display:flex;flex-direction:column;gap:4px">'+
+    [1,1.2,1.4,1.6,1.8,2,2.5].map(function(v){
+      return '<button class="ec-tb-dd" onclick="ecSetSpacing('+v+')">'+v+'x'+(v===1.6?' (default)':'')+'</button>';
+    }).join('')+
+    '</div>';
+  document.body.appendChild(picker);
+}
+
+function ecSetSpacing(val){
+  document.getElementById('ec-spacing-picker').remove();
+  var editor=document.getElementById('ec-editor-rich');
+  editor.style.lineHeight=val;
+  editor.focus();
+}
+
+/* Make color picker labels clickable to open the hidden input */
+document.addEventListener('DOMContentLoaded',function(){
+  var labels=document.querySelectorAll('.ec-tb-color-wrap');
+  labels.forEach(function(label){
+    label.addEventListener('click',function(){
+      var input=label.querySelector('input[type=color]');
+      if(input)input.click();
+    });
+  });
+});
+
+function ecCloseEmoji(){var el=document.getElementById('ec-emoji-picker');if(el)el.remove()}
+function ecCloseTablePicker(){var el=document.getElementById('ec-table-picker');if(el)el.remove()}
