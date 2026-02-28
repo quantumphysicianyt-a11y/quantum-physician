@@ -8,13 +8,13 @@ sb.auth.onAuthStateChange(function(event,session){
     sessionStorage.setItem('qp_admin_token',session.access_token);
     if(session.refresh_token)sessionStorage.setItem('qp_admin_refresh',session.refresh_token);
   }
+});
 
 /* ================================================================
    ACTIVE EDITOR REFERENCES — Session 21
    ================================================================ */
 var _ecEditor=null; /* Email Center editor instance */
 var _sgEditor=null; /* SG/Recovery popup editor instance */
-});
 /* Restore Supabase session from stored token on page load */
 (async function(){try{
   var tok=sessionStorage.getItem('qp_admin_token');
