@@ -2639,9 +2639,30 @@ async function ecSendTestEmail(){
   var body=(document.getElementById('email-body')||{}).value;
   var from=(document.getElementById('email-from')||{}).value;
   if(!subject||!body){showToast('Subject and body required','error');return}
-  var testEmail=prompt('Send test email to:',currentAdmin?currentAdmin.email:'');
-  if(!testEmail)return;
-  showToast('Sending test...','info');
+  /* Show styled modal instead of browser prompt */
+  var defaultEmail=currentAdmin?currentAdmin.email:'';
+  var overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center';
+  var modal=document.createElement('div');
+  modal.style.cssText='background:var(--navy-card,#0d1f2d);border:1px solid var(--border);border-radius:16px;padding:28px;width:420px;max-width:90vw';
+  modal.innerHTML='<div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px">Send Test Email</div><p style="font-size:12px;color:var(--text-dim);margin-bottom:16px">Preview how this email looks in a real inbox.</p><label style="font-size:11px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:6px">Send to</label><input type="email" id="ec-test-email-input" class="input" value="'+esc(defaultEmail)+'" placeholder="you@email.com" style="margin-bottom:16px"><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-ghost" id="ec-test-cancel-btn">Cancel</button><button class="btn btn-primary" id="ec-test-send-btn">Send Test</button></div>';
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove()});
+  document.getElementById('ec-test-cancel-btn').addEventListener('click',function(){overlay.remove()});
+  document.getElementById('ec-test-send-btn').addEventListener('click',function(){ecDoSendTest(overlay)});
+  var inp=document.getElementById('ec-test-email-input');
+  inp.focus();inp.select();
+  inp.addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('ec-test-send-btn').click()});
+}
+async function ecDoSendTest(overlay){
+  var btn=document.getElementById('ec-test-send-btn');
+  var testEmail=document.getElementById('ec-test-email-input').value.trim();
+  if(!testEmail){showToast('Enter an email address','error');return}
+  btn.disabled=true;btn.textContent='Sending...';
+  var subject=(document.getElementById('email-subject')||{}).value;
+  var body=(document.getElementById('email-body')||{}).value;
+  var from=(document.getElementById('email-from')||{}).value;
   try{
     var pb=body.replace(/\{\{name\}\}/g,'Test User').replace(/\{\{email\}\}/g,testEmail).replace(/\{\{referral_code\}\}/g,'TESTCODE');
     var richToggle=document.getElementById('rich-email-toggle');
@@ -2649,22 +2670,23 @@ async function ecSendTestEmail(){
     if(richToggle&&richToggle.checked){
       try{htmlBody=ecBuildHtml(pb)}catch(ex){htmlBody=null}
     }
-    var res=await adminProxy({type:'insert',table:'email_log',data:{
-      to_email:testEmail,from_email:from,subject:'[TEST] '+subject,
-      body:htmlBody||pb,status:'pending',email_type:'test',
-      created_at:new Date().toISOString()
-    }});
-    /* Actually send via the send-email function if available */
-    try{
-      var sendRes=await fetch('/.netlify/functions/send-email',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':'Bearer '+currentSession.access_token},
-        body:JSON.stringify({to:testEmail,from:from,subject:'[TEST] '+subject,html:htmlBody||pb,text:pb})
-      });
-      if(sendRes.ok){showToast('Test email sent to '+testEmail,'success')}
-      else{showToast('Logged but send may have failed — check email','warning')}
-    }catch(sendErr){showToast('Logged to email_log — send function unavailable','warning')}
-  }catch(err){showToast('Error: '+err.message,'error')}
+    var sendRes=await fetch('/.netlify/functions/send-email',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+currentSession.access_token},
+      body:JSON.stringify({to:testEmail,from:from,subject:'[TEST] '+subject,html:htmlBody||pb,text:pb})
+    });
+    if(sendRes.ok){
+      showToast('Test email sent to '+testEmail,'success');
+      overlay.remove();
+    }else{
+      var errData=await sendRes.json().catch(function(){return{}});
+      showToast('Send failed: '+(errData.error||sendRes.status),'error');
+      btn.disabled=false;btn.textContent='Send Test';
+    }
+  }catch(err){
+    showToast('Error: '+err.message,'error');
+    btn.disabled=false;btn.textContent='Send Test';
+  }
 }
 
 /* ---------- CTA Button Insert ---------- */
