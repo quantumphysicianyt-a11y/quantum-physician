@@ -1039,8 +1039,10 @@ var discountBody=parts[1]?parts[1].trim():'';
 /* Strip signature block */
 mainBody=mainBody.replace(/\n\n(With warmth,|With healing energy,|With gratitude,)\n.*$/s,'');
 /* Remove raw URLs */
-/* Convert markdown links FIRST — before any URL stripping */
-mainBody=mainBody.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'%%LINK%%<a href="$2" style="color:#8338ec;text-decoration:underline;">$1</a>%%/LINK%%');
+/* Convert markdown links to styled CTA buttons */
+mainBody=mainBody.replace(/\[([^\]]+)\]\(([^)]+)\)/g,function(_,label,url){
+  return '%%LINK%%<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:15px 0;"><tr><td align="center"><table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr><td style="background:linear-gradient(45deg,#ff006e,#8338ec);border-radius:50px;"><a href="'+url+'" target="_blank" style="display:inline-block;padding:14px 40px;color:#fff;text-decoration:none;font-weight:700;font-size:14px;letter-spacing:1px;text-transform:uppercase;">'+label+'</a></td></tr></table></td></tr></table>%%/LINK%%';
+});
 /* Now safely strip raw URLs (but not our converted links) */
 mainBody=mainBody.replace(/\n(?!.*%%LINK%%).*https?:\/\/[^\s]*/g,'');
 mainBody=mainBody.replace(/^(?!.*%%LINK%%).*https?:\/\/[^\s]*/gm,'');
@@ -1135,8 +1137,10 @@ var parts=cleanBody.split(/\n---\n/);
 var mainBody=parts[0].trim();
 var discountBody=parts[1]?parts[1].trim():'';
 mainBody=mainBody.replace(/\n\n(With warmth,|With healing energy,|With gratitude,)\n.*$/s,'');
-/* Convert markdown links FIRST */
-mainBody=mainBody.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'%%LINK%%<a href="$2" style="color:#5ba8b2;text-decoration:underline;">$1</a>%%/LINK%%');
+/* Convert markdown links to styled CTA buttons */
+mainBody=mainBody.replace(/\[([^\]]+)\]\(([^)]+)\)/g,function(_,label,url){
+  return '%%LINK%%<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:15px 0;"><tr><td align="center"><table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr><td style="background:linear-gradient(135deg,#5ba8b2,#4acfd9);border-radius:50px;"><a href="'+url+'" target="_blank" style="display:inline-block;padding:14px 40px;color:#fff;text-decoration:none;font-weight:700;font-size:14px;letter-spacing:1px;text-transform:uppercase;">'+label+'</a></td></tr></table></td></tr></table>%%/LINK%%';
+});
 mainBody=mainBody.replace(/\n(?!.*%%LINK%%).*https?:\/\/[^\s]*/g,'');
 mainBody=mainBody.replace(/^(?!.*%%LINK%%).*https?:\/\/[^\s]*/gm,'');
 mainBody=mainBody.replace(/\n- /g,'\n\u2022 ').replace(/^- /gm,'\u2022 ');
