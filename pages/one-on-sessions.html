@@ -617,6 +617,23 @@
   </style>
 </head>
 <body>
+  <script>
+    // Instant redirect for ?pay= tokens — runs before page renders
+    (function() {
+      var p = new URLSearchParams(window.location.search).get('pay');
+      if (p) {
+        document.documentElement.style.display = 'none';
+        fetch('/.netlify/functions/session-checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: p })
+        }).then(function(r) { return r.json(); }).then(function(d) {
+          if (d.url) { window.location.href = d.url; }
+          else { document.documentElement.style.display = ''; }
+        }).catch(function() { document.documentElement.style.display = ''; });
+      }
+    })();
+  </script>
 
   <!-- ========== SHARED HEADER ========== -->
   <div id="shared-header"></div>
