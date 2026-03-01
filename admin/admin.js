@@ -4116,7 +4116,7 @@ async function addClientDate(clientId,cycleId){
   endH+=Math.floor(endM/60);endM=endM%60;
   var endTime=String(endH).padStart(2,'0')+':'+String(endM).padStart(2,'0');
   try{
-    var res=await proxyFrom('session_bookings').insert({cycle_id:cycleId,client_id:clientId,email:cl?cl.email:'',name:cl?cl.name:'',date:dateStr,start_time:time,end_time:endTime,status:'proposed',type:'recurring',proposed_at:new Date().toISOString()});
+    var res=await proxyFrom('session_bookings').insert({cycle_id:cycleId,client_id:clientId,email:cl?cl.email:'',name:cl?cl.name:'',date:dateStr,start_time:time,end_time:endTime,status:'proposed',type:'recurring',confirmation_token:generateBookingToken(),proposed_at:new Date().toISOString()});
     if(res.error){showToast('Error: '+res.error.message,'error');return}
     showToast('Date added','success');
     var r=await proxyFrom('session_bookings').select('*').order('date',{ascending:true});sessBookingsData=r.data||[];
@@ -4134,7 +4134,7 @@ async function addClientDateCustom(clientId,cycleId){
   endH+=Math.floor(endM/60);endM=endM%60;
   var endTime=String(endH).padStart(2,'0')+':'+String(endM).padStart(2,'0');
   try{
-    var res=await proxyFrom('session_bookings').insert({cycle_id:cycleId,client_id:clientId,email:cl?cl.email:'',name:cl?cl.name:'',date:dateStr,start_time:time,end_time:endTime,status:'proposed',type:'recurring',proposed_at:new Date().toISOString()});
+    var res=await proxyFrom('session_bookings').insert({cycle_id:cycleId,client_id:clientId,email:cl?cl.email:'',name:cl?cl.name:'',date:dateStr,start_time:time,end_time:endTime,status:'proposed',type:'recurring',confirmation_token:generateBookingToken(),proposed_at:new Date().toISOString()});
     if(res.error){showToast('Error: '+res.error.message,'error');return}
     showToast('Custom date added','success');
     var r=await proxyFrom('session_bookings').select('*').order('date',{ascending:true});sessBookingsData=r.data||[];
@@ -4321,6 +4321,7 @@ async function autoPopulate(){
           cycle_id:cycleId,client_id:client.id,email:client.email,name:client.name,
           date:day.date,start_time:prefTime,end_time:endTimeStr,
           status:'proposed',type:'recurring',
+          confirmation_token:generateBookingToken(),
           zoom_link:sessConfigData?sessConfigData.zoom_link:null,
           proposed_at:new Date().toISOString()
         });
@@ -4368,11 +4369,11 @@ function renderBookingsGrid(){
   var confirmTracker=document.getElementById('sess-confirm-tracker');
   if(confirmTracker){
     var proposed=bookings.filter(function(b){return b.status==='proposed'}).length;
-    var confirmed=bookings.filter(function(b){return b.status==='confirmed'}).length;
+    var paid=bookings.filter(function(b){return b.status==='paid'}).length;
     var declined=bookings.filter(function(b){return b.status==='declined'}).length;
     confirmTracker.innerHTML='<div style="display:flex;gap:12px;flex-wrap:wrap;font-size:13px">'
       +'<span style="color:var(--warning)">⏳ '+proposed+' proposed</span>'
-      +'<span style="color:var(--success)">✅ '+confirmed+' confirmed</span>'
+      +'<span style="color:var(--success)">✅ '+paid+' paid</span>'
       +'<span style="color:var(--danger)">❌ '+declined+' declined</span>'
       +'</div>';
   }
@@ -4383,19 +4384,21 @@ function renderBookingsGrid(){
   var start=(sessBookPage-1)*sessBookPS;
   var page=bookings.slice(start,start+sessBookPS);
 
-  var statusBadges={proposed:'<span class="badge yellow">Proposed</span>',confirmed:'<span class="badge green">Confirmed</span>',declined:'<span class="badge danger">Declined</span>',rescheduled:'<span class="badge purple">Rescheduled</span>',cancelled:'<span class="badge muted">Cancelled</span>',completed:'<span class="badge teal">Completed</span>',no_show:'<span class="badge danger">No Show</span>'};
+  var statusBadges={proposed:'<span class="badge yellow">Proposed</span>',paid:'<span class="badge green">Paid</span>',confirmed:'<span class="badge green">Confirmed</span>',declined:'<span class="badge danger">Declined</span>',expired:'<span class="badge muted">Expired</span>',cancelled:'<span class="badge muted">Cancelled</span>',completed:'<span class="badge teal">Completed</span>',no_show:'<span class="badge danger">No Show</span>'};
   var typeBadges={recurring:'<span class="badge teal">Recurring</span>',public:'<span class="badge purple">Public</span>',manual:'<span class="badge muted">Manual</span>'};
 
   c.innerHTML='<table class="tbl"><thead><tr><th>Date</th><th>Time</th><th>Client</th><th>Type</th><th>Status</th><th></th></tr></thead><tbody>'
     +page.map(function(b){
+      var payLink=b.confirmation_token?'https://qp-homepage.netlify.app/pages/one-on-sessions.html?pay='+b.confirmation_token:'';
       return'<tr><td style="white-space:nowrap">'+fmtDate(b.date)+'</td>'
         +'<td>'+b.start_time.slice(0,5)+'–'+b.end_time.slice(0,5)+'</td>'
         +'<td class="email">'+esc(b.email)+(b.name?'<br><span class="name" style="font-size:11px">'+esc(b.name)+'</span>':'')+'</td>'
         +'<td>'+typeBadges[b.type]+'</td>'
-        +'<td>'+statusBadges[b.status]+'</td>'
+        +'<td>'+(statusBadges[b.status]||'<span class="badge muted">'+b.status+'</span>')+(b.stripe_payment_id?'<br><span style="font-size:9px;color:var(--text-dim);font-family:monospace">'+b.stripe_payment_id.slice(0,18)+'…</span>':'')+'</td>'
         +'<td><div style="display:flex;gap:4px;flex-wrap:wrap">'
-        +(b.status==='proposed'?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'confirmed\')">Confirm</button><button class="btn btn-danger btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'declined\')">Decline</button>':'')
-        +(b.status==='confirmed'?'<button class="btn btn-ghost btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'completed\')">Complete</button><button class="btn btn-ghost btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'no_show\')">No Show</button><button class="btn btn-danger btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'cancelled\')">Cancel</button>':'')
+        +(b.status==='proposed'&&payLink?'<button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText(\''+payLink+'\');showToast(\'Pay link copied\',\'success\')" title="Copy payment link">🔗 Pay Link</button>':'')
+        +(b.status==='proposed'?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'paid\')">Mark Paid</button><button class="btn btn-danger btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'declined\')">Decline</button>':'')
+        +(b.status==='paid'?'<button class="btn btn-ghost btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'completed\')">Complete</button><button class="btn btn-ghost btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'no_show\')">No Show</button><button class="btn btn-danger btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'cancelled\')">Cancel</button>':'')
         +'<button class="btn btn-ghost btn-sm" onclick="deleteBooking(\''+b.id+'\')">🗑</button>'
         +'</div></td></tr>';
     }).join('')+'</tbody></table>';
@@ -4406,6 +4409,7 @@ function renderBookingsGrid(){
 async function updateBookingStatus(id,status){
   try{
     var updates={status:status};
+    if(status==='paid') updates.confirmed_at=new Date().toISOString();
     if(status==='confirmed') updates.confirmed_at=new Date().toISOString();
     if(status==='cancelled') updates.cancelled_at=new Date().toISOString();
     await proxyFrom('session_bookings').update(updates).eq('id',id);
@@ -4609,7 +4613,7 @@ function updateOfferPreview(wl,email){
     +'With care,<br>Dr. Tracey Clark';
 }
 
-function buildOfferEmailBody(wl,email){
+function buildOfferEmailBody(wl,email,token){
   var dateStr=document.getElementById('os-date').value;
   var time=document.getElementById('os-time').value;
   if(!dateStr) return null;
@@ -4623,8 +4627,13 @@ function buildOfferEmailBody(wl,email){
   var priceStr=price?'$'+Number(price).toFixed(0):'';
   var name=wl?wl.name||'there':'there';
 
+  // If token provided, CTA goes to checkout page with token; otherwise generic link
+  var ctaUrl=token
+    ?'https://qp-homepage.netlify.app/pages/one-on-sessions.html?pay='+token
+    :'https://qp-homepage.netlify.app/pages/one-on-sessions.html#book';
+
   var subject='Your Session with Dr. Tracey Clark — '+dayFmt;
-  var body='Hi '+name+',\n\nGreat news! A private session slot has opened up just for you with Dr. Tracey Clark.\n\n---\n\n**Your Appointment**\n**'+dayFmt+'**\n'+timeFmt+' · '+duration+' minutes'+(priceStr?' · '+priceStr:'')+'\n\n---\n\nThis slot is reserved for you for **72 hours**. After that, it will be offered to the next person on the waitlist.\n\nTo secure your appointment, confirm and complete payment using the link below.\n\n[Confirm & Pay Now](https://qp-homepage.netlify.app/pages/one-on-sessions.html#book)\n\n**What to expect:**\n• A personalized, integrative healing session via Zoom\n• Practical guidance and next steps tailored to you\n• Follow-up resources to support your journey\n\nIf this time doesn\'t work, simply reply to this email and we\'ll find an alternative.\n\nWith care and healing,\nDr. Tracey Clark\nQuantum Physician';
+  var body='Hi '+name+',\n\nGreat news! A private session slot has opened up just for you with Dr. Tracey Clark.\n\n---\n\n**Your Appointment**\n**'+dayFmt+'**\n'+timeFmt+' · '+duration+' minutes'+(priceStr?' · '+priceStr:'')+'\n\n---\n\nThis slot is reserved for you for **72 hours**. After that, it will be offered to the next person on the waitlist.\n\nTo secure your appointment, confirm and complete payment using the link below.\n\n[Confirm & Pay Now]('+ctaUrl+')\n\n**What to expect:**\n• A personalized, integrative healing session via Zoom\n• Practical guidance and next steps tailored to you\n• Follow-up resources to support your journey\n\nIf this time doesn\'t work, simply reply to this email and we\'ll find an alternative.\n\nWith care and healing,\nDr. Tracey Clark\nQuantum Physician';
 
   return {subject:subject, body:body, name:name};
 }
@@ -4710,7 +4719,8 @@ async function sendOfferSlot(waitlistId,email){
   var cycleId=sessSelectedCycleId;
   if(!cycleId){var ac=sessCyclesData.find(function(c){return c.status!=='completed'});if(ac)cycleId=ac.id}
   var wl=sessWaitlistData.find(function(w){return w.id===waitlistId});
-  var emailData=buildOfferEmailBody(wl,email);
+  var offerToken=generateBookingToken();
+  var emailData=buildOfferEmailBody(wl,email,offerToken);
   if(!emailData){showToast('Select a date first','error');return}
 
   if(!await qpConfirm('Send Offer','Send offer email to '+email+' for '+emailData.subject.replace('Your Session with Dr. Tracey Clark — ','')+'?\n\nThis will create a proposed booking and send the branded email.',{okText:'Send Offer'}))return;
@@ -4721,6 +4731,7 @@ async function sendOfferSlot(waitlistId,email){
       cycle_id:cycleId,email:email.toLowerCase(),name:wl?wl.name:'',
       date:dateStr,start_time:time,end_time:endTime,
       status:'proposed',type:'public',
+      confirmation_token:offerToken,
       notes:'Offered from waitlist. Expires 72hr.',
       proposed_at:new Date().toISOString()
     });
@@ -4768,6 +4779,10 @@ async function removeFromWaitlist(id){
 }
 
 /* ---------- Helpers ---------- */
+function generateBookingToken(){
+  var chars='abcdef0123456789';var t='';for(var i=0;i<64;i++)t+=chars.charAt(Math.floor(Math.random()*chars.length));return t;
+}
+
 function fmtDate(d){
   if(!d) return '—';
   return new Date(d+'T12:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
