@@ -4432,15 +4432,158 @@ async function togglePublicBooking(status){
 }
 
 async function offerSlot(waitlistId,email){
-  showToast('Opening email composer for '+email,'info');
-  sgSetupEmail({
-    customEmails:email,
-    brand:'fusion',
-    type:'transactional',
-    from:'tracey@quantumphysician.com',
-    subject:'A Session Slot Has Opened — Book Now!',
-    body:'Hi {{name}},\n\nGreat news! A session slot has opened up with Dr. Tracey Clark.\n\nVisit our booking page to reserve your appointment before it fills up.\n\nWith care,\nDr. Tracey Clark'
+  var wl=sessWaitlistData.find(function(w){return w.id===waitlistId});
+  var cycleId=sessSelectedCycleId;
+  if(!cycleId){
+    // Try to find any active/public_open cycle
+    var ac=sessCyclesData.find(function(c){return c.status==='active'||c.status==='public_open'||c.status==='client_confirmation'||c.status==='planning'});
+    if(ac) cycleId=ac.id;
+  }
+  var cycle=cycleId?sessCyclesData.find(function(c){return c.id===cycleId}):null;
+  var availDays=sessAvailData.filter(function(a){return(!cycleId||a.cycle_id===cycleId)&&a.status==='available'}).sort(function(a,b){return a.date<b.date?-1:1});
+  // Filter out days already fully booked
+  availDays=availDays.filter(function(a){
+    var dayBookings=sessBookingsData.filter(function(b){return b.date===a.date&&b.status!=='cancelled'&&b.status!=='declined'});
+    return dayBookings.length===0||dayBookings.some(function(b){return b.start_time!==a.start_time});
   });
+
+  var old=document.getElementById('sess-offer-slot-modal');if(old)old.remove();
+  var ov=document.createElement('div');ov.id='sess-offer-slot-modal';ov.className='modal-overlay';
+  ov.onclick=function(e){if(e.target===ov)ov.remove()};
+  var box=document.createElement('div');
+  box.style.cssText='background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;max-width:520px;width:94%;max-height:85vh;overflow-y:auto';
+
+  var duration=sessConfigData?sessConfigData.session_duration_minutes:60;
+  var price=sessConfigData?sessConfigData.session_price:null;
+  var priceStr=price?'$'+Number(price).toFixed(0):'TBD';
+
+  var availOpts=availDays.map(function(a){
+    var dayName=new Date(a.date+'T12:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+    return'<option value="'+a.date+'" data-start="'+a.start_time+'" data-end="'+a.end_time+'">'+dayName+' ('+a.start_time.slice(0,5)+'–'+a.end_time.slice(0,5)+')</option>';
+  }).join('');
+
+  var prefInfo='';
+  if(wl){
+    var prefDays=(wl.preferred_days||[]).join(', ')||'any';
+    var prefTimes=(wl.preferred_times||[]).join(', ')||'any';
+    prefInfo='<div style="font-size:11px;color:var(--text-dim);margin-bottom:14px;padding:8px 12px;background:rgba(91,168,178,.06);border-radius:var(--radius-sm);border:1px solid rgba(91,168,178,.12)">Preference: <strong style="color:var(--teal)">'+prefDays+'</strong> · <strong style="color:var(--teal)">'+prefTimes+'</strong>'+(wl.message?' · "'+esc(wl.message)+'"':'')+'</div>';
+  }
+
+  box.innerHTML='<div style="font-weight:600;font-size:16px;margin-bottom:4px;color:var(--teal)">Offer Slot to '+esc(wl?wl.name:email)+'</div>'
+    +'<div style="font-size:12px;color:var(--text-dim);margin-bottom:14px">'+esc(email)+(cycle?' · '+esc(cycle.name):'')+'</div>'
+    +prefInfo
+    +'<div style="margin-bottom:14px"><label style="font-size:11px;font-weight:600;color:var(--text-dim);display:block;margin-bottom:4px;letter-spacing:.5px">SELECT DATE & TIME</label>'
+    +'<select class="input" id="os-date" style="width:100%;margin-bottom:8px"><option value="">Choose an available slot…</option>'+availOpts+'</select>'
+    +'<div style="display:flex;gap:8px;align-items:center"><input type="time" class="input" id="os-time" value="10:00" style="width:120px"><span style="font-size:12px;color:var(--text-dim)">'+duration+' min · '+priceStr+'</span></div></div>'
+    +'<div style="padding:14px 0;border-top:1px solid var(--border)">'
+    +'<label style="font-size:11px;font-weight:600;color:var(--text-dim);display:block;margin-bottom:8px;letter-spacing:.5px">EMAIL PREVIEW</label>'
+    +'<div id="os-email-preview" style="font-size:12px;color:var(--text-dim);background:rgba(0,0,0,.15);border-radius:var(--radius-sm);padding:14px;line-height:1.7">Select a date above to preview the email</div></div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">'
+    +'<button class="btn btn-ghost btn-sm" onclick="document.getElementById(\'sess-offer-slot-modal\').remove()">Cancel</button>'
+    +'<button class="btn btn-primary btn-sm" onclick="sendOfferSlot(\''+waitlistId+'\',\''+esc(email)+'\')">Send Offer Email</button></div>';
+
+  ov.appendChild(box);document.body.appendChild(ov);
+
+  // Update preview when date changes
+  document.getElementById('os-date').addEventListener('change',function(){updateOfferPreview(wl,email)});
+  document.getElementById('os-time').addEventListener('change',function(){updateOfferPreview(wl,email)});
+  if(availDays.length){
+    // Auto-select first matching preferred day
+    var prefDay=wl&&wl.preferred_days&&wl.preferred_days[0]?wl.preferred_days[0]:null;
+    if(prefDay){
+      var match=availDays.find(function(a){return new Date(a.date+'T12:00').toLocaleDateString('en-US',{weekday:'long'}).toLowerCase()===prefDay});
+      if(match) document.getElementById('os-date').value=match.date;
+    }
+    if(!document.getElementById('os-date').value) document.getElementById('os-date').value=availDays[0].date;
+    updateOfferPreview(wl,email);
+  }
+}
+
+function updateOfferPreview(wl,email){
+  var dateStr=document.getElementById('os-date').value;
+  var time=document.getElementById('os-time').value;
+  var preview=document.getElementById('os-email-preview');
+  if(!dateStr){preview.innerHTML='Select a date above to preview the email';return}
+  var dateObj=new Date(dateStr+'T12:00');
+  var dayFmt=dateObj.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  var h=parseInt(time.split(':')[0]),mi=time.split(':')[1];
+  var ampm=h>=12?'PM':'AM';var h12=h>12?h-12:(h===0?12:h);
+  var timeFmt=h12+':'+mi+' '+ampm;
+  var duration=sessConfigData?sessConfigData.session_duration_minutes:60;
+  var price=sessConfigData?sessConfigData.session_price:null;
+  var priceStr=price?'$'+Number(price).toFixed(0):'';
+  var name=wl?wl.name||'there':'there';
+
+  preview.innerHTML='<strong>Subject:</strong> Your Session with Dr. Tracey Clark — '+dayFmt
+    +'<br><br><strong>Body:</strong><br>'
+    +'Hi '+esc(name)+',<br><br>'
+    +'Great news! A session slot has opened up just for you.<br><br>'
+    +'<div style="background:rgba(91,168,178,.1);border:1px solid rgba(91,168,178,.2);border-radius:6px;padding:12px 14px;margin:8px 0">'
+    +'<strong style="color:var(--teal)">'+dayFmt+'</strong><br>'
+    +timeFmt+' · '+duration+' minutes'+(priceStr?' · '+priceStr:'')+'</div>'
+    +'This slot is reserved for you for <strong>72 hours</strong>.<br><br>'
+    +'<span style="display:inline-block;background:var(--teal);color:#fff;padding:6px 16px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:.5px">CONFIRM & PAY →</span><br><br>'
+    +'With care,<br>Dr. Tracey Clark';
+}
+
+async function sendOfferSlot(waitlistId,email){
+  var dateStr=document.getElementById('os-date').value;
+  var time=document.getElementById('os-time').value;
+  if(!dateStr){showToast('Select a date first','error');return}
+  var dateObj=new Date(dateStr+'T12:00');
+  var dayFmt=dateObj.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  var h=parseInt(time.split(':')[0]),mi=time.split(':')[1];
+  var ampm=h>=12?'PM':'AM';var h12=h>12?h-12:(h===0?12:h);
+  var timeFmt=h12+':'+mi+' '+ampm;
+  var duration=sessConfigData?sessConfigData.session_duration_minutes:60;
+  var price=sessConfigData?sessConfigData.session_price:null;
+  var priceStr=price?'$'+Number(price).toFixed(0):'';
+  var endH=parseInt(time.split(':')[0]),endM=parseInt(time.split(':')[1])+duration;
+  endH+=Math.floor(endM/60);endM=endM%60;
+  var endTime=String(endH).padStart(2,'0')+':'+String(endM).padStart(2,'0');
+
+  // Create a proposed booking for this slot
+  var cycleId=sessSelectedCycleId;
+  if(!cycleId){var ac=sessCyclesData.find(function(c){return c.status!=='completed'});if(ac)cycleId=ac.id}
+  var wl=sessWaitlistData.find(function(w){return w.id===waitlistId});
+
+  try{
+    // Insert booking as 'offered' (proposed, awaiting payment)
+    var res=await proxyFrom('session_bookings').insert({
+      cycle_id:cycleId,email:email.toLowerCase(),name:wl?wl.name:'',
+      date:dateStr,start_time:time,end_time:endTime,
+      status:'proposed',type:'public',
+      notes:'Offered from waitlist. Expires 72hr.',
+      proposed_at:new Date().toISOString()
+    });
+    if(res.error){showToast('Error creating booking: '+res.error.message,'error');return}
+
+    // Update waitlist entry
+    await proxyFrom('session_waitlist').update({status:'notified',notified_at:new Date().toISOString()}).eq('id',waitlistId);
+
+    // Refresh data
+    var br=await proxyFrom('session_bookings').select('*').order('date',{ascending:true});sessBookingsData=br.data||[];
+    var wr=await proxyFrom('session_waitlist').select('*').order('created_at',{ascending:true});sessWaitlistData=wr.data||[];
+
+    await logAudit('offer_slot',email,'Offered '+dayFmt+' '+timeFmt+' from waitlist',{date:dateStr,time:time});
+
+    // Close modal
+    var modal=document.getElementById('sess-offer-slot-modal');if(modal)modal.remove();
+
+    // Open email composer with booking-focused template
+    sgSetupEmail({
+      customEmails:email,
+      brand:'academy',
+      type:'transactional',
+      from:'tracey@quantumphysician.com',
+      subject:'Your Session with Dr. Tracey Clark — '+dayFmt,
+      body:'Hi '+(wl?wl.name:'{{name}}')+',\n\nGreat news! A private session slot has opened up just for you with Dr. Tracey Clark.\n\n---\n\n**Your Appointment**\n**'+dayFmt+'**\n'+timeFmt+' · '+duration+' minutes'+(priceStr?' · '+priceStr:'')+'\n\n---\n\nThis slot is reserved for you for **72 hours**. After that, it will be offered to the next person on the waitlist.\n\nTo secure your appointment, confirm and complete payment using the link below.\n\n[Confirm & Pay Now](https://qp-homepage.netlify.app/pages/one-on-sessions.html#book)\n\n**What to expect:**\n• A personalized, integrative healing session via Zoom\n• Practical guidance and next steps tailored to you\n• Follow-up resources to support your journey\n\nIf this time doesn\'t work, simply reply to this email and we\'ll find an alternative.\n\nWith care and healing,\nDr. Tracey Clark\nQuantum Physician'
+    });
+
+    renderPublicWaitlist();
+    renderSessionsStats();
+    showToast('Slot offered to '+email,'success');
+  }catch(e){showToast('Error: '+e.message,'error')}
 }
 
 async function removeFromWaitlist(id){
