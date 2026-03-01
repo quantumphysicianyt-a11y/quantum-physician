@@ -3462,7 +3462,8 @@ function renderSessionsStats(){
 /* ---------- Cycle Banner ---------- */
 function renderCycleBanner(){
   var banner=document.getElementById('sess-cycle-banner');
-  var active=sessCyclesData.find(function(c){return c.status!=='completed'&&c.status!=='planning'});
+  var active=sessSelectedCycleId?sessCyclesData.find(function(c){return c.id===sessSelectedCycleId}):null;
+  if(!active) active=sessCyclesData.find(function(c){return c.status!=='completed'&&c.status!=='planning'});
   if(!active) active=sessCyclesData.find(function(c){return c.status==='planning'});
   if(!active){banner.style.display='none';return}
   banner.style.display='block';
@@ -3484,23 +3485,50 @@ function renderCycleBanner(){
 }
 
 /* ---------- Cycle Management ---------- */
+var sessSelectedCycleId=null;
+function selectCycle(id){
+  sessSelectedCycleId=id;
+  // Sync all cycle dropdowns
+  ['sess-avail-cycle','sess-book-cycle'].forEach(function(elId){
+    var el=document.getElementById(elId);
+    if(el) el.value=id;
+  });
+  renderCyclesList();
+  renderCycleBanner();
+  loadAvailabilityCalendar();
+  // Auto-navigate to cycle start month
+  var cy=sessCyclesData.find(function(c){return c.id===id});
+  if(cy){
+    var sd=new Date(cy.start_date+'T12:00');
+    sessAvailMonth=sd.getMonth();
+    sessAvailYear=sd.getFullYear();
+    loadAvailabilityCalendar();
+  }
+}
+
 function renderCyclesList(){
   var c=document.getElementById('sess-cycles-list');
   if(!sessCyclesData.length){c.innerHTML='<div class="empty"><p>No cycles created yet. Create your first 4-month cycle above.</p></div>';return}
   var statusLabels={planning:'Planning',client_confirmation:'Confirming',public_open:'Public Open',active:'Active',completed:'Completed'};
   var statusColors={planning:'muted',client_confirmation:'yellow',public_open:'purple',active:'green',completed:'muted'};
+  var borderColors={planning:'var(--border)',client_confirmation:'var(--warning)',public_open:'var(--purple)',active:'var(--success)',completed:'var(--border)'};
+  // Auto-select first if none selected
+  if(!sessSelectedCycleId && sessCyclesData.length) sessSelectedCycleId=sessCyclesData[0].id;
   c.innerHTML=sessCyclesData.map(function(cy){
+    var isSelected=cy.id===sessSelectedCycleId;
     var bookCount=sessBookingsData.filter(function(b){return b.cycle_id===cy.id}).length;
     var confirmedCount=sessBookingsData.filter(function(b){return b.cycle_id===cy.id&&b.status==='confirmed'}).length;
     var availCount=sessAvailData.filter(function(a){return a.cycle_id===cy.id&&a.status==='available'}).length;
-    return'<div style="padding:14px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px;background:rgba(0,0,0,.1)">'
+    return'<div onclick="selectCycle(\''+cy.id+'\')" style="padding:14px 16px;border:2px solid '+(isSelected?borderColors[cy.status]:'var(--border)')+';border-radius:var(--radius-sm);margin-bottom:8px;background:'+(isSelected?'rgba(91,168,178,.06)':'rgba(0,0,0,.1)')+';cursor:pointer;transition:all .15s">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">'
-      +'<div><div style="font-weight:600;font-size:14px">'+esc(cy.name)+'</div>'
+      +'<div>'
+      +'<div style="display:flex;align-items:center;gap:8px"><div style="font-weight:600;font-size:14px">'+esc(cy.name)+'</div>'
+      +(isSelected?'<span style="font-size:10px;color:var(--teal);font-weight:600;letter-spacing:.5px">● SELECTED</span>':'')+'</div>'
       +'<div style="font-size:12px;color:var(--text-dim);margin-top:2px">'+fmtDate(cy.start_date)+' → '+fmtDate(cy.end_date)+'</div>'
       +'<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap"><span class="badge '+statusColors[cy.status]+'">'+statusLabels[cy.status]+'</span>'
       +'<span style="font-size:11px;color:var(--text-dim)">'+availCount+' avail days · '+bookCount+' bookings · '+confirmedCount+' confirmed</span></div></div>'
-      +'<div style="display:flex;gap:6px;flex-wrap:wrap">'
-      +(cy.status!=='completed'?'<button class="btn btn-ghost btn-sm" onclick="editCycle(\''+cy.id+'\')">Edit</button>'
+      +'<div style="display:flex;gap:6px;flex-wrap:wrap" onclick="event.stopPropagation()">'
+      +(cy.status!=='completed'?'<button class="btn btn-ghost btn-sm" onclick="editCycle(\''+cy.id+'\')">Rename</button>'
       +'<button class="btn btn-ghost btn-sm" onclick="advanceCycleStatus(\''+cy.id+'\',\''+cy.status+'\')">Advance →</button>':'')
       +'<button class="btn btn-danger btn-sm" onclick="deleteCycle(\''+cy.id+'\',\''+esc(cy.name.replace(/'/g,"\\'"))+'\')">Delete</button>'
       +'</div></div></div>';
@@ -3574,7 +3602,7 @@ function populateCycleDropdowns(){
   var noOpt='<option value="">Select cycle…</option>';
   ['sess-avail-cycle','sess-book-cycle'].forEach(function(id){
     var el=document.getElementById(id);
-    if(el){el.innerHTML=noOpt+opts;if(sessCyclesData.length)el.value=sessCyclesData[0].id}
+    if(el){el.innerHTML=noOpt+opts;if(sessSelectedCycleId)el.value=sessSelectedCycleId;else if(sessCyclesData.length)el.value=sessCyclesData[0].id}
   });
 }
 
