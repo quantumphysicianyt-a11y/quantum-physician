@@ -3469,14 +3469,14 @@ function renderCycleBanner(){
   banner.style.display='block';
   document.getElementById('sess-cycle-name-display').textContent=active.name;
   document.getElementById('sess-cycle-dates').textContent=fmtDate(active.start_date)+' → '+fmtDate(active.end_date);
-  var statusColors={planning:'var(--text-dim)',client_confirmation:'var(--warning)',public_open:'var(--purple)',active:'var(--success)',completed:'var(--text-dim)'};
+  var statusColors={planning:'var(--text-dim)',client_confirmation:'var(--warning)',public_open:'var(--purple)',active:'var(--success)',completed:'var(--success)'};
   var statusLabels={planning:'Planning',client_confirmation:'Client Confirmation',public_open:'Public Booking Open',active:'Active',completed:'Completed'};
   document.getElementById('sess-cycle-status-wrap').innerHTML='<span class="badge" style="background:'+statusColors[active.status]+'22;color:'+statusColors[active.status]+'">'+statusLabels[active.status]+'</span>'
     +(active.status!=='planning'?'<button class="btn btn-ghost btn-sm" onclick="regressCycleStatus(\''+active.id+'\',\''+active.status+'\')">← Back</button>':'')
     +(active.status!=='completed'?'<button class="btn btn-ghost btn-sm" onclick="advanceCycleStatus(\''+active.id+'\',\''+active.status+'\')">Advance →</button>':'');
   var stages=['planning','client_confirmation','public_open','active','completed'];
   var stageLabels={planning:'Planning',client_confirmation:'Client Confirm',public_open:'Public Open',active:'Active',completed:'Complete'};
-  var stageColors={planning:'var(--text-dim)',client_confirmation:'var(--warning)',public_open:'var(--purple)',active:'var(--success)',completed:'var(--text-dim)'};
+  var stageColors={planning:'var(--text-dim)',client_confirmation:'var(--warning)',public_open:'var(--purple)',active:'var(--success)',completed:'var(--success)'};
   var pipeHtml='';
   stages.forEach(function(s,i){
     var isCurrent=s===active.status;
@@ -3521,7 +3521,7 @@ function renderCyclesList(){
   var c=document.getElementById('sess-cycles-list');
   if(!sessCyclesData.length){c.innerHTML='<div class="empty"><p>No cycles created yet. Create your first 4-month cycle above.</p></div>';return}
   var statusLabels={planning:'Planning',client_confirmation:'Confirming',public_open:'Public Open',active:'Active',completed:'Completed'};
-  var statusColors={planning:'muted',client_confirmation:'yellow',public_open:'purple',active:'green',completed:'muted'};
+  var statusColors={planning:'muted',client_confirmation:'yellow',public_open:'purple',active:'green',completed:'green'};
   var borderColors={planning:'var(--border)',client_confirmation:'var(--warning)',public_open:'var(--purple)',active:'var(--success)',completed:'var(--border)'};
   // Auto-select first if none selected
   if(!sessSelectedCycleId && sessCyclesData.length) sessSelectedCycleId=sessCyclesData[0].id;
