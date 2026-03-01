@@ -3472,7 +3472,8 @@ function renderCycleBanner(){
   var statusColors={planning:'var(--text-dim)',client_confirmation:'var(--warning)',public_open:'var(--purple)',active:'var(--success)',completed:'var(--text-dim)'};
   var statusLabels={planning:'Planning',client_confirmation:'Client Confirmation',public_open:'Public Booking Open',active:'Active',completed:'Completed'};
   document.getElementById('sess-cycle-status-wrap').innerHTML='<span class="badge" style="background:'+statusColors[active.status]+'22;color:'+statusColors[active.status]+'">'+statusLabels[active.status]+'</span>'
-    +'<button class="btn btn-ghost btn-sm" onclick="advanceCycleStatus(\''+active.id+'\',\''+active.status+'\')">Advance →</button>';
+    +(active.status!=='planning'?'<button class="btn btn-ghost btn-sm" onclick="regressCycleStatus(\''+active.id+'\',\''+active.status+'\')">← Back</button>':'')
+    +(active.status!=='completed'?'<button class="btn btn-ghost btn-sm" onclick="advanceCycleStatus(\''+active.id+'\',\''+active.status+'\')">Advance →</button>':'');
   var stages=['planning','client_confirmation','public_open','active','completed'];
   var stageLabels={planning:'Planning',client_confirmation:'Client Confirm',public_open:'Public Open',active:'Active',completed:'Complete'};
   var stageColors={planning:'var(--text-dim)',client_confirmation:'var(--warning)',public_open:'var(--purple)',active:'var(--success)',completed:'var(--text-dim)'};
@@ -3578,6 +3579,22 @@ async function advanceCycleStatus(id,current){
     if(r.error) throw new Error(r.error.message);
     await logAudit('advance_cycle',null,'Advanced cycle to '+next,{cycle_id:id});
     showToast('Cycle advanced to '+labels[next],'success');
+    await loadSessionsData();
+  }catch(e){showToast('Error: '+e.message,'error')}
+}
+
+async function regressCycleStatus(id,current){
+  var order=['planning','client_confirmation','public_open','active','completed'];
+  var idx=order.indexOf(current);
+  if(idx<=0){showToast('Already at planning stage','info');return}
+  var prev=order[idx-1];
+  var labels={planning:'Planning',client_confirmation:'Client Confirmation',public_open:'Public Booking Open',active:'Active',completed:'Completed'};
+  if(!await qpConfirm('Move Back','Move this cycle back to "'+labels[prev]+'"?',{okText:'Move Back'}))return;
+  try{
+    var r=await proxyFrom('session_cycles').update({status:prev}).eq('id',id);
+    if(r.error) throw new Error(r.error.message);
+    await logAudit('regress_cycle',null,'Moved cycle back to '+prev,{cycle_id:id});
+    showToast('Cycle moved back to '+labels[prev],'success');
     await loadSessionsData();
   }catch(e){showToast('Error: '+e.message,'error')}
 }
