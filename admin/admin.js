@@ -3624,19 +3624,24 @@ function loadAvailabilityCalendar(){
   var html='<div class="sess-cal-grid">';
   dayNames.forEach(function(d){html+='<div class="sess-cal-head">'+d+'</div>'});
   for(var i=0;i<firstDay;i++) html+='<div class="sess-cal-empty"></div>';
+  var statusLabelsShort={available:'Avail',blocked:'Blocked',teaching:'Teaching',travel:'Travel',personal:'Personal'};
+  var visLabels={client_only:'Client',client_first:'Priority','public':'Public'};
   for(var d=1;d<=daysInMonth;d++){
     var dateStr=year+'-'+String(month+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
     var avail=sessAvailData.find(function(a){return a.date===dateStr&&(!cycleId||a.cycle_id===cycleId)});
     var status=avail?avail.status:'';
     var color=status?statusColors[status]:'transparent';
     var borderColor=status?color:'var(--border)';
+    var bgAlpha=status?'0.08':'0';
     var isPast=new Date(dateStr)<new Date(new Date().toDateString());
     var bookCount=sessBookingsData.filter(function(b){return b.date===dateStr}).length;
-    var visIcon=avail&&avail.visibility==='client_only'?'<span title="Client only" style="font-size:9px;color:var(--warning)">★</span>':avail&&avail.visibility==='public'?'<span title="Public" style="font-size:9px;color:var(--teal)">◉</span>':'';
-    html+='<div class="sess-cal-day'+(isPast?' past':'')+'" style="border-color:'+borderColor+'" onclick="toggleDayAvail(\''+dateStr+'\',\''+cycleId+'\')" title="'+(status||'No status')+(avail&&avail.visibility?' ('+avail.visibility+')':'')+'">'
-      +'<div class="sess-cal-num">'+d+' '+visIcon+'</div>'
-      +(status?'<div class="sess-cal-dot" style="background:'+color+'"></div>':'')
-      +(avail&&avail.start_time?'<div class="sess-cal-time">'+avail.start_time.slice(0,5)+'-'+avail.end_time.slice(0,5)+'</div>':'')
+    var visTag=avail&&avail.visibility&&avail.visibility!=='client_first'?'<div style="font-size:8px;margin-top:1px;color:'+(avail.visibility==='client_only'?'var(--warning)':'var(--teal)')+'">'+visLabels[avail.visibility]+'</div>':'';
+    html+='<div class="sess-cal-day'+(isPast?' past':'')+'" style="border-color:'+borderColor+';background:rgba('+
+      (status==='available'?'72,191,132':status==='blocked'?'239,105,105':status==='teaching'?'224,169,72':status==='travel'?'91,168,178':status==='personal'?'159,122,234':'0,0,0')+','+bgAlpha+')" onclick="toggleDayAvail(\''+dateStr+'\',\''+cycleId+'\')" title="'+(status||'No status')+(avail&&avail.notes?' — '+avail.notes:'')+'">'
+      +'<div class="sess-cal-num">'+d+'</div>'
+      +(status?'<div style="font-size:9px;font-weight:600;color:'+color+';margin-top:1px">'+statusLabelsShort[status]+'</div>':'')
+      +visTag
+      +(avail&&avail.start_time?'<div class="sess-cal-time">'+avail.start_time.slice(0,5)+'–'+avail.end_time.slice(0,5)+'</div>':'')
       +(bookCount?'<div class="sess-cal-books">'+bookCount+' appt'+(bookCount>1?'s':'')+'</div>':'')
       +'</div>';
   }
@@ -3644,12 +3649,50 @@ function loadAvailabilityCalendar(){
   cal.innerHTML=html;
 }
 
+var sessCurrentView='calendar';
+function sessSetView(v){
+  sessCurrentView=v;
+  document.getElementById('sess-avail-calendar').style.display=v==='calendar'?'block':'none';
+  document.getElementById('sess-avail-list').style.display=v==='list'?'block':'none';
+  var calBtn=document.getElementById('sess-view-cal-btn');
+  var listBtn=document.getElementById('sess-view-list-btn');
+  if(calBtn)calBtn.style.background=v==='calendar'?'rgba(91,168,178,.15)':'';
+  if(listBtn)listBtn.style.background=v==='list'?'rgba(91,168,178,.15)':'';
+  if(v==='list') renderAvailList();
+}
+
+function renderAvailList(){
+  var cycleId=document.getElementById('sess-avail-cycle')?document.getElementById('sess-avail-cycle').value:'';
+  var statusFilter=document.getElementById('sess-list-filter')?document.getElementById('sess-list-filter').value:'all';
+  var visFilter=document.getElementById('sess-list-vis-filter')?document.getElementById('sess-list-vis-filter').value:'all';
+  var filtered=sessAvailData.filter(function(a){
+    if(cycleId&&a.cycle_id!==cycleId) return false;
+    if(statusFilter!=='all'&&a.status!==statusFilter) return false;
+    if(visFilter!=='all'&&a.visibility!==visFilter) return false;
+    return true;
+  }).sort(function(a,b){return a.date<b.date?-1:1});
+  var statusColors={available:'var(--success)',blocked:'var(--danger)',teaching:'var(--warning)',travel:'var(--teal)',personal:'var(--purple)'};
+  var visLabels={client_first:'Client Priority',client_only:'Client Only','public':'Public'};
+  var c=document.getElementById('sess-avail-list-rows');
+  if(!filtered.length){c.innerHTML='<div class="empty"><p>No days match this filter.</p></div>';return}
+  c.innerHTML='<div style="font-size:11px;color:var(--text-dim);margin-bottom:6px">'+filtered.length+' day'+(filtered.length!==1?'s':'')+'</div>'
+    +filtered.map(function(a){
+    var col=statusColors[a.status]||'var(--text-dim)';
+    var bookCount=sessBookingsData.filter(function(b){return b.date===a.date}).length;
+    return'<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid var(--border);border-left:3px solid '+col+';border-radius:var(--radius-sm);margin-bottom:4px;background:rgba(0,0,0,.1);cursor:pointer" onclick="toggleDayAvail(\''+a.date+'\',\''+a.cycle_id+'\')">'
+      +'<div style="min-width:100px"><div style="font-weight:600;font-size:13px">'+new Date(a.date+'T12:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})+'</div></div>'
+      +'<div style="min-width:60px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+col+';margin-right:4px"></span><span style="font-size:12px;color:'+col+';font-weight:500">'+a.status.charAt(0).toUpperCase()+a.status.slice(1)+'</span></div>'
+      +'<div style="font-size:11px;color:var(--text-dim);min-width:80px">'+(a.start_time?a.start_time.slice(0,5)+'–'+a.end_time.slice(0,5):'')+'</div>'
+      +'<div style="font-size:11px;color:var(--text-dim);min-width:80px">'+(visLabels[a.visibility]||'Priority')+'</div>'
+      +(a.notes?'<div style="font-size:11px;color:var(--taupe);flex:1">'+esc(a.notes)+'</div>':'<div style="flex:1"></div>')
+      +(bookCount?'<div style="font-size:10px;color:var(--teal)">'+bookCount+' appt'+(bookCount>1?'s':'')+'</div>':'')
+      +'</div>';
+  }).join('');
+}
+
 async function toggleDayAvail(dateStr,cycleId){
   if(!cycleId){showToast('Select a cycle first','error');return}
   var existing=sessAvailData.find(function(a){return a.date===dateStr&&a.cycle_id===cycleId});
-  var statuses=['available','blocked','teaching','travel','personal'];
-  var labels=['✅ Available','🚫 Blocked','📚 Teaching','✈️ Travel','🔒 Personal','❌ Remove'];
-  var currentIdx=existing?statuses.indexOf(existing.status):-1;
 
   // Build quick-select popup
   var old=document.getElementById('sess-day-popup');if(old)old.remove();

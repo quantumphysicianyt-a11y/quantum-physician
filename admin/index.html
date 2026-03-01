@@ -120,16 +120,37 @@
 <button class="btn btn-ghost btn-sm" onclick="sessAvailNextMonth()">&#9654;</button>
 </div></div>
 <div class="card-body">
-<div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;font-size:11px;color:var(--text-dim)">
+<div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;font-size:11px;color:var(--text-dim);align-items:center">
 <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--success);vertical-align:middle;margin-right:4px"></span>Available</span>
 <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--danger);vertical-align:middle;margin-right:4px"></span>Blocked</span>
 <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--warning);vertical-align:middle;margin-right:4px"></span>Teaching</span>
 <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--teal);vertical-align:middle;margin-right:4px"></span>Travel</span>
 <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--purple);vertical-align:middle;margin-right:4px"></span>Personal</span>
-<span style="margin-left:12px;border-left:1px solid var(--border);padding-left:12px"><span style="color:var(--warning);font-size:11px;margin-right:2px">★</span>Client Only</span>
-<span><span style="color:var(--teal);font-size:11px;margin-right:2px">◉</span>Public</span>
+<span style="margin-left:auto;display:flex;gap:4px">
+<button class="btn btn-ghost btn-sm" id="sess-view-cal-btn" onclick="sessSetView('calendar')" style="font-size:11px;padding:3px 8px">Calendar</button>
+<button class="btn btn-ghost btn-sm" id="sess-view-list-btn" onclick="sessSetView('list')" style="font-size:11px;padding:3px 8px">List</button>
+</span>
 </div>
 <div id="sess-avail-calendar" class="sess-calendar"></div>
+<div id="sess-avail-list" style="display:none">
+<div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+<select class="input" id="sess-list-filter" onchange="renderAvailList()" style="width:auto;font-size:12px">
+<option value="all">All Statuses</option>
+<option value="available">Available</option>
+<option value="blocked">Blocked</option>
+<option value="teaching">Teaching</option>
+<option value="travel">Travel</option>
+<option value="personal">Personal</option>
+</select>
+<select class="input" id="sess-list-vis-filter" onchange="renderAvailList()" style="width:auto;font-size:12px">
+<option value="all">All Visibility</option>
+<option value="client_first">Client Priority</option>
+<option value="client_only">Client Only</option>
+<option value="public">Public</option>
+</select>
+</div>
+<div id="sess-avail-list-rows"></div>
+</div>
 </div></div>
 <div class="card">
 <div class="card-header"><div class="card-title">Bulk Actions</div></div>
