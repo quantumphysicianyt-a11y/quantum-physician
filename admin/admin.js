@@ -1236,41 +1236,70 @@ var mainBody=bodyText.trim();
 mainBody=mainBody.replace(/\n\n(With care,|With care and healing,|With warmth,|With healing energy,|With gratitude,)\n.*$/s,'');
 /* Convert markdown links to styled CTA buttons */
 mainBody=mainBody.replace(/\[([^\]]+)\]\(([^)]+)\)/g,function(_,label,url){
-  return '<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:20px 0;"><tr><td align="center"><table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr><td style="background:linear-gradient(135deg,#5ba8b2,#4a97a1);border-radius:8px;"><a href="'+wrapLink(url)+'" target="_blank" style="display:inline-block;padding:16px 48px;color:#fff;text-decoration:none;font-weight:700;font-size:15px;letter-spacing:1.5px;text-transform:uppercase;font-family:Arial,Helvetica,sans-serif;">'+label+'</a></td></tr></table></td></tr></table>';
+  return '<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:24px 0;"><tr><td align="center"><table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr><td style="background:linear-gradient(135deg,#5ba8b2,#4acfd9);border-radius:50px;box-shadow:0 4px 20px rgba(91,168,178,.35);"><a href="'+wrapLink(url)+'" target="_blank" style="display:inline-block;padding:16px 52px;color:#fff;text-decoration:none;font-weight:700;font-size:15px;letter-spacing:2px;text-transform:uppercase;font-family:Arial,Helvetica,sans-serif;">'+label+'</a></td></tr></table></td></tr></table>';
 });
 /* Convert markdown bold */
-mainBody=mainBody.replace(/\*\*([^*]+)\*\*/g,'<strong style="color:#fff;">$1</strong>');
-/* Convert bullet points */
-mainBody=mainBody.replace(/\n[•\u2022] /g,'\n<span style="color:#5ba8b2;margin-right:6px;">✦</span> ');
-mainBody=mainBody.replace(/^[•\u2022] /gm,'<span style="color:#5ba8b2;margin-right:6px;">✦</span> ');
-/* Convert --- to appointment card divider */
-mainBody=mainBody.replace(/\n---\n/g,'<div style="border-top:1px solid rgba(91,168,178,.2);margin:20px 0;"></div>');
+mainBody=mainBody.replace(/\*\*([^*]+)\*\*/g,'<strong style="color:#5ba8b2;">$1</strong>');
+/* Convert bullet points to styled list */
+mainBody=mainBody.replace(/\n[•\u2022] /g,'\n<span style="color:#5ba8b2;margin-right:8px;">&#10022;</span> ');
+mainBody=mainBody.replace(/^[•\u2022] /gm,'<span style="color:#5ba8b2;margin-right:8px;">&#10022;</span> ');
+/* Convert --- to appointment card */
+mainBody=mainBody.replace(/\n---\n/g,'</p><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:24px 0;"><tr><td style="background:linear-gradient(135deg,rgba(91,168,178,.08),rgba(91,168,178,.03));border:1px solid rgba(91,168,178,.2);border-radius:12px;padding:0;"><div style="height:3px;background:linear-gradient(90deg,#5ba8b2,#4acfd9,rgba(91,168,178,.2));border-radius:12px 12px 0 0;"></div><div style="padding:24px 28px;text-align:center;"><p style="margin:0;font-size:16px;color:rgba(255,255,255,.85);line-height:1.8;font-family:Georgia,serif;">');
 /* Convert newlines to breaks */
 var mainHtml=mainBody.replace(/\n/g,'<br>').replace(/(<br>){3,}/g,'<br><br>').replace(/^(<br>)+/,'').replace(/(<br>)+$/,'');
+/* Close any open appointment card */
+if(mainHtml.indexOf('border-radius:12px 12px 0 0')>=0){
+  var cardSections=mainHtml.split('</div><div style="padding:24px 28px;text-align:center;">');
+  if(cardSections.length>1){
+    // Find the second card close point - after the appointment details, close the card
+    mainHtml=mainHtml.replace(/<\/p><table role="presentation"([\s\S]*?)<\/div><\/td><\/tr><\/table>/g,'');
+    // Rebuild with proper card wrapping
+    var pieces=bodyText.trim().split(/\n---\n/);
+    if(pieces.length>=3){
+      var before=pieces[0];var appt=pieces[1];var after=pieces[2];
+      before=before.replace(/\n\n(With care,|With care and healing,|With warmth,|With healing energy,|With gratitude,)\n.*$/s,'');
+      before=before.replace(/\*\*([^*]+)\*\*/g,'<strong style="color:#5ba8b2;">$1</strong>');
+      before=before.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'');
+      before=before.replace(/\n/g,'<br>').replace(/(<br>){3,}/g,'<br><br>').replace(/^(<br>)+/,'').replace(/(<br>)+$/,'');
+      appt=appt.replace(/\*\*([^*]+)\*\*/g,'<strong style="color:#5ba8b2;">$1</strong>');
+      appt=appt.replace(/\n/g,'<br>').replace(/(<br>){3,}/g,'<br><br>').replace(/^(<br>)+/,'').replace(/(<br>)+$/,'');
+      after=after.replace(/\*\*([^*]+)\*\*/g,'<strong style="color:#fff;">$1</strong>');
+      after=after.replace(/\n[•\u2022] /g,'\n<span style="color:#5ba8b2;margin-right:8px;">&#10022;</span> ');
+      after=after.replace(/^[•\u2022] /gm,'<span style="color:#5ba8b2;margin-right:8px;">&#10022;</span> ');
+      after=after.replace(/\[([^\]]+)\]\(([^)]+)\)/g,function(_,label,url){
+        return '<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:24px 0;"><tr><td align="center"><table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr><td style="background:linear-gradient(135deg,#5ba8b2,#4acfd9);border-radius:50px;box-shadow:0 4px 20px rgba(91,168,178,.35);"><a href="'+wrapLink(url)+'" target="_blank" style="display:inline-block;padding:16px 52px;color:#fff;text-decoration:none;font-weight:700;font-size:15px;letter-spacing:2px;text-transform:uppercase;font-family:Arial,Helvetica,sans-serif;">'+label+'</a></td></tr></table></td></tr></table>';
+      });
+      after=after.replace(/\n/g,'<br>').replace(/(<br>){3,}/g,'<br><br>').replace(/^(<br>)+/,'').replace(/(<br>)+$/,'');
+      mainHtml=before
+        +'<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:28px 0;"><tr><td style="background:linear-gradient(135deg,rgba(91,168,178,.1),rgba(91,168,178,.03));border:1px solid rgba(91,168,178,.25);border-radius:12px;padding:0;overflow:hidden;"><div style="height:3px;background:linear-gradient(90deg,#5ba8b2,#4acfd9,rgba(91,168,178,.15));"></div><div style="padding:28px 32px;text-align:center;">'+appt+'</div></td></tr></table>'
+        +after;
+    }
+  }
+}
 var pixelUrl=trackingId?trackBase+'?action=open&tid='+trackingId:'';
 return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>'
-+'<body style="margin:0;padding:20px;font-family:Georgia,Times New Roman,serif;background-color:#0e1a2b;">'
-+'<div style="max-width:600px;margin:0 auto;background-color:#131e3d;border-radius:12px;overflow:hidden;box-shadow:0 16px 60px rgba(0,0,0,.5),0 0 0 1px rgba(91,168,178,.08);">'
-/* Header with QP logo */
-+'<div style="background:linear-gradient(180deg,#0e1a2b,#131e3d);padding:40px 30px 30px;text-align:center;border-bottom:1px solid rgba(91,168,178,.15);">'
-+'<img src="'+logoImg+'" alt="Quantum Physician" style="max-width:160px;height:auto;margin:0 auto 14px;display:block;">'
-+'<p style="color:rgba(91,168,178,.7);font-size:11px;margin:0;letter-spacing:3px;text-transform:uppercase;font-weight:600;">Private Healing Sessions</p>'
++'<body style="margin:0;padding:20px;font-family:Georgia,Times New Roman,serif;background-color:#0a1322;">'
++'<div style="max-width:600px;margin:0 auto;background-color:#0f1d34;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5),0 0 0 1px rgba(91,168,178,.08);">'
+/* Header with QP logo — gradient background */
++'<div style="background:linear-gradient(180deg,#0a1628,#0f1d34 70%,#131e3d);padding:48px 30px 36px;text-align:center;border-bottom:2px solid rgba(91,168,178,.2);">'
++'<img src="'+logoImg+'" alt="Quantum Physician" style="max-width:220px;height:auto;margin:0 auto 18px;display:block;">'
++'<p style="color:rgba(91,168,178,.6);font-size:11px;margin:0;letter-spacing:4px;text-transform:uppercase;font-weight:600;">Private Healing Sessions</p>'
 +'</div>'
-/* Body */
-+'<div style="padding:36px 32px;color:rgba(255,255,255,.82);font-size:16px;line-height:1.8;">'
-+mainHtml
+/* Body — centered, Georgia */
++'<div style="padding:40px 36px;color:rgba(255,255,255,.82);font-size:16px;line-height:1.85;text-align:center;font-family:Georgia,Times New Roman,serif;">'
++'<p style="margin:0;font-size:16px;line-height:1.85;font-family:Georgia,serif;">'+mainHtml+'</p>'
 +'</div>'
 /* Sign-off with Tracey photo */
-+'<div style="padding:28px 32px;border-top:1px solid rgba(91,168,178,.1);text-align:center;">'
-+'<img src="'+traceyImg+'" alt="Dr. Tracey Clark" style="width:72px;height:72px;border-radius:50%;border:2px solid rgba(91,168,178,.25);object-fit:cover;display:block;margin:0 auto 14px;">'
++'<div style="padding:30px 36px;border-top:1px solid rgba(91,168,178,.1);text-align:center;background:linear-gradient(180deg,transparent,rgba(91,168,178,.03));">'
++'<img src="'+traceyImg+'" alt="Dr. Tracey Clark" style="width:80px;height:80px;border-radius:50%;border:2px solid rgba(91,168,178,.3);object-fit:cover;display:block;margin:0 auto 14px;">'
 +'<p style="margin:0;color:rgba(255,255,255,.5);font-size:14px;font-family:Georgia,serif;">With care and healing,</p>'
-+'<p style="margin:6px 0 0;color:#5ba8b2;font-weight:700;font-size:18px;font-family:Georgia,serif;">Dr. Tracey Clark</p>'
-+'<p style="margin:4px 0 0;color:rgba(255,255,255,.3);font-size:12px;letter-spacing:1px;">Quantum Physician</p>'
++'<p style="margin:6px 0 0;color:#5ba8b2;font-weight:700;font-size:19px;font-family:Georgia,serif;">Dr. Tracey Clark</p>'
++'<p style="margin:4px 0 0;color:rgba(255,255,255,.3);font-size:12px;letter-spacing:1.5px;">Quantum Physician</p>'
 +'</div>'
 /* Footer */
-+'<div style="background:#0a1322;padding:20px 30px;text-align:center;border-top:1px solid rgba(91,168,178,.06);">'
-+'<p style="margin:0;font-size:11px;color:rgba(255,255,255,.25);">&copy; 2026 Quantum Physician. All rights reserved.</p>'
-+'<p style="margin:8px 0 0;font-size:10px;"><a href="https://qp-homepage.netlify.app" style="color:rgba(91,168,178,.4);text-decoration:none;">quantumphysician.com</a></p>'
++'<div style="background:linear-gradient(180deg,#0a1628,#071220);padding:22px 30px;text-align:center;border-top:1px solid rgba(91,168,178,.06);">'
++'<p style="margin:0;font-size:11px;color:rgba(255,255,255,.2);">&copy; 2026 Quantum Physician. All rights reserved.</p>'
++'<p style="margin:8px 0 0;font-size:10px;"><a href="https://qp-homepage.netlify.app" style="color:rgba(91,168,178,.35);text-decoration:none;">quantumphysician.com</a></p>'
 +'</div>'
 +'</div>'
 +(pixelUrl?'<img src="'+pixelUrl+'" width="1" height="1" style="display:none;" alt="">':'')
