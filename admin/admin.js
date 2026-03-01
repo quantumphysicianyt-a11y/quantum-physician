@@ -4478,8 +4478,10 @@ async function offerSlot(waitlistId,email){
     +'<div style="padding:14px 0;border-top:1px solid var(--border)">'
     +'<label style="font-size:11px;font-weight:600;color:var(--text-dim);display:block;margin-bottom:8px;letter-spacing:.5px">EMAIL PREVIEW</label>'
     +'<div id="os-email-preview" style="font-size:12px;color:var(--text-dim);background:rgba(0,0,0,.15);border-radius:var(--radius-sm);padding:14px;line-height:1.7">Select a date above to preview the email</div></div>'
-    +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap">'
     +'<button class="btn btn-ghost btn-sm" onclick="document.getElementById(\'sess-offer-slot-modal\').remove()">Cancel</button>'
+    +'<button class="btn btn-ghost btn-sm" style="color:var(--purple);border-color:rgba(131,56,236,.3)" onclick="previewOfferEmail(\''+esc(email)+'\')">Preview Email</button>'
+    +'<button class="btn btn-ghost btn-sm" style="color:var(--warning);border-color:rgba(240,180,41,.3)" onclick="testOfferEmail()">Send Test</button>'
     +'<button class="btn btn-primary btn-sm" onclick="sendOfferSlot(\''+waitlistId+'\',\''+esc(email)+'\')">Send Offer Email</button></div>';
 
   ov.appendChild(box);document.body.appendChild(ov);
@@ -4526,10 +4528,10 @@ function updateOfferPreview(wl,email){
     +'With care,<br>Dr. Tracey Clark';
 }
 
-async function sendOfferSlot(waitlistId,email){
+function buildOfferEmailBody(wl,email){
   var dateStr=document.getElementById('os-date').value;
   var time=document.getElementById('os-time').value;
-  if(!dateStr){showToast('Select a date first','error');return}
+  if(!dateStr) return null;
   var dateObj=new Date(dateStr+'T12:00');
   var dayFmt=dateObj.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
   var h=parseInt(time.split(':')[0]),mi=time.split(':')[1];
@@ -4538,17 +4540,102 @@ async function sendOfferSlot(waitlistId,email){
   var duration=sessConfigData?sessConfigData.session_duration_minutes:60;
   var price=sessConfigData?sessConfigData.session_price:null;
   var priceStr=price?'$'+Number(price).toFixed(0):'';
+  var name=wl?wl.name||'there':'there';
+
+  var subject='Your Session with Dr. Tracey Clark — '+dayFmt;
+  var body='Hi '+name+',\n\nGreat news! A private session slot has opened up just for you with Dr. Tracey Clark.\n\n---\n\n**Your Appointment**\n**'+dayFmt+'**\n'+timeFmt+' · '+duration+' minutes'+(priceStr?' · '+priceStr:'')+'\n\n---\n\nThis slot is reserved for you for **72 hours**. After that, it will be offered to the next person on the waitlist.\n\nTo secure your appointment, confirm and complete payment using the link below.\n\n[Confirm & Pay Now](https://qp-homepage.netlify.app/pages/one-on-sessions.html#book)\n\n**What to expect:**\n• A personalized, integrative healing session via Zoom\n• Practical guidance and next steps tailored to you\n• Follow-up resources to support your journey\n\nIf this time doesn\'t work, simply reply to this email and we\'ll find an alternative.\n\nWith care and healing,\nDr. Tracey Clark\nQuantum Physician';
+
+  return {subject:subject, body:body, name:name};
+}
+
+function previewOfferEmail(email){
+  var dateStr=document.getElementById('os-date').value;
+  if(!dateStr){showToast('Select a date first','error');return}
+  var wl=sessWaitlistData.find(function(w){return w.email&&w.email.toLowerCase()===email.toLowerCase()});
+  var emailData=buildOfferEmailBody(wl,email);
+  if(!emailData) return;
+
+  // Build through the branded Academy template
+  var richHtml=buildAcademyEmail(emailData.body,null,'https://qp-homepage.netlify.app',null);
+
+  // Show preview modal
+  var old=document.getElementById('offer-preview-modal');if(old)old.remove();
+  var ov=document.createElement('div');ov.id='offer-preview-modal';
+  ov.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.onclick=function(e){if(e.target===ov)ov.remove()};
+  var box=document.createElement('div');
+  box.style.cssText='background:#112a42;border:1px solid rgba(91,168,178,.25);border-radius:16px;padding:28px;width:95%;max-width:900px;max-height:90vh;overflow-y:auto;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.5)';
+  var xBtn=document.createElement('button');
+  xBtn.innerHTML='\u00d7';
+  xBtn.style.cssText='position:absolute;top:14px;right:14px;background:rgba(91,168,178,.1);border:1px solid rgba(91,168,178,.25);color:#5ba8b2;font-size:18px;cursor:pointer;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;padding:0';
+  xBtn.onclick=function(){ov.remove()};
+  box.appendChild(xBtn);
+  var info=document.createElement('div');
+  info.style.cssText='margin-bottom:14px';
+  info.innerHTML='<h3 style="margin:0 0 14px;font-size:16px;color:#e8e8e8">Offer Email Preview</h3>'
+    +'<p style="font-size:12px;margin:4px 0;color:#8899aa"><strong>From:</strong> tracey@quantumphysician.com</p>'
+    +'<p style="font-size:12px;margin:4px 0;color:#8899aa"><strong>To:</strong> '+email+'</p>'
+    +'<p style="font-size:12px;margin:4px 0;color:#8899aa"><strong>Subject:</strong> <span style="color:#5ba8b2">[TEST] '+emailData.subject+'</span></p>';
+  box.appendChild(info);
+  var fr=document.createElement('iframe');
+  fr.style.cssText='width:100%;min-height:70vh;border:none;border-radius:8px;background:#fff;margin-top:4px';
+  fr.srcdoc=richHtml;
+  box.appendChild(fr);
+  ov.appendChild(box);document.body.appendChild(ov);
+}
+
+async function testOfferEmail(){
+  var dateStr=document.getElementById('os-date').value;
+  if(!dateStr){showToast('Select a date first','error');return}
+
+  // Prompt for test email address
+  var testAddr=currentAdmin?currentAdmin.email:'';
+  var inp=await qpPrompt('Send Test Email','Enter the email address to send a test to:',testAddr||'you@example.com');
+  if(!inp) return;
+
+  var wl=null; // Use generic for test
+  var emailData=buildOfferEmailBody(wl,'test@example.com');
+  if(!emailData) return;
+
+  // Build branded HTML
+  var richHtml=buildAcademyEmail(emailData.body,null,'https://qp-homepage.netlify.app',null);
+
+  try{
+    showToast('Sending test email to '+inp+'…','info');
+    await fetch(APPS_SCRIPT_URL,{
+      method:'POST',mode:'no-cors',
+      headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify({
+        to:inp,
+        from:'tracey@quantumphysician.com',
+        subject:'[TEST] '+emailData.subject,
+        body:richHtml,
+        isHtml:true
+      })
+    });
+    showToast('Test email sent to '+inp,'success');
+  }catch(e){showToast('Error sending test: '+e.message,'error')}
+}
+
+async function sendOfferSlot(waitlistId,email){
+  var dateStr=document.getElementById('os-date').value;
+  var time=document.getElementById('os-time').value;
+  if(!dateStr){showToast('Select a date first','error');return}
+  var duration=sessConfigData?sessConfigData.session_duration_minutes:60;
   var endH=parseInt(time.split(':')[0]),endM=parseInt(time.split(':')[1])+duration;
   endH+=Math.floor(endM/60);endM=endM%60;
   var endTime=String(endH).padStart(2,'0')+':'+String(endM).padStart(2,'0');
 
-  // Create a proposed booking for this slot
   var cycleId=sessSelectedCycleId;
   if(!cycleId){var ac=sessCyclesData.find(function(c){return c.status!=='completed'});if(ac)cycleId=ac.id}
   var wl=sessWaitlistData.find(function(w){return w.id===waitlistId});
+  var emailData=buildOfferEmailBody(wl,email);
+  if(!emailData){showToast('Select a date first','error');return}
+
+  if(!await qpConfirm('Send Offer','Send offer email to '+email+' for '+emailData.subject.replace('Your Session with Dr. Tracey Clark — ','')+'?\n\nThis will create a proposed booking and send the branded email.',{okText:'Send Offer'}))return;
 
   try{
-    // Insert booking as 'offered' (proposed, awaiting payment)
+    // Insert booking
     var res=await proxyFrom('session_bookings').insert({
       cycle_id:cycleId,email:email.toLowerCase(),name:wl?wl.name:'',
       date:dateStr,start_time:time,end_time:endTime,
@@ -4561,28 +4648,35 @@ async function sendOfferSlot(waitlistId,email){
     // Update waitlist entry
     await proxyFrom('session_waitlist').update({status:'notified',notified_at:new Date().toISOString()}).eq('id',waitlistId);
 
+    // Build branded HTML email
+    var richHtml=buildAcademyEmail(emailData.body,null,'https://qp-homepage.netlify.app',null);
+
+    // Send via Apps Script
+    await fetch(APPS_SCRIPT_URL,{
+      method:'POST',mode:'no-cors',
+      headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify({
+        to:email,
+        from:'tracey@quantumphysician.com',
+        subject:emailData.subject,
+        body:richHtml,
+        isHtml:true
+      })
+    });
+
     // Refresh data
     var br=await proxyFrom('session_bookings').select('*').order('date',{ascending:true});sessBookingsData=br.data||[];
     var wr=await proxyFrom('session_waitlist').select('*').order('created_at',{ascending:true});sessWaitlistData=wr.data||[];
 
-    await logAudit('offer_slot',email,'Offered '+dayFmt+' '+timeFmt+' from waitlist',{date:dateStr,time:time});
+    await logAudit('offer_slot',email,'Offered '+emailData.subject.replace('Your Session with Dr. Tracey Clark — ','')+' from waitlist',{date:dateStr,time:time});
 
     // Close modal
     var modal=document.getElementById('sess-offer-slot-modal');if(modal)modal.remove();
 
-    // Open email composer with booking-focused template
-    sgSetupEmail({
-      customEmails:email,
-      brand:'academy',
-      type:'transactional',
-      from:'tracey@quantumphysician.com',
-      subject:'Your Session with Dr. Tracey Clark — '+dayFmt,
-      body:'Hi '+(wl?wl.name:'{{name}}')+',\n\nGreat news! A private session slot has opened up just for you with Dr. Tracey Clark.\n\n---\n\n**Your Appointment**\n**'+dayFmt+'**\n'+timeFmt+' · '+duration+' minutes'+(priceStr?' · '+priceStr:'')+'\n\n---\n\nThis slot is reserved for you for **72 hours**. After that, it will be offered to the next person on the waitlist.\n\nTo secure your appointment, confirm and complete payment using the link below.\n\n[Confirm & Pay Now](https://qp-homepage.netlify.app/pages/one-on-sessions.html#book)\n\n**What to expect:**\n• A personalized, integrative healing session via Zoom\n• Practical guidance and next steps tailored to you\n• Follow-up resources to support your journey\n\nIf this time doesn\'t work, simply reply to this email and we\'ll find an alternative.\n\nWith care and healing,\nDr. Tracey Clark\nQuantum Physician'
-    });
-
     renderPublicWaitlist();
     renderSessionsStats();
-    showToast('Slot offered to '+email,'success');
+    renderBookingsGrid();
+    showToast('Offer sent to '+email+' — branded email delivered','success');
   }catch(e){showToast('Error: '+e.message,'error')}
 }
 
