@@ -438,6 +438,144 @@
       line-height: 1.6;
     }
 
+    /* ========== BOOKING BANNER ========== */
+    #booking-banner {
+      margin-bottom: 36px;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .banner-open {
+      background: linear-gradient(135deg, rgba(91,168,178,.12), rgba(91,168,178,.06));
+      border: 1px solid rgba(91,168,178,.25);
+      padding: 24px 28px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .banner-open h3 { color: var(--teal); font-family: 'Playfair Display', serif; font-size: 20px; margin-bottom: 6px; }
+    .banner-open p { color: rgba(255,255,255,.55); font-size: 14px; }
+    .banner-closed {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.08);
+      padding: 24px 28px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .banner-closed h3 { color: var(--taupe); font-family: 'Playfair Display', serif; font-size: 20px; margin-bottom: 6px; }
+    .banner-closed p { color: rgba(255,255,255,.45); font-size: 14px; }
+
+    /* ========== SLOTS CALENDAR ========== */
+    .slots-cal {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+    .slots-cal-head {
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.35);
+      padding: 8px 0;
+    }
+    .slots-day {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      font-size: 14px;
+      color: rgba(255,255,255,.25);
+      position: relative;
+      cursor: default;
+      transition: all .15s;
+    }
+    .slots-day.empty { visibility: hidden; }
+    .slots-day.past { color: rgba(255,255,255,.12); }
+    .slots-day.available {
+      background: rgba(91,168,178,.1);
+      border: 1px solid rgba(91,168,178,.3);
+      color: var(--teal);
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .slots-day.available:hover {
+      background: rgba(91,168,178,.2);
+      transform: scale(1.05);
+    }
+    .slots-day.available.selected {
+      background: var(--teal);
+      color: #fff;
+      border-color: var(--teal);
+    }
+    .slots-day.booked {
+      color: rgba(255,255,255,.2);
+      text-decoration: line-through;
+    }
+    .slots-day .dot {
+      position: absolute;
+      bottom: 4px;
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--teal);
+    }
+
+    .slot-time-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      margin: 4px;
+      border-radius: 8px;
+      border: 1px solid rgba(91,168,178,.25);
+      background: rgba(91,168,178,.08);
+      color: var(--teal);
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .slot-time-btn:hover {
+      background: rgba(91,168,178,.18);
+      border-color: rgba(91,168,178,.45);
+    }
+    .slot-time-btn.taken {
+      opacity: .3;
+      cursor: not-allowed;
+      text-decoration: line-through;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ========== COUNTDOWN ========== */
+    .cd-block {
+      text-align: center;
+      min-width: 72px;
+    }
+    .cd-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 36px;
+      font-weight: 600;
+      color: var(--teal);
+      line-height: 1;
+    }
+    .cd-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.35);
+      margin-top: 6px;
+    }
+
+    @media (max-width: 900px) {
+      .slots-day { font-size: 12px; }
+      .slot-time-btn { padding: 10px 18px; font-size: 13px; }
+      .cd-num { font-size: 28px; }
+      .cd-block { min-width: 56px; }
+    }
+
     /* ========== FLOATING CTA ========== */
     .sess-float {
       position: fixed;
@@ -681,6 +819,92 @@
     </div>
   </section>
 
+  <!-- ========== DYNAMIC BOOKING STATUS ========== -->
+  <section class="sess-section dark" id="book-section">
+    <div class="wrap">
+      <div class="sess-heading">
+        <h2>Book Your Session</h2>
+        <p id="book-subtitle">Check availability and secure your time with Dr. Clark.</p>
+      </div>
+
+      <!-- Status Banner -->
+      <div id="booking-banner" style="display:none">
+        <div id="banner-content"></div>
+      </div>
+
+      <!-- Available Slots (shown when public booking is open) -->
+      <div id="booking-slots" style="display:none">
+        <div id="slots-month-nav" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <button class="btn outline" style="padding:10px 20px" onclick="slotsPrevMonth()">← Prev</button>
+          <h3 id="slots-month-label" style="font-family:'Playfair Display',serif;font-size:22px;font-weight:400;color:#fff"></h3>
+          <button class="btn outline" style="padding:10px 20px" onclick="slotsNextMonth()">Next →</button>
+        </div>
+        <div id="slots-calendar" class="slots-cal"></div>
+        <div id="slots-day-detail" style="display:none;margin-top:24px">
+          <h4 id="slots-day-label" style="font-family:'Playfair Display',serif;font-size:18px;font-weight:400;color:#fff;margin-bottom:14px"></h4>
+          <div id="slots-time-list"></div>
+        </div>
+      </div>
+
+      <!-- Waitlist Signup (shown when fully booked or closed) -->
+      <div id="waitlist-section" style="display:none">
+        <div style="max-width:480px;margin:0 auto;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:32px">
+          <h3 style="font-family:'Playfair Display',serif;font-size:22px;font-weight:400;color:#fff;margin-bottom:8px;text-align:center">Join the Waitlist</h3>
+          <p style="color:rgba(255,255,255,.55);font-size:14px;text-align:center;margin-bottom:24px;line-height:1.6">Be the first to know when the next booking window opens. We'll notify you as soon as spots become available.</p>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <input type="text" id="wl-name" placeholder="Your name" style="padding:12px 16px;border-radius:6px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:#fff;font-size:14px;font-family:inherit;outline:none" />
+            <input type="email" id="wl-email" placeholder="Your email" style="padding:12px 16px;border-radius:6px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:#fff;font-size:14px;font-family:inherit;outline:none" />
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div>
+                <label style="font-size:11px;color:rgba(255,255,255,.4);display:block;margin-bottom:4px">Preferred days</label>
+                <select id="wl-days" style="width:100%;padding:10px 12px;border-radius:6px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:#fff;font-size:13px;font-family:inherit">
+                  <option value="">Any day</option>
+                  <option value="monday">Monday</option>
+                  <option value="tuesday">Tuesday</option>
+                  <option value="wednesday">Wednesday</option>
+                  <option value="thursday">Thursday</option>
+                  <option value="friday">Friday</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:11px;color:rgba(255,255,255,.4);display:block;margin-bottom:4px">Preferred time</label>
+                <select id="wl-time" style="width:100%;padding:10px 12px;border-radius:6px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:#fff;font-size:13px;font-family:inherit">
+                  <option value="">Any time</option>
+                  <option value="morning">Morning (9am–12pm)</option>
+                  <option value="afternoon">Afternoon (12pm–5pm)</option>
+                </select>
+              </div>
+            </div>
+            <textarea id="wl-message" placeholder="Anything you'd like us to know (optional)" rows="3" style="padding:12px 16px;border-radius:6px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:#fff;font-size:14px;font-family:inherit;outline:none;resize:vertical"></textarea>
+            <button class="btn teal" onclick="submitWaitlist()" style="width:100%;margin-top:4px">Join Waitlist</button>
+          </div>
+          <div id="wl-success" style="display:none;text-align:center;padding:20px 0">
+            <div style="font-size:32px;margin-bottom:12px">✓</div>
+            <h4 style="color:var(--teal);font-family:'Playfair Display',serif;font-size:20px;margin-bottom:8px">You're on the list!</h4>
+            <p style="color:rgba(255,255,255,.55);font-size:14px">We'll reach out as soon as the next booking window opens.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Countdown (shown when coming soon) -->
+      <div id="countdown-section" style="display:none;text-align:center">
+        <div style="max-width:500px;margin:0 auto">
+          <h3 style="font-family:'Playfair Display',serif;font-size:26px;font-weight:400;color:#fff;margin-bottom:8px">Next Booking Window Opens Soon</h3>
+          <p style="color:rgba(255,255,255,.55);font-size:15px;margin-bottom:28px">Mark your calendar — new sessions are on the way.</p>
+          <div id="countdown-timer" style="display:flex;gap:16px;justify-content:center;margin-bottom:32px"></div>
+          <p style="color:rgba(255,255,255,.4);font-size:13px;margin-bottom:24px">Want to be notified the moment booking opens?</p>
+          <button class="btn teal" onclick="document.getElementById('waitlist-section').style.display='block';document.getElementById('countdown-section').style.display='none'">Join the Waitlist</button>
+        </div>
+      </div>
+
+      <!-- Loading state -->
+      <div id="booking-loading" style="text-align:center;padding:40px 0">
+        <div style="width:32px;height:32px;border:3px solid rgba(255,255,255,.15);border-top-color:var(--teal);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px"></div>
+        <p style="color:rgba(255,255,255,.45);font-size:14px">Checking availability…</p>
+      </div>
+    </div>
+  </section>
+
   <!-- ========== FINAL CTA ========== -->
   <section class="sess-cta" id="book">
     <div class="wrap">
@@ -701,6 +925,7 @@
     <a class="btn taupe" href="#book">Book a Session</a>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/shared.js"></script>
   <script>
     // Load shared header/footer
@@ -722,6 +947,276 @@
         else if(y < 300 && shown){ shown=false; fc.classList.remove('show'); }
       }, {passive:true});
     })();
+
+    /* ========== BOOKING SYSTEM ========== */
+    var SB_URL = 'https://rihlrfiqokqrlmzjjyxj.supabase.co';
+    var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpaGxyZmlxb2txcmxtempqeXhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1MTU2NDYsImV4cCI6MjA4NDA5MTY0Nn0.G2TQKSmQpPYb8Cyzo7R833G7xkr0855faLRjrJ9ov-4';
+    var sb = supabase.createClient(SB_URL, SB_KEY);
+
+    var bookConfig = null;
+    var bookCycles = [];
+    var bookAvail = [];
+    var bookBookings = [];
+    var slotsMonth, slotsYear;
+    var selectedDate = null;
+
+    (async function initBooking() {
+      try {
+        var [cfgRes, cycRes, availRes, bookRes] = await Promise.all([
+          sb.from('session_config').select('*').limit(1),
+          sb.from('session_cycles').select('*').order('start_date', { ascending: false }),
+          sb.from('session_availability').select('date,start_time,end_time,status,cycle_id,visibility').eq('status', 'available'),
+          sb.from('session_bookings').select('date,start_time,end_time,status,cycle_id').not('status', 'in', '("cancelled","declined")')
+        ]);
+
+        bookConfig = (cfgRes.data && cfgRes.data[0]) || null;
+        bookCycles = cycRes.data || [];
+        bookAvail = (availRes.data || []).filter(function(a) { return !a.visibility || a.visibility === 'public'; });
+        bookBookings = bookRes.data || [];
+
+        document.getElementById('booking-loading').style.display = 'none';
+        renderBookingState();
+      } catch (e) {
+        console.error('Booking init error:', e);
+        document.getElementById('booking-loading').innerHTML = '<p style="color:rgba(255,255,255,.45);font-size:14px">Unable to load booking information. Please try again later.</p>';
+      }
+    })();
+
+    function renderBookingState() {
+      var status = bookConfig ? bookConfig.public_booking_status : 'closed';
+      var banner = document.getElementById('booking-banner');
+      var bannerContent = document.getElementById('banner-content');
+      var activeCycle = bookCycles.find(function(c) {
+        return c.status === 'active' || c.status === 'public_open';
+      });
+      var price = bookConfig ? bookConfig.session_price : null;
+      var duration = bookConfig ? bookConfig.session_duration_minutes : 60;
+      var priceStr = price ? '$' + Number(price).toFixed(0) : '';
+
+      if (status === 'open' && activeCycle) {
+        // Public booking is open — show calendar
+        banner.style.display = 'block';
+        bannerContent.innerHTML = '<div class="banner-open"><h3>Booking Is Open</h3><p>' + (priceStr ? priceStr + ' · ' : '') + duration + '-minute private session with Dr. Tracey Clark</p></div>';
+        document.getElementById('booking-slots').style.display = 'block';
+
+        // Initialize calendar to current month
+        var now = new Date();
+        slotsMonth = now.getMonth();
+        slotsYear = now.getFullYear();
+        renderSlotsCalendar();
+
+      } else if (status === 'coming_soon' && bookConfig.public_booking_opens_at) {
+        // Coming soon with countdown
+        banner.style.display = 'block';
+        bannerContent.innerHTML = '<div class="banner-closed"><h3>Booking Opens Soon</h3><p>The next booking window is just around the corner.</p></div>';
+        document.getElementById('countdown-section').style.display = 'block';
+        startCountdown(new Date(bookConfig.public_booking_opens_at));
+
+      } else {
+        // Closed — show waitlist
+        banner.style.display = 'block';
+        var nextCycle = bookCycles.find(function(c) { return c.status === 'planning' || c.status === 'client_confirmation'; });
+        bannerContent.innerHTML = '<div class="banner-closed"><h3>Currently Fully Booked</h3><p>All sessions for the current cycle are filled.' + (nextCycle ? ' The next cycle begins ' + new Date(nextCycle.start_date + 'T12:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) + '.' : '') + '</p></div>';
+        document.getElementById('waitlist-section').style.display = 'block';
+      }
+
+      // Update hero CTA and floating CTA
+      updateCTAs(status);
+    }
+
+    function updateCTAs(status) {
+      var heroCta = document.querySelector('.sess-hero-actions .btn.taupe');
+      var floatCta = document.querySelector('.sess-float .btn');
+      var finalCta = document.querySelector('.sess-cta .btn.taupe');
+      if (status === 'open') {
+        if (heroCta) { heroCta.textContent = 'View Available Slots'; heroCta.href = '#book-section'; }
+        if (floatCta) { floatCta.textContent = 'View Available Slots'; floatCta.href = '#book-section'; }
+        if (finalCta) { finalCta.textContent = 'View Available Slots'; finalCta.href = '#book-section'; }
+      } else {
+        if (heroCta) { heroCta.textContent = 'Join the Waitlist'; heroCta.href = '#book-section'; }
+        if (floatCta) { floatCta.textContent = 'Join the Waitlist'; floatCta.href = '#book-section'; }
+        if (finalCta) { finalCta.textContent = 'Join the Waitlist'; finalCta.href = '#book-section'; }
+      }
+    }
+
+    /* ===== Slots Calendar ===== */
+    function slotsPrevMonth() {
+      slotsMonth--;
+      if (slotsMonth < 0) { slotsMonth = 11; slotsYear--; }
+      selectedDate = null;
+      document.getElementById('slots-day-detail').style.display = 'none';
+      renderSlotsCalendar();
+    }
+    function slotsNextMonth() {
+      slotsMonth++;
+      if (slotsMonth > 11) { slotsMonth = 0; slotsYear++; }
+      selectedDate = null;
+      document.getElementById('slots-day-detail').style.display = 'none';
+      renderSlotsCalendar();
+    }
+
+    function renderSlotsCalendar() {
+      var label = document.getElementById('slots-month-label');
+      var cal = document.getElementById('slots-calendar');
+      var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      label.textContent = monthNames[slotsMonth] + ' ' + slotsYear;
+
+      var firstDay = new Date(slotsYear, slotsMonth, 1).getDay();
+      var daysInMonth = new Date(slotsYear, slotsMonth + 1, 0).getDate();
+      var today = new Date(); today.setHours(0,0,0,0);
+
+      var dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      var html = dayNames.map(function(d) { return '<div class="slots-cal-head">' + d + '</div>'; }).join('');
+
+      for (var i = 0; i < firstDay; i++) {
+        html += '<div class="slots-day empty"></div>';
+      }
+
+      for (var d = 1; d <= daysInMonth; d++) {
+        var dateObj = new Date(slotsYear, slotsMonth, d);
+        var dateStr = slotsYear + '-' + String(slotsMonth + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+        var isPast = dateObj < today;
+        var dayAvail = bookAvail.filter(function(a) { return a.date === dateStr; });
+        var dayBooked = bookBookings.filter(function(b) { return b.date === dateStr; });
+        var hasOpen = dayAvail.length > 0 && !isPast;
+        var isSelected = selectedDate === dateStr;
+
+        var cls = 'slots-day';
+        if (isPast) cls += ' past';
+        else if (hasOpen) cls += ' available' + (isSelected ? ' selected' : '');
+
+        var dot = hasOpen ? '<span class="dot"></span>' : '';
+        var onclick = hasOpen ? ' onclick="selectSlotDay(\'' + dateStr + '\')"' : '';
+
+        html += '<div class="' + cls + '"' + onclick + '>' + d + dot + '</div>';
+      }
+
+      cal.innerHTML = html;
+    }
+
+    function selectSlotDay(dateStr) {
+      selectedDate = dateStr;
+      renderSlotsCalendar();
+
+      var detail = document.getElementById('slots-day-detail');
+      var label = document.getElementById('slots-day-label');
+      var list = document.getElementById('slots-time-list');
+
+      var dateObj = new Date(dateStr + 'T12:00');
+      label.textContent = dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
+      var dayAvail = bookAvail.filter(function(a) { return a.date === dateStr; });
+      var dayBooked = bookBookings.filter(function(b) { return b.date === dateStr; });
+      var duration = bookConfig ? bookConfig.session_duration_minutes : 60;
+      var buffer = bookConfig ? bookConfig.booking_buffer_minutes : 15;
+
+      // Generate time slots from availability blocks
+      var slots = [];
+      dayAvail.forEach(function(a) {
+        var startParts = a.start_time.split(':');
+        var endParts = a.end_time.split(':');
+        var startMin = parseInt(startParts[0]) * 60 + parseInt(startParts[1]);
+        var endMin = parseInt(endParts[0]) * 60 + parseInt(endParts[1]);
+
+        for (var m = startMin; m + duration <= endMin; m += duration + buffer) {
+          var h = Math.floor(m / 60);
+          var mi = m % 60;
+          var timeStr = String(h).padStart(2, '0') + ':' + String(mi).padStart(2, '0');
+          var taken = dayBooked.some(function(b) { return b.start_time.slice(0, 5) === timeStr; });
+          slots.push({ time: timeStr, taken: taken });
+        }
+      });
+
+      if (!slots.length) {
+        list.innerHTML = '<p style="color:rgba(255,255,255,.4);font-size:14px">No available time slots on this day.</p>';
+      } else {
+        list.innerHTML = slots.map(function(s) {
+          var h = parseInt(s.time.split(':')[0]);
+          var mi = s.time.split(':')[1];
+          var ampm = h >= 12 ? 'PM' : 'AM';
+          var h12 = h > 12 ? h - 12 : (h === 0 ? 12 : h);
+          var display = h12 + ':' + mi + ' ' + ampm;
+
+          if (s.taken) {
+            return '<button class="slot-time-btn taken" disabled>' + display + '</button>';
+          }
+          return '<button class="slot-time-btn" onclick="selectTimeSlot(\'' + dateStr + '\',\'' + s.time + '\')">' + display + '</button>';
+        }).join('');
+      }
+
+      detail.style.display = 'block';
+      detail.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function selectTimeSlot(date, time) {
+      // This is where Stripe checkout will go in the payment flow build
+      var dateObj = new Date(date + 'T12:00');
+      var dateStr = dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+      var h = parseInt(time.split(':')[0]);
+      var mi = time.split(':')[1];
+      var ampm = h >= 12 ? 'PM' : 'AM';
+      var h12 = h > 12 ? h - 12 : (h === 0 ? 12 : h);
+      var timeStr = h12 + ':' + mi + ' ' + ampm;
+      var price = bookConfig ? bookConfig.session_price : null;
+
+      alert('You selected: ' + dateStr + ' at ' + timeStr + (price ? '\nPrice: $' + Number(price).toFixed(0) : '') + '\n\nStripe checkout coming soon!');
+    }
+
+    /* ===== Countdown ===== */
+    function startCountdown(target) {
+      var el = document.getElementById('countdown-timer');
+      function update() {
+        var now = new Date();
+        var diff = target - now;
+        if (diff <= 0) {
+          el.innerHTML = '<p style="color:var(--teal);font-size:18px;font-weight:600">Booking is now open!</p>';
+          setTimeout(function() { location.reload(); }, 2000);
+          return;
+        }
+        var days = Math.floor(diff / 86400000);
+        var hours = Math.floor((diff % 86400000) / 3600000);
+        var mins = Math.floor((diff % 3600000) / 60000);
+        var secs = Math.floor((diff % 60000) / 1000);
+        el.innerHTML = '<div class="cd-block"><div class="cd-num">' + days + '</div><div class="cd-label">Days</div></div>'
+          + '<div class="cd-block"><div class="cd-num">' + hours + '</div><div class="cd-label">Hours</div></div>'
+          + '<div class="cd-block"><div class="cd-num">' + mins + '</div><div class="cd-label">Minutes</div></div>'
+          + '<div class="cd-block"><div class="cd-num">' + secs + '</div><div class="cd-label">Seconds</div></div>';
+      }
+      update();
+      setInterval(update, 1000);
+    }
+
+    /* ===== Waitlist ===== */
+    async function submitWaitlist() {
+      var name = document.getElementById('wl-name').value.trim();
+      var email = document.getElementById('wl-email').value.trim();
+      var days = document.getElementById('wl-days').value;
+      var time = document.getElementById('wl-time').value;
+      var message = document.getElementById('wl-message').value.trim();
+
+      if (!name || !email) { alert('Please enter your name and email.'); return; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert('Please enter a valid email address.'); return; }
+
+      try {
+        var { error } = await sb.from('session_waitlist').insert({
+          name: name,
+          email: email.toLowerCase(),
+          preferred_days: days ? [days] : [],
+          preferred_times: time ? [time] : [],
+          message: message || null,
+          status: 'waiting'
+        });
+
+        if (error) throw error;
+
+        // Show success
+        document.getElementById('wl-success').style.display = 'block';
+        document.getElementById('wl-success').previousElementSibling.style.display = 'none';
+      } catch (e) {
+        console.error('Waitlist error:', e);
+        alert('Something went wrong. Please try again.');
+      }
+    }
   </script>
 </body>
 </html>
