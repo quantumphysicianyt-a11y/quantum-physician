@@ -1391,7 +1391,7 @@ await loadAllData();loadScheduledEmails();loadAutomationStats()
 }
 
 async function reactivateSchedEmail(id){
-var newDT=prompt('Enter new date/time (YYYY-MM-DD HH:MM):');
+var newDT=await qpPrompt('Reactivate Email','Enter new date/time (YYYY-MM-DD HH:MM):');
 if(!newDT) return;
 var parsed=new Date(newDT);
 if(isNaN(parsed.getTime())){showToast('Invalid date format','error');return}
@@ -2290,7 +2290,7 @@ return '<button class="btn btn-ghost btn-sm" style="font-size:11px;border-color:
 }).join(' ');
 }
 
-function saveQueryPreset(){
+async function saveQueryPreset(){
 var source=document.getElementById('caq-source').value;
 var measure=document.getElementById('caq-measure').value;
 var group=document.getElementById('caq-group').value;
@@ -2300,7 +2300,7 @@ var chartType=document.getElementById('caq-chart-type').value;
 var measureLabel=document.getElementById('caq-measure').options[document.getElementById('caq-measure').selectedIndex].text;
 var sourceLabel=document.getElementById('caq-source').options[document.getElementById('caq-source').selectedIndex].text;
 var defaultName=sourceLabel+': '+measureLabel;
-var name=prompt('Name this preset:',defaultName);
+var name=await qpPrompt('Save Preset','Name this preset:',defaultName);
 if(!name)return;
 var presets=getQueryPresets();
 presets.push({name:name,source:source,measure:measure,group:group,filterField:filterField,filterVal:filterVal,chartType:chartType});
@@ -2775,13 +2775,13 @@ var EC_CTA_BUTTONS={
   academy:{label:'Explore Academy',url:'https://academy.quantumphysician.com'},
   community:{label:'Join the Community',url:'https://fusionsessions.com/community.html'}
 };
-function ecInsertCTA(key){
+async function ecInsertCTA(key){
   var ta=document.getElementById('email-body');if(!ta)return;
   var cta;
   if(key==='custom'){
-    var label=prompt('Button text:','Learn More');
+    var label=await qpPrompt('Custom CTA','Button text:','Learn More');
     if(!label)return;
-    var url=prompt('Button URL:','https://');
+    var url=await qpPrompt('Custom CTA','Button URL:','https://');
     if(!url)return;
     cta='['+label+']('+url+')';
   }else{
@@ -3559,7 +3559,7 @@ async function deleteCycle(id,name){
 async function editCycle(id){
   var cy=sessCyclesData.find(function(c){return c.id===id});
   if(!cy) return;
-  var name=prompt('Cycle name:',cy.name);
+  var name=await qpPrompt('Edit Cycle','Cycle name:',cy.name);
   if(!name) return;
   try{
     await proxyFrom('session_cycles').update({name:name}).eq('id',id);
@@ -3844,12 +3844,27 @@ async function removeClient(id,email){
 }
 async function editClient(id){
   var cl=sessClientsData.find(function(c){return c.id===id});if(!cl)return;
-  // Simple edit via prompts (can upgrade to modal later)
-  var freq=prompt('Frequency (weekly/biweekly/monthly/every_2_months):',cl.frequency);if(!freq)return;
-  var day=prompt('Preferred day (monday-friday):',cl.preferred_day);if(!day)return;
-  var time=prompt('Preferred time (HH:MM):',cl.preferred_time.slice(0,5));if(!time)return;
-  var priority=prompt('Priority (lower = higher priority):',cl.priority);
-  try{await proxyFrom('session_clients').update({frequency:freq,preferred_day:day,preferred_time:time,priority:parseInt(priority)||100}).eq('id',id);showToast('Client updated','success');
+  // Build themed edit modal
+  var old=document.getElementById('sess-edit-client-modal');if(old)old.remove();
+  var ov=document.createElement('div');ov.id='sess-edit-client-modal';ov.className='modal-overlay';
+  ov.onclick=function(e){if(e.target===ov)ov.remove()};
+  var box=document.createElement('div');
+  box.style.cssText='background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;max-width:400px;width:92%';
+  box.innerHTML='<div style="font-weight:600;margin-bottom:14px">Edit Client: '+esc(cl.client_email)+'</div>'
+    +'<div style="margin-bottom:10px"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px">Frequency</label><select class="input" id="ec-freq" style="width:100%"><option value="weekly"'+(cl.frequency==='weekly'?' selected':'')+'>Weekly</option><option value="biweekly"'+(cl.frequency==='biweekly'?' selected':'')+'>Biweekly</option><option value="monthly"'+(cl.frequency==='monthly'?' selected':'')+'>Monthly</option><option value="every_2_months"'+(cl.frequency==='every_2_months'?' selected':'')+'>Every 2 Months</option></select></div>'
+    +'<div style="margin-bottom:10px"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px">Preferred Day</label><select class="input" id="ec-day" style="width:100%"><option value="monday"'+(cl.preferred_day==='monday'?' selected':'')+'>Monday</option><option value="tuesday"'+(cl.preferred_day==='tuesday'?' selected':'')+'>Tuesday</option><option value="wednesday"'+(cl.preferred_day==='wednesday'?' selected':'')+'>Wednesday</option><option value="thursday"'+(cl.preferred_day==='thursday'?' selected':'')+'>Thursday</option><option value="friday"'+(cl.preferred_day==='friday'?' selected':'')+'>Friday</option></select></div>'
+    +'<div style="margin-bottom:10px"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px">Preferred Time</label><input type="time" class="input" id="ec-time" value="'+(cl.preferred_time?cl.preferred_time.slice(0,5):'10:00')+'" style="width:100%"></div>'
+    +'<div style="margin-bottom:14px"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px">Priority (lower = higher priority)</label><input type="number" class="input" id="ec-priority" value="'+(cl.priority||100)+'" min="1" style="width:100%"></div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-ghost btn-sm" onclick="document.getElementById(\'sess-edit-client-modal\').remove()">Cancel</button><button class="btn btn-primary btn-sm" onclick="saveEditClient(\''+id+'\')">Save</button></div>';
+  ov.appendChild(box);document.body.appendChild(ov);
+}
+async function saveEditClient(id){
+  var freq=document.getElementById('ec-freq').value;
+  var day=document.getElementById('ec-day').value;
+  var time=document.getElementById('ec-time').value;
+  var priority=parseInt(document.getElementById('ec-priority').value)||100;
+  document.getElementById('sess-edit-client-modal').remove();
+  try{await proxyFrom('session_clients').update({frequency:freq,preferred_day:day,preferred_time:time,priority:priority}).eq('id',id);showToast('Client updated','success');
   var r=await proxyFrom('session_clients').select('*').order('priority',{ascending:true});sessClientsData=r.data||[];renderClientRoster()}catch(e){showToast('Error: '+e.message,'error')}
 }
 
