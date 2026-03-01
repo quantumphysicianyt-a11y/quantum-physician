@@ -961,6 +961,41 @@
     var selectedDate = null;
 
     (async function initBooking() {
+      // --- Handle ?pay=TOKEN — auto-redirect to Stripe checkout ---
+      var urlParams = new URLSearchParams(window.location.search);
+      var payToken = urlParams.get('pay');
+      if (payToken) {
+        // Show a loading state
+        var bookSection = document.getElementById('book-section');
+        if (bookSection) bookSection.innerHTML = '<div style="text-align:center;padding:60px 20px"><div style="width:40px;height:40px;border:3px solid rgba(91,168,178,.3);border-top-color:#5ba8b2;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 20px"></div><p style="color:#5ba8b2;font-size:18px;font-weight:600">Preparing your checkout…</p><p style="color:rgba(255,255,255,.5);font-size:14px;margin-top:8px">You\'ll be redirected to our secure payment page.</p></div>';
+        try {
+          var resp = await fetch('/.netlify/functions/session-checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: payToken })
+          });
+          var data = await resp.json();
+          if (data.url) {
+            window.location.href = data.url;
+            return;
+          } else {
+            if (bookSection) bookSection.innerHTML = '<div style="text-align:center;padding:60px 20px"><p style="color:#ff6b6b;font-size:18px;font-weight:600">Unable to process payment</p><p style="color:rgba(255,255,255,.5);font-size:14px;margin-top:8px">' + (data.error || 'This link may have expired.') + '</p><p style="margin-top:20px"><a href="/pages/one-on-sessions.html" style="color:#5ba8b2;text-decoration:underline">Back to Sessions</a></p></div>';
+          }
+        } catch (e) {
+          console.error('Pay token error:', e);
+          if (bookSection) bookSection.innerHTML = '<div style="text-align:center;padding:60px 20px"><p style="color:#ff6b6b;font-size:18px;font-weight:600">Something went wrong</p><p style="color:rgba(255,255,255,.5);font-size:14px;margin-top:8px">Please try again or contact us.</p><p style="margin-top:20px"><a href="/pages/one-on-sessions.html" style="color:#5ba8b2;text-decoration:underline">Back to Sessions</a></p></div>';
+        }
+        return;
+      }
+
+      // --- Handle ?payment=success — show confirmation ---
+      var paymentStatus = urlParams.get('payment');
+      if (paymentStatus === 'success') {
+        var bookSection2 = document.getElementById('book-section');
+        if (bookSection2) bookSection2.innerHTML = '<div style="text-align:center;padding:60px 20px"><div style="width:60px;height:60px;border-radius:50%;background:rgba(91,168,178,.15);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:28px">✓</div><p style="color:#5ba8b2;font-size:22px;font-weight:600">Payment Confirmed!</p><p style="color:rgba(255,255,255,.6);font-size:15px;margin-top:12px;line-height:1.6">Your session with Dr. Tracey Clark is booked.<br>A confirmation email with your Zoom link is on its way.</p><p style="margin-top:24px"><a href="/pages/one-on-sessions.html" style="color:#5ba8b2;text-decoration:underline">Back to Sessions</a></p></div>';
+        return;
+      }
+
       try {
         var [cfgRes, cycRes, availRes, bookRes] = await Promise.all([
           sb.from('session_config').select('*').limit(1),
@@ -1159,7 +1194,6 @@
     }
 
     function selectTimeSlot(date, time) {
-      // This is where Stripe checkout will go in the payment flow build
       var dateObj = new Date(date + 'T12:00');
       var dateStr = dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
       var h = parseInt(time.split(':')[0]);
@@ -1168,8 +1202,75 @@
       var h12 = h > 12 ? h - 12 : (h === 0 ? 12 : h);
       var timeStr = h12 + ':' + mi + ' ' + ampm;
       var price = bookConfig ? bookConfig.session_price : null;
+      var duration = bookConfig ? bookConfig.session_duration_minutes : 60;
 
-      alert('You selected: ' + dateStr + ' at ' + timeStr + (price ? '\nPrice: $' + Number(price).toFixed(0) : '') + '\n\nStripe checkout coming soon!');
+      // Remove any existing modal
+      var old = document.getElementById('slot-checkout-modal');
+      if (old) old.remove();
+
+      var modal = document.createElement('div');
+      modal.id = 'slot-checkout-modal';
+      modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+      modal.innerHTML = '<div style="background:#0f1d34;border:1px solid rgba(91,168,178,.2);border-radius:16px;max-width:440px;width:100%;padding:36px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5)">'
+        + '<p style="color:rgba(91,168,178,.6);font-size:11px;letter-spacing:3px;text-transform:uppercase;margin:0 0 16px">Book Your Session</p>'
+        + '<p style="color:#5ba8b2;font-size:20px;font-weight:700;margin:0 0 4px">' + dateStr + '</p>'
+        + '<p style="color:rgba(255,255,255,.6);font-size:16px;margin:0 0 24px">' + timeStr + ' · ' + duration + ' min' + (price ? ' · $' + Number(price).toFixed(0) : '') + '</p>'
+        + '<input type="text" id="slot-name" placeholder="Your name" style="width:100%;padding:12px 16px;margin-bottom:10px;background:rgba(255,255,255,.06);border:1px solid rgba(91,168,178,.2);border-radius:8px;color:#fff;font-size:15px;font-family:inherit;box-sizing:border-box">'
+        + '<input type="email" id="slot-email" placeholder="Your email" style="width:100%;padding:12px 16px;margin-bottom:20px;background:rgba(255,255,255,.06);border:1px solid rgba(91,168,178,.2);border-radius:8px;color:#fff;font-size:15px;font-family:inherit;box-sizing:border-box">'
+        + '<div id="slot-error" style="color:#ff6b6b;font-size:13px;margin-bottom:12px;display:none"></div>'
+        + '<button id="slot-pay-btn" onclick="processSlotCheckout(\'' + date + '\',\'' + time + '\')" style="width:100%;padding:14px;background:linear-gradient(135deg,#5ba8b2,#4acfd9);border:none;border-radius:50px;color:#fff;font-size:15px;font-weight:700;letter-spacing:1px;cursor:pointer;text-transform:uppercase">Confirm & Pay</button>'
+        + '<p onclick="document.getElementById(\'slot-checkout-modal\').remove()" style="color:rgba(255,255,255,.4);font-size:13px;margin:16px 0 0;cursor:pointer">Cancel</p>'
+        + '</div>';
+      document.body.appendChild(modal);
+      document.getElementById('slot-name').focus();
+    }
+
+    async function processSlotCheckout(date, time) {
+      var name = (document.getElementById('slot-name').value || '').trim();
+      var email = (document.getElementById('slot-email').value || '').trim();
+      var errEl = document.getElementById('slot-error');
+      var btn = document.getElementById('slot-pay-btn');
+
+      if (!name || !email) {
+        errEl.textContent = 'Please enter your name and email.';
+        errEl.style.display = 'block';
+        return;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        errEl.textContent = 'Please enter a valid email address.';
+        errEl.style.display = 'block';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Processing…';
+      btn.style.opacity = '0.6';
+      errEl.style.display = 'none';
+
+      try {
+        var resp = await fetch('/.netlify/functions/session-checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email, name: name, date: date, start_time: time })
+        });
+        var data = await resp.json();
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          errEl.textContent = data.error || 'Something went wrong. Please try again.';
+          errEl.style.display = 'block';
+          btn.disabled = false;
+          btn.textContent = 'Confirm & Pay';
+          btn.style.opacity = '1';
+        }
+      } catch (e) {
+        console.error('Checkout error:', e);
+        errEl.textContent = 'Connection error. Please try again.';
+        errEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Confirm & Pay';
+        btn.style.opacity = '1';
+      }
     }
 
     /* ===== Countdown ===== */
