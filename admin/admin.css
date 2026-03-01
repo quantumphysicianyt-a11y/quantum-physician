@@ -164,3 +164,10 @@ input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus
   .sess-cal-num{font-size:11px}
   .sess-cal-time,.sess-cal-books{font-size:8px}
 }
+
+/* Date/Time Input Theming */
+input[type="date"].input,input[type="time"].input{color-scheme:dark;appearance:none;-webkit-appearance:none;background:rgba(255,255,255,.04);color:var(--text);font-family:'Inter',sans-serif;font-size:13px}
+input[type="date"].input::-webkit-calendar-picker-indicator,input[type="time"].input::-webkit-calendar-picker-indicator{filter:invert(.7) sepia(.3) hue-rotate(150deg) brightness(1.2);cursor:pointer;opacity:.6;transition:opacity .15s}
+input[type="date"].input::-webkit-calendar-picker-indicator:hover,input[type="time"].input::-webkit-calendar-picker-indicator:hover{opacity:1}
+[data-theme="light"] input[type="date"].input,[data-theme="light"] input[type="time"].input{color-scheme:light}
+[data-theme="light"] input[type="date"].input::-webkit-calendar-picker-indicator,[data-theme="light"] input[type="time"].input::-webkit-calendar-picker-indicator{filter:none}
