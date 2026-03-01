@@ -1225,6 +1225,58 @@ var unsubscribeUrl=wrapLink('https://fusionsessions.com/unsubscribe.html');
 return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body style="margin:0;padding:20px;font-family:Georgia,Times New Roman,serif;background-color:#2f5f7f;"><div style="max-width:600px;margin:0 auto;background-color:#0a1e33;border-radius:16px;overflow:hidden;box-shadow:0 12px 60px rgba(0,0,0,0.5),0 0 0 1px rgba(91,168,178,0.08);"><div style="background:linear-gradient(135deg,#081a2e,#0f2942 50%,#123554);padding:35px 30px;text-align:center;border-bottom:2px solid rgba(91,168,178,0.3);"><img src="'+logoImg+'" alt="Quantum Physician Academy" style="max-width:180px;height:auto;margin:0 auto 16px;display:block;"><p style="color:rgba(255,255,255,0.6);font-size:12px;margin:0;letter-spacing:3px;text-transform:uppercase;">Empowering Growth</p></div><div style="padding:35px 30px;color:rgba(255,255,255,0.85);"><p style="margin:0;font-size:16px;line-height:1.8;font-family:Georgia,serif;">'+mainHtml+'</p>'+ctaHtml+discountCardHtml+'</div><div style="padding:25px 30px;border-top:1px solid rgba(91,168,178,0.15);text-align:center;"><img src="'+traceyImg+'" alt="Dr. Tracey Clark" style="width:80px;height:80px;border-radius:50%;border:2px solid rgba(91,168,178,0.3);object-fit:cover;display:block;margin:0 auto 12px;"><p style="margin:0;color:rgba(255,255,255,0.6);font-size:14px;">With gratitude,</p><p style="margin:5px 0 0;color:#5ba8b2;font-weight:700;font-size:18px;font-family:Georgia,serif;">Dr. Tracey Clark</p><p style="margin:4px 0 0;color:rgba(255,255,255,0.35);font-size:12px;">Quantum Physician</p></div><div style="background-color:#071825;padding:20px;text-align:center;border-top:1px solid rgba(91,168,178,0.1);"><p style="margin:0;font-size:11px;color:rgba(255,255,255,0.3);">&copy; 2026 Quantum Physician Academy. All rights reserved.</p><p style="margin:8px 0 0;"><a href="'+unsubscribeUrl+'" style="color:rgba(255,255,255,0.2);font-size:10px;text-decoration:none;">unsubscribe</a></p></div></div>'+(pixelUrl?'<img src="'+pixelUrl+'" width="1" height="1" style="display:none;" alt="">':'')+'</body></html>'
 }
 
+/* ==================== SESSION EMAIL BUILDER (QP BRAND) ==================== */
+function buildSessionEmail(bodyText,trackingId){
+var trackBase='https://fusionsessions.com/.netlify/functions/email-track';
+var wrapLink=function(url){return trackingId?trackBase+'?action=click&tid='+trackingId+'&url='+encodeURIComponent(url):url};
+var traceyImg='https://qp-homepage.netlify.app/assets/images/tracey-about-me.png';
+var logoImg='https://qp-homepage.netlify.app/assets/images/qp-logo.png';
+var mainBody=bodyText.trim();
+/* Strip closing sign-off (we add our own branded footer) */
+mainBody=mainBody.replace(/\n\n(With care,|With care and healing,|With warmth,|With healing energy,|With gratitude,)\n.*$/s,'');
+/* Convert markdown links to styled CTA buttons */
+mainBody=mainBody.replace(/\[([^\]]+)\]\(([^)]+)\)/g,function(_,label,url){
+  return '<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:20px 0;"><tr><td align="center"><table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr><td style="background:linear-gradient(135deg,#5ba8b2,#4a97a1);border-radius:8px;"><a href="'+wrapLink(url)+'" target="_blank" style="display:inline-block;padding:16px 48px;color:#fff;text-decoration:none;font-weight:700;font-size:15px;letter-spacing:1.5px;text-transform:uppercase;font-family:Arial,Helvetica,sans-serif;">'+label+'</a></td></tr></table></td></tr></table>';
+});
+/* Convert markdown bold */
+mainBody=mainBody.replace(/\*\*([^*]+)\*\*/g,'<strong style="color:#fff;">$1</strong>');
+/* Convert bullet points */
+mainBody=mainBody.replace(/\n[•\u2022] /g,'\n<span style="color:#5ba8b2;margin-right:6px;">✦</span> ');
+mainBody=mainBody.replace(/^[•\u2022] /gm,'<span style="color:#5ba8b2;margin-right:6px;">✦</span> ');
+/* Convert --- to appointment card divider */
+mainBody=mainBody.replace(/\n---\n/g,'<div style="border-top:1px solid rgba(91,168,178,.2);margin:20px 0;"></div>');
+/* Convert newlines to breaks */
+var mainHtml=mainBody.replace(/\n/g,'<br>').replace(/(<br>){3,}/g,'<br><br>').replace(/^(<br>)+/,'').replace(/(<br>)+$/,'');
+var pixelUrl=trackingId?trackBase+'?action=open&tid='+trackingId:'';
+return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>'
++'<body style="margin:0;padding:20px;font-family:Georgia,Times New Roman,serif;background-color:#0e1a2b;">'
++'<div style="max-width:600px;margin:0 auto;background-color:#131e3d;border-radius:12px;overflow:hidden;box-shadow:0 16px 60px rgba(0,0,0,.5),0 0 0 1px rgba(91,168,178,.08);">'
+/* Header with QP logo */
++'<div style="background:linear-gradient(180deg,#0e1a2b,#131e3d);padding:40px 30px 30px;text-align:center;border-bottom:1px solid rgba(91,168,178,.15);">'
++'<img src="'+logoImg+'" alt="Quantum Physician" style="max-width:160px;height:auto;margin:0 auto 14px;display:block;">'
++'<p style="color:rgba(91,168,178,.7);font-size:11px;margin:0;letter-spacing:3px;text-transform:uppercase;font-weight:600;">Private Healing Sessions</p>'
++'</div>'
+/* Body */
++'<div style="padding:36px 32px;color:rgba(255,255,255,.82);font-size:16px;line-height:1.8;">'
++mainHtml
++'</div>'
+/* Sign-off with Tracey photo */
++'<div style="padding:28px 32px;border-top:1px solid rgba(91,168,178,.1);text-align:center;">'
++'<img src="'+traceyImg+'" alt="Dr. Tracey Clark" style="width:72px;height:72px;border-radius:50%;border:2px solid rgba(91,168,178,.25);object-fit:cover;display:block;margin:0 auto 14px;">'
++'<p style="margin:0;color:rgba(255,255,255,.5);font-size:14px;font-family:Georgia,serif;">With care and healing,</p>'
++'<p style="margin:6px 0 0;color:#5ba8b2;font-weight:700;font-size:18px;font-family:Georgia,serif;">Dr. Tracey Clark</p>'
++'<p style="margin:4px 0 0;color:rgba(255,255,255,.3);font-size:12px;letter-spacing:1px;">Quantum Physician</p>'
++'</div>'
+/* Footer */
++'<div style="background:#0a1322;padding:20px 30px;text-align:center;border-top:1px solid rgba(91,168,178,.06);">'
++'<p style="margin:0;font-size:11px;color:rgba(255,255,255,.25);">&copy; 2026 Quantum Physician. All rights reserved.</p>'
++'<p style="margin:8px 0 0;font-size:10px;"><a href="https://qp-homepage.netlify.app" style="color:rgba(91,168,178,.4);text-decoration:none;">quantumphysician.com</a></p>'
++'</div>'
++'</div>'
++(pixelUrl?'<img src="'+pixelUrl+'" width="1" height="1" style="display:none;" alt="">':'')
++'</body></html>';
+}
+
 /* ==================== EMAIL AUTOMATION PAGE ==================== */
 function loadAutomationPage(){loadAutomationStats();loadScheduledEmails()}
 
@@ -4555,8 +4607,8 @@ function previewOfferEmail(email){
   var emailData=buildOfferEmailBody(wl,email);
   if(!emailData) return;
 
-  // Build through the branded Academy template
-  var richHtml=buildAcademyEmail(emailData.body,null,'https://qp-homepage.netlify.app',null);
+  // Build through QP Sessions branded template
+  var richHtml=buildSessionEmail(emailData.body,null);
 
   // Show preview modal
   var old=document.getElementById('offer-preview-modal');if(old)old.remove();
@@ -4597,8 +4649,8 @@ async function testOfferEmail(){
   var emailData=buildOfferEmailBody(wl,'test@example.com');
   if(!emailData) return;
 
-  // Build branded HTML
-  var richHtml=buildAcademyEmail(emailData.body,null,'https://qp-homepage.netlify.app',null);
+  // Build QP Sessions branded HTML
+  var richHtml=buildSessionEmail(emailData.body,null);
 
   try{
     showToast('Sending test email to '+inp+'…','info');
@@ -4648,8 +4700,8 @@ async function sendOfferSlot(waitlistId,email){
     // Update waitlist entry
     await proxyFrom('session_waitlist').update({status:'notified',notified_at:new Date().toISOString()}).eq('id',waitlistId);
 
-    // Build branded HTML email
-    var richHtml=buildAcademyEmail(emailData.body,null,'https://qp-homepage.netlify.app',null);
+    // Build QP Sessions branded HTML email
+    var richHtml=buildSessionEmail(emailData.body,null);
 
     // Send via Apps Script
     await fetch(APPS_SCRIPT_URL,{
