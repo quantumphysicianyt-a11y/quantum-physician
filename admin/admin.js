@@ -4561,7 +4561,7 @@ function previewOfferEmail(email){
   // Show preview modal
   var old=document.getElementById('offer-preview-modal');if(old)old.remove();
   var ov=document.createElement('div');ov.id='offer-preview-modal';
-  ov.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);z-index:9999999;display:flex;align-items:center;justify-content:center;padding:20px';
   ov.onclick=function(e){if(e.target===ov)ov.remove()};
   var box=document.createElement('div');
   box.style.cssText='background:#112a42;border:1px solid rgba(91,168,178,.25);border-radius:16px;padding:28px;width:95%;max-width:900px;max-height:90vh;overflow-y:auto;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.5)';
