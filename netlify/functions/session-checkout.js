@@ -189,8 +189,8 @@ exports.handler = async (event) => {
           price_data: {
             currency: "usd",
             product_data: {
-              name: "Private Healing Session with Dr. Tracey Clark",
-              description: `📅 ${dateFmt}  ·  🕐 ${timeFmt}\n${duration} min  —  Integrative healing via Zoom`,
+              name: `Private Healing Session — ${dateFmt}`,
+              description: `${timeFmt}  ·  ${duration} min  ·  Integrative healing via Zoom`,
               images: ["https://qp-homepage.netlify.app/assets/images/1on1-sessions-payment.png"],
             },
             unit_amount: priceInCents,
