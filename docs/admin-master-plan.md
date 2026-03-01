@@ -32,7 +32,7 @@ Todd (the founder/developer of Quantum Physician) and Claude have built this adm
 - These 3 docs + the current `admin/index.html`, `admin/admin.js`, `admin/admin.css`
 - Claude reads all docs BEFORE writing any code
 
-**Last updated:** Session 22 (Feb 28, 2026)
+**Last updated:** Session 22 + Hotfixes (Feb 28, 2026) — Session 23 (1-on-1 Sessions) starting next
 
 ---
 
@@ -201,14 +201,15 @@ Commit `86eeaa7` — Pre-Session 21 state. Both admin.js and index.html restored
 - `admin/admin.js` — Added `createRichEditor()` component (~300 lines), EC bridge code (~80 lines), SG popup mount integration. Removed 388 lines of old Session 20 EC-specific editor code. Total: 3290 lines (was 3132).
 - `admin/admin.css` — Updated `.re-toolbar`, `.re-editor`, `.re-select`, `.ec-tb-sep`, `.ec-tb-color-wrap`, `.ec-emoji-btn` styles. Replaced old Session 21 `.re-editable` styles.
 
-### Hotfix 7 — Applied (Session 22 continuation)
-1. ✅ **Safari-safe regex**: Replaced `(?<!\*)` lookbehind in `_reTextareaToRich()` line 3000 with `(?:^|([^*]))` alternation pattern. Lookbehinds crash Safari/WebKit. This was likely the SG popup crash cause.
-2. ✅ **CTA insert before first `---`**: Already implemented in Session 22 (lines 3246-3250). No change needed.
-3. ✅ **Academy email card links**: `buildAcademyEmail()` additional cards (line 1185) were stripping `[text](url)` with `.replace(/…/g,'')`. Now converts to styled `<a>` tags matching Fusion builder behavior (line 1113).
-
 ### Known Cleanup (Low Priority)
 - Old Session 19-20 `ecInsertLibraryCard` / `insertEmailVar` / `ecInsertCTA` definitions (lines ~2635-2744) are now dead code, overridden by bridge functions. Can be removed in a future cleanup pass.
 - `prompt()` used for link/image/CTA URLs. Could be upgraded to `qpPrompt()` for themed modals in a future pass.
+
+### Post-Session 22 Hotfixes (same day, Feb 28 2026)
+1. **Safari regex fix** ✅ — Replaced `(?<!\*)` lookbehind in `_reTextareaToRich` with Safari-safe `(^|[^*])\*...\*(?!\*)` pattern. Lookbehinds crash Safari/WebKit.
+2. **Draggable CTA pills** ✅ — CTAs now insert as their own `---` section using `[CTA:Label](url)` format. They appear as purple-bordered 🔗 pills in the drag-and-drop organizer alongside card pills. Both `buildRichEmail` and `buildAcademyEmail` detect `[CTA:...]` sections and render them as standalone gradient buttons (not wrapped in card boxes). Rich editor renders them as non-editable gradient button spans with `data-cta-url` attribute for round-tripping.
+3. **Section controls label** ✅ — "Cards" → "Cards & CTAs" in both EC and SG pill strips.
+4. **Email builder link rendering** ✅ — `[text](url)` markdown links in card sections now convert to styled `<a>` tags instead of being stripped. Applied to both Fusion and Academy email builders.
 
 ### Testing Notes
 - **EC editor**: Navigate to Email Center page. Toolbar + editor should render in the mount div. All formatting, cards, CTAs, merge tags, source toggle should work.
@@ -224,16 +225,52 @@ Commit `86eeaa7` — Pre-Session 21 state. Both admin.js and index.html restored
 
 ### Sessions 3–22 — ALL COMPLETED ✅
 
-### Session 23 — Live Event Page (GAME-CHANGER BUILD)
-- **Branded live Zoom experience page** — replaces plain Zoom links
-- **Pre-session**: Animated countdown timer, session details, Dr. Tracey bio, product cards, email capture for non-customers, referral sharing widget, ambient healing-energy animations
-- **During session**: Embedded Zoom (Web SDK), floating reaction buttons (hearts, prayer hands, sparkles), minimized product sidebar
-- **Post-session**: Auto-switch to replay mode (Vimeo), bundle upsell for single-session owners, related sessions carousel, reflection prompt, community link
-- **Access control**: Free events (email gate), paid sessions (login + purchase check), bundle upsell overlay, non-customer teaser with purchase CTA
-- **Swappable layout templates**: Admin panel gets "Live Event" config section — pick layout (Classic/Immersive/Minimal), set session, Zoom link, toggle widgets
-- **URL**: `fusionsessions.com/live.html` (or similar)
+### Session 23 — 1-on-1 Sessions System (STARTING NOW)
+Dr. Tracey's private BodyTalk sessions currently managed manually. Building a full booking cycle system:
 
-### Session 23+ — Future Features
+**Core Concept: 4-Month Booking Cycles**
+- Dr. Tracey works in 4-month segments (e.g., March-June, July-October, Nov-Feb)
+- She blocks available days (usually Tue/Wed/Thu, varies for teaching/travel)
+- Recurring clients are auto-populated into the cycle first (priority placement)
+- Clients receive proposed dates → confirm/decline/request changes via tokenized link
+- Remaining open slots become available to the public on a set date (creates anticipation/scarcity)
+- Single session type, one price
+
+**Admin Panel (page-sessions):**
+- ⬜ Cycle Manager — create/manage 4-month cycles, status pipeline (Planning → Client Confirmation → Public Open → Active → Completed)
+- ⬜ Availability Builder — calendar grid, click days to toggle available/blocked/teaching/travel, bulk actions ("Mark all Tuesdays"), time slot config per day
+- ⬜ Auto-Populate Engine — one-click places recurring clients based on preferred day/time/frequency, preview before committing, conflict detection
+- ⬜ Client Roster Manager — recurring clients list with frequency, preferred day/time, status (active/paused/waitlist), booking history
+- ⬜ Booking Grid — day/week timeline view, color-coded statuses, click to manage
+- ⬜ Client Communication Dashboard — batch send confirmations, track responses, auto-reminders
+- ⬜ Public Booking Controls — toggle open/closed, set "opens at" date, view available slots
+- ⬜ Waitlist Manager — queue, auto-notify on cancellations, one-click offer slot
+- ⬜ Analytics — utilization rate, retention, revenue per cycle, cancellation/no-show rate
+
+**Frontend (pages/one-on-sessions.html):**
+- ⬜ Session info page with booking status banner (Currently Booking / Fully Booked / Next Opens [Date] countdown)
+- ⬜ Available slots calendar + Stripe checkout for public bookings
+- ⬜ Client Confirmation Portal — tokenized link, confirm/decline/request change per appointment
+- ⬜ Waitlist signup form
+- ⬜ My Appointments view (logged-in users) with add-to-calendar
+
+**Database Tables (6 new):**
+- `session_config` — global settings (cycle length, price, duration, timezone, buffer)
+- `session_cycles` — each 4-month cycle with status pipeline
+- `session_availability` — daily time blocks with status (available/blocked/teaching/travel)
+- `session_clients` — recurring client roster with frequency/preferences
+- `session_bookings` — individual appointments with confirmation workflow
+- `session_waitlist` — public waitlist queue
+
+**Automation:**
+- Auto-email: confirmations, 24hr + 1hr reminders, waitlist notifications, cycle opening alerts
+- Auto-free declined/unconfirmed slots after deadline
+- Cycle summary report to Tracey
+
+**Reference:** Full design spec in `docs/session-system-design.md`
+
+### Session 24+ — Future Features
+- **Live Event Page**: Branded Zoom experience page (pre/during/post states), countdown, embedded Zoom, reactions, replay mode, access control, swappable layouts
 - **Student tools expansion**: Flashcards, text highlighting, reflection journal, lesson summarizer, student progress dashboard, goal tracking (build into preview toolbar)
 - **Custom card templates**: Save your own cards to library, card preview thumbnails
 - **AI Copilot**: Smart email writing assistance, content suggestions

@@ -7,7 +7,7 @@
 - Once QP admin covers everything, fusionsessions.com/admin.html gets decommissioned
 - One admin panel at qp-homepage.netlify.app/admin/ manages both platforms
 
-**Last updated:** Session 22 (Feb 28, 2026)
+**Last updated:** Session 22 + Hotfixes (Feb 28, 2026) — Session 23 (1-on-1 Sessions) starting next
 
 ---
 
@@ -34,13 +34,11 @@ All features from Fusion admin are now in QP admin. Zero gaps remain.
 - ✅ **Test Email** (SESSION 20) — Themed modal, sends via Apps Script
 - ✅ **Auth Auto-Refresh** (SESSION 20) — onAuthStateChange + 45-min interval + 401 retry
 
-### Unified Rich Editor (Session 22 + Hotfix 7) ✅
+### Unified Rich Editor (Session 22) ✅
 - ✅ `createRichEditor(config)` reusable component with instance-based state
 - ✅ Mounted in Email Center (inline), SG popup, and Recovery popup
 - ✅ Selection save/restore fixes CTA focus-loss bug
 - ✅ Syncing guard prevents infinite input loops
-- ✅ Safari-safe italic regex (no lookbehinds)
-- ✅ Academy email builder converts markdown links in card sections to styled links
 
 ### Course Builder (Sessions 14-18)
 - ✅ Full course builder with lesson creation, ordering, management
@@ -69,7 +67,15 @@ All features from Fusion admin are now in QP admin. Zero gaps remain.
 
 ## Planned Features (Not Yet Built)
 
-### Session 23 — Live Event Page
+### Session 23 — 1-on-1 Sessions System (STARTING IMMEDIATELY)
+- ⬜ 4-month booking cycle engine (Dr. Tracey's manual workflow → automated)
+- ⬜ Admin: Cycle Manager, Availability Builder (calendar), Auto-Populate Engine, Client Roster, Booking Grid, Confirmation Tracker, Public Booking Controls, Waitlist Manager
+- ⬜ Frontend: Session info page, dynamic booking status banner (open/closed/countdown), available slots calendar, Stripe checkout, client confirmation portal (tokenized), waitlist signup
+- ⬜ 6 new database tables: session_config, session_cycles, session_availability, session_clients, session_bookings, session_waitlist
+- ⬜ Automation: confirmation emails, 24hr/1hr reminders, waitlist notifications, cycle opening alerts
+- ⬜ Full design spec: `docs/session-system-design.md`
+
+### Session 24 — Live Event Page
 - ⬜ Branded live Zoom experience page (pre/during/post states)
 - ⬜ Countdown timer, embedded Zoom (Web SDK), live reactions
 - ⬜ Session replay (Vimeo), product cards, referral widget

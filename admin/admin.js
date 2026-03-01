@@ -3419,6 +3419,12 @@ function switchSessTab(tab,btn){
 /* ---------- Data Loading ---------- */
 async function loadSessionsData(){
   try{
+    /* Pre-flight: ensure token is fresh before parallel calls */
+    var s=await sb.auth.getSession();
+    if(s.data&&s.data.session){
+      sessionStorage.setItem('qp_admin_token',s.data.session.access_token);
+      if(s.data.session.refresh_token)sessionStorage.setItem('qp_admin_refresh',s.data.session.refresh_token);
+    }
     var r=await Promise.all([
       proxyFrom('session_config').select('*').limit(1),
       proxyFrom('session_cycles').select('*').order('start_date',{ascending:false}),
@@ -3598,8 +3604,9 @@ function loadAvailabilityCalendar(){
     var borderColor=status?color:'var(--border)';
     var isPast=new Date(dateStr)<new Date(new Date().toDateString());
     var bookCount=sessBookingsData.filter(function(b){return b.date===dateStr}).length;
-    html+='<div class="sess-cal-day'+(isPast?' past':'')+'" style="border-color:'+borderColor+'" onclick="toggleDayAvail(\''+dateStr+'\',\''+cycleId+'\')" title="'+(status||'No status')+'">'
-      +'<div class="sess-cal-num">'+d+'</div>'
+    var visIcon=avail&&avail.visibility==='client_only'?'<span title="Client only" style="font-size:9px;color:var(--warning)">★</span>':avail&&avail.visibility==='public'?'<span title="Public" style="font-size:9px;color:var(--teal)">◉</span>':'';
+    html+='<div class="sess-cal-day'+(isPast?' past':'')+'" style="border-color:'+borderColor+'" onclick="toggleDayAvail(\''+dateStr+'\',\''+cycleId+'\')" title="'+(status||'No status')+(avail&&avail.visibility?' ('+avail.visibility+')':'')+'">'
+      +'<div class="sess-cal-num">'+d+' '+visIcon+'</div>'
       +(status?'<div class="sess-cal-dot" style="background:'+color+'"></div>':'')
       +(avail&&avail.start_time?'<div class="sess-cal-time">'+avail.start_time.slice(0,5)+'-'+avail.end_time.slice(0,5)+'</div>':'')
       +(bookCount?'<div class="sess-cal-books">'+bookCount+' appt'+(bookCount>1?'s':'')+'</div>':'')
@@ -3622,17 +3629,25 @@ async function toggleDayAvail(dateStr,cycleId){
   ov.className='modal-overlay';
   ov.onclick=function(e){if(e.target===ov)ov.remove()};
   var box=document.createElement('div');
-  box.style.cssText='background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;max-width:320px;width:90%';
+  box.style.cssText='background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;max-width:400px;width:92%';
+  var statusButtons=[
+    {key:'available',label:'Available',color:'var(--success)'},
+    {key:'blocked',label:'Blocked',color:'var(--danger)'},
+    {key:'teaching',label:'Teaching',color:'var(--warning)'},
+    {key:'travel',label:'Travel',color:'var(--teal)'},
+    {key:'personal',label:'Personal',color:'var(--purple)'}
+  ];
+  var btnHtml=statusButtons.map(function(s){
+    return'<button class="btn btn-ghost btn-sm" style="border-color:'+s.color+'44;color:'+s.color+'" onclick="saveDayAvail(\''+dateStr+'\',\''+cycleId+'\',\''+s.key+'\')"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+s.color+';margin-right:4px"></span>'+s.label+'</button>';
+  }).join('');
+  btnHtml+='<button class="btn btn-danger btn-sm" onclick="saveDayAvail(\''+dateStr+'\',\''+cycleId+'\',null)">Remove</button>';
   box.innerHTML='<div style="font-weight:600;margin-bottom:4px">'+new Date(dateStr+'T12:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})+'</div>'
     +'<div style="font-size:12px;color:var(--text-dim);margin-bottom:14px">Set availability status:</div>'
-    +'<div style="display:flex;gap:6px;margin-bottom:14px"><label style="font-size:11px;color:var(--text-dim)">Start</label><input type="time" class="input" id="sess-day-start" value="'+(existing&&existing.start_time?existing.start_time.slice(0,5):'09:00')+'" style="width:120px">'
-    +'<label style="font-size:11px;color:var(--text-dim)">End</label><input type="time" class="input" id="sess-day-end" value="'+(existing&&existing.end_time?existing.end_time.slice(0,5):'17:00')+'" style="width:120px"></div>'
-    +'<div style="display:flex;gap:6px;margin-bottom:10px"><input type="text" class="input" id="sess-day-notes" placeholder="Notes (optional)" value="'+esc(existing&&existing.notes||'')+'"></div>'
-    +'<div style="display:flex;flex-wrap:wrap;gap:6px">'+labels.map(function(l,i){
-      var isRemove=i===5;
-      var statusArg=isRemove?'null':"'"+statuses[i]+"'";
-      return'<button class="btn '+(isRemove?'btn-danger':'btn-ghost')+' btn-sm" onclick="saveDayAvail(\''+dateStr+'\',\''+cycleId+'\','+statusArg+')">'+ l+'</button>';
-    }).join('')+'</div>';
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px"><div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px">Start</label><input type="time" class="input" id="sess-day-start" value="'+(existing&&existing.start_time?existing.start_time.slice(0,5):'09:00')+'" style="width:100%"></div>'
+    +'<div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px">End</label><input type="time" class="input" id="sess-day-end" value="'+(existing&&existing.end_time?existing.end_time.slice(0,5):'17:00')+'" style="width:100%"></div></div>'
+    +'<div style="margin-bottom:14px"><input type="text" class="input" id="sess-day-notes" placeholder="Notes (optional)" value="'+esc(existing&&existing.notes||'')+'" style="width:100%"></div>'
+    +'<div style="margin-bottom:10px"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:6px">Visibility</label><select class="input" id="sess-day-visibility" style="width:100%"><option value="client_first"'+(existing&&existing.visibility==='client_first'?' selected':'')+'>Client Priority (opens to public after window)</option><option value="client_only"'+(existing&&existing.visibility==='client_only'?' selected':'')+'>Client Only (never public)</option><option value="public"'+(existing&&existing.visibility==='public'?' selected':'')+'>Public Immediately</option></select></div>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:6px">'+btnHtml+'</div>';
   ov.appendChild(box);document.body.appendChild(ov);
 }
 
@@ -3641,15 +3656,16 @@ async function saveDayAvail(dateStr,cycleId,status){
   var startTime=document.getElementById('sess-day-start')?document.getElementById('sess-day-start').value:'09:00';
   var endTime=document.getElementById('sess-day-end')?document.getElementById('sess-day-end').value:'17:00';
   var notes=document.getElementById('sess-day-notes')?document.getElementById('sess-day-notes').value:'';
+  var visibility=document.getElementById('sess-day-visibility')?document.getElementById('sess-day-visibility').value:'client_first';
   if(popup)popup.remove();
   try{
     var existing=sessAvailData.find(function(a){return a.date===dateStr&&a.cycle_id===cycleId});
     if(status===null||status==='null'){
       if(existing){await proxyFrom('session_availability').delete().eq('id',existing.id)}
     }else if(existing){
-      await proxyFrom('session_availability').update({status:status,start_time:startTime,end_time:endTime,notes:notes||null}).eq('id',existing.id);
+      await proxyFrom('session_availability').update({status:status,start_time:startTime,end_time:endTime,notes:notes||null,visibility:visibility}).eq('id',existing.id);
     }else{
-      await proxyFrom('session_availability').insert({cycle_id:cycleId,date:dateStr,start_time:startTime,end_time:endTime,status:status,notes:notes||null});
+      await proxyFrom('session_availability').insert({cycle_id:cycleId,date:dateStr,start_time:startTime,end_time:endTime,status:status,notes:notes||null,visibility:visibility});
     }
     // Reload just availability
     var r=await proxyFrom('session_availability').select('*').order('date',{ascending:true});
@@ -3676,6 +3692,7 @@ async function bulkAvailability(){
   var startTime=document.getElementById('sess-bulk-start').value||'09:00';
   var endTime=document.getElementById('sess-bulk-end').value||'17:00';
   var notes=document.getElementById('sess-bulk-notes').value||null;
+  var visibility=document.getElementById('sess-bulk-visibility')?document.getElementById('sess-bulk-visibility').value:'client_first';
 
   var startDate=new Date(cycle.start_date+'T12:00');
   var endDate=new Date(cycle.end_date+'T12:00');
@@ -3706,7 +3723,7 @@ async function bulkAvailability(){
   if(!await qpConfirm('Bulk Availability','Set '+dates.length+' days to "'+action+'" for this cycle?',{okText:'Apply'}))return;
 
   try{
-    var rows=dates.map(function(dt){return{cycle_id:cycleId,date:dt,start_time:startTime,end_time:endTime,status:action,notes:notes}});
+    var rows=dates.map(function(dt){return{cycle_id:cycleId,date:dt,start_time:startTime,end_time:endTime,status:action,notes:notes,visibility:visibility}});
     // Delete existing entries for these dates first
     for(var i=0;i<dates.length;i++){
       var ex=sessAvailData.find(function(a){return a.date===dates[i]&&a.cycle_id===cycleId});
@@ -3720,6 +3737,10 @@ async function bulkAvailability(){
     showToast(dates.length+' days updated','success');
     var r=await proxyFrom('session_availability').select('*').order('date',{ascending:true});
     sessAvailData=r.data||[];
+    // Auto-navigate to the first month of the cycle
+    var cycleStart=new Date(cycle.start_date+'T12:00');
+    sessAvailMonth=cycleStart.getMonth();
+    sessAvailYear=cycleStart.getFullYear();
     loadAvailabilityCalendar();
   }catch(e){showToast('Error: '+e.message,'error')}
 }

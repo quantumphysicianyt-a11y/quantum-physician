@@ -1,6 +1,6 @@
 # QP Admin Panel — Full Infrastructure Documentation
 
-**Last updated:** Session 22 (Feb 28, 2026)
+**Last updated:** Session 22 + Hotfixes (Feb 28, 2026) — Session 23 (1-on-1 Sessions) starting next
 
 ---
 
@@ -188,15 +188,41 @@ Two SEPARATE key systems (Session 20 learning):
 
 ---
 
-## Known Issues (Session 22 + Hotfix 7)
+## Known Issues (Session 22)
 1. **✅ Fusion Sessions domain**: `fusionsessions.com` confirmed working.
 2. **✅ CTA buttons + rich editor**: Fixed in Session 22 — selection save/restore handles focus loss.
 3. **✅ Session 21 rebuilt**: Unified editor component working in Session 22.
-4. **✅ Safari lookbehind crash**: Replaced `(?<!\*)` in `_reTextareaToRich` with Safari-safe `(?:^|([^*]))` alternation. Was likely cause of SG popup crash.
-5. **✅ Academy email card links**: `buildAcademyEmail` additional cards now convert markdown links to styled `<a>` tags instead of stripping them.
+4. **✅ Safari regex crash**: Lookbehind `(?<!\*)` replaced with Safari-safe pattern in `_reTextareaToRich`.
+5. **✅ CTA drag-and-drop**: CTAs now insert as `[CTA:Label](url)` sections, draggable in pill organizer alongside cards.
 6. **email-decode.min.js 404**: Netlify phantom, harmless.
-5. **Test email delivery**: `mode:'no-cors'` means no confirmation. Check inbox manually.
-6. **Rich editor → email fidelity**: Advanced formatting (tables, images) may not render perfectly in email HTML.
-7. **Token refresh first-login**: After deploying auth changes, must log out + back in once to store refresh_token.
-8. **Dead code from Session 19-20**: Old `ecInsertLibraryCard`/`insertEmailVar`/`ecInsertCTA` overrides (lines ~2635-2744) are overridden by Session 22 bridge. Low priority cleanup.
-9. **prompt() for URLs**: Link, image, and custom CTA inputs use browser `prompt()` instead of `qpPrompt()`. Low priority upgrade.
+7. **Test email delivery**: `mode:'no-cors'` means no confirmation. Check inbox manually.
+8. **Rich editor → email fidelity**: Advanced formatting (tables, images) may not render perfectly in email HTML.
+9. **Token refresh first-login**: After deploying auth changes, must log out + back in once to store refresh_token.
+10. **Dead code from Session 19-20**: Old `ecInsertLibraryCard`/`insertEmailVar`/`ecInsertCTA` overrides (lines ~2635-2744) are overridden by Session 22 bridge. Low priority cleanup.
+11. **prompt() for URLs**: Link, image, and custom CTA inputs use browser `prompt()` instead of `qpPrompt()`. Low priority upgrade.
+
+---
+
+## Session 23 — 1-on-1 Sessions System (NEXT BUILD)
+
+### New Database Tables (6 tables to create in Supabase)
+| Table | Purpose |
+|-------|---------|
+| `session_config` | Global settings: cycle length, price, duration, timezone, buffer, booking status |
+| `session_cycles` | 4-month booking cycles with status pipeline |
+| `session_availability` | Daily time blocks: date, start/end time, status (available/blocked/teaching/travel) |
+| `session_clients` | Recurring client roster: frequency, preferred day/time, active/paused status |
+| `session_bookings` | Individual appointments: proposed/confirmed/declined, confirmation tokens, Zoom links |
+| `session_waitlist` | Public waitlist queue with preferred days/times |
+
+### Admin Panel Addition
+- `page-sessions` section (currently placeholder) will become the full booking management UI
+- Cycle Manager, Availability Builder (calendar), Auto-Populate Engine, Client Roster, Booking Grid, Confirmation Tracker
+
+### Frontend Addition
+- `pages/one-on-sessions.html` will become the public booking page with dynamic status banner
+- Client confirmation portal (tokenized, no login required)
+
+### Admin Proxy Updates Needed
+- Add 6 new tables to allowlist in `admin-proxy.js`
+- Add corresponding RLS policies in Supabase
