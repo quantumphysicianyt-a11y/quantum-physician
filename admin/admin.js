@@ -3895,19 +3895,30 @@ function renderClientRoster(){
   if(!clients.length){c.innerHTML='<div class="empty"><p>No '+filter+' clients.</p></div>';return}
   var freqLabels={weekly:'Weekly',biweekly:'Biweekly',monthly:'Monthly',every_2_months:'Every 2 Mo'};
   var dayLabels={monday:'Mon',tuesday:'Tue',wednesday:'Wed',thursday:'Thu',friday:'Fri',saturday:'Sat',sunday:'Sun'};
-  c.innerHTML='<table class="tbl"><thead><tr><th>Email</th><th>Name</th><th>Frequency</th><th>Preferred</th><th>Status</th><th>Priority</th><th></th></tr></thead><tbody>'
-    +clients.map(function(cl){
-      var statusBadge=cl.status==='active'?'<span class="badge green">Active</span>':(cl.status==='paused'?'<span class="badge yellow">Paused</span>':'<span class="badge muted">'+cl.status+'</span>');
-      return'<tr><td class="email">'+esc(cl.email)+'</td><td class="name">'+esc(cl.name||'—')+'</td>'
-        +'<td>'+freqLabels[cl.frequency]+'</td>'
-        +'<td>'+(dayLabels[cl.preferred_day]||cl.preferred_day)+' '+cl.preferred_time.slice(0,5)+'</td>'
-        +'<td>'+statusBadge+'</td><td>'+cl.priority+'</td>'
-        +'<td><div style="display:flex;gap:4px">'
-        +(cl.status==='active'?'<button class="btn btn-ghost btn-sm" onclick="pauseClient(\''+cl.id+'\')">Pause</button>':'<button class="btn btn-success btn-sm" onclick="activateClient(\''+cl.id+'\')">Activate</button>')
-        +'<button class="btn btn-ghost btn-sm" onclick="editClient(\''+cl.id+'\')">Edit</button>'
-        +'<button class="btn btn-danger btn-sm" onclick="removeClient(\''+cl.id+'\',\''+esc(cl.email)+'\')">Remove</button>'
-        +'</div></td></tr>';
-    }).join('')+'</tbody></table>';
+  // Count bookings per client for the selected cycle
+  var cycleId=sessSelectedCycleId||'';
+  c.innerHTML=clients.map(function(cl){
+    var clientBookings=sessBookingsData.filter(function(b){return b.client_id===cl.id&&(!cycleId||b.cycle_id===cycleId)});
+    var upcomingCount=clientBookings.filter(function(b){return b.date>=new Date().toISOString().slice(0,10)}).length;
+    var statusBadge=cl.status==='active'?'<span class="badge green">Active</span>':(cl.status==='paused'?'<span class="badge yellow">Paused</span>':'<span class="badge muted">'+cl.status+'</span>');
+    return'<div style="padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:6px;background:rgba(0,0,0,.08)">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">'
+      +'<div style="flex:1;min-width:200px">'
+      +'<div style="display:flex;align-items:center;gap:8px"><span style="font-weight:600;font-size:13px">'+esc(cl.name||cl.email)+'</span>'+statusBadge+'</div>'
+      +'<div style="font-size:11px;color:var(--teal);margin-top:2px">'+esc(cl.email)+'</div>'
+      +'<div style="font-size:11px;color:var(--text-dim);margin-top:4px">'+freqLabels[cl.frequency]+' · '+(dayLabels[cl.preferred_day]||cl.preferred_day)+'s · '+cl.preferred_time.slice(0,5)+' · Priority '+cl.priority+'</div>'
+      +'</div>'
+      +'<div style="display:flex;align-items:center;gap:6px">'
+      +'<div style="text-align:center;padding:4px 10px;background:rgba(91,168,178,.08);border-radius:var(--radius-sm);min-width:50px"><div style="font-size:16px;font-weight:700;color:var(--teal)">'+upcomingCount+'</div><div style="font-size:9px;color:var(--text-dim)">upcoming</div></div>'
+      +'</div>'
+      +'<div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">'
+      +'<button class="btn btn-ghost btn-sm" onclick="openClientDates(\''+cl.id+'\')" title="Assign Dates"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;vertical-align:middle;margin-right:2px"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Dates</button>'
+      +'<button class="btn btn-ghost btn-sm" onclick="openClientEmail(\''+cl.id+'\')" title="Send Email"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;vertical-align:middle;margin-right:2px"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Email</button>'
+      +'<button class="btn btn-ghost btn-sm" onclick="editClient(\''+cl.id+'\')">Edit</button>'
+      +(cl.status==='active'?'<button class="btn btn-ghost btn-sm" onclick="pauseClient(\''+cl.id+'\')">Pause</button>':'<button class="btn btn-success btn-sm" onclick="activateClient(\''+cl.id+'\')">Activate</button>')
+      +'<button class="btn btn-danger btn-sm" onclick="removeClient(\''+cl.id+'\',\''+esc(cl.email)+'\')">Remove</button>'
+      +'</div></div></div>';
+  }).join('');
 }
 
 async function pauseClient(id){
@@ -3947,6 +3958,203 @@ async function saveEditClient(id){
   document.getElementById('sess-edit-client-modal').remove();
   try{await proxyFrom('session_clients').update({frequency:freq,preferred_day:day,preferred_time:time,priority:priority}).eq('id',id);showToast('Client updated','success');
   var r=await proxyFrom('session_clients').select('*').order('priority',{ascending:true});sessClientsData=r.data||[];renderClientRoster()}catch(e){showToast('Error: '+e.message,'error')}
+}
+
+/* ---------- Auto-Populate Engine ---------- */
+
+/* ---------- Client Date Assignment ---------- */
+async function openClientDates(clientId){
+  var cl=sessClientsData.find(function(c){return c.id===clientId});if(!cl)return;
+  var cycleId=sessSelectedCycleId;
+  if(!cycleId){showToast('Select a cycle first from the Cycles tab','error');return}
+  var cycle=sessCyclesData.find(function(c){return c.id===cycleId});if(!cycle)return;
+  var clientBookings=sessBookingsData.filter(function(b){return b.client_id===clientId&&b.cycle_id===cycleId}).sort(function(a,b){return a.date<b.date?-1:1});
+  var availDays=sessAvailData.filter(function(a){return a.cycle_id===cycleId&&a.status==='available'}).sort(function(a,b){return a.date<b.date?-1:1});
+
+  var old=document.getElementById('sess-client-dates-modal');if(old)old.remove();
+  var ov=document.createElement('div');ov.id='sess-client-dates-modal';ov.className='modal-overlay';
+  ov.onclick=function(e){if(e.target===ov)ov.remove()};
+  var box=document.createElement('div');
+  box.style.cssText='background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;max-width:520px;width:94%;max-height:80vh;overflow-y:auto';
+
+  var existingHtml=clientBookings.length?clientBookings.map(function(b){
+    var dayName=new Date(b.date+'T12:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+    var statusBadge=b.status==='confirmed'?'<span class="badge green" style="font-size:10px">Confirmed</span>':'<span class="badge yellow" style="font-size:10px">Proposed</span>';
+    return'<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">'
+      +'<div style="flex:1;font-size:12px">'+dayName+' · '+b.time_slot+'</div>'+statusBadge
+      +'<button class="btn btn-danger btn-sm" style="font-size:10px;padding:2px 6px" onclick="removeClientDate(\''+b.id+'\',\''+clientId+'\')">×</button></div>';
+  }).join(''):'<div style="font-size:12px;color:var(--text-dim);padding:8px 0">No dates assigned yet</div>';
+
+  var availOpts=availDays.map(function(a){
+    var dayName=new Date(a.date+'T12:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+    var taken=sessBookingsData.some(function(b){return b.date===a.date&&b.cycle_id===cycleId});
+    return'<option value="'+a.date+'"'+(taken?' disabled':'')+'>'+dayName+' ('+a.start_time.slice(0,5)+'–'+a.end_time.slice(0,5)+')'+(taken?' — taken':'')+'</option>';
+  }).join('');
+
+  box.innerHTML='<div style="font-weight:600;font-size:15px;margin-bottom:4px">Dates for '+esc(cl.name||cl.email)+'</div>'
+    +'<div style="font-size:11px;color:var(--text-dim);margin-bottom:14px">Cycle: '+esc(cycle.name)+' ('+fmtDate(cycle.start_date)+' → '+fmtDate(cycle.end_date)+')</div>'
+    +'<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:600;color:var(--text-dim);margin-bottom:6px;letter-spacing:.5px">ASSIGNED DATES</div>'+existingHtml+'</div>'
+    +'<div style="border-top:1px solid var(--border);padding-top:12px">'
+    +'<div style="font-size:11px;font-weight:600;color:var(--text-dim);margin-bottom:6px;letter-spacing:.5px">ADD DATE</div>'
+    +'<div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">'
+    +'<div style="flex:1;min-width:160px"><label style="font-size:10px;color:var(--text-dim);display:block;margin-bottom:3px">Available Day</label><select class="input" id="cd-avail-date" style="width:100%"><option value="">Choose a day…</option>'+availOpts+'</select></div>'
+    +'<div><label style="font-size:10px;color:var(--text-dim);display:block;margin-bottom:3px">Time</label><input type="time" class="input" id="cd-time" value="'+cl.preferred_time.slice(0,5)+'" style="width:100px"></div>'
+    +'<button class="btn btn-primary btn-sm" onclick="addClientDate(\''+clientId+'\',\''+cycleId+'\')">Add</button></div>'
+    +'<div style="margin-top:8px;display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">'
+    +'<div style="flex:1;min-width:160px"><label style="font-size:10px;color:var(--text-dim);display:block;margin-bottom:3px">Or pick a custom date</label><input type="date" class="input" id="cd-custom-date" min="'+cycle.start_date+'" max="'+cycle.end_date+'" style="width:100%"></div>'
+    +'<button class="btn btn-ghost btn-sm" onclick="addClientDateCustom(\''+clientId+'\',\''+cycleId+'\')">Add Custom</button></div>'
+    +'</div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px"><button class="btn btn-ghost btn-sm" onclick="document.getElementById(\'sess-client-dates-modal\').remove()">Close</button></div>';
+  ov.appendChild(box);document.body.appendChild(ov);
+}
+
+async function addClientDate(clientId,cycleId){
+  var dateStr=document.getElementById('cd-avail-date').value;
+  var time=document.getElementById('cd-time').value;
+  if(!dateStr){showToast('Select a date','error');return}
+  var cl=sessClientsData.find(function(c){return c.id===clientId});
+  try{
+    await proxyFrom('session_bookings').insert({cycle_id:cycleId,client_id:clientId,client_email:cl?cl.email:'',date:dateStr,time_slot:time,status:'proposed',booked_by:'admin'});
+    showToast('Date added','success');
+    var r=await proxyFrom('session_bookings').select('*').order('date',{ascending:true});sessBookingsData=r.data||[];
+    openClientDates(clientId);renderClientRoster();
+  }catch(e){showToast('Error: '+e.message,'error')}
+}
+
+async function addClientDateCustom(clientId,cycleId){
+  var dateStr=document.getElementById('cd-custom-date').value;
+  var time=document.getElementById('cd-time').value;
+  if(!dateStr){showToast('Select a date','error');return}
+  var cl=sessClientsData.find(function(c){return c.id===clientId});
+  try{
+    await proxyFrom('session_bookings').insert({cycle_id:cycleId,client_id:clientId,client_email:cl?cl.email:'',date:dateStr,time_slot:time,status:'proposed',booked_by:'admin'});
+    showToast('Custom date added','success');
+    var r=await proxyFrom('session_bookings').select('*').order('date',{ascending:true});sessBookingsData=r.data||[];
+    openClientDates(clientId);renderClientRoster();
+  }catch(e){showToast('Error: '+e.message,'error')}
+}
+
+async function removeClientDate(bookingId,clientId){
+  try{
+    await proxyFrom('session_bookings').delete().eq('id',bookingId);
+    showToast('Date removed','success');
+    var r=await proxyFrom('session_bookings').select('*').order('date',{ascending:true});sessBookingsData=r.data||[];
+    openClientDates(clientId);renderClientRoster();
+  }catch(e){showToast('Error: '+e.message,'error')}
+}
+
+/* ---------- Client Quick Email ---------- */
+var SESS_EMAIL_TEMPLATES={
+  invitation:{
+    subject:'Your {{cycle_name}} Session Schedule',
+    body:'Hi {{client_name}},\n\nYour sessions for the {{cycle_name}} cycle are ready! Here are your scheduled dates:\n\n{{session_dates}}\n\nPlease confirm your availability by replying to this email.\n\nWarmly,\nDr. Tracey'
+  },
+  reminder:{
+    subject:'Session Reminder — {{next_date}}',
+    body:'Hi {{client_name}},\n\nThis is a friendly reminder about your upcoming session:\n\n📅 {{next_date}} at {{next_time}}\n\n{{zoom_link}}\n\nLooking forward to connecting with you!\n\nWarmly,\nDr. Tracey'
+  },
+  zoom_link:{
+    subject:'Your Zoom Link — {{next_date}}',
+    body:'Hi {{client_name}},\n\nHere is your Zoom link for our session on {{next_date}}:\n\n🔗 {{zoom_link}}\n\nPlease join a few minutes early.\n\nWarmly,\nDr. Tracey'
+  },
+  recording:{
+    subject:'Session Recording Available',
+    body:'Hi {{client_name}},\n\nYour session recording is now available:\n\n🎥 {{recording_link}}\n\nThis recording will be available for 30 days.\n\nWarmly,\nDr. Tracey'
+  },
+  followup:{
+    subject:'Follow-up — Your Session Notes',
+    body:'Hi {{client_name}},\n\nThank you for our session. Here are your session notes and next steps:\n\n{{notes}}\n\nYour next session is scheduled for {{next_date}}.\n\nWarmly,\nDr. Tracey'
+  },
+  custom:{subject:'',body:'Hi {{client_name}},\n\n\n\nWarmly,\nDr. Tracey'}
+};
+
+function openClientEmail(clientId){
+  var cl=sessClientsData.find(function(c){return c.id===clientId});if(!cl)return;
+  var cycleId=sessSelectedCycleId;
+  var cycle=cycleId?sessCyclesData.find(function(c){return c.id===cycleId}):null;
+  var clientBookings=sessBookingsData.filter(function(b){return b.client_id===clientId}).sort(function(a,b){return a.date<b.date?-1:1});
+  var nextBooking=clientBookings.find(function(b){return b.date>=new Date().toISOString().slice(0,10)});
+
+  var old=document.getElementById('sess-client-email-modal');if(old)old.remove();
+  var ov=document.createElement('div');ov.id='sess-client-email-modal';ov.className='modal-overlay';
+  ov.onclick=function(e){if(e.target===ov)ov.remove()};
+  var box=document.createElement('div');
+  box.style.cssText='background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;max-width:560px;width:94%;max-height:85vh;overflow-y:auto';
+
+  var templateBtns='<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px">';
+  [{k:'invitation',l:'Invitation'},{k:'reminder',l:'Reminder'},{k:'zoom_link',l:'Zoom Link'},{k:'recording',l:'Recording'},{k:'followup',l:'Follow-up'},{k:'custom',l:'Custom'}].forEach(function(t){
+    templateBtns+='<button class="btn btn-ghost btn-sm" style="font-size:11px" onclick="loadClientEmailTemplate(\''+t.k+'\',\''+clientId+'\')">'+t.l+'</button>';
+  });
+  templateBtns+='</div>';
+
+  box.innerHTML='<div style="font-weight:600;font-size:15px;margin-bottom:4px">Email to '+esc(cl.name||cl.email)+'</div>'
+    +'<div style="font-size:11px;color:var(--teal);margin-bottom:12px">'+esc(cl.email)+'</div>'
+    +'<div style="font-size:11px;font-weight:600;color:var(--text-dim);margin-bottom:6px;letter-spacing:.5px">QUICK TEMPLATES</div>'
+    +templateBtns
+    +'<div style="margin-bottom:10px"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px">Subject</label><input type="text" class="input" id="ce-subject" style="width:100%" placeholder="Email subject…"></div>'
+    +'<div style="margin-bottom:10px"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px">Body</label><textarea class="input" id="ce-body" rows="10" style="width:100%;resize:vertical;font-family:inherit;line-height:1.5" placeholder="Email body…"></textarea></div>'
+    +'<div style="font-size:10px;color:var(--text-dim);margin-bottom:12px">Merge fields: {{client_name}}, {{client_email}}, {{cycle_name}}, {{next_date}}, {{next_time}}, {{session_dates}}, {{zoom_link}}, {{recording_link}}, {{notes}}</div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-ghost btn-sm" onclick="document.getElementById(\'sess-client-email-modal\').remove()">Cancel</button><button class="btn btn-ghost btn-sm" onclick="previewClientEmail(\''+clientId+'\')">Preview</button><button class="btn btn-primary btn-sm" onclick="sendClientEmail(\''+clientId+'\')">Send</button></div>';
+  ov.appendChild(box);document.body.appendChild(ov);
+}
+
+function loadClientEmailTemplate(key,clientId){
+  var tpl=SESS_EMAIL_TEMPLATES[key];if(!tpl)return;
+  var cl=sessClientsData.find(function(c){return c.id===clientId});
+  var cycle=sessSelectedCycleId?sessCyclesData.find(function(c){return c.id===sessSelectedCycleId}):null;
+  var clientBookings=sessBookingsData.filter(function(b){return b.client_id===clientId}).sort(function(a,b){return a.date<b.date?-1:1});
+  var nextBooking=clientBookings.find(function(b){return b.date>=new Date().toISOString().slice(0,10)});
+  var datesStr=clientBookings.map(function(b){return new Date(b.date+'T12:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})+' at '+b.time_slot}).join('\n');
+
+  var subject=tpl.subject.replace(/\{\{client_name\}\}/g,cl?cl.name||'':'')
+    .replace(/\{\{cycle_name\}\}/g,cycle?cycle.name:'')
+    .replace(/\{\{next_date\}\}/g,nextBooking?new Date(nextBooking.date+'T12:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}):'[date]')
+    .replace(/\{\{next_time\}\}/g,nextBooking?nextBooking.time_slot:'[time]');
+  var body=tpl.body.replace(/\{\{client_name\}\}/g,cl?cl.name||'':'')
+    .replace(/\{\{client_email\}\}/g,cl?cl.email:'')
+    .replace(/\{\{cycle_name\}\}/g,cycle?cycle.name:'')
+    .replace(/\{\{next_date\}\}/g,nextBooking?new Date(nextBooking.date+'T12:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}):'[date]')
+    .replace(/\{\{next_time\}\}/g,nextBooking?nextBooking.time_slot:'[time]')
+    .replace(/\{\{session_dates\}\}/g,datesStr||'[no dates assigned yet]')
+    .replace(/\{\{zoom_link\}\}/g,'[paste Zoom link]')
+    .replace(/\{\{recording_link\}\}/g,'[paste recording link]')
+    .replace(/\{\{notes\}\}/g,'[paste session notes]');
+
+  document.getElementById('ce-subject').value=subject;
+  document.getElementById('ce-body').value=body;
+}
+
+function previewClientEmail(clientId){
+  var subject=document.getElementById('ce-subject').value;
+  var body=document.getElementById('ce-body').value;
+  var cl=sessClientsData.find(function(c){return c.id===clientId});
+  var old=document.getElementById('sess-email-preview');if(old)old.remove();
+  var prev=document.createElement('div');prev.id='sess-email-preview';
+  prev.style.cssText='margin-top:12px;padding:14px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:var(--radius-sm)';
+  prev.innerHTML='<div style="font-size:10px;color:var(--text-dim);margin-bottom:6px">PREVIEW</div>'
+    +'<div style="font-size:12px;color:var(--text-dim)">To: '+esc(cl?cl.email:'')+'</div>'
+    +'<div style="font-size:13px;font-weight:600;margin:4px 0 8px">'+esc(subject)+'</div>'
+    +'<div style="font-size:12px;white-space:pre-wrap;line-height:1.5">'+esc(body)+'</div>';
+  var modal=document.getElementById('sess-client-email-modal');
+  if(modal) modal.querySelector('div').appendChild(prev);
+}
+
+async function sendClientEmail(clientId){
+  var cl=sessClientsData.find(function(c){return c.id===clientId});if(!cl)return;
+  var subject=document.getElementById('ce-subject').value.trim();
+  var body=document.getElementById('ce-body').value.trim();
+  if(!subject||!body){showToast('Subject and body required','error');return}
+  if(!await qpConfirm('Send Email','Send this email to '+cl.email+'?',{okText:'Send'}))return;
+  try{
+    await proxyFrom('email_log').insert({
+      to_email:cl.email,to_name:cl.name||'',subject:subject,
+      body_text:body,status:'sent',template:'session_client',
+      sent_at:new Date().toISOString(),sent_by:currentAdmin?currentAdmin.name:'admin'
+    });
+    await logAudit('send_client_email',cl.email,'Sent: '+subject,{template:'client_email'});
+    showToast('Email sent to '+cl.email,'success');
+    document.getElementById('sess-client-email-modal').remove();
+  }catch(e){showToast('Error: '+e.message,'error')}
 }
 
 /* ---------- Auto-Populate Engine ---------- */
