@@ -3959,7 +3959,7 @@ async function editClient(id){
   ov.onclick=function(e){if(e.target===ov)ov.remove()};
   var box=document.createElement('div');
   box.style.cssText='background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;max-width:400px;width:92%';
-  box.innerHTML='<div style="font-weight:600;margin-bottom:14px">Edit Client: '+esc(cl.client_email)+'</div>'
+  box.innerHTML='<div style="font-weight:600;margin-bottom:14px">Edit Client: '+esc(cl.email)+'</div>'
     +'<div style="margin-bottom:10px"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px">Frequency</label><select class="input" id="ec-freq" style="width:100%"><option value="weekly"'+(cl.frequency==='weekly'?' selected':'')+'>Weekly</option><option value="biweekly"'+(cl.frequency==='biweekly'?' selected':'')+'>Biweekly</option><option value="monthly"'+(cl.frequency==='monthly'?' selected':'')+'>Monthly</option><option value="every_2_months"'+(cl.frequency==='every_2_months'?' selected':'')+'>Every 2 Months</option></select></div>'
     +'<div style="margin-bottom:10px"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px">Preferred Day</label><select class="input" id="ec-day" style="width:100%"><option value="monday"'+(cl.preferred_day==='monday'?' selected':'')+'>Monday</option><option value="tuesday"'+(cl.preferred_day==='tuesday'?' selected':'')+'>Tuesday</option><option value="wednesday"'+(cl.preferred_day==='wednesday'?' selected':'')+'>Wednesday</option><option value="thursday"'+(cl.preferred_day==='thursday'?' selected':'')+'>Thursday</option><option value="friday"'+(cl.preferred_day==='friday'?' selected':'')+'>Friday</option></select></div>'
     +'<div style="margin-bottom:10px"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px">Preferred Time</label><input type="time" class="input" id="ec-time" value="'+(cl.preferred_time?cl.preferred_time.slice(0,5):'10:00')+'" style="width:100%"></div>'
@@ -3998,7 +3998,7 @@ async function openClientDates(clientId){
     var dayName=new Date(b.date+'T12:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
     var statusBadge=b.status==='confirmed'?'<span class="badge green" style="font-size:10px">Confirmed</span>':'<span class="badge yellow" style="font-size:10px">Proposed</span>';
     return'<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">'
-      +'<div style="flex:1;font-size:12px">'+dayName+' · '+b.time_slot+'</div>'+statusBadge
+      +'<div style="flex:1;font-size:12px">'+dayName+' · '+b.start_time.slice(0,5)+'–'+b.end_time.slice(0,5)+'</div>'+statusBadge
       +'<button class="btn btn-danger btn-sm" style="font-size:10px;padding:2px 6px" onclick="removeClientDate(\''+b.id+'\',\''+clientId+'\')">×</button></div>';
   }).join(''):'<div style="font-size:12px;color:var(--text-dim);padding:8px 0">No dates assigned yet</div>';
 
@@ -4030,8 +4030,13 @@ async function addClientDate(clientId,cycleId){
   var time=document.getElementById('cd-time').value;
   if(!dateStr){showToast('Select a date','error');return}
   var cl=sessClientsData.find(function(c){return c.id===clientId});
+  var duration=sessConfigData?sessConfigData.session_duration_minutes:60;
+  var endH=parseInt(time.split(':')[0]),endM=parseInt(time.split(':')[1])+duration;
+  endH+=Math.floor(endM/60);endM=endM%60;
+  var endTime=String(endH).padStart(2,'0')+':'+String(endM).padStart(2,'0');
   try{
-    await proxyFrom('session_bookings').insert({cycle_id:cycleId,client_id:clientId,client_email:cl?cl.email:'',date:dateStr,time_slot:time,status:'proposed',booked_by:'admin'});
+    var res=await proxyFrom('session_bookings').insert({cycle_id:cycleId,client_id:clientId,email:cl?cl.email:'',name:cl?cl.name:'',date:dateStr,start_time:time,end_time:endTime,status:'proposed',type:'recurring',proposed_at:new Date().toISOString()});
+    if(res.error){showToast('Error: '+res.error.message,'error');return}
     showToast('Date added','success');
     var r=await proxyFrom('session_bookings').select('*').order('date',{ascending:true});sessBookingsData=r.data||[];
     openClientDates(clientId);renderClientRoster();
@@ -4043,8 +4048,13 @@ async function addClientDateCustom(clientId,cycleId){
   var time=document.getElementById('cd-time').value;
   if(!dateStr){showToast('Select a date','error');return}
   var cl=sessClientsData.find(function(c){return c.id===clientId});
+  var duration=sessConfigData?sessConfigData.session_duration_minutes:60;
+  var endH=parseInt(time.split(':')[0]),endM=parseInt(time.split(':')[1])+duration;
+  endH+=Math.floor(endM/60);endM=endM%60;
+  var endTime=String(endH).padStart(2,'0')+':'+String(endM).padStart(2,'0');
   try{
-    await proxyFrom('session_bookings').insert({cycle_id:cycleId,client_id:clientId,client_email:cl?cl.email:'',date:dateStr,time_slot:time,status:'proposed',booked_by:'admin'});
+    var res=await proxyFrom('session_bookings').insert({cycle_id:cycleId,client_id:clientId,email:cl?cl.email:'',name:cl?cl.name:'',date:dateStr,start_time:time,end_time:endTime,status:'proposed',type:'recurring',proposed_at:new Date().toISOString()});
+    if(res.error){showToast('Error: '+res.error.message,'error');return}
     showToast('Custom date added','success');
     var r=await proxyFrom('session_bookings').select('*').order('date',{ascending:true});sessBookingsData=r.data||[];
     openClientDates(clientId);renderClientRoster();
@@ -4121,17 +4131,17 @@ function loadClientEmailTemplate(key,clientId){
   var cycle=sessSelectedCycleId?sessCyclesData.find(function(c){return c.id===sessSelectedCycleId}):null;
   var clientBookings=sessBookingsData.filter(function(b){return b.client_id===clientId}).sort(function(a,b){return a.date<b.date?-1:1});
   var nextBooking=clientBookings.find(function(b){return b.date>=new Date().toISOString().slice(0,10)});
-  var datesStr=clientBookings.map(function(b){return new Date(b.date+'T12:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})+' at '+b.time_slot}).join('\n');
+  var datesStr=clientBookings.map(function(b){return new Date(b.date+'T12:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})+' at '+b.start_time.slice(0,5)}).join('\n');
 
   var subject=tpl.subject.replace(/\{\{client_name\}\}/g,cl?cl.name||'':'')
     .replace(/\{\{cycle_name\}\}/g,cycle?cycle.name:'')
     .replace(/\{\{next_date\}\}/g,nextBooking?new Date(nextBooking.date+'T12:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}):'[date]')
-    .replace(/\{\{next_time\}\}/g,nextBooking?nextBooking.time_slot:'[time]');
+    .replace(/\{\{next_time\}\}/g,nextBooking?nextBooking.start_time.slice(0,5):'[time]');
   var body=tpl.body.replace(/\{\{client_name\}\}/g,cl?cl.name||'':'')
     .replace(/\{\{client_email\}\}/g,cl?cl.email:'')
     .replace(/\{\{cycle_name\}\}/g,cycle?cycle.name:'')
     .replace(/\{\{next_date\}\}/g,nextBooking?new Date(nextBooking.date+'T12:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}):'[date]')
-    .replace(/\{\{next_time\}\}/g,nextBooking?nextBooking.time_slot:'[time]')
+    .replace(/\{\{next_time\}\}/g,nextBooking?nextBooking.start_time.slice(0,5):'[time]')
     .replace(/\{\{session_dates\}\}/g,datesStr||'[no dates assigned yet]')
     .replace(/\{\{zoom_link\}\}/g,'[paste Zoom link]')
     .replace(/\{\{recording_link\}\}/g,'[paste recording link]')
