@@ -3630,7 +3630,8 @@ async function toggleDayAvail(dateStr,cycleId){
     +'<div style="display:flex;gap:6px;margin-bottom:10px"><input type="text" class="input" id="sess-day-notes" placeholder="Notes (optional)" value="'+esc(existing&&existing.notes||'')+'"></div>'
     +'<div style="display:flex;flex-wrap:wrap;gap:6px">'+labels.map(function(l,i){
       var isRemove=i===5;
-      return'<button class="btn '+(isRemove?'btn-danger':'btn-ghost')+' btn-sm" onclick="saveDayAvail(\''+dateStr+'\',\''+cycleId+'\','+(isRemove?'null':'\\''+statuses[i]+'\\'')+')">'+ l+'</button>';
+      var statusArg=isRemove?'null':"'"+statuses[i]+"'";
+      return'<button class="btn '+(isRemove?'btn-danger':'btn-ghost')+' btn-sm" onclick="saveDayAvail(\''+dateStr+'\',\''+cycleId+'\','+statusArg+')">'+ l+'</button>';
     }).join('')+'</div>';
   ov.appendChild(box);document.body.appendChild(ov);
 }
