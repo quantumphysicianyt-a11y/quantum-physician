@@ -3474,12 +3474,22 @@ function renderCycleBanner(){
   document.getElementById('sess-cycle-status-wrap').innerHTML='<span class="badge" style="background:'+statusColors[active.status]+'22;color:'+statusColors[active.status]+'">'+statusLabels[active.status]+'</span>'
     +'<button class="btn btn-ghost btn-sm" onclick="advanceCycleStatus(\''+active.id+'\',\''+active.status+'\')">Advance →</button>';
   var stages=['planning','client_confirmation','public_open','active','completed'];
+  var stageLabels={planning:'Planning',client_confirmation:'Client Confirm',public_open:'Public Open',active:'Active',completed:'Complete'};
+  var stageColors={planning:'var(--text-dim)',client_confirmation:'var(--warning)',public_open:'var(--purple)',active:'var(--success)',completed:'var(--text-dim)'};
   var pipeHtml='';
   stages.forEach(function(s,i){
     var isCurrent=s===active.status;
     var isPast=stages.indexOf(active.status)>i;
-    var color=isPast?'var(--success)':(isCurrent?statusColors[s]:'var(--border)');
-    pipeHtml+='<div style="flex:1;height:6px;border-radius:3px;background:'+color+';transition:background .3s" title="'+statusLabels[s]+'"></div>';
+    var isNext=stages.indexOf(active.status)+1===i;
+    var barColor=isPast?'var(--success)':(isCurrent?stageColors[s]:'var(--border)');
+    var textColor=isCurrent?stageColors[s]:(isPast?'var(--success)':'var(--text-dim)');
+    var weight=isCurrent?'700':'400';
+    var opacity=isPast||isCurrent?'1':'.4';
+    pipeHtml+='<div style="flex:1;text-align:center;opacity:'+opacity+'">'
+      +'<div style="height:6px;border-radius:3px;background:'+barColor+';transition:background .3s;margin-bottom:4px"></div>'
+      +'<div style="font-size:9px;font-weight:'+weight+';color:'+textColor+';letter-spacing:.3px">'+stageLabels[s]
+      +(isNext?' →':'')
+      +'</div></div>';
   });
   document.getElementById('sess-cycle-pipeline').innerHTML=pipeHtml;
 }
