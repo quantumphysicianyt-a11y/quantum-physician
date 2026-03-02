@@ -377,7 +377,13 @@
                 <div class="ref-stats">
                     <span><strong id="refBal">$0</strong>Credit</span>
                     <span><strong id="refEarn">$0</strong>Earned</span>
+                    <span><strong id="refRefs">0</strong>Referrals</span>
                 </div>
+                <div style="margin-top:10px;font-size:10px;color:var(--text-muted);text-align:center;line-height:1.5;">
+                    Earn <strong style="color:var(--teal)">$10</strong> per session referral<br>
+                    <strong style="color:var(--teal)">$25</strong> per bundle referral
+                </div>
+                <a href="/referral-hub.html?brand=qp" style="display:block;margin-top:8px;font-size:10px;text-align:center;color:var(--teal);text-decoration:none;text-transform:uppercase;letter-spacing:.05em;">Open Referral Hub →</a>
             </div>
         </div>
 
@@ -524,12 +530,16 @@
 
     // ═══ REFERRAL ═══
     async function loadReferral() {
-        const { data: ref } = await sb.from('referral_codes').select('code, credit_balance, total_earned').eq('user_id', currentUser.id).single();
+        const { data: ref } = await sb.from('referral_codes')
+            .select('code, credit_balance, total_earned, successful_referrals')
+            .eq('email', userEmail.toLowerCase())
+            .single();
         if (ref) {
             $('refSection').style.display = 'block';
             $('refCode').textContent = ref.code;
             $('refBal').textContent = `$${(ref.credit_balance || 0).toFixed(0)}`;
             $('refEarn').textContent = `$${(ref.total_earned || 0).toFixed(0)}`;
+            $('refRefs').textContent = ref.successful_referrals || 0;
         }
     }
 
