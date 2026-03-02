@@ -391,7 +391,7 @@
             <a href="/members/dashboard.html" class="active"><svg><use href="#i-layout"/></svg> Dashboard</a>
             <a href="/pages/one-on-sessions.html"><svg><use href="#i-cal"/></svg> Book a Session</a>
             <a href="/academy/dashboard.html"><svg><use href="#i-grad"/></svg> Academy</a>
-            <a href="https://fusionsessions.com/dashboard.html"><svg><use href="#i-layers"/></svg> Fusion Sessions</a>
+            <a href="#" id="fusionLink" onclick="goToFusion(event)"><svg><use href="#i-layers"/></svg> Fusion Sessions</a>
             <a href="/members/settings.html"><svg><use href="#i-settings"/></svg> Account Settings</a>
             <div class="divider"></div>
             <a href="/"><svg><use href="#i-home"/></svg> Main Site</a>
@@ -428,7 +428,7 @@
                 <div class="quick-links">
                     <a href="/pages/one-on-sessions.html" class="quick-link"><svg style="color:var(--teal)"><use href="#i-cal"/></svg> Book a 1-on-1 Session <span class="ql-arrow"><svg><use href="#i-chevron"/></svg></span></a>
                     <a href="/academy/" class="quick-link"><svg style="color:var(--gold)"><use href="#i-grad"/></svg> Academy Courses <span class="ql-arrow"><svg><use href="#i-chevron"/></svg></span></a>
-                    <a href="https://fusionsessions.com/dashboard.html" class="quick-link"><svg style="color:var(--success)"><use href="#i-layers"/></svg> Fusion Sessions <span class="ql-arrow"><svg><use href="#i-chevron"/></svg></span></a>
+                    <a href="#" onclick="goToFusion(event)" class="quick-link"><svg style="color:var(--success)"><use href="#i-layers"/></svg> Fusion Sessions <span class="ql-arrow"><svg><use href="#i-chevron"/></svg></span></a>
                     <a href="https://quantumphysician.com/contact-us/" class="quick-link" target="_blank"><svg style="color:var(--warning)"><use href="#i-mail"/></svg> Contact Dr. Tracey <span class="ql-arrow"><svg><use href="#i-chevron"/></svg></span></a>
                 </div>
             </div>
@@ -665,6 +665,18 @@
     // ═══ SIGNOUT ═══
     $('signout-btn').addEventListener('click', async e => { e.preventDefault(); await sb.auth.signOut(); window.location.href = LOGIN_URL+'?logged_out=true'; });
     sb.auth.onAuthStateChange(e => { if(e==='SIGNED_OUT') window.location.href=LOGIN_URL+'?session_expired=true'; });
+
+    // ═══ CROSS-DOMAIN SSO ═══
+    async function goToFusion(e) {
+        e.preventDefault();
+        const { data: { session } } = await sb.auth.getSession();
+        if (session?.access_token && session?.refresh_token) {
+            const url = `https://fusionsessions.com/dashboard.html#access_token=${session.access_token}&refresh_token=${session.refresh_token}&type=sso`;
+            window.location.href = url;
+        } else {
+            window.location.href = 'https://fusionsessions.com/dashboard.html';
+        }
+    }
 
     // ═══ HELPERS ═══
     function fmtDate(s) { if(!s) return '—'; return new Date(s).toLocaleDateString('en-US',{month:'long',year:'numeric'}); }
