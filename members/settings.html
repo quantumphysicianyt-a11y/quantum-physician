@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Settings — Quantum Physician</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Lato:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy: #131e3d;
+            --navy-light: #1a2a50;
+            --navy-lighter: #223363;
+            --teal: #5ba8b2;
+            --teal-light: #7dc4cd;
+            --teal-dark: #4a939c;
+            --gold: #c9a96e;
+            --white: #ffffff;
+            --text-light: rgba(255,255,255,0.85);
+            --text-muted: rgba(255,255,255,0.5);
+            --error: #e85d5d;
+            --success: #5bb88c;
+            --border-subtle: rgba(91,168,178,0.2);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Lato', sans-serif;
+            background: var(--navy);
+            color: var(--white);
+            min-height: 100vh;
+        }
+        body::before {
+            content: ''; position: fixed; inset: 0;
+            background: radial-gradient(ellipse at 15% 20%, rgba(91,168,178,0.07) 0%, transparent 60%),
+                        radial-gradient(ellipse at 85% 80%, rgba(201,169,110,0.05) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .ic { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+        .ic-sm { width: 15px; height: 15px; }
+
+        /* ─── Header ─── */
+        .dash-header {
+            position: sticky; top: 0; z-index: 100;
+            padding: 16px 32px; display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px solid var(--border-subtle);
+            background: rgba(19,30,61,0.95); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+        }
+        .logo-area { display: flex; align-items: center; text-decoration: none; }
+        .logo-img { height: 36px; width: auto; }
+        .back-link {
+            display: flex; align-items: center; gap: 6px;
+            color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s;
+        }
+        .back-link:hover { color: var(--teal); }
+        .back-link svg { width: 16px; height: 16px; }
+
+        /* ─── Main ─── */
+        .settings-main {
+            position: relative; z-index: 1;
+            max-width: 680px; margin: 0 auto; padding: 32px 24px 60px;
+        }
+        .page-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 28px; font-weight: 600; margin-bottom: 8px;
+        }
+        .page-sub { color: var(--text-muted); font-size: 15px; margin-bottom: 32px; font-weight: 300; }
+
+        /* ─── Section Card ─── */
+        .settings-card {
+            background: linear-gradient(170deg, var(--navy-light) 0%, var(--navy) 100%);
+            border: 1px solid var(--border-subtle); border-radius: 14px;
+            padding: 28px; margin-bottom: 24px;
+        }
+        .card-header {
+            display: flex; align-items: center; gap: 10px;
+            font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 600;
+            margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .card-icon {
+            width: 32px; height: 32px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(91,168,178,0.15); color: var(--teal); flex-shrink: 0;
+        }
+
+        /* ─── Avatar ─── */
+        .avatar-section {
+            display: flex; align-items: center; gap: 24px; margin-bottom: 24px;
+        }
+        .avatar-wrapper { position: relative; flex-shrink: 0; }
+        .avatar-circle {
+            width: 80px; height: 80px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--teal), var(--teal-dark));
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 700; color: #fff;
+            overflow: hidden;
+        }
+        .avatar-circle img { width: 100%; height: 100%; object-fit: cover; }
+        .avatar-upload-btn {
+            position: absolute; bottom: -2px; right: -2px;
+            width: 28px; height: 28px; border-radius: 50%;
+            background: var(--teal); border: 2px solid var(--navy);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: transform 0.2s;
+            color: #fff;
+        }
+        .avatar-upload-btn:hover { transform: scale(1.1); }
+        .avatar-upload-btn svg { width: 13px; height: 13px; }
+        .avatar-upload-btn input { display: none; }
+        .avatar-info p { color: var(--text-muted); font-size: 13px; line-height: 1.5; }
+        .avatar-info .remove-link {
+            color: var(--error); font-size: 12px; cursor: pointer;
+            background: none; border: none; font-family: inherit; margin-top: 4px;
+            transition: opacity 0.2s; display: none;
+        }
+        .avatar-info .remove-link.show { display: inline-block; }
+        .avatar-info .remove-link:hover { opacity: 0.7; }
+
+        /* ─── Form ─── */
+        .form-row { margin-bottom: 18px; }
+        .form-label {
+            display: block; font-size: 12px; font-weight: 600; letter-spacing: 1.2px;
+            text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;
+        }
+        .form-input {
+            width: 100%; padding: 13px 16px;
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px; color: var(--white); font-family: 'Lato', sans-serif;
+            font-size: 15px; outline: none; transition: all 0.3s;
+        }
+        .form-input::placeholder { color: rgba(255,255,255,0.25); }
+        .form-input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(91,168,178,0.15); }
+        .form-input:disabled { opacity: 0.5; cursor: not-allowed; }
+        .form-hint { font-size: 12px; color: var(--text-muted); margin-top: 5px; }
+
+        .form-row-inline { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+        /* ─── Toggle Switch ─── */
+        .toggle-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .toggle-row:last-child { border-bottom: none; }
+        .toggle-label { font-size: 14px; color: var(--text-light); }
+        .toggle-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+        .toggle-switch {
+            position: relative; width: 44px; height: 24px;
+            background: rgba(255,255,255,0.12); border-radius: 12px;
+            cursor: pointer; transition: background 0.3s; flex-shrink: 0;
+        }
+        .toggle-switch.on { background: var(--teal); }
+        .toggle-switch::after {
+            content: ''; position: absolute; top: 2px; left: 2px;
+            width: 20px; height: 20px; border-radius: 50%;
+            background: #fff; transition: transform 0.3s; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        .toggle-switch.on::after { transform: translateX(20px); }
+
+        /* ─── Buttons ─── */
+        .btn-primary {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 12px 24px; border: none; border-radius: 10px;
+            background: linear-gradient(135deg, var(--teal), var(--teal-dark));
+            color: var(--white); font-family: 'Lato', sans-serif; font-size: 14px; font-weight: 700;
+            letter-spacing: 0.5px; text-transform: uppercase; cursor: pointer; transition: all 0.3s;
+        }
+        .btn-primary:hover { box-shadow: 0 6px 25px rgba(91,168,178,0.35); transform: translateY(-1px); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-primary .spinner {
+            display: none; width: 16px; height: 16px;
+            border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff;
+            border-radius: 50%; animation: spin 0.7s linear infinite;
+        }
+        .btn-primary.loading .spinner { display: inline-block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .btn-outline {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 10px 20px; border: 1px solid rgba(255,255,255,0.15); border-radius: 10px;
+            background: transparent; color: var(--text-muted); font-family: 'Lato', sans-serif;
+            font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-outline:hover { border-color: var(--teal); color: var(--teal); }
+
+        .btn-row { display: flex; gap: 12px; margin-top: 20px; }
+
+        /* ─── Message ─── */
+        .msg {
+            display: none; padding: 10px 14px; border-radius: 8px;
+            font-size: 13px; margin-bottom: 16px; text-align: center;
+        }
+        .msg.error { display: block; background: rgba(232,93,93,0.12); border: 1px solid rgba(232,93,93,0.3); color: var(--error); }
+        .msg.success { display: block; background: rgba(91,184,140,0.12); border: 1px solid rgba(91,184,140,0.3); color: var(--success); }
+
+        /* ─── Footer ─── */
+        .settings-footer {
+            position: relative; z-index: 1; text-align: center; padding: 24px;
+            border-top: 1px solid var(--border-subtle);
+        }
+        .settings-footer p { color: var(--text-muted); font-size: 12px; }
+        .settings-footer a { color: var(--teal); text-decoration: none; }
+
+        @media (max-width: 600px) {
+            .dash-header { padding: 14px 16px; }
+            .settings-main { padding: 20px 16px 48px; }
+            .page-title { font-size: 24px; }
+            .settings-card { padding: 20px; }
+            .avatar-section { flex-direction: column; text-align: center; }
+            .form-row-inline { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- SVG Icons -->
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></symbol>
+    <symbol id="i-arrow-left" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></symbol>
+  </defs>
+</svg>
+
+    <!-- Header -->
+    <header class="dash-header">
+        <a href="/" class="logo-area">
+            <img src="../assets/images/qp-logo.png" alt="Quantum Physician" class="logo-img">
+        </a>
+        <a href="/members/dashboard.html" class="back-link">
+            <svg class="ic ic-sm"><use href="#i-arrow-left"/></svg> Back to Dashboard
+        </a>
+    </header>
+
+    <main class="settings-main">
+        <h1 class="page-title">Account Settings</h1>
+        <p class="page-sub">Manage your profile, security, and preferences.</p>
+
+        <!-- ═══ PROFILE & AVATAR ═══ -->
+        <div class="settings-card">
+            <div class="card-header">
+                <div class="card-icon"><svg class="ic"><use href="#i-user"/></svg></div>
+                Profile
+            </div>
+
+            <div class="avatar-section">
+                <div class="avatar-wrapper">
+                    <div class="avatar-circle" id="avatar-display">?</div>
+                    <label class="avatar-upload-btn" title="Change photo">
+                        <svg><use href="#i-camera"/></svg>
+                        <input type="file" id="avatar-input" accept="image/*">
+                    </label>
+                </div>
+                <div class="avatar-info">
+                    <p>Upload a profile photo.<br>JPG or PNG, max 2 MB.</p>
+                    <button class="remove-link" id="remove-avatar">Remove photo</button>
+                </div>
+            </div>
+
+            <div class="msg" id="profile-msg"></div>
+
+            <div class="form-row-inline">
+                <div class="form-row">
+                    <label class="form-label" for="profile-first">First Name</label>
+                    <input class="form-input" type="text" id="profile-first" placeholder="First name">
+                </div>
+                <div class="form-row">
+                    <label class="form-label" for="profile-last">Last Name</label>
+                    <input class="form-input" type="text" id="profile-last" placeholder="Last name">
+                </div>
+            </div>
+            <div class="form-row">
+                <label class="form-label" for="profile-email">Email</label>
+                <input class="form-input" type="email" id="profile-email" disabled>
+                <p class="form-hint">Contact support to change your email address.</p>
+            </div>
+
+            <div class="btn-row">
+                <button class="btn-primary" id="save-profile-btn">
+                    <span class="spinner"></span>
+                    <svg class="ic ic-sm"><use href="#i-check"/></svg> Save Changes
+                </button>
+            </div>
+        </div>
+
+        <!-- ═══ PASSWORD ═══ -->
+        <div class="settings-card">
+            <div class="card-header">
+                <div class="card-icon"><svg class="ic"><use href="#i-lock"/></svg></div>
+                Password
+            </div>
+
+            <div class="msg" id="password-msg"></div>
+
+            <div class="form-row">
+                <label class="form-label" for="pw-current">Current Password</label>
+                <input class="form-input" type="password" id="pw-current" placeholder="Enter current password" autocomplete="current-password">
+            </div>
+            <div class="form-row-inline">
+                <div class="form-row">
+                    <label class="form-label" for="pw-new">New Password</label>
+                    <input class="form-input" type="password" id="pw-new" placeholder="New password (6+)" autocomplete="new-password" minlength="6">
+                </div>
+                <div class="form-row">
+                    <label class="form-label" for="pw-confirm">Confirm New</label>
+                    <input class="form-input" type="password" id="pw-confirm" placeholder="Re-enter new password" autocomplete="new-password" minlength="6">
+                </div>
+            </div>
+
+            <div class="btn-row">
+                <button class="btn-primary" id="save-pw-btn">
+                    <span class="spinner"></span>
+                    Update Password
+                </button>
+            </div>
+        </div>
+
+        <!-- ═══ NOTIFICATIONS ═══ -->
+        <div class="settings-card">
+            <div class="card-header">
+                <div class="card-icon"><svg class="ic"><use href="#i-bell"/></svg></div>
+                Notifications
+            </div>
+
+            <div class="toggle-row">
+                <div>
+                    <div class="toggle-label">Session Reminders</div>
+                    <div class="toggle-desc">24-hour and 1-hour reminders before appointments</div>
+                </div>
+                <div class="toggle-switch on" data-pref="session_reminders" onclick="togglePref(this)"></div>
+            </div>
+            <div class="toggle-row">
+                <div>
+                    <div class="toggle-label">Booking Confirmations</div>
+                    <div class="toggle-desc">Email when a session is confirmed or changed</div>
+                </div>
+                <div class="toggle-switch on" data-pref="booking_confirmations" onclick="togglePref(this)"></div>
+            </div>
+            <div class="toggle-row">
+                <div>
+                    <div class="toggle-label">New Cycle Announcements</div>
+                    <div class="toggle-desc">Get notified when a new booking window opens</div>
+                </div>
+                <div class="toggle-switch on" data-pref="cycle_announcements" onclick="togglePref(this)"></div>
+            </div>
+            <div class="toggle-row">
+                <div>
+                    <div class="toggle-label">Academy Updates</div>
+                    <div class="toggle-desc">New courses, lessons, and learning reminders</div>
+                </div>
+                <div class="toggle-switch on" data-pref="academy_updates" onclick="togglePref(this)"></div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="settings-footer">
+        <p>&copy; 2026 <a href="/">Quantum Physician</a> &middot; Dr. Tracey Clark</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://rihlrfiqokqrlmzjjyxj.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpaGxyZmlxb2txcmxtempqeXhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1MTU2NDYsImV4cCI6MjA4NDA5MTY0Nn0.G2TQKSmQpPYb8Cyzo7R833G7xkr0855faLRjrJ9ov-4';
+        const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const LOGIN_URL = '/members/login.html';
+        const $ = id => document.getElementById(id);
+
+        let currentUser = null;
+
+        // ═══════════════════════════════════════════
+        // INIT
+        // ═══════════════════════════════════════════
+        async function init() {
+            const { data: { session } } = await sb.auth.getSession();
+            if (!session) { window.location.href = LOGIN_URL; return; }
+            currentUser = session.user;
+
+            const { data: profile } = await sb.from('profiles')
+                .select('full_name, email, avatar_url, created_at')
+                .eq('id', currentUser.id).single();
+
+            const fullName = profile?.full_name || currentUser.user_metadata?.full_name || '';
+            const parts = fullName.split(' ');
+            $('profile-first').value = parts[0] || '';
+            $('profile-last').value = parts.slice(1).join(' ') || '';
+            $('profile-email').value = profile?.email || currentUser.email || '';
+
+            // Avatar
+            const initials = (parts[0]?.[0] || '') + (parts[1]?.[0] || '');
+            if (profile?.avatar_url) {
+                $('avatar-display').innerHTML = `<img src="${profile.avatar_url}" alt="Avatar">`;
+                $('remove-avatar').classList.add('show');
+            } else {
+                $('avatar-display').textContent = initials.toUpperCase() || '?';
+            }
+
+            // Load notification preferences
+            loadPreferences();
+        }
+
+        // ═══════════════════════════════════════════
+        // SAVE PROFILE
+        // ═══════════════════════════════════════════
+        $('save-profile-btn').addEventListener('click', async () => {
+            const btn = $('save-profile-btn');
+            const first = $('profile-first').value.trim();
+            const last = $('profile-last').value.trim();
+            const fullName = [first, last].filter(Boolean).join(' ');
+
+            if (!first) { showMsg('profile-msg', 'First name is required.', 'error'); return; }
+
+            btn.classList.add('loading'); btn.disabled = true;
+
+            try {
+                // Update profiles table
+                const { error } = await sb.from('profiles')
+                    .update({ full_name: fullName })
+                    .eq('id', currentUser.id);
+                if (error) throw error;
+
+                // Also update user metadata
+                await sb.auth.updateUser({ data: { full_name: fullName } });
+
+                showMsg('profile-msg', 'Profile updated.', 'success');
+
+                // Update avatar initials
+                const hasImg = $('avatar-display').querySelector('img');
+                if (!hasImg) {
+                    const initials = (first[0] || '') + (last[0] || '');
+                    $('avatar-display').textContent = initials.toUpperCase() || '?';
+                }
+            } catch (err) {
+                showMsg('profile-msg', err.message || 'Failed to save.', 'error');
+            } finally {
+                btn.classList.remove('loading'); btn.disabled = false;
+            }
+        });
+
+        // ═══════════════════════════════════════════
+        // AVATAR UPLOAD
+        // ═══════════════════════════════════════════
+        $('avatar-input').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (file.size > 2 * 1024 * 1024) { showMsg('profile-msg', 'Image must be under 2 MB.', 'error'); return; }
+            if (!file.type.startsWith('image/')) { showMsg('profile-msg', 'Please upload an image file.', 'error'); return; }
+
+            try {
+                const ext = file.name.split('.').pop();
+                const path = `avatars/${currentUser.id}.${ext}`;
+
+                // Upload to Supabase storage
+                const { error: upErr } = await sb.storage.from('avatars').upload(path, file, { upsert: true });
+                if (upErr) throw upErr;
+
+                const { data: { publicUrl } } = sb.storage.from('avatars').getPublicUrl(path);
+
+                // Update profile
+                await sb.from('profiles').update({ avatar_url: publicUrl }).eq('id', currentUser.id);
+
+                $('avatar-display').innerHTML = `<img src="${publicUrl}?t=${Date.now()}" alt="Avatar">`;
+                $('remove-avatar').classList.add('show');
+                showMsg('profile-msg', 'Photo updated.', 'success');
+            } catch (err) {
+                showMsg('profile-msg', 'Upload failed: ' + (err.message || 'Unknown error'), 'error');
+            }
+        });
+
+        $('remove-avatar').addEventListener('click', async () => {
+            try {
+                await sb.from('profiles').update({ avatar_url: null }).eq('id', currentUser.id);
+                const first = $('profile-first').value.trim();
+                const last = $('profile-last').value.trim();
+                $('avatar-display').textContent = ((first[0] || '') + (last[0] || '')).toUpperCase() || '?';
+                $('remove-avatar').classList.remove('show');
+                showMsg('profile-msg', 'Photo removed.', 'success');
+            } catch (err) {
+                showMsg('profile-msg', 'Failed to remove photo.', 'error');
+            }
+        });
+
+        // ═══════════════════════════════════════════
+        // CHANGE PASSWORD
+        // ═══════════════════════════════════════════
+        $('save-pw-btn').addEventListener('click', async () => {
+            const btn = $('save-pw-btn');
+            const current = $('pw-current').value;
+            const newPw = $('pw-new').value;
+            const confirm = $('pw-confirm').value;
+
+            if (!current || !newPw || !confirm) { showMsg('password-msg', 'Please fill in all fields.', 'error'); return; }
+            if (newPw !== confirm) { showMsg('password-msg', 'New passwords do not match.', 'error'); return; }
+            if (newPw.length < 6) { showMsg('password-msg', 'Password must be at least 6 characters.', 'error'); return; }
+
+            btn.classList.add('loading'); btn.disabled = true;
+
+            try {
+                // Verify current password by re-signing in
+                const { error: signInErr } = await sb.auth.signInWithPassword({
+                    email: currentUser.email,
+                    password: current
+                });
+                if (signInErr) { showMsg('password-msg', 'Current password is incorrect.', 'error'); return; }
+
+                // Update password
+                const { error } = await sb.auth.updateUser({ password: newPw });
+                if (error) throw error;
+
+                showMsg('password-msg', 'Password updated.', 'success');
+                $('pw-current').value = '';
+                $('pw-new').value = '';
+                $('pw-confirm').value = '';
+            } catch (err) {
+                showMsg('password-msg', err.message || 'Failed to update password.', 'error');
+            } finally {
+                btn.classList.remove('loading'); btn.disabled = false;
+            }
+        });
+
+        // ═══════════════════════════════════════════
+        // NOTIFICATION PREFERENCES
+        // ═══════════════════════════════════════════
+        let prefs = {
+            session_reminders: true,
+            booking_confirmations: true,
+            cycle_announcements: true,
+            academy_updates: true
+        };
+
+        async function loadPreferences() {
+            // Try loading from notification_preferences table
+            try {
+                const { data } = await sb.from('notification_preferences')
+                    .select('*').eq('user_id', currentUser.id).single();
+                if (data) {
+                    prefs = { ...prefs, ...data };
+                }
+            } catch (e) {
+                // Table may not exist yet — use defaults
+            }
+
+            // Apply to toggles
+            document.querySelectorAll('.toggle-switch').forEach(el => {
+                const key = el.dataset.pref;
+                if (prefs[key] === false) el.classList.remove('on');
+                else el.classList.add('on');
+            });
+        }
+
+        function togglePref(el) {
+            el.classList.toggle('on');
+            const key = el.dataset.pref;
+            const isOn = el.classList.contains('on');
+            prefs[key] = isOn;
+            savePref(key, isOn);
+        }
+
+        async function savePref(key, value) {
+            try {
+                await sb.from('notification_preferences')
+                    .upsert({ user_id: currentUser.id, [key]: value }, { onConflict: 'user_id' });
+            } catch (e) {
+                // Silent fail — preferences table may not have these columns yet
+            }
+        }
+
+        // ═══════════════════════════════════════════
+        // HELPERS
+        // ═══════════════════════════════════════════
+        function showMsg(id, text, type) {
+            const el = $(id);
+            el.textContent = text;
+            el.className = 'msg ' + type;
+            setTimeout(() => { el.className = 'msg'; }, 5000);
+        }
+
+        init();
+    </script>
+</body>
+</html>
