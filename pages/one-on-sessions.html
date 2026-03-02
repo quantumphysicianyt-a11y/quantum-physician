@@ -620,7 +620,8 @@
   <script>
     // Instant redirect for ?pay= tokens — runs before page renders
     (function() {
-      var p = new URLSearchParams(window.location.search).get('pay');
+      var params = new URLSearchParams(window.location.search);
+      var p = params.get('pay');
       if (p) {
         document.documentElement.style.display = 'none';
         fetch('/.netlify/functions/session-checkout', {
@@ -631,6 +632,18 @@
           if (d.url) { window.location.href = d.url; }
           else { document.documentElement.style.display = ''; }
         }).catch(function() { document.documentElement.style.display = ''; });
+      }
+      // Payment success/cancelled — show full-page confirmation
+      var ps = params.get('payment');
+      if (ps === 'success') {
+        document.addEventListener('DOMContentLoaded', function() {
+          document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0b1628;font-family:Georgia,serif"><div style="text-align:center;padding:40px 20px;max-width:500px"><img src="/assets/images/qp-logo.png" alt="Quantum Physician" style="height:60px;margin-bottom:40px" onerror="this.style.display=\'none\'"><div style="width:70px;height:70px;border-radius:50%;background:rgba(91,168,178,.15);display:flex;align-items:center;justify-content:center;margin:0 auto 24px;font-size:32px">✓</div><h1 style="color:#5ba8b2;font-size:26px;font-weight:600;margin:0 0 12px;font-family:Playfair Display,serif">Payment Confirmed!</h1><p style="color:rgba(255,255,255,.6);font-size:16px;line-height:1.7;margin:0 0 8px">Your session with Dr. Tracey Clark is booked.</p><p style="color:rgba(255,255,255,.4);font-size:14px;line-height:1.6;margin:0 0 32px">A confirmation email with your Zoom link is on its way.</p><a href="/pages/one-on-sessions.html" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#5ba8b2,#4acfd9);border-radius:50px;color:#fff;text-decoration:none;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase">Back to Sessions</a></div></div>';
+        });
+      }
+      if (ps === 'cancelled') {
+        document.addEventListener('DOMContentLoaded', function() {
+          document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0b1628;font-family:Georgia,serif"><div style="text-align:center;padding:40px 20px;max-width:500px"><img src="/assets/images/qp-logo.png" alt="Quantum Physician" style="height:60px;margin-bottom:40px" onerror="this.style.display=\'none\'"><div style="width:70px;height:70px;border-radius:50%;background:rgba(255,107,107,.1);display:flex;align-items:center;justify-content:center;margin:0 auto 24px;font-size:32px">✕</div><h1 style="color:#fff;font-size:26px;font-weight:600;margin:0 0 12px;font-family:Playfair Display,serif">Payment Cancelled</h1><p style="color:rgba(255,255,255,.6);font-size:16px;line-height:1.7;margin:0 0 8px">Your slot is still reserved for 72 hours.</p><p style="color:rgba(255,255,255,.4);font-size:14px;line-height:1.6;margin:0 0 32px">You can return to complete payment anytime before it expires.</p><a href="/pages/one-on-sessions.html" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#5ba8b2,#4acfd9);border-radius:50px;color:#fff;text-decoration:none;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase">Back to Sessions</a></div></div>';
+        });
       }
     })();
   </script>
