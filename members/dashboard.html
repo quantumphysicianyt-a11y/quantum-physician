@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Dashboard — Quantum Physician</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Lato:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy: #131e3d;
+            --navy-light: #1a2a50;
+            --navy-lighter: #223363;
+            --teal: #5ba8b2;
+            --teal-light: #7dc4cd;
+            --teal-dark: #4a939c;
+            --gold: #c9a96e;
+            --gold-light: #ddc08a;
+            --cream: #f5f0e8;
+            --white: #ffffff;
+            --text-light: rgba(255,255,255,0.85);
+            --text-muted: rgba(255,255,255,0.5);
+            --error: #e85d5d;
+            --success: #5bb88c;
+            --warning: #e8a84c;
+            --border-subtle: rgba(91,168,178,0.2);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Lato', sans-serif;
+            background: var(--navy);
+            color: var(--white);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 15% 20%, rgba(91,168,178,0.07) 0%, transparent 60%),
+                radial-gradient(ellipse at 85% 80%, rgba(201,169,110,0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ─── Header ─── */
+        .dash-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-subtle);
+            background: rgba(19,30,61,0.95);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+        .logo-img {
+            height: 36px;
+            width: auto;
+            flex-shrink: 0;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .user-greeting {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+        .user-greeting strong { color: var(--text-light); font-weight: 600; }
+        .logout-btn {
+            padding: 8px 18px;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 8px;
+            background: transparent;
+            color: var(--text-muted);
+            font-family: 'Lato', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .logout-btn:hover {
+            border-color: var(--error);
+            color: var(--error);
+        }
+
+        /* ─── Loading State ─── */
+        .loading-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 60vh;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .loading-spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid rgba(91,168,178,0.2);
+            border-top-color: var(--teal);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { color: var(--text-muted); font-size: 14px; }
+
+        /* ─── Main Layout ─── */
+        .dash-main {
+            position: relative;
+            z-index: 1;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 32px 24px 60px;
+        }
+
+        /* ─── Welcome Banner ─── */
+        .welcome-banner {
+            background: linear-gradient(135deg, var(--navy-light) 0%, var(--navy-lighter) 100%);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 32px 36px;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+        .welcome-banner::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(91,168,178,0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .welcome-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .welcome-sub {
+            color: var(--text-muted);
+            font-size: 15px;
+            font-weight: 300;
+        }
+
+        /* ─── Section Grid ─── */
+        .sections-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+        .section-full { grid-column: 1 / -1; }
+
+        /* ─── Section Card ─── */
+        .section-card {
+            background: linear-gradient(170deg, var(--navy-light) 0%, var(--navy) 100%);
+            border: 1px solid var(--border-subtle);
+            border-radius: 14px;
+            padding: 28px;
+            transition: border-color 0.3s;
+        }
+        .section-card:hover { border-color: rgba(91,168,178,0.35); }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        .section-icon.teal { background: rgba(91,168,178,0.15); }
+        .section-icon.gold { background: rgba(201,169,110,0.15); }
+        .section-icon.green { background: rgba(91,184,140,0.15); }
+
+        .section-link {
+            font-size: 13px;
+            color: var(--teal);
+            text-decoration: none;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            transition: color 0.2s;
+        }
+        .section-link:hover { color: var(--teal-light); }
+
+        /* ─── Session Cards ─── */
+        .session-list { display: flex; flex-direction: column; gap: 12px; }
+
+        .session-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 10px;
+            transition: background 0.2s;
+        }
+        .session-item:hover { background: rgba(255,255,255,0.05); }
+
+        .session-date-badge {
+            width: 54px;
+            height: 54px;
+            border-radius: 10px;
+            background: rgba(91,168,178,0.12);
+            border: 1px solid rgba(91,168,178,0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .session-date-badge .month {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--teal);
+        }
+        .session-date-badge .day {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--white);
+            line-height: 1;
+        }
+
+        .session-info { flex: 1; }
+        .session-info .time {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--white);
+            margin-bottom: 2px;
+        }
+        .session-info .detail {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .session-status {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            flex-shrink: 0;
+        }
+        .status-paid {
+            background: rgba(91,184,140,0.15);
+            color: var(--success);
+            border: 1px solid rgba(91,184,140,0.25);
+        }
+        .status-proposed {
+            background: rgba(232,168,76,0.15);
+            color: var(--warning);
+            border: 1px solid rgba(232,168,76,0.25);
+        }
+        .status-completed {
+            background: rgba(255,255,255,0.06);
+            color: var(--text-muted);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .status-cancelled {
+            background: rgba(232,93,93,0.1);
+            color: rgba(232,93,93,0.7);
+            border: 1px solid rgba(232,93,93,0.2);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 32px 20px;
+            color: var(--text-muted);
+        }
+        .empty-state .empty-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+        .empty-state p { font-size: 14px; line-height: 1.6; }
+        .empty-state a {
+            color: var(--teal);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        /* ─── Quick Links ─── */
+        .quick-links {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .quick-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 10px;
+            text-decoration: none;
+            color: var(--text-light);
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .quick-link:hover {
+            background: rgba(91,168,178,0.08);
+            border-color: rgba(91,168,178,0.2);
+        }
+        .quick-link .ql-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        .quick-link .ql-arrow {
+            margin-left: auto;
+            color: var(--text-muted);
+            font-size: 16px;
+        }
+
+        /* ─── Account Info ─── */
+        .account-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .account-row:last-child { border-bottom: none; }
+        .account-label {
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+        .account-value {
+            font-size: 14px;
+            color: var(--text-light);
+            font-weight: 500;
+        }
+
+        /* ─── Footer ─── */
+        .dash-footer {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            padding: 24px;
+            border-top: 1px solid var(--border-subtle);
+        }
+        .dash-footer p {
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+        .dash-footer a { color: var(--teal); text-decoration: none; }
+
+        /* ─── Responsive ─── */
+        @media (max-width: 768px) {
+            .dash-header { padding: 14px 16px; }
+            .user-greeting { display: none; }
+            .dash-main { padding: 20px 16px 48px; }
+            .welcome-banner { padding: 24px 20px; }
+            .welcome-name { font-size: 22px; }
+            .sections-grid {
+                grid-template-columns: 1fr;
+            }
+            .session-item { flex-wrap: wrap; }
+            .session-status { margin-left: 70px; margin-top: -4px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="dash-header">
+        <a href="/" class="logo-area">
+            <img src="../assets/images/qp-logo.png" alt="Quantum Physician" class="logo-img">
+        </a>
+        <div class="header-right">
+            <span class="user-greeting">Hello, <strong id="header-name">—</strong></span>
+            <button class="logout-btn" id="logout-btn">Sign Out</button>
+        </div>
+    </header>
+
+    <!-- Loading State -->
+    <div class="loading-screen" id="loading-screen">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading your dashboard...</div>
+    </div>
+
+    <!-- Dashboard Content (hidden until loaded) -->
+    <main class="dash-main" id="dash-content" style="display:none;">
+
+        <!-- Welcome Banner -->
+        <div class="welcome-banner">
+            <h1 class="welcome-name" id="welcome-name">Welcome back</h1>
+            <p class="welcome-sub">Your personal wellness hub — sessions, progress, and resources all in one place.</p>
+        </div>
+
+        <div class="sections-grid">
+
+            <!-- ═══ UPCOMING SESSIONS ═══ -->
+            <div class="section-card section-full">
+                <div class="section-header">
+                    <div class="section-title">
+                        <div class="section-icon teal">📅</div>
+                        My Sessions
+                    </div>
+                    <a href="/pages/one-on-sessions.html" class="section-link">Book a Session →</a>
+                </div>
+                <div class="session-list" id="upcoming-sessions">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- ═══ PAST SESSIONS ═══ -->
+            <div class="section-card section-full" id="past-sessions-card" style="display:none;">
+                <div class="section-header">
+                    <div class="section-title">
+                        <div class="section-icon gold">📋</div>
+                        Past Sessions
+                    </div>
+                </div>
+                <div class="session-list" id="past-sessions">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- ═══ QUICK LINKS ═══ -->
+            <div class="section-card">
+                <div class="section-header">
+                    <div class="section-title">
+                        <div class="section-icon green">⚡</div>
+                        Quick Links
+                    </div>
+                </div>
+                <div class="quick-links">
+                    <a href="/pages/one-on-sessions.html" class="quick-link">
+                        <div class="ql-icon" style="background:rgba(91,168,178,0.12);">🗓️</div>
+                        Book a 1-on-1 Session
+                        <span class="ql-arrow">›</span>
+                    </a>
+                    <a href="/academy/" class="quick-link">
+                        <div class="ql-icon" style="background:rgba(201,169,110,0.12);">🎓</div>
+                        Academy Courses
+                        <span class="ql-arrow">›</span>
+                    </a>
+                    <a href="https://fusionsessions.com/dashboard.html" class="quick-link">
+                        <div class="ql-icon" style="background:rgba(91,184,140,0.12);">🔮</div>
+                        Fusion Sessions
+                        <span class="ql-arrow">›</span>
+                    </a>
+                    <a href="https://quantumphysician.com/contact-us/" class="quick-link" target="_blank">
+                        <div class="ql-icon" style="background:rgba(232,168,76,0.12);">✉️</div>
+                        Contact Dr. Tracey
+                        <span class="ql-arrow">›</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- ═══ MY ACCOUNT ═══ -->
+            <div class="section-card">
+                <div class="section-header">
+                    <div class="section-title">
+                        <div class="section-icon teal">👤</div>
+                        My Account
+                    </div>
+                </div>
+                <div class="account-info">
+                    <div class="account-row">
+                        <span class="account-label">Name</span>
+                        <span class="account-value" id="acct-name">—</span>
+                    </div>
+                    <div class="account-row">
+                        <span class="account-label">Email</span>
+                        <span class="account-value" id="acct-email">—</span>
+                    </div>
+                    <div class="account-row">
+                        <span class="account-label">Member Since</span>
+                        <span class="account-value" id="acct-since">—</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="dash-footer">
+        <p>&copy; 2026 <a href="/">Quantum Physician</a> &middot; Dr. Tracey Clark</p>
+    </footer>
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // ═══════════════════════════════════════════
+        // CONFIG
+        // ═══════════════════════════════════════════
+        const SUPABASE_URL = 'https://rihlrfiqokqrlmzjjyxj.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpaGxyZmlxb2txcmxtempqeXhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1MTU2NDYsImV4cCI6MjA4NDA5MTY0Nn0.G2TQKSmQpPYb8Cyzo7R833G7xkr0855faLRjrJ9ov-4';
+        const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const LOGIN_URL = '/members/login.html';
+        const $ = id => document.getElementById(id);
+
+        // ═══════════════════════════════════════════
+        // AUTH CHECK
+        // ═══════════════════════════════════════════
+        let currentUser = null;
+        let userProfile = null;
+
+        async function initDashboard() {
+            const { data: { session } } = await sb.auth.getSession();
+            if (!session) {
+                window.location.href = LOGIN_URL;
+                return;
+            }
+            currentUser = session.user;
+
+            // Load profile
+            const { data: profile } = await sb.from('profiles')
+                .select('full_name, email, created_at')
+                .eq('id', currentUser.id)
+                .single();
+
+            userProfile = profile || {};
+            const displayName = userProfile.full_name || currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'there';
+            const displayEmail = userProfile.email || currentUser.email || '';
+
+            // Populate header + welcome
+            $('header-name').textContent = displayName.split(' ')[0];
+            $('welcome-name').textContent = `Welcome back, ${displayName.split(' ')[0]}`;
+            $('acct-name').textContent = userProfile.full_name || displayName;
+            $('acct-email').textContent = displayEmail;
+            $('acct-since').textContent = formatDate(userProfile.created_at || currentUser.created_at);
+
+            // Load sessions
+            await loadSessions(displayEmail);
+
+            // Show content
+            $('loading-screen').style.display = 'none';
+            $('dash-content').style.display = 'block';
+        }
+
+        // ═══════════════════════════════════════════
+        // LOAD SESSIONS
+        // ═══════════════════════════════════════════
+        async function loadSessions(email) {
+            if (!email) {
+                renderEmpty('upcoming-sessions', 'No sessions found.', true);
+                return;
+            }
+
+            const { data: bookings, error } = await sb.from('session_bookings')
+                .select('*')
+                .eq('email', email)
+                .in('status', ['proposed', 'paid', 'confirmed', 'completed', 'cancelled', 'no_show'])
+                .order('date', { ascending: true });
+
+            if (error || !bookings || bookings.length === 0) {
+                renderEmpty('upcoming-sessions', 'You don\'t have any sessions yet.', true);
+                return;
+            }
+
+            const today = new Date().toISOString().split('T')[0];
+            const upcoming = bookings.filter(b => b.date >= today && ['proposed', 'paid', 'confirmed'].includes(b.status));
+            const past = bookings.filter(b => b.date < today || ['completed', 'cancelled', 'no_show'].includes(b.status));
+
+            // Render upcoming
+            if (upcoming.length === 0) {
+                renderEmpty('upcoming-sessions', 'No upcoming sessions.', true);
+            } else {
+                $('upcoming-sessions').innerHTML = upcoming.map(b => renderSessionItem(b)).join('');
+            }
+
+            // Render past
+            if (past.length > 0) {
+                $('past-sessions-card').style.display = 'block';
+                // Show most recent 5 past sessions
+                $('past-sessions').innerHTML = past.slice(-5).reverse().map(b => renderSessionItem(b)).join('');
+            }
+        }
+
+        function renderSessionItem(booking) {
+            const d = new Date(booking.date + 'T00:00:00');
+            const month = d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+            const day = d.getDate();
+            const dayName = d.toLocaleDateString('en-US', { weekday: 'long' });
+            const time = formatTime(booking.start_time);
+            const endTime = formatTime(booking.end_time);
+            const statusClass = `status-${booking.status}`;
+            const statusLabel = booking.status.charAt(0).toUpperCase() + booking.status.slice(1);
+
+            // If proposed with a confirmation_token, show pay link
+            let payBtn = '';
+            if (booking.status === 'proposed' && booking.confirmation_token) {
+                const payUrl = `/pages/one-on-sessions.html?pay=${booking.confirmation_token}`;
+                payBtn = `<a href="${payUrl}" style="margin-left:8px;padding:5px 14px;border-radius:20px;background:var(--teal);color:#fff;text-decoration:none;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;">Confirm & Pay</a>`;
+            }
+
+            return `
+                <div class="session-item">
+                    <div class="session-date-badge">
+                        <span class="month">${month}</span>
+                        <span class="day">${day}</span>
+                    </div>
+                    <div class="session-info">
+                        <div class="time">${dayName} &middot; ${time} – ${endTime}</div>
+                        <div class="detail">1-on-1 Session with Dr. Tracey Clark</div>
+                    </div>
+                    <span class="session-status ${statusClass}">${statusLabel}</span>
+                    ${payBtn}
+                </div>
+            `;
+        }
+
+        function renderEmpty(containerId, message, showBookLink) {
+            $(containerId).innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">🌿</div>
+                    <p>${message}${showBookLink ? '<br><a href="/pages/one-on-sessions.html">Browse available sessions →</a>' : ''}</p>
+                </div>
+            `;
+        }
+
+        // ═══════════════════════════════════════════
+        // HELPERS
+        // ═══════════════════════════════════════════
+        function formatDate(dateStr) {
+            if (!dateStr) return '—';
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        }
+
+        function formatTime(timeStr) {
+            if (!timeStr) return '';
+            const [h, m] = timeStr.split(':').map(Number);
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            const hour = h % 12 || 12;
+            return `${hour}:${String(m).padStart(2, '0')} ${ampm}`;
+        }
+
+        // ═══════════════════════════════════════════
+        // LOGOUT
+        // ═══════════════════════════════════════════
+        $('logout-btn').addEventListener('click', async () => {
+            await sb.auth.signOut();
+            window.location.href = LOGIN_URL + '?logged_out=true';
+        });
+
+        // ═══════════════════════════════════════════
+        // AUTH STATE LISTENER
+        // ═══════════════════════════════════════════
+        sb.auth.onAuthStateChange((event) => {
+            if (event === 'SIGNED_OUT') {
+                window.location.href = LOGIN_URL + '?session_expired=true';
+            }
+        });
+
+        // ═══════════════════════════════════════════
+        // INIT
+        // ═══════════════════════════════════════════
+        initDashboard();
+    </script>
+</body>
+</html>
