@@ -7,7 +7,9 @@ const ALLOWED_TABLES = [
   "promotions", "purchases", "qa_enrollments", "qa_profiles",
   "referral_codes", "qa_bundles", "qa_bundle_courses", "qa_courses", "qa_lessons", "qa_modules", "scheduled_emails", "session_schedule",
   "session_config", "session_cycles", "session_availability",
-  "session_clients", "session_bookings", "session_waitlist"
+  "session_clients", "session_bookings", "session_waitlist",
+  "session_notes", "session_recordings", "patient_intake",
+  "patient_checkins", "patient_progress_notes"
 ];
 
 const WRITABLE_TABLES = [...ALLOWED_TABLES];
