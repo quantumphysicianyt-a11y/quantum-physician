@@ -361,6 +361,7 @@
             <div class="collapse-body">
                 <div class="bodymap-container">
                     <div class="bodymap-controls">
+                        <div class="ba-toggle" id="body-gender-toggle"><button class="ba-toggle-btn active" onclick="setBodyGender('male',this)">Male</button><button class="ba-toggle-btn" onclick="setBodyGender('female',this)">Female</button></div>
                         <div class="ba-toggle"><button class="ba-toggle-btn active" onclick="resetBodyView('front',this)">Front</button><button class="ba-toggle-btn" onclick="resetBodyView('back',this)">Back</button></div>
                         <span class="bc-hint">Drag to rotate &middot; Scroll to zoom</span>
                     </div>
@@ -424,6 +425,7 @@
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="/js/GLTFLoader.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
     const SUPABASE_URL = 'https://rihlrfiqokqrlmzjjyxj.supabase.co';
@@ -785,22 +787,34 @@
 
     // ═══ 3D BODY MAP (Three.js) ═══
     const BODY_REGIONS_3D = {
-        'tmj':              { label: 'TMJ / Jaw',               pos: [0.35, 2.55, 0.35], r: 0.08 },
-        'atlas':            { label: 'Atlas (C1-C2)',            pos: [0, 2.35, -0.12],   r: 0.09 },
-        'cervical-spine':   { label: 'Cervical Spine (C1-C7)',   pos: [0, 2.15, -0.1],    r: 0.1  },
-        'left-neck':        { label: 'Left SCM / Scalenes',      pos: [0.22, 2.15, 0.08], r: 0.08 },
-        'upper-trapezius':  { label: 'Upper Trapezius',          pos: [-0.3, 1.95, -0.08],r: 0.12 },
-        'right-shoulder':   { label: 'Right Shoulder',           pos: [-0.6, 1.85, 0],    r: 0.12 },
-        'thoracic-spine':   { label: 'Thoracic Spine (T1-T12)', pos: [0, 1.55, -0.18],   r: 0.12 },
-        'ribcage':          { label: 'Ribcage',                  pos: [-0.25, 1.5, 0.15], r: 0.12 },
-        'diaphragm':        { label: 'Diaphragm',               pos: [0, 1.2, 0.1],      r: 0.14 },
-        'lumbar-spine':     { label: 'Lumbar Spine (L1-L5)',     pos: [0, 0.9, -0.15],    r: 0.12 },
-        'pelvis':           { label: 'Pelvis / Pelvic Floor',    pos: [0, 0.55, 0],       r: 0.14 },
-        'full-spine':       { label: 'Full Spine Assessment',    pos: [0, 1.5, -0.2],     r: 0.22 }
+        'tmj':              { label: 'TMJ / Jaw',               male: [0.18, 2.95, 0.28],   female: [0.14, 2.78, 0.24],  r: 0.06 },
+        'atlas':            { label: 'Atlas (C1-C2)',            male: [0, 2.85, -0.08],     female: [0, 2.68, -0.06],    r: 0.07 },
+        'cervical-spine':   { label: 'Cervical Spine (C1-C7)',   male: [0, 2.7, -0.06],      female: [0, 2.55, -0.05],    r: 0.08 },
+        'left-neck':        { label: 'Left SCM / Scalenes',      male: [0.15, 2.72, 0.06],   female: [0.12, 2.56, 0.05],  r: 0.06 },
+        'upper-trapezius':  { label: 'Upper Trapezius',          male: [-0.22, 2.55, -0.04], female: [-0.18, 2.4, -0.03], r: 0.09 },
+        'right-shoulder':   { label: 'Right Shoulder',           male: [-0.48, 2.45, 0],     female: [-0.38, 2.3, 0],     r: 0.09 },
+        'thoracic-spine':   { label: 'Thoracic Spine (T1-T12)', male: [0, 2.1, -0.1],       female: [0, 2.0, -0.08],     r: 0.09 },
+        'ribcage':          { label: 'Ribcage',                  male: [-0.18, 2.05, 0.12],  female: [-0.14, 1.95, 0.1],  r: 0.09 },
+        'diaphragm':        { label: 'Diaphragm',               male: [0, 1.75, 0.08],      female: [0, 1.7, 0.07],      r: 0.1  },
+        'lumbar-spine':     { label: 'Lumbar Spine (L1-L5)',     male: [0, 1.45, -0.08],     female: [0, 1.42, -0.07],    r: 0.09 },
+        'pelvis':           { label: 'Pelvis / Pelvic Floor',    male: [0, 1.1, 0],          female: [0, 1.08, 0],        r: 0.1  },
+        'full-spine':       { label: 'Full Spine Assessment',    male: [0, 2.0, -0.12],      female: [0, 1.9, -0.1],      r: 0.18 }
     };
 
     const SESSION_COLORS_HEX = [0x5ba8b2, 0xc9a96e, 0x5bb88c, 0xb294d6, 0xe85d5d, 0xf0c674, 0x81a2be, 0xa3be8c];
     const SESSION_COLORS_STR = ['#5ba8b2','#c9a96e','#5bb88c','#b294d6','#e85d5d','#f0c674','#81a2be','#a3be8c'];
+
+    var bodyGender = 'male';
+    var bodySceneState = null;
+
+    function setBodyGender(gender, btn) {
+        bodyGender = gender;
+        if (btn) {
+            btn.parentElement.querySelectorAll('.ba-toggle-btn').forEach(function(b){ b.classList.remove('active'); });
+            btn.classList.add('active');
+        }
+        if (bodySceneState) swapBodyModel();
+    }
 
     function renderBodyMap() {
         if (!allSessionNotes.length) {
@@ -826,7 +840,6 @@
             return;
         }
 
-        // Session dates for color coding
         var sessionDates = [];
         allSessionNotes.forEach(function(n) {
             var b = allBookings.find(function(bk){ return bk.id === n.booking_id; });
@@ -834,7 +847,6 @@
         });
         sessionDates.sort();
 
-        // Store for click handler
         window._regionMap = regionMap;
         window._sessionDates = sessionDates;
 
@@ -849,7 +861,7 @@
         var activeCount = Object.keys(regionMap).length;
         $('bodymap-detail').innerHTML = '<span style="color:var(--text-muted)">Click a highlighted region to see treatment details. ' + activeCount + ' areas addressed across ' + sessionDates.length + ' sessions.</span>';
 
-        // ─── THREE.JS SCENE ───
+        // ─── THREE.JS SCENE SETUP ───
         var canvas = $('bodymap-canvas');
         var W = 400, H = 520;
         canvas.width = W; canvas.height = H;
@@ -860,223 +872,73 @@
         renderer.setClearColor(0x000000, 0);
 
         var scene = new THREE.Scene();
-        var camera = new THREE.PerspectiveCamera(32, W / H, 0.1, 100);
-        camera.position.set(0, 1.4, 6);
-        camera.lookAt(0, 1.4, 0);
+        var camera = new THREE.PerspectiveCamera(30, W / H, 0.1, 100);
+        camera.position.set(0, 1.75, 7);
+        camera.lookAt(0, 1.75, 0);
 
         // Lighting
-        var amb = new THREE.AmbientLight(0x4a6a8a, 0.6);
-        scene.add(amb);
-        var dir1 = new THREE.DirectionalLight(0x5ba8b2, 0.8);
-        dir1.position.set(2, 4, 3);
+        scene.add(new THREE.AmbientLight(0x4a6a8a, 0.5));
+        var dir1 = new THREE.DirectionalLight(0x5ba8b2, 0.9);
+        dir1.position.set(3, 5, 4);
         scene.add(dir1);
-        var dir2 = new THREE.DirectionalLight(0xc9a96e, 0.3);
-        dir2.position.set(-2, 2, -2);
+        var dir2 = new THREE.DirectionalLight(0xc9a96e, 0.25);
+        dir2.position.set(-3, 3, -3);
         scene.add(dir2);
-        var rim = new THREE.PointLight(0x4acfd9, 0.4, 10);
-        rim.position.set(0, 3, -3);
+        var rim = new THREE.PointLight(0x4acfd9, 0.35, 12);
+        rim.position.set(0, 4, -4);
         scene.add(rim);
 
-        // Body material
+        // Body material (applied to loaded mesh)
         var bodyMat = new THREE.MeshPhongMaterial({
-            color: 0x1a3050,
+            color: 0x1a3858,
             transparent: true,
-            opacity: 0.35,
-            shininess: 40,
+            opacity: 0.4,
+            shininess: 50,
             side: THREE.DoubleSide,
-            depthWrite: false
+            depthWrite: true
         });
-        var bodyMatSolid = new THREE.MeshPhongMaterial({
-            color: 0x1e3858,
+        var bodyMatWireframe = new THREE.MeshBasicMaterial({
+            color: 0x5ba8b2,
+            wireframe: true,
             transparent: true,
-            opacity: 0.55,
-            shininess: 60,
-            side: THREE.DoubleSide
+            opacity: 0.06
         });
 
         var bodyGroup = new THREE.Group();
-
-        // Helper: create smooth capsule from cylinder + sphere caps
-        function makeCapsule(rTop, rBot, h, segs) {
-            var group = new THREE.Group();
-            var cyl = new THREE.Mesh(new THREE.CylinderGeometry(rTop, rBot, h, segs || 16), bodyMatSolid);
-            group.add(cyl);
-            var capTop = new THREE.Mesh(new THREE.SphereGeometry(rTop, segs || 16, 8, 0, Math.PI*2, 0, Math.PI/2), bodyMatSolid);
-            capTop.position.y = h/2;
-            group.add(capTop);
-            var capBot = new THREE.Mesh(new THREE.SphereGeometry(rBot, segs || 16, 8, 0, Math.PI*2, Math.PI/2, Math.PI/2), bodyMatSolid);
-            capBot.position.y = -h/2;
-            group.add(capBot);
-            return group;
-        }
-
-        // HEAD
-        var head = new THREE.Mesh(new THREE.SphereGeometry(0.28, 24, 18), bodyMatSolid);
-        head.position.set(0, 2.62, 0);
-        head.scale.set(1, 1.15, 0.95);
-        bodyGroup.add(head);
-
-        // NECK
-        var neck = makeCapsule(0.12, 0.15, 0.28, 12);
-        neck.position.set(0, 2.22, -0.02);
-        bodyGroup.add(neck);
-
-        // TORSO - upper chest
-        var chest = makeCapsule(0.42, 0.38, 0.55, 20);
-        chest.position.set(0, 1.72, 0);
-        chest.scale.set(1, 1, 0.65);
-        bodyGroup.add(chest);
-
-        // TORSO - mid/lower
-        var torso = makeCapsule(0.38, 0.35, 0.5, 20);
-        torso.position.set(0, 1.22, 0);
-        torso.scale.set(1, 1, 0.6);
-        bodyGroup.add(torso);
-
-        // TORSO - waist/hip
-        var hip = makeCapsule(0.35, 0.38, 0.35, 20);
-        hip.position.set(0, 0.78, 0);
-        hip.scale.set(1, 1, 0.6);
-        bodyGroup.add(hip);
-
-        // PELVIS
-        var pelvis = new THREE.Mesh(new THREE.SphereGeometry(0.38, 20, 14), bodyMat);
-        pelvis.position.set(0, 0.55, 0);
-        pelvis.scale.set(1, 0.45, 0.6);
-        bodyGroup.add(pelvis);
-
-        // SHOULDERS
-        [-1, 1].forEach(function(side) {
-            var shoulder = new THREE.Mesh(new THREE.SphereGeometry(0.14, 14, 10), bodyMatSolid);
-            shoulder.position.set(side * 0.52, 1.92, 0);
-            bodyGroup.add(shoulder);
-
-            // UPPER ARM
-            var upperArm = makeCapsule(0.1, 0.08, 0.5, 10);
-            upperArm.position.set(side * 0.58, 1.58, 0);
-            upperArm.rotation.z = side * 0.12;
-            bodyGroup.add(upperArm);
-
-            // FOREARM
-            var forearm = makeCapsule(0.08, 0.06, 0.45, 10);
-            forearm.position.set(side * 0.62, 1.08, 0.03);
-            forearm.rotation.z = side * 0.08;
-            bodyGroup.add(forearm);
-
-            // HAND
-            var hand = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 8), bodyMat);
-            hand.position.set(side * 0.64, 0.78, 0.04);
-            hand.scale.set(0.9, 1.2, 0.5);
-            bodyGroup.add(hand);
-        });
-
-        // LEGS
-        [-1, 1].forEach(function(side) {
-            // UPPER LEG
-            var thigh = makeCapsule(0.14, 0.11, 0.65, 12);
-            thigh.position.set(side * 0.18, 0.15, 0);
-            bodyGroup.add(thigh);
-
-            // LOWER LEG
-            var shin = makeCapsule(0.1, 0.07, 0.6, 10);
-            shin.position.set(side * 0.18, -0.55, 0.02);
-            bodyGroup.add(shin);
-
-            // FOOT
-            var foot = new THREE.Mesh(new THREE.SphereGeometry(0.08, 10, 8), bodyMat);
-            foot.position.set(side * 0.18, -0.9, 0.06);
-            foot.scale.set(0.8, 0.4, 1.4);
-            bodyGroup.add(foot);
-        });
-
-        // Spine line (subtle glow)
-        var spinePts = [
-            new THREE.Vector3(0, 2.35, -0.15),
-            new THREE.Vector3(0, 2.0, -0.18),
-            new THREE.Vector3(0, 1.5, -0.2),
-            new THREE.Vector3(0, 1.0, -0.18),
-            new THREE.Vector3(0, 0.6, -0.12)
-        ];
-        var spineCurve = new THREE.CatmullRomCurve3(spinePts);
-        var spineGeo = new THREE.TubeGeometry(spineCurve, 20, 0.02, 6, false);
-        var spineMat = new THREE.MeshBasicMaterial({ color: 0x4acfd9, transparent: true, opacity: 0.3 });
-        bodyGroup.add(new THREE.Mesh(spineGeo, spineMat));
-
-        scene.add(bodyGroup);
-
-        // ─── REGION MARKERS ───
         var markerGroup = new THREE.Group();
+        scene.add(bodyGroup);
+        scene.add(markerGroup);
+
         var markerMeshes = [];
         var raycaster = new THREE.Raycaster();
         var mouse = new THREE.Vector2();
 
-        Object.keys(BODY_REGIONS_3D).forEach(function(id) {
-            var reg = BODY_REGIONS_3D[id];
-            var sessions = regionMap[id] || [];
-            var isActive = sessions.length > 0;
-            var colorIdx = 0;
-            if (isActive && sessions.length > 0) {
-                colorIdx = sessionDates.indexOf(sessions[sessions.length - 1].date);
-            }
-            var hexColor = isActive ? SESSION_COLORS_HEX[colorIdx % SESSION_COLORS_HEX.length] : 0x2a4060;
-
-            // Outer glow sphere
-            var glowMat = new THREE.MeshBasicMaterial({
-                color: hexColor,
-                transparent: true,
-                opacity: isActive ? 0.25 : 0.04,
-                depthWrite: false
-            });
-            var glow = new THREE.Mesh(new THREE.SphereGeometry(reg.r * 2.2, 16, 12), glowMat);
-            glow.position.set(reg.pos[0], reg.pos[1], reg.pos[2]);
-            markerGroup.add(glow);
-
-            // Inner marker
-            var markerMat = new THREE.MeshPhongMaterial({
-                color: hexColor,
-                transparent: true,
-                opacity: isActive ? 0.85 : 0.1,
-                emissive: hexColor,
-                emissiveIntensity: isActive ? 0.5 : 0,
-                shininess: 80
-            });
-            var marker = new THREE.Mesh(new THREE.SphereGeometry(reg.r, 16, 12), markerMat);
-            marker.position.set(reg.pos[0], reg.pos[1], reg.pos[2]);
-            marker.userData = { regionId: id, isActive: isActive, glowMesh: glow, baseMat: markerMat };
-            markerGroup.add(marker);
-            markerMeshes.push(marker);
-
-            // Pulse ring for active regions
-            if (isActive) {
-                var ringGeo = new THREE.RingGeometry(reg.r * 1.5, reg.r * 1.8, 24);
-                var ringMat = new THREE.MeshBasicMaterial({ color: hexColor, transparent: true, opacity: 0.15, side: THREE.DoubleSide, depthWrite: false });
-                var ring = new THREE.Mesh(ringGeo, ringMat);
-                ring.position.set(reg.pos[0], reg.pos[1], reg.pos[2]);
-                ring.userData.isPulse = true;
-                ring.userData.baseScale = 1;
-                markerGroup.add(ring);
-            }
-        });
-
-        scene.add(markerGroup);
-
-        // ─── INTERACTION STATE ───
+        // ─── STATE ───
         var state = {
-            isDragging: false,
-            prevX: 0,
-            prevY: 0,
-            rotY: 0,
-            rotX: 0,
-            targetRotY: 0,
-            targetRotX: 0,
-            zoom: 6,
-            targetZoom: 6,
-            hovered: null,
-            time: 0
+            isDragging: false, prevX: 0, prevY: 0,
+            rotY: 0, rotX: 0, targetRotY: 0, targetRotX: 0,
+            zoom: 7, targetZoom: 7,
+            hovered: null, time: 0,
+            scene: scene, camera: camera, renderer: renderer,
+            bodyGroup: bodyGroup, markerGroup: markerGroup,
+            bodyMat: bodyMat, bodyMatWireframe: bodyMatWireframe,
+            markerMeshes: markerMeshes,
+            gltfData: null, regionMap: regionMap, sessionDates: sessionDates
         };
+        bodySceneState = state;
         window._bodyScene = state;
 
-        // Mouse/touch interaction
+        // ─── LOAD GLB ───
+        var loader = new THREE.GLTFLoader();
+        loader.load('/assets/models/body.glb', function(gltf) {
+            state.gltfData = gltf;
+            swapBodyModel();
+        }, undefined, function(err) {
+            console.error('GLB load error:', err);
+            $('bodymap-detail').innerHTML = '<span style="color:var(--error)">Could not load 3D body model.</span>';
+        });
+
+        // ─── INTERACTION ───
         canvas.addEventListener('mousedown', function(e) { state.isDragging = true; state.prevX = e.clientX; state.prevY = e.clientY; });
         window.addEventListener('mouseup', function() { state.isDragging = false; });
         window.addEventListener('mousemove', function(e) {
@@ -1086,46 +948,30 @@
             state.targetRotY += dx * 0.008;
             state.targetRotX += dy * 0.005;
             state.targetRotX = Math.max(-0.6, Math.min(0.6, state.targetRotX));
-            state.prevX = e.clientX;
-            state.prevY = e.clientY;
+            state.prevX = e.clientX; state.prevY = e.clientY;
         });
-
         canvas.addEventListener('wheel', function(e) {
             e.preventDefault();
             state.targetZoom += e.deltaY * 0.005;
-            state.targetZoom = Math.max(3.5, Math.min(10, state.targetZoom));
+            state.targetZoom = Math.max(4, Math.min(12, state.targetZoom));
         }, { passive: false });
 
-        // Touch support
-        canvas.addEventListener('touchstart', function(e) {
-            if (e.touches.length === 1) { state.isDragging = true; state.prevX = e.touches[0].clientX; state.prevY = e.touches[0].clientY; }
-        }, { passive: true });
-        canvas.addEventListener('touchmove', function(e) {
-            if (!state.isDragging || e.touches.length !== 1) return;
-            var dx = e.touches[0].clientX - state.prevX;
-            var dy = e.touches[0].clientY - state.prevY;
-            state.targetRotY += dx * 0.008;
-            state.targetRotX += dy * 0.005;
-            state.targetRotX = Math.max(-0.6, Math.min(0.6, state.targetRotX));
-            state.prevX = e.touches[0].clientX;
-            state.prevY = e.touches[0].clientY;
-        }, { passive: true });
+        // Touch
+        canvas.addEventListener('touchstart', function(e) { if (e.touches.length === 1) { state.isDragging = true; state.prevX = e.touches[0].clientX; state.prevY = e.touches[0].clientY; } }, { passive: true });
+        canvas.addEventListener('touchmove', function(e) { if (!state.isDragging || e.touches.length !== 1) return; var dx = e.touches[0].clientX - state.prevX; var dy = e.touches[0].clientY - state.prevY; state.targetRotY += dx * 0.008; state.targetRotX += dy * 0.005; state.targetRotX = Math.max(-0.6, Math.min(0.6, state.targetRotX)); state.prevX = e.touches[0].clientX; state.prevY = e.touches[0].clientY; }, { passive: true });
         canvas.addEventListener('touchend', function() { state.isDragging = false; }, { passive: true });
 
-        // Click / tap detection for region markers
+        // Click
         canvas.addEventListener('click', function(e) {
             var rect = canvas.getBoundingClientRect();
             mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
             mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
             raycaster.setFromCamera(mouse, camera);
             var hits = raycaster.intersectObjects(markerMeshes);
-            if (hits.length > 0) {
-                var m = hits[0].object;
-                if (m.userData.isActive) showRegionDetail(m.userData.regionId);
-            }
+            if (hits.length > 0 && hits[0].object.userData.isActive) showRegionDetail(hits[0].object.userData.regionId);
         });
 
-        // Hover effect
+        // Hover
         canvas.addEventListener('mousemove', function(e) {
             if (state.isDragging) return;
             var rect = canvas.getBoundingClientRect();
@@ -1133,32 +979,18 @@
             mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
             raycaster.setFromCamera(mouse, camera);
             var hits = raycaster.intersectObjects(markerMeshes);
-
-            // Reset previous hover
-            if (state.hovered) {
-                var hm = state.hovered;
-                hm.scale.set(1, 1, 1);
-                if (hm.userData.glowMesh) hm.userData.glowMesh.scale.set(1, 1, 1);
-            }
-
+            if (state.hovered) { state.hovered.scale.set(1,1,1); if (state.hovered.userData.glowMesh) state.hovered.userData.glowMesh.scale.set(1,1,1); }
             if (hits.length > 0 && hits[0].object.userData.isActive) {
-                var hit = hits[0].object;
-                hit.scale.set(1.3, 1.3, 1.3);
-                if (hit.userData.glowMesh) hit.userData.glowMesh.scale.set(1.4, 1.4, 1.4);
-                canvas.style.cursor = 'pointer';
-                state.hovered = hit;
-            } else {
-                canvas.style.cursor = state.isDragging ? 'grabbing' : 'grab';
-                state.hovered = null;
-            }
+                var hit = hits[0].object; hit.scale.set(1.3,1.3,1.3);
+                if (hit.userData.glowMesh) hit.userData.glowMesh.scale.set(1.4,1.4,1.4);
+                canvas.style.cursor = 'pointer'; state.hovered = hit;
+            } else { canvas.style.cursor = state.isDragging ? 'grabbing' : 'grab'; state.hovered = null; }
         });
 
-        // ─── ANIMATION LOOP ───
+        // ─── ANIMATION ───
         function animate() {
             requestAnimationFrame(animate);
             state.time += 0.016;
-
-            // Smooth rotation
             state.rotY += (state.targetRotY - state.rotY) * 0.08;
             state.rotX += (state.targetRotX - state.rotX) * 0.08;
             state.zoom += (state.targetZoom - state.zoom) * 0.08;
@@ -1167,9 +999,8 @@
             bodyGroup.rotation.x = state.rotX;
             markerGroup.rotation.y = state.rotY;
             markerGroup.rotation.x = state.rotX;
-
             camera.position.z = state.zoom;
-            camera.lookAt(0, 1.4, 0);
+            camera.lookAt(0, 1.75, 0);
 
             // Pulse rings
             markerGroup.children.forEach(function(child) {
@@ -1185,7 +1016,7 @@
         }
         animate();
 
-        // Handle resize when collapse opens
+        // Resize
         var resizeObs = new ResizeObserver(function() {
             var wrap = $('bodymap-wrap');
             if (!wrap) return;
@@ -1199,27 +1030,88 @@
         resizeObs.observe($('bodymap-wrap'));
     }
 
-    function showRegionDetail(regionId) {
-        var reg = BODY_REGIONS_3D[regionId];
-        var sessions = window._regionMap[regionId] || [];
-        if (!sessions.length) {
-            $('bodymap-detail').innerHTML = '<span style="color:var(--text-muted)">' + reg.label + ' \u2014 Not yet addressed</span>';
+    // ─── SWAP BODY MODEL (male/female) ───
+    function swapBodyModel() {
+        var s = bodySceneState;
+        if (!s || !s.gltfData) return;
+
+        // Clear existing body and markers
+        while (s.bodyGroup.children.length) s.bodyGroup.remove(s.bodyGroup.children[0]);
+        while (s.markerGroup.children.length) s.markerGroup.remove(s.markerGroup.children[0]);
+        s.markerMeshes.length = 0;
+
+        var gltf = s.gltfData;
+
+        // Find the right mesh by node name
+        var targetName = bodyGender === 'male' ? 'Man (NonRig)' : 'Woman (NonRig)';
+        var bodyMesh = null;
+        gltf.scene.traverse(function(child) {
+            if (child.name && child.name.indexOf(targetName) !== -1) {
+                bodyMesh = child;
+            }
+        });
+
+        if (!bodyMesh) {
+            console.error('Could not find ' + targetName + ' in GLB');
             return;
         }
-        var html = '<div style="text-align:left;max-width:600px;margin:0 auto">';
-        html += '<div style="font-weight:700;margin-bottom:8px;color:var(--teal)">' + reg.label + '</div>';
-        sessions.forEach(function(s) {
-            var dt = new Date(s.date + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
-            var colorIdx = window._sessionDates.indexOf(s.date);
-            var color = SESSION_COLORS_STR[colorIdx % SESSION_COLORS_STR.length];
-            var preview = s.note.length > 120 ? s.note.substring(0, 120) + '...' : s.note;
-            html += '<div style="padding:8px;margin-bottom:6px;background:rgba(0,0,0,.15);border-radius:6px;border-left:3px solid ' + color + '">';
-            html += '<div style="font-size:11px;color:var(--text-muted);margin-bottom:3px">' + dt + '</div>';
-            html += '<div style="font-size:12px;line-height:1.5">' + esc(preview) + '</div>';
-            html += '</div>';
+
+        // Clone the mesh subtree
+        var clone = bodyMesh.clone(true);
+
+        // Apply QP materials
+        clone.traverse(function(child) {
+            if (child.isMesh) {
+                child.material = s.bodyMat;
+                // Add wireframe overlay
+                var wire = child.clone();
+                wire.material = s.bodyMatWireframe;
+                s.bodyGroup.add(wire);
+            }
         });
-        html += '</div>';
-        $('bodymap-detail').innerHTML = html;
+
+        s.bodyGroup.add(clone);
+
+        // ─── BUILD REGION MARKERS ───
+        var regionMap = s.regionMap;
+        var sessionDates = s.sessionDates;
+        var posKey = bodyGender === 'male' ? 'male' : 'female';
+
+        Object.keys(BODY_REGIONS_3D).forEach(function(id) {
+            var reg = BODY_REGIONS_3D[id];
+            var pos = reg[posKey];
+            var sessions = regionMap[id] || [];
+            var isActive = sessions.length > 0;
+            var colorIdx = 0;
+            if (isActive && sessions.length > 0) {
+                colorIdx = sessionDates.indexOf(sessions[sessions.length - 1].date);
+            }
+            var hexColor = isActive ? SESSION_COLORS_HEX[colorIdx % SESSION_COLORS_HEX.length] : 0x2a4060;
+
+            // Outer glow
+            var glowMat = new THREE.MeshBasicMaterial({ color: hexColor, transparent: true, opacity: isActive ? 0.2 : 0.03, depthWrite: false });
+            var glow = new THREE.Mesh(new THREE.SphereGeometry(reg.r * 2.5, 16, 12), glowMat);
+            glow.position.set(pos[0], pos[1], pos[2]);
+            s.markerGroup.add(glow);
+
+            // Inner marker
+            var markerMat = new THREE.MeshPhongMaterial({ color: hexColor, transparent: true, opacity: isActive ? 0.85 : 0.08, emissive: hexColor, emissiveIntensity: isActive ? 0.5 : 0, shininess: 80 });
+            var marker = new THREE.Mesh(new THREE.SphereGeometry(reg.r, 16, 12), markerMat);
+            marker.position.set(pos[0], pos[1], pos[2]);
+            marker.userData = { regionId: id, isActive: isActive, glowMesh: glow };
+            s.markerGroup.add(marker);
+            s.markerMeshes.push(marker);
+
+            // Pulse ring for active
+            if (isActive) {
+                var ringGeo = new THREE.RingGeometry(reg.r * 1.5, reg.r * 1.9, 24);
+                var ringMat = new THREE.MeshBasicMaterial({ color: hexColor, transparent: true, opacity: 0.12, side: THREE.DoubleSide, depthWrite: false });
+                var ring = new THREE.Mesh(ringGeo, ringMat);
+                ring.position.set(pos[0], pos[1], pos[2]);
+                ring.userData = { isPulse: true };
+                s.markerGroup.add(ring);
+            }
+        });
     }
 
     // ═══ HEALING TIMELINE ═══
