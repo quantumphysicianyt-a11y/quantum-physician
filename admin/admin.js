@@ -4943,7 +4943,13 @@ function renderCrmSessions(){
     var recCount = recs.length ? '<span class="badge badge-success">'+recs.length+'</span>' : '<span style="color:var(--text-dim)">\u2014</span>';
     html += '<tr><td>'+date+'</td><td>'+time+'</td><td><span class="badge badge-'+statusClass+'">'+esc(b.status)+'</span></td><td>'+noteCount+'</td><td>'+recCount+'</td><td><button class="btn btn-ghost btn-sm" onclick="crmAddNote(\''+b.id+'\')">+ Note</button> <button class="btn btn-ghost btn-sm" onclick="crmAddRecording(\''+b.id+'\')">+ Recording</button></td></tr>';
     notes.forEach(function(n){
-      html += '<tr style="background:rgba(91,168,178,0.05)"><td colspan="6" style="padding:8px 16px;font-size:13px"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><span style="color:var(--teal);font-weight:600;font-size:11px;text-transform:uppercase">'+esc(n.note_type)+' note</span>'+(n.visible_to_patient ? ' <span class="badge badge-info" style="font-size:10px">Visible to patient</span>' : ' <span class="badge badge-muted" style="font-size:10px">Private</span>')+'<div style="margin-top:4px;color:var(--text)">'+esc(n.content)+'</div><div style="margin-top:4px;font-size:11px;color:var(--text-dim)">'+timeAgo(n.created_at)+'</div></div><button class="btn btn-ghost btn-sm" onclick="crmToggleNoteVisibility(\''+n.id+'\','+ !n.visible_to_patient+')" title="Toggle visibility">'+(n.visible_to_patient?'\uD83D\uDD13':'\uD83D\uDD12')+'</button></div></td></tr>';
+      var regionBadges = '';
+      if (n.body_regions && n.body_regions.length) {
+        regionBadges = '<div style="margin-top:5px;display:flex;flex-wrap:wrap;gap:3px">';
+        n.body_regions.forEach(function(rid) { regionBadges += '<span style="display:inline-block;padding:2px 7px;font-size:10px;border-radius:10px;background:rgba(91,168,178,.15);color:var(--teal);border:1px solid rgba(91,168,178,.25)">' + esc(rid.replace(/-/g,' ')) + '</span>'; });
+        regionBadges += '</div>';
+      }
+      html += '<tr style="background:rgba(91,168,178,0.05)"><td colspan="6" style="padding:8px 16px;font-size:13px"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><span style="color:var(--teal);font-weight:600;font-size:11px;text-transform:uppercase">'+esc(n.note_type)+' note</span>'+(n.visible_to_patient ? ' <span class="badge badge-info" style="font-size:10px">Visible to patient</span>' : ' <span class="badge badge-muted" style="font-size:10px">Private</span>')+'<div style="margin-top:4px;color:var(--text)">'+esc(n.content)+'</div>'+regionBadges+'<div style="margin-top:4px;font-size:11px;color:var(--text-dim)">'+timeAgo(n.created_at)+'</div></div><button class="btn btn-ghost btn-sm" onclick="crmToggleNoteVisibility(\''+n.id+'\','+ !n.visible_to_patient+')" title="Toggle visibility">'+(n.visible_to_patient?'\uD83D\uDD13':'\uD83D\uDD12')+'</button></div></td></tr>';
     });
     recs.forEach(function(r){
       html += '<tr style="background:rgba(91,184,140,0.05)"><td colspan="6" style="padding:8px 16px;font-size:13px"><span style="color:var(--success);font-weight:600;font-size:11px">\uD83C\uDFA5 RECORDING</span> '+esc(r.title||'Session Recording')+(r.duration_minutes ? ' ('+r.duration_minutes+' min)' : '')+' <a href="'+esc(r.recording_url)+'" target="_blank" class="btn btn-ghost btn-sm" style="margin-left:8px">Open \u2197</a></td></tr>';
@@ -4953,11 +4959,102 @@ function renderCrmSessions(){
   el.innerHTML = html;
 }
 
+const BODY_REGION_OPTIONS = [
+  { section: 'Head & Neck', regions: [
+    { id: 'cranial', label: 'Cranial' }, { id: 'tmj', label: 'TMJ / Jaw' }, { id: 'atlas', label: 'Atlas (C1-C2)' },
+    { id: 'cervical-spine', label: 'Cervical Spine' }, { id: 'left-neck', label: 'Left SCM' }, { id: 'right-neck', label: 'Right SCM' }
+  ]},
+  { section: 'Shoulders & Upper Back', regions: [
+    { id: 'upper-trapezius', label: 'Upper Trapezius' }, { id: 'left-shoulder', label: 'Left Shoulder' }, { id: 'right-shoulder', label: 'Right Shoulder' },
+    { id: 'left-scapula', label: 'Left Scapula' }, { id: 'right-scapula', label: 'Right Scapula' }
+  ]},
+  { section: 'Spine', regions: [
+    { id: 'thoracic-spine', label: 'Thoracic (T1-T12)' }, { id: 'lumbar-spine', label: 'Lumbar (L1-L5)' },
+    { id: 'sacrum', label: 'Sacrum / Coccyx' }, { id: 'full-spine', label: 'Full Spine' }
+  ]},
+  { section: 'Chest & Torso', regions: [
+    { id: 'sternum', label: 'Sternum / Chest' }, { id: 'ribcage', label: 'Ribcage' },
+    { id: 'diaphragm', label: 'Diaphragm' }, { id: 'abdomen', label: 'Abdomen' }
+  ]},
+  { section: 'Pelvis & Hips', regions: [
+    { id: 'pelvis', label: 'Pelvis / Pelvic Floor' }, { id: 'left-si-joint', label: 'Left SI Joint' }, { id: 'right-si-joint', label: 'Right SI Joint' },
+    { id: 'left-hip', label: 'Left Hip' }, { id: 'right-hip', label: 'Right Hip' }
+  ]},
+  { section: 'Legs', regions: [
+    { id: 'left-knee', label: 'Left Knee' }, { id: 'right-knee', label: 'Right Knee' },
+    { id: 'left-ankle', label: 'Left Ankle / Foot' }, { id: 'right-ankle', label: 'Right Ankle / Foot' }
+  ]}
+];
+
 async function crmAddNote(bookingId){
-  var content = await qpPrompt('Add Session Note', 'Enter your note for this session:', 'Session observations, alignments, recommendations...');
-  if(!content) return;
-  var visible = await qpConfirm('Patient Visibility', 'Make this note visible to the patient?');
-  try{ await proxyFrom('session_notes').insert({ booking_id: bookingId, note_type: 'session', content: content, visible_to_patient: !!visible, created_by: currentAdmin.id || null }); await logAudit('crm_add_note', crmCurrentClient, 'Added session note'); showToast('Note added', 'success'); await crmOpenClient(crmCurrentClient); } catch(e){ showToast('Error adding note: '+e.message, 'error'); }
+  return new Promise(function(resolve){
+    var selectedRegions = [];
+    var o = document.createElement('div');
+    o.className = 'modal-overlay';
+    var html = '<div class="modal-box" style="max-width:620px;max-height:90vh;overflow-y:auto">';
+    html += '<div class="modal-title">Add Session Note</div>';
+
+    // Note textarea
+    html += '<div style="margin-bottom:14px"><label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">Session Notes</label>';
+    html += '<textarea id="crm-note-text" class="input" style="width:100%;min-height:100px;resize:vertical;font-size:13px" placeholder="Session observations, alignments, recommendations..."></textarea></div>';
+
+    // Body region picker
+    html += '<div style="margin-bottom:14px"><label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:8px">Body Regions Addressed <span style="opacity:.6">(click to select)</span></label>';
+    BODY_REGION_OPTIONS.forEach(function(section){
+      html += '<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:600;color:var(--taupe);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">' + esc(section.section) + '</div>';
+      html += '<div style="display:flex;flex-wrap:wrap;gap:5px">';
+      section.regions.forEach(function(r){
+        html += '<button type="button" class="region-chip" data-rid="' + r.id + '" onclick="this.classList.toggle(\'selected\')" style="padding:4px 10px;font-size:11px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;transition:all .15s">' + esc(r.label) + '</button>';
+      });
+      html += '</div></div>';
+    });
+    html += '</div>';
+
+    // Visibility toggle
+    html += '<div style="margin-bottom:16px;display:flex;align-items:center;gap:8px"><label style="font-size:12px;color:var(--text-muted)">Visible to patient?</label>';
+    html += '<label style="position:relative;width:36px;height:20px;display:inline-block"><input type="checkbox" id="crm-note-visible" style="opacity:0;width:0;height:0"><span style="position:absolute;inset:0;background:var(--border);border-radius:10px;transition:.2s;cursor:pointer"></span></label></div>';
+
+    // Actions
+    html += '<div class="modal-actions"><button class="btn btn-ghost btn-sm" id="modal-cancel">Cancel</button><button class="btn btn-primary btn-sm" id="modal-ok">Save Note</button></div>';
+    html += '</div>';
+    o.innerHTML = html;
+
+    // Inject chip styling
+    var style = document.createElement('style');
+    style.textContent = '.region-chip.selected{background:var(--teal)!important;color:#fff!important;border-color:var(--teal)!important;font-weight:600}';
+    o.querySelector('.modal-box').prepend(style);
+
+    document.body.appendChild(o);
+    document.getElementById('crm-note-text').focus();
+
+    // Toggle switch styling
+    var cb = document.getElementById('crm-note-visible');
+    var track = cb.nextElementSibling;
+    cb.addEventListener('change', function(){ track.style.background = cb.checked ? 'var(--teal)' : 'var(--border)'; });
+
+    document.getElementById('modal-ok').onclick = async function(){
+      var content = document.getElementById('crm-note-text').value.trim();
+      if(!content){ showToast('Please enter a note', 'warning'); return; }
+      var chips = o.querySelectorAll('.region-chip.selected');
+      var regions = [];
+      chips.forEach(function(c){ regions.push(c.getAttribute('data-rid')); });
+      var visible = document.getElementById('crm-note-visible').checked;
+      o.remove();
+      try{
+        await proxyFrom('session_notes').insert({
+          booking_id: bookingId, note_type: 'session', content: content,
+          body_regions: regions.length ? regions : null,
+          visible_to_patient: !!visible, created_by: currentAdmin.id || null
+        });
+        await logAudit('crm_add_note', crmCurrentClient, 'Added session note' + (regions.length ? ' (' + regions.length + ' regions)' : ''));
+        showToast('Note added' + (regions.length ? ' with ' + regions.length + ' body regions' : ''), 'success');
+        await crmOpenClient(crmCurrentClient);
+      } catch(e){ showToast('Error adding note: '+e.message, 'error'); }
+      resolve();
+    };
+    document.getElementById('modal-cancel').onclick = function(){ o.remove(); resolve(); };
+    o.onclick = function(e){ if(e.target===o){ o.remove(); resolve(); }};
+  });
 }
 
 async function crmAddRecording(bookingId){
