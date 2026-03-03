@@ -365,8 +365,8 @@
             .order('date', { ascending: false });
         allBookings = bookings || [];
 
-        // Fetch notes for patient-visible ones (RLS handles visibility)
-        const { data: notes } = await sb.from('session_notes').select('*');
+        // Fetch notes for patient-visible ones only
+        const { data: notes } = await sb.from('session_notes').select('*').eq('visible_to_patient', true);
         allNotes = notes || [];
 
         // Fetch recordings (RLS handles ownership)
@@ -374,6 +374,31 @@
         allRecordings = recs || [];
 
         renderAll();
+
+        // Handle ?highlight=bookingId — auto-switch to Past tab and expand that session
+        const urlParams = new URLSearchParams(window.location.search);
+        const highlightId = urlParams.get('highlight');
+        if (highlightId) {
+            // Switch to Past tab
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+            const pastBtn = document.querySelector('.tab-btn[data-tab="past"]');
+            if (pastBtn) pastBtn.classList.add('active');
+            $('tab-past').style.display = 'block';
+
+            // Find and expand the matching session card
+            setTimeout(() => {
+                const card = document.querySelector(`.session-card[data-booking-id="${highlightId}"]`);
+                if (card) {
+                    const toggle = card.querySelector('.expand-toggle');
+                    const details = card.querySelector('.session-details');
+                    if (details) { details.style.display = 'block'; }
+                    if (toggle) { toggle.textContent = 'Hide Details'; }
+                    card.style.boxShadow = '0 0 0 2px var(--teal)';
+                    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 100);
+        }
     }
 
     function renderAll() {
@@ -463,12 +488,20 @@
         if (hasDetails) {
             detailsHtml = `<div class="session-details" style="display:none">`;
             if (notes.length) {
-                detailsHtml += notes.map(n => `
+                detailsHtml += notes.map(n => {
+                    let regionHtml = '';
+                    if (n.body_regions && n.body_regions.length) {
+                        regionHtml = '<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px">' +
+                            n.body_regions.map(rid => `<span style="display:inline-block;padding:2px 8px;font-size:10px;border-radius:10px;background:rgba(91,168,178,.12);color:var(--teal);border:1px solid rgba(91,168,178,.2)">${escapeHtml(rid.replace(/-/g,' '))}</span>`).join('') +
+                            '</div>';
+                    }
+                    return `
                     <div class="detail-section">
                         <div class="detail-label"><svg><use href="#i-file-text"/></svg> ${n.note_type === 'followup' ? 'Follow-up Note' : 'Session Notes'}</div>
                         <div class="detail-content">${escapeHtml(n.content)}</div>
-                    </div>
-                `).join('');
+                        ${regionHtml}
+                    </div>`;
+                }).join('');
             }
             if (recordings.length) {
                 detailsHtml += `<div class="detail-section"><div class="detail-label"><svg><use href="#i-play"/></svg> Recordings</div>`;
@@ -484,7 +517,7 @@
         }
 
         return `
-        <div class="session-card">
+        <div class="session-card" data-booking-id="${b.id}">
             <div class="session-top">
                 <div class="session-date-badge">
                     <span class="month">${month}</span>
