@@ -1054,16 +1054,40 @@
         var gltf = s.gltfData;
 
         // Find the right mesh by node name
-        var targetName = bodyGender === 'male' ? 'Man (NonRig)' : 'Woman (NonRig)';
+        var maleKey = 'Man (NonRig)';
+        var femaleKey = 'Woman (NonRig)';
+        var targetName = bodyGender === 'male' ? maleKey : femaleKey;
         var bodyMesh = null;
         gltf.scene.traverse(function(child) {
+            if (bodyMesh) return;
             if (child.name && child.name.indexOf(targetName) !== -1) {
                 bodyMesh = child;
             }
+            // Fallback: check for mesh children directly
+            if (!bodyMesh && child.isMesh && child.parent && child.parent.name && child.parent.name.indexOf(targetName) !== -1) {
+                bodyMesh = child.parent;
+            }
         });
 
+        // Second fallback: find by mesh index (NonRig Male=mesh1/node161, NonRig Female=mesh3/node320)
         if (!bodyMesh) {
-            console.error('Could not find ' + targetName + ' in GLB');
+            var fallbackNames = bodyGender === 'male' ? ['Object_161', 'Man'] : ['Object_320', 'Woman'];
+            gltf.scene.traverse(function(child) {
+                if (bodyMesh) return;
+                for (var i = 0; i < fallbackNames.length; i++) {
+                    if (child.name && child.name.indexOf(fallbackNames[i]) !== -1 && child.isMesh) {
+                        bodyMesh = child;
+                        return;
+                    }
+                }
+            });
+        }
+
+        if (!bodyMesh) {
+            // Last resort: log all node names for debugging
+            var names = [];
+            gltf.scene.traverse(function(c) { if (c.name) names.push(c.name + (c.isMesh ? ' [MESH]' : '')); });
+            console.error('Could not find ' + targetName + ' in GLB. Available nodes:', names.join(', '));
             return;
         }
 
