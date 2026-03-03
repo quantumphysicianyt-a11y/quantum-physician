@@ -3481,7 +3481,7 @@ function loadTemplate(key){
    ============================================================================ */
 
 /* ---------- State ---------- */
-var sessConfigData=null, sessCyclesData=[], sessAvailData=[], sessClientsData=[], sessBookingsData=[], sessWaitlistData=[];
+var sessConfigData=null, sessCyclesData=[], sessAvailData=[], sessClientsData=[], sessBookingsData=[], sessWaitlistData=[], sessNotesData=[], sessRecsData=[];
 var sessAvailMonth=new Date().getMonth(), sessAvailYear=new Date().getFullYear();
 var sessBookPage=1, sessBookPS=20;
 
@@ -3512,7 +3512,9 @@ async function loadSessionsData(){
       proxyFrom('session_availability').select('*').order('date',{ascending:true}),
       proxyFrom('session_clients').select('*').order('priority',{ascending:true}),
       proxyFrom('session_bookings').select('*').order('date',{ascending:true}),
-      proxyFrom('session_waitlist').select('*').order('created_at',{ascending:true})
+      proxyFrom('session_waitlist').select('*').order('created_at',{ascending:true}),
+      proxyFrom('session_notes').select('*').order('created_at',{ascending:false}),
+      proxyFrom('session_recordings').select('*').order('created_at',{ascending:false})
     ]);
     sessConfigData=(r[0].data&&r[0].data[0])||null;
     sessCyclesData=r[1].data||[];
@@ -3520,6 +3522,8 @@ async function loadSessionsData(){
     sessClientsData=r[3].data||[];
     sessBookingsData=r[4].data||[];
     sessWaitlistData=r[5].data||[];
+    sessNotesData=r[6].data||[];
+    sessRecsData=r[7].data||[];
     renderSessionsStats();
     renderCycleBanner();
     renderCyclesList();
@@ -4390,7 +4394,7 @@ function renderBookingsGrid(){
   c.innerHTML='<table class="tbl"><thead><tr><th>Date</th><th>Time</th><th>Client</th><th>Type</th><th>Status</th><th></th></tr></thead><tbody>'
     +page.map(function(b){
       var payLink=b.confirmation_token?'https://qp-homepage.netlify.app/pages/one-on-sessions.html?pay='+b.confirmation_token:'';
-      return'<tr><td style="white-space:nowrap">'+fmtDate(b.date)+'</td>'
+      var row='<tr><td style="white-space:nowrap">'+fmtDate(b.date)+'</td>'
         +'<td>'+b.start_time.slice(0,5)+'–'+b.end_time.slice(0,5)+'</td>'
         +'<td class="email">'+esc(b.email)+(b.name?'<br><span class="name" style="font-size:11px">'+esc(b.name)+'</span>':'')+'</td>'
         +'<td>'+typeBadges[b.type]+'</td>'
@@ -4402,7 +4406,28 @@ function renderBookingsGrid(){
         +(b.status==='completed'||b.status==='paid'?'<button class="btn btn-primary btn-sm" onclick="crmAddNote(\''+b.id+'\')">+ Note</button>':'<button class="btn btn-ghost btn-sm" onclick="crmAddNote(\''+b.id+'\')">+ Note</button>')
         +'<button class="btn btn-ghost btn-sm" onclick="deleteBooking(\''+b.id+'\')">🗑</button>'
         +'</div></td></tr>';
+      // Render notes under this booking
+      var bNotes = sessNotesData.filter(function(n){ return n.booking_id === b.id; });
+      bNotes.forEach(function(n){
+        var regionBadges = '';
+        if (n.body_regions && n.body_regions.length) {
+          regionBadges = '<div style="margin-top:5px;display:flex;flex-wrap:wrap;gap:3px">';
+          n.body_regions.forEach(function(rid) { regionBadges += '<span style="display:inline-block;padding:2px 7px;font-size:10px;border-radius:10px;background:rgba(91,168,178,.15);color:var(--teal);border:1px solid rgba(91,168,178,.25)">' + esc(rid.replace(/-/g,' ')) + '</span>'; });
+          regionBadges += '</div>';
+        }
+        row += '<tr style="background:rgba(91,168,178,0.05)"><td colspan="6" style="padding:8px 16px;font-size:13px"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div style="flex:1"><span style="color:var(--teal);font-weight:600;font-size:11px;text-transform:uppercase">'+esc(n.note_type)+' note</span>'+(n.visible_to_patient ? ' <span class="badge badge-info" style="font-size:10px">Patient visible</span>' : ' <span class="badge badge-muted" style="font-size:10px">Private</span>')+'<div style="margin-top:4px;color:var(--text);white-space:pre-wrap">'+esc(n.content)+'</div>'+regionBadges+'<div style="margin-top:4px;font-size:11px;color:var(--text-dim)">'+timeAgo(n.created_at)+'</div></div><div style="display:flex;gap:4px;flex-shrink:0;margin-left:8px"><button class="btn btn-ghost btn-sm sess-note-edit" data-nid="'+n.id+'" title="Edit" style="font-size:11px">✏️</button><button class="btn btn-ghost btn-sm" onclick="crmToggleNoteVisibility(\''+n.id+'\','+!n.visible_to_patient+')" title="'+(n.visible_to_patient?'Make private':'Share with patient')+'" style="font-size:11px">'+(n.visible_to_patient?'🔓':'🔒')+'</button><button class="btn btn-ghost btn-sm" onclick="crmDeleteNote(\''+n.id+'\')" title="Delete" style="font-size:11px;color:var(--error)">🗑</button></div></div></td></tr>';
+      });
+      return row;
     }).join('')+'</tbody></table>';
+
+  // Wire edit buttons
+  c.querySelectorAll('.sess-note-edit').forEach(function(btn){
+    btn.onclick = function(){
+      var nid = btn.getAttribute('data-nid');
+      var note = sessNotesData.find(function(n){ return n.id === nid; });
+      if(note) crmEditNote(nid, note.content, note.body_regions || [], !!note.visible_to_patient);
+    };
+  });
 
   document.getElementById('sess-book-pagination').innerHTML='<span>'+bookings.length+' bookings · Page '+sessBookPage+'/'+tp+'</span><div class="page-btns"><button class="btn btn-ghost btn-sm" onclick="sessBookPage=Math.max(1,sessBookPage-1);renderBookingsGrid()" '+(sessBookPage<=1?'disabled':'')+'>Prev</button><button class="btn btn-ghost btn-sm" onclick="sessBookPage=Math.min('+tp+',sessBookPage+1);renderBookingsGrid()" '+(sessBookPage>=tp?'disabled':'')+'>Next</button></div>';
 }
@@ -5109,7 +5134,7 @@ async function crmAddNote(bookingId){
         await logAudit('crm_add_note', crmCurrentClient || 'admin', 'Added session note' + (regions.length ? ' (' + regions.length + ' regions)' : ''));
         showToast('Note added' + (regions.length ? ' with ' + regions.length + ' body regions' : ''), 'success');
         if (crmCurrentClient) { await crmOpenClient(crmCurrentClient); }
-        if (typeof renderBookingsGrid === 'function') { try { var nbr = await proxyFrom('session_bookings').select('*').order('date',{ascending:false}); sessBookingsData = nbr.data || []; renderBookingsGrid(); } catch(e2){} }
+        if (typeof renderBookingsGrid === 'function') { try { var nbr = await proxyFrom('session_bookings').select('*').order('date',{ascending:false}); sessBookingsData = nbr.data || []; var nnr = await proxyFrom('session_notes').select('*').order('created_at',{ascending:false}); sessNotesData = nnr.data || []; renderBookingsGrid(); } catch(e2){} }
       } catch(e){ showToast('Error adding note: '+e.message, 'error'); }
       resolve();
     };
@@ -5126,7 +5151,7 @@ async function crmAddRecording(bookingId){
 }
 
 async function crmToggleNoteVisibility(noteId, visible){
-  try{ await proxyFrom('session_notes').update({ visible_to_patient: visible }).eq('id', noteId); showToast(visible ? 'Note shared with patient' : 'Note set to private', 'success'); if(crmCurrentClient) await crmOpenClient(crmCurrentClient); } catch(e){ showToast('Error updating note: '+e.message, 'error'); }
+  try{ await proxyFrom('session_notes').update({ visible_to_patient: visible }).eq('id', noteId); showToast(visible ? 'Note shared with patient' : 'Note set to private', 'success'); var nr = await proxyFrom('session_notes').select('*').order('created_at',{ascending:false}); sessNotesData = nr.data || []; if(crmCurrentClient) await crmOpenClient(crmCurrentClient); else renderBookingsGrid(); } catch(e){ showToast('Error updating note: '+e.message, 'error'); }
 }
 
 async function crmEditNote(noteId, currentContent, currentRegions, currentVisible){
@@ -5178,7 +5203,8 @@ async function crmEditNote(noteId, currentContent, currentRegions, currentVisibl
       try{
         await proxyFrom('session_notes').update({ content: content, body_regions: regions.length ? regions : null, visible_to_patient: !!visible }).eq('id', noteId);
         showToast('Note updated', 'success');
-        if(crmCurrentClient) await crmOpenClient(crmCurrentClient);
+        var nr = await proxyFrom('session_notes').select('*').order('created_at',{ascending:false}); sessNotesData = nr.data || [];
+        if(crmCurrentClient) await crmOpenClient(crmCurrentClient); else renderBookingsGrid();
       } catch(e){ showToast('Error: '+e.message, 'error'); }
       resolve();
     };
@@ -5189,7 +5215,7 @@ async function crmEditNote(noteId, currentContent, currentRegions, currentVisibl
 
 async function crmDeleteNote(noteId){
   if(!await qpConfirm('Delete Note', 'Are you sure you want to delete this note? This cannot be undone.', {danger:true, okText:'Delete'})) return;
-  try{ await proxyFrom('session_notes').delete().eq('id', noteId); showToast('Note deleted', 'success'); if(crmCurrentClient) await crmOpenClient(crmCurrentClient); } catch(e){ showToast('Error: '+e.message, 'error'); }
+  try{ await proxyFrom('session_notes').delete().eq('id', noteId); showToast('Note deleted', 'success'); var nr = await proxyFrom('session_notes').select('*').order('created_at',{ascending:false}); sessNotesData = nr.data || []; if(crmCurrentClient) await crmOpenClient(crmCurrentClient); else renderBookingsGrid(); } catch(e){ showToast('Error: '+e.message, 'error'); }
 }
 
 function renderCrmIntake(){
