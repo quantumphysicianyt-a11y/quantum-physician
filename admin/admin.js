@@ -5011,6 +5011,20 @@ async function crmAddNote(bookingId){
     });
     html += '</div>';
 
+    // Custom region input
+    html += '<div style="margin-top:8px;border-top:1px solid var(--border);padding-top:10px;margin-bottom:14px"><div style="font-size:11px;font-weight:600;color:var(--taupe);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">+ Custom Region</div>';
+    html += '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">';
+    html += '<input type="text" class="input" id="custom-region-name" placeholder="e.g. Right Psoas, Occipital Ridge..." style="flex:1;min-width:160px;font-size:12px;padding:5px 10px">';
+    html += '<select class="input" id="custom-region-location" style="font-size:12px;padding:5px 8px;max-width:180px"><option value="">Place near...</option>';
+    BODY_REGION_OPTIONS.forEach(function(section){
+      html += '<optgroup label="' + esc(section.section) + '">';
+      section.regions.forEach(function(r){ html += '<option value="' + r.id + '">' + esc(r.label) + '</option>'; });
+      html += '</optgroup>';
+    });
+    html += '</select>';
+    html += '<button type="button" class="btn btn-ghost btn-sm" id="add-custom-region-btn" style="white-space:nowrap">+ Add</button>';
+    html += '</div><div id="custom-chips-area" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px"></div></div>';
+
     // Visibility toggle
     html += '<div style="margin-bottom:16px;display:flex;align-items:center;gap:8px"><label style="font-size:12px;color:var(--text-muted)">Visible to patient?</label>';
     html += '<label style="position:relative;width:36px;height:20px;display:inline-block"><input type="checkbox" id="crm-note-visible" style="opacity:0;width:0;height:0"><span style="position:absolute;inset:0;background:var(--border);border-radius:10px;transition:.2s;cursor:pointer"></span></label></div>';
@@ -5028,6 +5042,27 @@ async function crmAddNote(bookingId){
     document.body.appendChild(o);
     document.getElementById('crm-note-text').focus();
 
+    // Custom region logic
+    var customRegions = [];
+    document.getElementById('add-custom-region-btn').onclick = function(){
+      var nameInp = document.getElementById('custom-region-name');
+      var locSel = document.getElementById('custom-region-location');
+      var name = nameInp.value.trim();
+      if(!name){ showToast('Enter a region name', 'warning'); nameInp.focus(); return; }
+      var slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      var location = locSel.value || null;
+      customRegions.push({ slug: slug, label: name, nearRegion: location });
+      var area = document.getElementById('custom-chips-area');
+      var chip = document.createElement('span');
+      chip.style.cssText = 'display:inline-flex;align-items:center;gap:4px;padding:4px 10px;font-size:11px;border-radius:20px;background:var(--teal);color:#fff;border:1px solid var(--teal);font-weight:600';
+      chip.innerHTML = esc(name) + (location ? ' <span style="opacity:.6;font-size:10px">(near ' + esc(location.replace(/-/g,' ')) + ')</span>' : '') + ' <span style="cursor:pointer;opacity:.7;margin-left:2px" onclick="this.parentElement.remove()">×</span>';
+      chip.dataset.slug = slug;
+      area.appendChild(chip);
+      nameInp.value = '';
+      locSel.value = '';
+      nameInp.focus();
+    };
+
     // Toggle switch styling
     var cb = document.getElementById('crm-note-visible');
     var track = cb.nextElementSibling;
@@ -5039,6 +5074,22 @@ async function crmAddNote(bookingId){
       var chips = o.querySelectorAll('.region-chip.selected');
       var regions = [];
       chips.forEach(function(c){ regions.push(c.getAttribute('data-rid')); });
+      // Add custom regions — they map to the nearest standard region for body map positioning
+      var activeCustomChips = document.getElementById('custom-chips-area').querySelectorAll('span[data-slug]');
+      var customLabels = [];
+      activeCustomChips.forEach(function(c){
+        var slug = c.dataset.slug;
+        var cr = customRegions.find(function(r){ return r.slug === slug; });
+        if(cr && cr.nearRegion) {
+          // Use the nearby region so it appears on the body map at that location
+          if(regions.indexOf(cr.nearRegion) === -1) regions.push(cr.nearRegion);
+          customLabels.push(cr.label + ' (near ' + cr.nearRegion.replace(/-/g,' ') + ')');
+        } else {
+          customLabels.push(cr ? cr.label : slug);
+        }
+      });
+      // Append custom labels to note content for reference
+      if(customLabels.length) content += '\n\n[Custom alignments: ' + customLabels.join(', ') + ']';
       var visible = document.getElementById('crm-note-visible').checked;
       o.remove();
       try{
