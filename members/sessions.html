@@ -402,6 +402,75 @@
         }
     }
 
+    function renderRecording(r) {
+        const url = r.recording_url || '';
+        const title = escapeHtml(r.title || 'Session Recording');
+        const sizeTxt = r.file_size_mb ? ` · ${r.file_size_mb} MB` : '';
+        const durTxt = r.duration_minutes ? ` · ${r.duration_minutes} min` : '';
+
+        // Supabase hosted — native HTML5 player
+        if (r.source_type === 'supabase' || url.includes('supabase.co/storage')) {
+            return `
+            <div style="margin-bottom:12px">
+                <video controls preload="metadata" style="width:100%;max-width:640px;border-radius:8px;background:#000">
+                    <source src="${url}" type="video/mp4">
+                </video>
+                <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+                    <span style="font-size:12px;color:var(--text-muted)">${title}${sizeTxt}</span>
+                    <a href="${url}" download class="recording-link" style="font-size:11px"><svg><use href="#i-download"/></svg> Download</a>
+                </div>
+            </div>`;
+        }
+
+        // Vimeo — extract ID and embed player
+        const vimeoMatch = url.match(/vimeo\.com\/(?:video\/)?(\d+)(?:\/([a-f0-9]+))?/);
+        if (vimeoMatch) {
+            const vimeoId = vimeoMatch[1];
+            const hash = vimeoMatch[2] ? `?h=${vimeoMatch[2]}` : '';
+            return `
+            <div style="margin-bottom:12px">
+                <div style="position:relative;padding-bottom:56.25%;height:0;max-width:640px;border-radius:8px;overflow:hidden">
+                    <iframe src="https://player.vimeo.com/video/${vimeoId}${hash}" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>
+                </div>
+                <div style="margin-top:6px;font-size:12px;color:var(--text-muted)">${title}${durTxt}</div>
+            </div>`;
+        }
+
+        // Google Drive — extract file ID and embed player
+        const gdriveMatch = url.match(/drive\.google\.com\/(?:file\/d\/|open\?id=)([a-zA-Z0-9_-]+)/);
+        if (gdriveMatch) {
+            const fileId = gdriveMatch[1];
+            return `
+            <div style="margin-bottom:12px">
+                <div style="position:relative;padding-bottom:56.25%;height:0;max-width:640px;border-radius:8px;overflow:hidden">
+                    <iframe src="https://drive.google.com/file/d/${fileId}/preview" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" allow="autoplay" allowfullscreen></iframe>
+                </div>
+                <div style="margin-top:6px;font-size:12px;color:var(--text-muted)">${title}${durTxt}</div>
+            </div>`;
+        }
+
+        // YouTube — extract ID and embed
+        const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
+        if (ytMatch) {
+            return `
+            <div style="margin-bottom:12px">
+                <div style="position:relative;padding-bottom:56.25%;height:0;max-width:640px;border-radius:8px;overflow:hidden">
+                    <iframe src="https://www.youtube.com/embed/${ytMatch[1]}" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" allow="autoplay; fullscreen" allowfullscreen></iframe>
+                </div>
+                <div style="margin-top:6px;font-size:12px;color:var(--text-muted)">${title}${durTxt}</div>
+            </div>`;
+        }
+
+        // Fallback — external link (Zoom, etc.)
+        return `
+        <div style="margin-bottom:8px">
+            <a href="${url}" target="_blank" class="recording-link">
+                <svg><use href="#i-play"/></svg> ${title}${durTxt}
+            </a>
+            <span style="font-size:10px;color:var(--text-dim);margin-left:6px">Opens in new tab</span>
+        </div>`;
+    }
+
     function renderAll() {
         const today = new Date().toISOString().split('T')[0];
 
@@ -506,27 +575,7 @@
             }
             if (recordings.length) {
                 detailsHtml += `<div class="detail-section"><div class="detail-label"><svg><use href="#i-play"/></svg> Recordings</div>`;
-                detailsHtml += recordings.map(r => {
-                    const isHosted = r.source_type === 'supabase' || r.recording_url.includes('supabase');
-                    if (isHosted) {
-                        return `
-                        <div style="margin-bottom:12px">
-                            <video controls preload="metadata" style="width:100%;max-width:640px;border-radius:8px;background:#000" controlsList="nodownload">
-                                <source src="${r.recording_url}" type="video/mp4">
-                            </video>
-                            <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
-                                <span style="font-size:12px;color:var(--text-muted)">${escapeHtml(r.title || 'Session Recording')}${r.file_size_mb ? ` · ${r.file_size_mb} MB` : ''}</span>
-                                <a href="${r.recording_url}" download class="recording-link" style="font-size:11px"><svg><use href="#i-download"/></svg> Download</a>
-                            </div>
-                        </div>`;
-                    } else {
-                        return `
-                        <a href="${r.recording_url}" target="_blank" class="recording-link">
-                            <svg><use href="#i-play"/></svg> ${escapeHtml(r.title || 'Session Recording')}
-                            ${r.duration_minutes ? ` · ${r.duration_minutes} min` : ''}
-                        </a>`;
-                    }
-                }).join(' ');
+                detailsHtml += recordings.map(r => renderRecording(r)).join('');
                 detailsHtml += `</div>`;
             }
             detailsHtml += `</div>`;
