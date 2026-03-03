@@ -67,7 +67,7 @@ async function doAuth(){var emailEl=document.getElementById('auth-email'),passEl
 function doLogout(){sessionStorage.removeItem('qp_admin_auth');currentAdmin=null;location.reload()}
 try{var savedAdmin=sessionStorage.getItem('qp_admin_auth');if(savedAdmin){currentAdmin=JSON.parse(savedAdmin);applyPermissions();document.getElementById('auth-screen').style.display='none';document.getElementById('admin-layout').style.display='block';setTimeout(initAdmin,50)}}catch(e){sessionStorage.removeItem('qp_admin_auth')}
 let currentPage='dashboard';
-const TITLES={dashboard:'Dashboard',customers:'Customers',academy:'Academy',fusion:'Fusion Sessions',sessions:'1-on-1 Sessions',memberships:'Memberships',community:'Community',referrals:'Referrals & Credits',email:'Email Campaigns',automation:'Email Automation',promotions:'Promotions',orders:'Orders',analytics:'Analytics',audit:'Audit Log','admin-users':'Admin Users'};
+const TITLES={dashboard:'Dashboard',customers:'Customers',academy:'Academy',fusion:'Fusion Sessions',sessions:'1-on-1 Sessions',memberships:'Memberships',community:'Community',referrals:'Referrals & Credits',email:'Email Campaigns',automation:'Email Automation',promotions:'Promotions',orders:'Orders',analytics:'Analytics',audit:'Audit Log','admin-users':'Admin Users',crm:'Client Profiles'};
 function go(page,btn){
   _reCleanupPickers();_ecEditor=null;if(_reInstances["ec"])delete _reInstances["ec"];currentPage=page;document.querySelectorAll('.sb-link').forEach(l=>l.classList.remove('active'));if(btn)btn.classList.add('active');document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));var el=document.getElementById('page-'+page);if(el)el.classList.add('active');document.getElementById('topbar-title').textContent=TITLES[page]||page;loadPageData(page);document.getElementById('sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('open')}
 function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sb-overlay').classList.toggle('open')}
@@ -79,7 +79,7 @@ async function loadAllData(){try{var r=await Promise.all([sb.from('purchases').s
 async function loadAuthUsers(){try{var page=1,allUsers=[];while(true){var r=await authAdminAPI('list_users',{page:page,per_page:500});var data=r.data;var users=data.users||data||[];if(!Array.isArray(users)||!users.length)break;allUsers=allUsers.concat(users);if(users.length<500)break;page++}authUsersMap=new Map();allUsers.forEach(function(u){if(u.email)authUsersMap.set(u.email.toLowerCase(),u)})}catch(e){console.error('Auth users load error:',e)}}
 function buildCustomerList(){var map=new Map();profilesData.forEach(function(p){if(!p.email)return;var k=p.email.toLowerCase();map.set(k,{email:p.email,name:p.full_name||'',userId:p.id,hasAccount:true,isBlocked:p.is_blocked||false,createdAt:p.created_at,purchases:[],academyPurchases:[],fusionPurchases:[],hasBundle:false,hasAcademyBundle:false,creditBalance:0,referralCount:0,referralCode:'',totalEarned:0,totalSpent:0})});purchasesData.forEach(function(p){if(!p.email)return;var k=p.email.toLowerCase();if(!map.has(k))map.set(k,{email:p.email,name:'',userId:null,hasAccount:false,isBlocked:false,createdAt:p.purchased_at,purchases:[],academyPurchases:[],fusionPurchases:[],hasBundle:false,hasAcademyBundle:false,creditBalance:0,referralCount:0,referralCode:'',totalEarned:0,totalSpent:0});var c=map.get(k);if(!c.purchases.includes(p.product_id)){c.purchases.push(p.product_id);if(isFusion(p.product_id))c.fusionPurchases.push(p.product_id);if(isAcademy(p.product_id))c.academyPurchases.push(p.product_id)}if(p.product_id==='bundle-all')c.hasBundle=true;if(p.product_id==='transformational-mastery')c.hasAcademyBundle=true;c.totalSpent+=(Number(p.amount_paid)||0)});referralData.forEach(function(r){if(!r.email)return;var k=r.email.toLowerCase();if(!map.has(k))map.set(k,{email:r.email,name:'',userId:null,hasAccount:false,isBlocked:false,createdAt:null,purchases:[],academyPurchases:[],fusionPurchases:[],hasBundle:false,hasAcademyBundle:false,creditBalance:0,referralCount:0,referralCode:'',totalEarned:0,totalSpent:0});var c=map.get(k);c.creditBalance=Number(r.credit_balance)||0;c.referralCount=r.successful_referrals||0;c.referralCode=r.code||'';c.totalEarned=Number(r.total_earned)||0});allCustomers=Array.from(map.values())}
 async function initAdmin(){document.addEventListener('keydown',function(e){if(e.ctrlKey&&e.shiftKey&&e.key==='R'){e.preventDefault();webhookRecovery()}});await loadAllData();loadPageData('dashboard')}
-function loadPageData(page){if(!dataLoaded&&page!=='dashboard')return;switch(page){case'dashboard':loadDashboard();break;case'customers':loadCustomerBrowser();break;case'academy':loadAcademyData();break;case'fusion':loadFusionData();break;case'referrals':loadReferralData();break;case'community':loadCommunityData();break;case'email':loadEmailPage();break;case'automation':loadAutomationPage();break;case'promotions':loadPromotionsPage();break;case'orders':loadOrdersPage();break;case'audit':loadAuditLog();break;case'analytics':loadAnalyticsPage();break;case'admin-users':loadAdminUsers();break;case'sessions':loadSessionsData();break}}
+function loadPageData(page){if(!dataLoaded&&page!=='dashboard')return;switch(page){case'dashboard':loadDashboard();break;case'customers':loadCustomerBrowser();break;case'academy':loadAcademyData();break;case'fusion':loadFusionData();break;case'referrals':loadReferralData();break;case'community':loadCommunityData();break;case'email':loadEmailPage();break;case'automation':loadAutomationPage();break;case'promotions':loadPromotionsPage();break;case'orders':loadOrdersPage();break;case'audit':loadAuditLog();break;case'analytics':loadAnalyticsPage();break;case'admin-users':loadAdminUsers();break;case'sessions':loadSessionsData();break;case'crm':loadCrmData();break}}
 function getAdminNotes(email){return adminNotesData.filter(function(n){return n.target_email&&n.target_email.toLowerCase()===email.toLowerCase()})}
 async function saveAdminNote(email,text){try{await proxyFrom('admin_notes').insert({target_email:email.toLowerCase(),note_text:text});await logAudit('add_note',email,'Added note: '+text.substring(0,80));var r=await proxyFrom('admin_notes').select('*').order('created_at',{ascending:false});adminNotesData=r.data||[]}catch(e){showToast('Error saving note: '+e.message,'error')}}
 async function deleteAdminNote(email,id){try{await proxyFrom('admin_notes').delete().eq('id',id);await logAudit('delete_note',email,'Deleted a note');var r=await proxyFrom('admin_notes').select('*').order('created_at',{ascending:false});adminNotesData=r.data||[]}catch(e){showToast('Error deleting note: '+e.message,'error')}}
@@ -4787,3 +4787,262 @@ function fmtDate(d){
   if(!d) return '—';
   return new Date(d+'T12:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
 }
+
+
+// ═══════════════════════════════════════
+// CLIENT PROFILES / CRM (Session 27)
+// ═══════════════════════════════════════
+var crmClients=[],crmPage=1,crmPS=20,crmCurrentClient=null;
+var crmBookings=[],crmNotes=[],crmRecordings=[],crmIntake=null,crmCheckins=[],crmProgressNotes=[];
+
+async function loadCrmData(){
+  try{
+    var [clientsRes, bookingsRes, intakeRes] = await Promise.all([
+      proxyFrom('session_clients').select('*').order('name'),
+      proxyFrom('session_bookings').select('*').order('date',{ascending:false}),
+      proxyFrom('patient_intake').select('user_id,email,status')
+    ]);
+    var clients = clientsRes.data || [];
+    var bookings = bookingsRes.data || [];
+    var intakes = intakeRes.data || [];
+    var intakeMap = {};
+    intakes.forEach(function(i){ intakeMap[i.email.toLowerCase()] = i.status; });
+    var bookingMap = {};
+    var lastSessionMap = {};
+    bookings.forEach(function(b){
+      var k = b.email.toLowerCase();
+      bookingMap[k] = (bookingMap[k]||0) + 1;
+      if(!lastSessionMap[k] || b.date > lastSessionMap[k]) lastSessionMap[k] = b.date;
+    });
+    var clientEmails = new Set(clients.map(function(c){ return c.email.toLowerCase(); }));
+    var extraEmails = new Set();
+    bookings.forEach(function(b){
+      var k = b.email.toLowerCase();
+      if(!clientEmails.has(k) && !extraEmails.has(k)){
+        extraEmails.add(k);
+        clients.push({ email: b.email, name: b.name || b.email.split('@')[0], status: 'public', frequency: 'one-time' });
+      }
+    });
+    crmClients = clients.map(function(c){
+      var k = c.email.toLowerCase();
+      return { email: c.email, name: c.name || '', status: c.status || 'active', frequency: c.frequency || '', sessionCount: bookingMap[k] || 0, lastSession: lastSessionMap[k] || null, intakeStatus: intakeMap[k] || 'not_started', priority: c.priority || 99 };
+    });
+    renderCrmStats();
+    renderCrmList();
+  } catch(e){
+    console.error('CRM load error:', e);
+    showToast('Error loading client data', 'error');
+  }
+}
+
+function renderCrmStats(){
+  var total = crmClients.length;
+  var active = crmClients.filter(function(c){ return c.sessionCount > 0; }).length;
+  var intakeDone = crmClients.filter(function(c){ return c.intakeStatus === 'completed'; }).length;
+  var totalSessions = crmClients.reduce(function(s,c){ return s + c.sessionCount; }, 0);
+  document.getElementById('crm-stats').innerHTML =
+    '<div class="stat-card"><div class="stat-ico teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div><div class="stat-val">'+total+'</div><div class="stat-lbl">Total Clients</div></div></div>'+
+    '<div class="stat-card"><div class="stat-ico green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/></svg></div><div><div class="stat-val">'+active+'</div><div class="stat-lbl">With Sessions</div></div></div>'+
+    '<div class="stat-card"><div class="stat-ico warm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div><div class="stat-val">'+intakeDone+'</div><div class="stat-lbl">Intake Complete</div></div></div>'+
+    '<div class="stat-card"><div class="stat-ico purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div><div class="stat-val">'+totalSessions+'</div><div class="stat-lbl">Total Sessions</div></div></div>';
+}
+
+function renderCrmList(){
+  var search = (document.getElementById('crm-search').value||'').toLowerCase();
+  var filter = document.getElementById('crm-filter').value;
+  var sort = document.getElementById('crm-sort').value;
+  var filtered = crmClients.filter(function(c){
+    if(search && c.name.toLowerCase().indexOf(search)===-1 && c.email.toLowerCase().indexOf(search)===-1) return false;
+    if(filter==='active' && c.sessionCount===0) return false;
+    if(filter==='intake-pending' && c.intakeStatus==='completed') return false;
+    if(filter==='intake-done' && c.intakeStatus!=='completed') return false;
+    return true;
+  });
+  if(sort==='name-asc') filtered.sort(function(a,b){ return (a.name||a.email).localeCompare(b.name||b.email); });
+  else if(sort==='sessions-desc') filtered.sort(function(a,b){ return b.sessionCount - a.sessionCount; });
+  else if(sort==='recent') filtered.sort(function(a,b){ return (b.lastSession||'').localeCompare(a.lastSession||''); });
+  var total = filtered.length;
+  var start = (crmPage-1)*crmPS;
+  var page = filtered.slice(start, start+crmPS);
+  if(!page.length){
+    document.getElementById('crm-table').innerHTML = '<div class="empty"><p>No clients found.</p></div>';
+    document.getElementById('crm-pagination').innerHTML = '';
+    return;
+  }
+  var html = '<table class="data-table"><thead><tr><th>Client</th><th>Sessions</th><th>Last Session</th><th>Intake</th><th>Status</th><th></th></tr></thead><tbody>';
+  page.forEach(function(c){
+    var intakeBadge = c.intakeStatus==='completed' ? '<span class="badge badge-success">Complete</span>' : c.intakeStatus==='in_progress' ? '<span class="badge badge-warning">In Progress</span>' : '<span class="badge badge-muted">Not Started</span>';
+    var statusBadge = c.status==='active' ? '<span class="badge badge-success">Active</span>' : c.status==='paused' ? '<span class="badge badge-warning">Paused</span>' : '<span class="badge badge-muted">'+esc(c.status)+'</span>';
+    var lastDate = c.lastSession ? new Date(c.lastSession).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '\u2014';
+    html += '<tr style="cursor:pointer" onclick="crmOpenClient(\''+esc(c.email)+'\')">'+'<td><div style="font-weight:600">'+esc(c.name||c.email.split('@')[0])+'</div><div style="font-size:11px;color:var(--text-dim)">'+esc(c.email)+'</div></td>'+'<td>'+c.sessionCount+'</td><td>'+lastDate+'</td><td>'+intakeBadge+'</td><td>'+statusBadge+'</td>'+'<td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();crmOpenClient(\''+esc(c.email)+'\')">View \u2192</button></td></tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('crm-table').innerHTML = html;
+  var pages = Math.ceil(total/crmPS);
+  if(pages>1){ var ph=''; for(var i=1;i<=pages;i++) ph+='<button class="btn btn-ghost btn-sm'+(i===crmPage?' active':'')+'" onclick="crmPage='+i+';renderCrmList()">'+i+'</button>'; document.getElementById('crm-pagination').innerHTML = ph; } else { document.getElementById('crm-pagination').innerHTML = ''; }
+}
+
+async function crmOpenClient(email){
+  crmCurrentClient = email.toLowerCase();
+  document.getElementById('crm-list-view').style.display = 'none';
+  document.getElementById('crm-detail-view').style.display = 'block';
+  var emailLower = crmCurrentClient;
+  try {
+    var [bookRes, notesRes, recRes, intakeRes, checkinRes, progRes, profileRes] = await Promise.all([
+      proxyFrom('session_bookings').select('*').eq('email', emailLower).order('date',{ascending:false}),
+      proxyFrom('session_notes').select('*'),
+      proxyFrom('session_recordings').select('*'),
+      proxyFrom('patient_intake').select('*').eq('email', emailLower).maybeSingle(),
+      proxyFrom('patient_checkins').select('*').eq('email', emailLower).order('checkin_date',{ascending:false}),
+      proxyFrom('patient_progress_notes').select('*').eq('email', emailLower).order('created_at',{ascending:false}),
+      sb.from('profiles').select('*').eq('email', emailLower).maybeSingle()
+    ]);
+    crmBookings = bookRes.data || [];
+    var allNotes = notesRes.data || [];
+    var allRecs = recRes.data || [];
+    crmIntake = intakeRes.data || null;
+    crmCheckins = checkinRes.data || [];
+    crmProgressNotes = progRes.data || [];
+    var bookingIds = crmBookings.map(function(b){ return b.id; });
+    crmNotes = allNotes.filter(function(n){ return bookingIds.indexOf(n.booking_id) > -1; });
+    crmRecordings = allRecs.filter(function(r){ return bookingIds.indexOf(r.booking_id) > -1; });
+    var profile = profileRes.data;
+    var clientInfo = crmClients.find(function(c){ return c.email.toLowerCase() === emailLower; }) || {};
+    var name = (profile && profile.full_name) || clientInfo.name || emailLower.split('@')[0];
+    var avatar = profile && profile.avatar_url ? '<img src="'+esc(profile.avatar_url)+'" style="width:48px;height:48px;border-radius:50%;object-fit:cover">' : '<div style="width:48px;height:48px;border-radius:50%;background:var(--teal);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px">'+name[0].toUpperCase()+'</div>';
+    var totalSess = crmBookings.length;
+    var paidSess = crmBookings.filter(function(b){ return b.status==='paid'||b.status==='completed'; }).length;
+    var firstSess = crmBookings.length ? crmBookings[crmBookings.length-1].date : null;
+    document.getElementById('crm-detail-header').innerHTML = '<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">'+avatar+'<div><div style="font-size:20px;font-weight:700;color:var(--text)">'+esc(name)+'</div><div style="font-size:13px;color:var(--text-dim)">'+esc(emailLower)+'</div></div><div style="margin-left:auto;display:flex;gap:20px;flex-wrap:wrap"><div style="text-align:center"><div style="font-size:22px;font-weight:700;color:var(--teal)">'+totalSess+'</div><div style="font-size:11px;color:var(--text-dim)">Total</div></div><div style="text-align:center"><div style="font-size:22px;font-weight:700;color:var(--success)">'+paidSess+'</div><div style="font-size:11px;color:var(--text-dim)">Paid</div></div>'+(firstSess ? '<div style="text-align:center"><div style="font-size:13px;font-weight:600;color:var(--text)">'+new Date(firstSess).toLocaleDateString('en-US',{month:'short',year:'numeric'})+'</div><div style="font-size:11px;color:var(--text-dim)">Client Since</div></div>' : '')+'</div></div>';
+    switchCrmTab('sessions', document.querySelector('#page-crm .tab-btn'));
+  } catch(e){ console.error('CRM client load error:', e); showToast('Error loading client data', 'error'); }
+}
+
+function crmBackToList(){ document.getElementById('crm-detail-view').style.display = 'none'; document.getElementById('crm-list-view').style.display = 'block'; crmCurrentClient = null; }
+
+function switchCrmTab(tab, btn){
+  document.querySelectorAll('#page-crm .tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  if(btn) btn.classList.add('active');
+  document.querySelectorAll('#page-crm .tab-content').forEach(function(t){ t.classList.remove('active'); });
+  var el = document.getElementById('crm-tab-'+tab);
+  if(el) el.classList.add('active');
+  switch(tab){ case 'sessions': renderCrmSessions(); break; case 'intake': renderCrmIntake(); break; case 'progress': renderCrmProgress(); break; case 'billing': renderCrmBilling(); break; case 'notes': renderCrmNotes(); break; }
+}
+
+function renderCrmSessions(){
+  var el = document.getElementById('crm-sessions-content');
+  if(!crmBookings.length){ el.innerHTML = '<div class="empty"><p>No sessions found for this client.</p></div>'; return; }
+  var html = '<table class="data-table"><thead><tr><th>Date</th><th>Time</th><th>Status</th><th>Notes</th><th>Recording</th><th>Actions</th></tr></thead><tbody>';
+  crmBookings.forEach(function(b){
+    var date = new Date(b.date).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+    var time = b.start_time ? fmtTime(b.start_time) : '\u2014';
+    var statusClass = b.status==='paid'?'success':b.status==='completed'?'success':b.status==='proposed'?'warning':b.status==='cancelled'?'danger':'muted';
+    var notes = crmNotes.filter(function(n){ return n.booking_id===b.id; });
+    var recs = crmRecordings.filter(function(r){ return r.booking_id===b.id; });
+    var noteCount = notes.length ? '<span class="badge badge-info">'+notes.length+' note'+(notes.length>1?'s':'')+'</span>' : '<span style="color:var(--text-dim)">\u2014</span>';
+    var recCount = recs.length ? '<span class="badge badge-success">'+recs.length+'</span>' : '<span style="color:var(--text-dim)">\u2014</span>';
+    html += '<tr><td>'+date+'</td><td>'+time+'</td><td><span class="badge badge-'+statusClass+'">'+esc(b.status)+'</span></td><td>'+noteCount+'</td><td>'+recCount+'</td><td><button class="btn btn-ghost btn-sm" onclick="crmAddNote(\''+b.id+'\')">+ Note</button> <button class="btn btn-ghost btn-sm" onclick="crmAddRecording(\''+b.id+'\')">+ Recording</button></td></tr>';
+    notes.forEach(function(n){
+      html += '<tr style="background:rgba(91,168,178,0.05)"><td colspan="6" style="padding:8px 16px;font-size:13px"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><span style="color:var(--teal);font-weight:600;font-size:11px;text-transform:uppercase">'+esc(n.note_type)+' note</span>'+(n.visible_to_patient ? ' <span class="badge badge-info" style="font-size:10px">Visible to patient</span>' : ' <span class="badge badge-muted" style="font-size:10px">Private</span>')+'<div style="margin-top:4px;color:var(--text)">'+esc(n.content)+'</div><div style="margin-top:4px;font-size:11px;color:var(--text-dim)">'+timeAgo(n.created_at)+'</div></div><button class="btn btn-ghost btn-sm" onclick="crmToggleNoteVisibility(\''+n.id+'\','+ !n.visible_to_patient+')" title="Toggle visibility">'+(n.visible_to_patient?'\uD83D\uDD13':'\uD83D\uDD12')+'</button></div></td></tr>';
+    });
+    recs.forEach(function(r){
+      html += '<tr style="background:rgba(91,184,140,0.05)"><td colspan="6" style="padding:8px 16px;font-size:13px"><span style="color:var(--success);font-weight:600;font-size:11px">\uD83C\uDFA5 RECORDING</span> '+esc(r.title||'Session Recording')+(r.duration_minutes ? ' ('+r.duration_minutes+' min)' : '')+' <a href="'+esc(r.recording_url)+'" target="_blank" class="btn btn-ghost btn-sm" style="margin-left:8px">Open \u2197</a></td></tr>';
+    });
+  });
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+
+async function crmAddNote(bookingId){
+  var content = await qpPrompt('Add Session Note', 'Enter your note for this session:', 'Session observations, alignments, recommendations...');
+  if(!content) return;
+  var visible = await qpConfirm('Patient Visibility', 'Make this note visible to the patient?');
+  try{ await proxyFrom('session_notes').insert({ booking_id: bookingId, note_type: 'session', content: content, visible_to_patient: !!visible, created_by: currentAdmin.id || null }); await logAudit('crm_add_note', crmCurrentClient, 'Added session note'); showToast('Note added', 'success'); await crmOpenClient(crmCurrentClient); } catch(e){ showToast('Error adding note: '+e.message, 'error'); }
+}
+
+async function crmAddRecording(bookingId){
+  var url = await qpPrompt('Add Recording', 'Paste the Zoom recording URL:', 'https://zoom.us/rec/share/...');
+  if(!url) return;
+  var title = await qpPrompt('Recording Title', 'Optional title for this recording:', 'Session Recording');
+  try{ await proxyFrom('session_recordings').insert({ booking_id: bookingId, recording_url: url, title: title || 'Session Recording' }); await logAudit('crm_add_recording', crmCurrentClient, 'Added recording'); showToast('Recording added', 'success'); await crmOpenClient(crmCurrentClient); } catch(e){ showToast('Error adding recording: '+e.message, 'error'); }
+}
+
+async function crmToggleNoteVisibility(noteId, visible){
+  try{ await proxyFrom('session_notes').update({ visible_to_patient: visible }).eq('id', noteId); showToast(visible ? 'Note now visible to patient' : 'Note hidden from patient', 'success'); await crmOpenClient(crmCurrentClient); } catch(e){ showToast('Error updating note: '+e.message, 'error'); }
+}
+
+function renderCrmIntake(){
+  var el = document.getElementById('crm-intake-content');
+  if(!crmIntake){ el.innerHTML = '<div class="empty"><p>No intake form submitted yet.</p><button class="btn btn-primary btn-sm" onclick="crmSendIntakeReminder()">Send Intake Reminder</button></div>'; return; }
+  var i = crmIntake;
+  var statusBadge = i.status==='completed' ? '<span class="badge badge-success">Completed</span>' : i.status==='in_progress' ? '<span class="badge badge-warning">In Progress</span>' : '<span class="badge badge-muted">Not Started</span>';
+  var html = '<div style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">'+statusBadge+(i.submitted_at ? '<span style="font-size:12px;color:var(--text-dim)">Submitted '+new Date(i.submitted_at).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})+'</span>' : '')+'</div>';
+  function sec(title, items){
+    html += '<div style="margin-bottom:20px"><div style="font-size:14px;font-weight:700;color:var(--teal);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">'+title+'</div>';
+    items.forEach(function(item){ if(item[1] !== null && item[1] !== undefined && item[1] !== ''){ var val = item[1]; if(Array.isArray(val)) val = val.length ? val.map(function(v){ return typeof v==='object' ? v.name+' ('+v.severity+'/10)' : v; }).join(', ') : '\u2014'; html += '<div style="display:flex;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05)"><div style="width:200px;font-size:12px;color:var(--text-dim);flex-shrink:0">'+item[0]+'</div><div style="font-size:13px;color:var(--text)">'+esc(String(val))+'</div></div>'; } });
+    html += '</div>';
+  }
+  sec('Personal Information', [['Date of Birth', i.date_of_birth],['Phone', i.phone],['Emergency Contact', i.emergency_contact_name ? i.emergency_contact_name + ' \u2014 ' + (i.emergency_contact_phone||'') : null]]);
+  sec('Health History', [['Medical Conditions', i.medical_conditions],['Medications', i.medications],['Allergies', i.allergies],['Surgeries/Hospitalizations', i.surgeries],['Family History', i.family_history]]);
+  sec('Current Symptoms', [['Primary Concern', i.primary_concern],['Symptoms', i.symptoms],['Duration', i.symptom_duration],['Previous Treatments', i.previous_treatments]]);
+  sec('Lifestyle', [['Exercise Frequency', i.exercise_frequency],['Diet', i.diet_description],['Sleep Quality', i.sleep_quality ? i.sleep_quality+'/10' : null],['Stress Level', i.stress_level ? i.stress_level+'/10' : null],['Wellness Goals', i.wellness_goals]]);
+  sec('Consent', [['Wellness Disclaimer', i.consent_wellness ? '\u2713 Acknowledged' : '\u2717 Not acknowledged'],['Data Access Consent', i.consent_access ? '\u2713 Granted' : '\u2717 Not granted'],['Signature', i.signature_name],['Signed Date', i.signature_date]]);
+  el.innerHTML = html;
+}
+
+async function crmSendIntakeReminder(){ showToast('Intake reminder \u2014 coming soon (email automation)', 'info'); }
+
+function renderCrmProgress(){
+  var el = document.getElementById('crm-progress-content');
+  var html = '<div style="margin-bottom:16px;display:flex;gap:10px"><button class="btn btn-primary btn-sm" onclick="crmAddProgressNote(\'alignment\')">+ Alignment Note</button><button class="btn btn-success btn-sm" onclick="crmAddProgressNote(\'milestone\')">+ Milestone</button><button class="btn btn-ghost btn-sm" onclick="crmAddProgressNote(\'observation\')">+ Observation</button></div>';
+  if(crmCheckins.length){
+    html += '<div style="font-size:14px;font-weight:700;color:var(--teal);margin-bottom:10px">PATIENT CHECK-INS</div>';
+    crmCheckins.forEach(function(c){
+      var date = new Date(c.checkin_date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+      var symptoms = c.symptoms || [];
+      var symptomStr = symptoms.length ? symptoms.map(function(s){ return s.name+' ('+s.severity+'/10)'; }).join(', ') : 'None reported';
+      html += '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-weight:600;color:var(--text)">'+date+'</span><div>'+(c.energy_level ? '<span class="badge badge-info">Energy: '+c.energy_level+'/10</span> ' : '')+(c.sleep_quality ? '<span class="badge badge-info">Sleep: '+c.sleep_quality+'/10</span>' : '')+'</div></div><div style="font-size:13px;color:var(--text-dim);margin-bottom:4px">Symptoms: '+esc(symptomStr)+'</div>'+(c.notes ? '<div style="font-size:13px;color:var(--text)">'+esc(c.notes)+'</div>' : '')+'</div>';
+    });
+  }
+  if(crmProgressNotes.length){
+    html += '<div style="font-size:14px;font-weight:700;color:var(--teal);margin:20px 0 10px">PRACTITIONER NOTES</div>';
+    crmProgressNotes.forEach(function(n){
+      var typeColor = n.note_type==='milestone' ? 'var(--success)' : n.note_type==='alignment' ? 'var(--teal)' : 'var(--text-dim)';
+      var typeIcon = n.note_type==='milestone' ? '\uD83C\uDFC6' : n.note_type==='alignment' ? '\uD83D\uDD04' : '\uD83D\uDCDD';
+      html += '<div style="background:rgba(255,255,255,0.03);border-left:3px solid '+typeColor+';border-radius:0 10px 10px 0;padding:14px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:12px;font-weight:700;color:'+typeColor+';text-transform:uppercase">'+typeIcon+' '+esc(n.note_type)+'</span><span style="font-size:11px;color:var(--text-dim)">'+timeAgo(n.created_at)+'</span></div><div style="font-size:13px;color:var(--text)">'+esc(n.content)+'</div></div>';
+    });
+  }
+  if(!crmCheckins.length && !crmProgressNotes.length){ html += '<div class="empty" style="margin-top:16px"><p>No progress data yet. Add notes after sessions to track the healing journey.</p></div>'; }
+  el.innerHTML = html;
+}
+
+async function crmAddProgressNote(type){
+  var labels = { alignment: 'Alignment Note', milestone: 'Milestone', observation: 'Observation' };
+  var content = await qpPrompt('Add '+labels[type], 'Enter your '+type+' note:', type==='milestone' ? 'Describe the milestone achieved...' : 'Observations, alignments found, recommendations...');
+  if(!content) return;
+  try{ await proxyFrom('patient_progress_notes').insert({ email: crmCurrentClient, note_type: type, content: content, created_by: currentAdmin.id || null }); await logAudit('crm_add_progress', crmCurrentClient, 'Added '+type+' note'); showToast(labels[type]+' added', 'success'); var res = await proxyFrom('patient_progress_notes').select('*').eq('email', crmCurrentClient).order('created_at',{ascending:false}); crmProgressNotes = res.data || []; renderCrmProgress(); } catch(e){ showToast('Error: '+e.message, 'error'); }
+}
+
+function renderCrmBilling(){
+  var el = document.getElementById('crm-billing-content');
+  var purchases = purchasesData.filter(function(p){ return p.email && p.email.toLowerCase() === crmCurrentClient; });
+  if(!purchases.length){ el.innerHTML = '<div class="empty"><p>No purchases found for this client.</p></div>'; return; }
+  var total = purchases.reduce(function(s,p){ return s + (Number(p.amount_paid)||0); }, 0);
+  var html = '<div style="margin-bottom:16px;font-size:15px;font-weight:600;color:var(--text)">Total Spent: <span style="color:var(--success)">'+fmtMoney(total)+'</span></div>';
+  html += '<table class="data-table"><thead><tr><th>Date</th><th>Product</th><th>Amount</th><th>Status</th></tr></thead><tbody>';
+  purchases.forEach(function(p){ var date = p.purchased_at ? new Date(p.purchased_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '\u2014'; html += '<tr><td>'+date+'</td><td>'+productName(p.product_id)+'</td><td>'+fmtMoney(p.amount_paid)+'</td><td><span class="badge badge-success">Paid</span></td></tr>'; });
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+
+function renderCrmNotes(){
+  var el = document.getElementById('crm-notes-content');
+  var notes = getAdminNotes(crmCurrentClient);
+  var html = '<div style="margin-bottom:16px"><button class="btn btn-primary btn-sm" onclick="crmAddInternalNote()">+ Add Internal Note</button></div>';
+  if(!notes.length){ html += '<div class="empty"><p>No internal notes for this client.</p></div>'; }
+  else { notes.forEach(function(n){ html += '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font-size:13px;color:var(--text)">'+esc(n.note_text)+'</div><div style="font-size:11px;color:var(--text-dim);margin-top:6px">'+timeAgo(n.created_at)+'</div></div><button class="btn btn-ghost btn-sm" onclick="crmDeleteNote(\''+n.id+'\')" style="color:var(--danger);flex-shrink:0">\u2715</button></div>'; }); }
+  el.innerHTML = html;
+}
+
+async function crmAddInternalNote(){ var text = await qpPrompt('Internal Note', 'This note is only visible to admins:', 'Internal observations, follow-up reminders...'); if(!text) return; await saveAdminNote(crmCurrentClient, text); showToast('Note saved', 'success'); renderCrmNotes(); }
+async function crmDeleteNote(id){ var ok = await qpConfirm('Delete Note', 'Delete this internal note?', {danger:true,okText:'Delete'}); if(!ok) return; await deleteAdminNote(crmCurrentClient, id); showToast('Note deleted', 'success'); renderCrmNotes(); }
