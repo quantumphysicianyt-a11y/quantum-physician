@@ -848,7 +848,7 @@
             var color = SESSION_COLORS[colorIdx % SESSION_COLORS.length];
             var opacity = isActive ? '0.7' : '0.08';
             var size = pos.r * 2;
-            mapHTML += '<div class="bodymap-region' + (isActive ? ' active' : '') + '" data-region="' + id + '" onclick="showRegionDetail('' + id + '')" style="position:absolute;left:' + pos.x + '%;top:' + pos.y + '%;width:' + size + '%;padding-bottom:' + size + '%;transform:translate(-50%,-50%);border-radius:50%;background:' + color + ';opacity:' + opacity + ';cursor:pointer;transition:all .2s"></div>';
+            mapHTML += '<div class="bodymap-region' + (isActive ? ' active' : '') + '" data-region="' + id + '" onclick="showRegionDetail(this.dataset.region)" style="position:absolute;left:' + pos.x + '%;top:' + pos.y + '%;width:' + size + '%;padding-bottom:' + size + '%;transform:translate(-50%,-50%);border-radius:50%;background:' + color + ';opacity:' + opacity + ';cursor:pointer;transition:all .2s"></div>';
             if (isActive) {
                 mapHTML += '<div style="position:absolute;left:' + pos.x + '%;top:' + pos.y + '%;width:' + (size+2) + '%;padding-bottom:' + (size+2) + '%;transform:translate(-50%,-50%);border-radius:50%;border:1px solid ' + color + ';opacity:.3;pointer-events:none"></div>';
             }
