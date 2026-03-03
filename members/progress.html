@@ -167,7 +167,7 @@
 
         /* Body Map */
         .bodymap-container { background: linear-gradient(170deg, var(--navy-card) 0%, var(--navy-mid) 100%); border: 1px solid var(--border); border-radius: 0 0 var(--radius) var(--radius); padding: 24px; }
-        .bodymap-svg-wrap { display: flex; justify-content: center; margin-bottom: 16px; }
+        .bodymap-svg-wrap { display: flex; justify-content: center; margin-bottom: 16px; perspective: 800px; }
         .bodymap-svg-wrap > div { max-width: 280px; width: 100%; }
         
         .bodymap-region { cursor: pointer; transition: all .2s; }
@@ -361,7 +361,7 @@
             <button class="collapse-toggle" onclick="toggleCollapse(this)"><span class="ct-title">Alignment Body Map</span><svg class="ct-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></button>
             <div class="collapse-body">
                 <div class="bodymap-container">
-                    <div class="bodymap-svg-wrap" id="bodymap-wrap"></div>
+                    <div style="margin-bottom:10px;display:flex;align-items:center;gap:10px;justify-content:center"><div class="ba-toggle" style="margin-right:12px"><button class="ba-toggle-btn active" onclick="setBodyView('front',this)">Front</button><button class="ba-toggle-btn" onclick="setBodyView('back',this)">Back</button></div><span style="font-size:11px;color:var(--text-muted)">Zoom</span><input type="range" min="200" max="600" value="350" id="bodymap-zoom" oninput="document.getElementById('bodymap-wrap').querySelector('div').style.maxWidth=this.value+'px'" style="width:150px"></div><div class="bodymap-svg-wrap" id="bodymap-wrap"></div>
                     <div class="bodymap-legend" id="bodymap-legend"></div>
                     <div class="bodymap-detail" id="bodymap-detail"></div>
                 </div>
@@ -766,6 +766,24 @@
         container.insertAdjacentHTML('afterend', html);
     }
 
+    var bodyView = 'front';
+    function setBodyView(view, btn) {
+        bodyView = view;
+        document.querySelectorAll('.ba-toggle-btn').forEach(function(b){ /* handled by parent toggle */ });
+        if (btn) {
+            btn.parentElement.querySelectorAll('.ba-toggle-btn').forEach(function(b){ b.classList.remove('active'); });
+            btn.classList.add('active');
+        }
+        var wrap = ;
+        if (wrap && wrap.querySelector('div')) {
+            var container = wrap.querySelector('div');
+            container.style.transition = 'transform 0.6s ease';
+            container.style.transform = view === 'back' ? 'rotateY(180deg)' : 'rotateY(0deg)';
+            container.style.transformStyle = 'preserve-3d';
+        }
+        renderBodyMap();
+    }
+
     // ═══ BODY MAP ═══
     const BODY_REGIONS = {
         'cervical-spine': { label: 'Cervical Spine (C1-C7)', cx: 150, cy: 72, r: 14 },
@@ -822,18 +840,18 @@
 
         // Overlay region circles positioned as percentages of image dimensions
         var REGION_POS = {
-            'cervical-spine': { x: 50, y: 16, r: 4 },
-            'atlas': { x: 50, y: 13, r: 3 },
-            'upper-trapezius': { x: 38, y: 20, r: 4.5 },
-            'right-shoulder': { x: 28, y: 23, r: 4.5 },
-            'left-neck': { x: 58, y: 17, r: 3.5 },
-            'thoracic-spine': { x: 50, y: 30, r: 5 },
-            'ribcage': { x: 40, y: 28, r: 4.5 },
-            'diaphragm': { x: 50, y: 38, r: 5 },
-            'lumbar-spine': { x: 50, y: 48, r: 4.5 },
-            'pelvis': { x: 50, y: 55, r: 5 },
-            'tmj': { x: 42, y: 9, r: 3 },
-            'full-spine': { x: 50, y: 32, r: 8 }
+            'cervical-spine': { x: 50, y: 15, r: 3 },
+            'atlas': { x: 50, y: 12.5, r: 2.5 },
+            'upper-trapezius': { x: 40, y: 19, r: 3.5 },
+            'right-shoulder': { x: 30, y: 22, r: 3.5 },
+            'left-neck': { x: 55, y: 14, r: 2.5 },
+            'thoracic-spine': { x: 50, y: 28, r: 3.5 },
+            'ribcage': { x: 44, y: 26, r: 3.5 },
+            'diaphragm': { x: 50, y: 35, r: 4 },
+            'lumbar-spine': { x: 50, y: 42, r: 3.5 },
+            'pelvis': { x: 50, y: 50, r: 4 },
+            'tmj': { x: 46, y: 9, r: 2 },
+            'full-spine': { x: 50, y: 30, r: 6 }
         };
 
         Object.keys(BODY_REGIONS).forEach(function(id) {
@@ -854,7 +872,7 @@
             }
         });
         mapHTML += '</div>';
-        $('bodymap-wrap').innerHTML = mapHTML;
+        .innerHTML = mapHTML;
 
         // Legend - session dates with colors
         var legendHTML = '';
