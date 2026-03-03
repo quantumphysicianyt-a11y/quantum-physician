@@ -163,6 +163,15 @@
         /* Energy/Sleep chart reuses .chart-section */
 
         /* Before/After card */
+        .collapse-section { margin-bottom: 4px; }
+        .collapse-toggle { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; background: linear-gradient(170deg, var(--navy-card) 0%, var(--navy-mid) 100%); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; transition: all .15s; width: 100%; font-family: 'Lato', sans-serif; color: var(--text); }
+        .collapse-toggle:hover { border-color: var(--border-hover); }
+        .collapse-toggle .ct-title { font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 600; }
+        .collapse-toggle .ct-arrow { width: 16px; height: 16px; stroke: var(--text-muted); fill: none; stroke-width: 2; transition: transform .25s ease; }
+        .collapse-toggle.open .ct-arrow { transform: rotate(180deg); }
+        .collapse-toggle.open { border-radius: var(--radius) var(--radius) 0 0; border-bottom-color: transparent; }
+        .collapse-body { max-height: 0; overflow: hidden; transition: max-height .4s ease; }
+        .collapse-body.open { max-height: 2000px; }
         .ov-select { padding: 5px 10px; font-size: 11px; background: rgba(0,0,0,.2); border: 1px solid var(--border); border-radius: 8px; color: var(--text-muted); font-family: 'Lato', sans-serif; cursor: pointer; outline: none; }
         .ov-select:focus { border-color: var(--teal); }
         .ba-toggle { display: flex; gap: 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
@@ -264,6 +273,9 @@
         </div>
 
         <!-- Symptom Chart -->
+        <div class="collapse-section">
+            <button class="collapse-toggle" onclick="toggleCollapse(this)"><span class="ct-title">Symptom Tracking</span><svg class="ct-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></button>
+            <div class="collapse-body">
         <div class="chart-section">
             <div class="chart-header">
                 <div class="chart-title">Symptom Tracking</div>
@@ -277,20 +289,32 @@
             <div class="chart-wrap"><canvas id="symptomChart"></canvas></div>
             <div id="chart-empty" class="empty-state" style="display:none"><p>Add check-ins to see your symptom trends over time.</p></div>
         </div>
+            </div>
+        </div>
 
         <!-- Energy & Sleep Chart -->
-        <div class="chart-section" style="margin-top:24px">
+        <div class="collapse-section">
+            <button class="collapse-toggle" onclick="toggleCollapse(this)"><span class="ct-title">Energy &amp; Sleep Recovery</span><svg class="ct-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></button>
+            <div class="collapse-body">
+        <div class="chart-section">
             <div class="chart-header">
                 <div class="chart-title">Energy &amp; Sleep Recovery</div>
             </div>
             <div class="chart-wrap"><canvas id="wellnessChart"></canvas></div>
         </div>
+            </div>
+        </div>
 
         <!-- Before / After Comparison -->
-        <div class="ba-card" id="ba-card" style="display:none">
+        <div class="collapse-section" id="ba-section" style="display:none">
+            <button class="collapse-toggle" onclick="toggleCollapse(this)"><span class="ct-title">Your Healing Journey</span><svg class="ct-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></button>
+            <div class="collapse-body">
+        <div class="ba-card" id="ba-card">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><div class="ba-title" style="margin-bottom:0">Your Healing Journey</div><div class="ba-toggle"><button class="ba-toggle-btn active" onclick="toggleBA('scores',this)">Scores</button><button class="ba-toggle-btn" onclick="toggleBA('pct',this)">% Change</button></div></div>
             <div class="ba-grid" id="ba-grid"></div>
             <div class="ba-summary" id="ba-summary"></div>
+        </div>
+            </div>
         </div>
 
         <!-- Check-In Log -->
@@ -349,6 +373,15 @@
 
     let currentUser = null, userEmail = '', allCheckins = [], allNotes = [], allBookings = [];
     let symptomChart = null, currentRange = 90;
+
+    function toggleCollapse(btn) {
+        btn.classList.toggle('open');
+        var body = btn.nextElementSibling;
+        body.classList.toggle('open');
+        if (body.classList.contains('open')) {
+            setTimeout(function() { window.dispatchEvent(new Event('resize')); }, 100);
+        }
+    }
 
     async function init() {
         const { data: { session } } = await sb.auth.getSession();
@@ -589,8 +622,8 @@
     }
 
     function renderBeforeAfter() {
-        if (allCheckins.length < 2) { $('ba-card').style.display = 'none'; return; }
-        $('ba-card').style.display = 'block';
+        if (allCheckins.length < 2) { $('ba-section').style.display = 'none'; return; }
+        $('ba-section').style.display = 'block';
         const first = allCheckins[allCheckins.length - 1];
         const latest = allCheckins[0];
         const firstSymptoms = first.symptoms || [];
@@ -672,7 +705,7 @@
 
     function renderCheckins() {
         const list = $('checkin-list');
-        if (!allCheckins.length) { list.innerHTML = '<div class="empty-state"><p>No check-ins yet. Click "Add Check-In" to log how you&rsquo;re feeling.</p></div>'; return; }
+        if (!allCheckins.length) { list.innerHTML = '<div class="empty-state"><p>No check-ins yet. Click "Add Check-In" to log how you're feeling.</p></div>'; return; }
         list.innerHTML = allCheckins.map(c => {
             const d = new Date(c.checkin_date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
             const symptoms = (c.symptoms || []).map(s => `<span class="tc-symptom">${s.name} <strong>${s.severity}/10</strong></span>`).join('');
