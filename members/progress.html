@@ -363,6 +363,7 @@
                     <div class="bodymap-controls">
                         <div class="ba-toggle" id="body-gender-toggle"><button class="ba-toggle-btn active" onclick="setBodyGender('male',this)">Male</button><button class="ba-toggle-btn" onclick="setBodyGender('female',this)">Female</button></div>
                         <div class="ba-toggle"><button class="ba-toggle-btn active" onclick="resetBodyView('front',this)">Front</button><button class="ba-toggle-btn" onclick="resetBodyView('back',this)">Back</button></div>
+                        <select class="ov-select" id="bodymap-filter" onchange="filterBodySessions(this.value)"><option value="all">All Sessions</option></select>
                         <span class="bc-hint">Drag to rotate &middot; Scroll to zoom</span>
                     </div>
                     <div class="bodymap-canvas-wrap" id="bodymap-wrap"><canvas id="bodymap-canvas" width="400" height="520"></canvas></div>
@@ -806,6 +807,7 @@
 
     var bodyGender = 'male';
     var bodySceneState = null;
+    var bodyFilterSession = 'all';
 
     function setBodyGender(gender, btn) {
         bodyGender = gender;
@@ -813,6 +815,11 @@
             btn.parentElement.querySelectorAll('.ba-toggle-btn').forEach(function(b){ b.classList.remove('active'); });
             btn.classList.add('active');
         }
+        if (bodySceneState) swapBodyModel();
+    }
+
+    function filterBodySessions(val) {
+        bodyFilterSession = val;
         if (bodySceneState) swapBodyModel();
     }
 
@@ -850,13 +857,17 @@
         window._regionMap = regionMap;
         window._sessionDates = sessionDates;
 
-        // Legend
+        // Legend + filter dropdown
         var legendHTML = '';
+        var filterHTML = '<option value="all">All Sessions</option>';
         sessionDates.forEach(function(d, i) {
             var dt = new Date(d + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
             legendHTML += '<div class="bodymap-legend-item"><span class="dot" style="background:' + SESSION_COLORS_STR[i % SESSION_COLORS_STR.length] + '"></span>Session ' + (i+1) + ' - ' + dt + '</div>';
+            filterHTML += '<option value="' + d + '">Session ' + (i+1) + ' - ' + dt + '</option>';
         });
         $('bodymap-legend').innerHTML = legendHTML;
+        $('bodymap-filter').innerHTML = filterHTML;
+        if (bodyFilterSession !== 'all') $('bodymap-filter').value = bodyFilterSession;
 
         var activeCount = Object.keys(regionMap).length;
         $('bodymap-detail').innerHTML = '<span style="color:var(--text-muted)">Click a highlighted region to see treatment details. ' + activeCount + ' areas addressed across ' + sessionDates.length + ' sessions.</span>';
@@ -1072,15 +1083,26 @@
 
         s.bodyGroup.add(clone);
 
-        // ─── BUILD REGION MARKERS ───
+        // ─── BUILD REGION MARKERS (filtered) ───
         var regionMap = s.regionMap;
         var sessionDates = s.sessionDates;
         var posKey = bodyGender === 'male' ? 'male' : 'female';
 
+        // Build filtered region map based on session filter
+        var filteredRegionMap = {};
+        if (bodyFilterSession === 'all') {
+            filteredRegionMap = regionMap;
+        } else {
+            Object.keys(regionMap).forEach(function(rid) {
+                var filtered = regionMap[rid].filter(function(entry) { return entry.date === bodyFilterSession; });
+                if (filtered.length) filteredRegionMap[rid] = filtered;
+            });
+        }
+
         Object.keys(BODY_REGIONS_3D).forEach(function(id) {
             var reg = BODY_REGIONS_3D[id];
             var pos = reg[posKey];
-            var sessions = regionMap[id] || [];
+            var sessions = filteredRegionMap[id] || [];
             var isActive = sessions.length > 0;
             var colorIdx = 0;
             if (isActive && sessions.length > 0) {
