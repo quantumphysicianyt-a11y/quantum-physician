@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Progress Tracker — Quantum Physician</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Lato:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <style>
+        :root {
+            --sb-w: 260px; --teal: #5ba8b2; --teal-light: #4acfd9; --teal-dark: #4a939c;
+            --gold: #c9a96e; --taupe: #ad9b84; --navy: #0e1a30; --navy-deep: #0a1424;
+            --navy-mid: #12223d; --navy-card: #142640; --navy-hover: #193050;
+            --border: rgba(91,168,178,.15); --border-hover: rgba(91,168,178,.35);
+            --text: rgba(255,255,255,.88); --text-muted: rgba(255,255,255,.5);
+            --error: #e85d5d; --success: #5bb88c; --warning: #e8a84c; --radius: 12px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Lato', sans-serif; background: var(--navy); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+        .d-layout { min-height: 100vh; }
+        .d-sidebar { background: var(--navy-deep); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; width: var(--sb-w); z-index: 50; overflow-y: auto; }
+        .d-sidebar .logo { padding: 24px 20px 16px; border-bottom: 1px solid var(--border); text-align: center; }
+        .d-sidebar .logo img { max-width: 160px; height: auto; display: block; margin: 0 auto; }
+        .d-profile { padding: 20px 18px; border-bottom: 1px solid var(--border); text-align: center; }
+        .d-avatar { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, var(--teal), var(--teal-light)); display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; color: #fff; font-family: "Playfair Display", serif; margin: 0 auto 10px; overflow: hidden; }
+        .d-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .d-profile .name { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+        .d-profile .email { font-size: 11px; color: var(--text-muted); word-break: break-all; }
+        .d-nav { padding: 12px 0; flex: 1; }
+        .d-nav a { display: flex; align-items: center; gap: 10px; padding: 11px 20px; font-size: 13px; color: var(--text-muted); text-decoration: none; transition: all .15s; border-left: 3px solid transparent; }
+        .d-nav a:hover { color: var(--text); background: rgba(255,255,255,.02); }
+        .d-nav a.active { color: var(--teal); background: rgba(91,168,178,.06); border-left-color: var(--teal); }
+        .d-nav a svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: .7; }
+        .d-nav a.active svg { opacity: 1; }
+        .d-nav .divider { height: 1px; background: var(--border); margin: 8px 20px; }
+        .d-nav-group-toggle { display: flex; align-items: center; gap: 8px; padding: 8px 20px; font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--taupe); cursor: pointer; border: none; background: none; width: 100%; }
+        .d-nav-group-toggle:hover { color: var(--teal); }
+        .d-nav-group-toggle svg.nav-icon { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; opacity: .7; }
+        .d-nav-group-toggle .toggle-arrow { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; margin-left: auto; transition: transform .25s ease; }
+        .d-nav-group-toggle.open .toggle-arrow { transform: rotate(180deg); }
+        .d-nav-group-items { max-height: 0; overflow: hidden; transition: max-height .3s ease; }
+        .d-nav-group-items.open { max-height: 200px; }
+        .d-nav-group-items a { padding-left: 34px; font-size: 12.5px; }
+        .d-sidebar-footer { padding: 12px 20px; border-top: 1px solid var(--border); }
+        .d-sidebar-footer a { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted); text-decoration: none; padding: 6px 0; }
+        .d-sidebar-footer a:hover { color: var(--text); }
+        .d-sidebar-footer a svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+        /* ═══ MAIN ═══ */
+        .d-main { margin-left: var(--sb-w); padding: 32px 32px 60px; min-height: 100vh; }
+        .d-header { margin-bottom: 28px; }
+        .d-header h1 { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 600; margin-bottom: 4px; }
+        .d-header p { color: var(--text-muted); font-size: 15px; font-weight: 300; }
+
+        /* ═══ OVERVIEW CARDS ═══ */
+        .overview-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+        .overview-card {
+            background: linear-gradient(170deg, var(--navy-card) 0%, var(--navy-mid) 100%);
+            border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; text-align: center;
+        }
+        .overview-card .ov-val { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; color: var(--teal); }
+        .overview-card .ov-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .8px; margin-top: 4px; }
+
+        /* ═══ CHART ═══ */
+        .chart-section {
+            background: linear-gradient(170deg, var(--navy-card) 0%, var(--navy-mid) 100%);
+            border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 24px;
+        }
+        .chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+        .chart-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 600; }
+        .chart-filters { display: flex; gap: 4px; }
+        .chart-filter {
+            padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: 600;
+            background: transparent; border: 1px solid var(--border); color: var(--text-muted);
+            cursor: pointer; font-family: 'Lato', sans-serif;
+        }
+        .chart-filter.active { background: rgba(91,168,178,.15); border-color: var(--teal); color: var(--teal); }
+        .chart-wrap { position: relative; height: 280px; }
+
+        /* ═══ CHECK-IN ═══ */
+        .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+        .section-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 600; }
+        .btn-sm { display: inline-flex; align-items: center; gap: 5px; padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; border: none; cursor: pointer; font-family: 'Lato', sans-serif; }
+        .btn-teal { background: linear-gradient(135deg, var(--teal), var(--teal-dark)); color: #fff; }
+        .btn-teal:hover { opacity: .85; }
+        .btn-sm svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+        .timeline { display: flex; flex-direction: column; gap: 12px; margin-bottom: 28px; }
+        .timeline-card {
+            background: linear-gradient(170deg, var(--navy-card) 0%, var(--navy-mid) 100%);
+            border: 1px solid var(--border); border-radius: var(--radius); padding: 18px;
+        }
+        .timeline-card:hover { border-color: var(--border-hover); }
+        .tc-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+        .tc-date { font-size: 12px; color: var(--text-muted); }
+        .tc-type { padding: 3px 8px; border-radius: 8px; font-size: 9px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; }
+        .tc-type.checkin { background: rgba(91,168,178,.12); color: var(--teal); }
+        .tc-type.alignment { background: rgba(201,169,110,.12); color: var(--gold); }
+        .tc-type.milestone { background: rgba(91,184,140,.12); color: var(--success); }
+        .tc-type.observation { background: rgba(255,255,255,.05); color: var(--text-muted); }
+        .tc-content { font-size: 13px; line-height: 1.6; }
+        .tc-symptoms { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+        .tc-symptom { padding: 3px 8px; background: rgba(255,255,255,.04); border-radius: 6px; font-size: 11px; color: var(--text-muted); }
+        .tc-symptom strong { color: var(--teal); }
+        .tc-metrics { display: flex; gap: 16px; margin-top: 8px; font-size: 12px; color: var(--text-muted); }
+
+        /* ═══ MODAL ═══ */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 500; align-items: center; justify-content: center; }
+        .modal-overlay.open { display: flex; }
+        .modal-box {
+            background: var(--navy-card); border: 1px solid var(--border-hover); border-radius: 16px;
+            padding: 28px; width: 90%; max-width: 500px; max-height: 85vh; overflow-y: auto;
+            box-shadow: 0 24px 64px rgba(0,0,0,.5);
+        }
+        .modal-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 600; margin-bottom: 18px; }
+        .field-label { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; display: block; }
+        .field-input, .field-textarea { width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; background: rgba(0,0,0,.15); color: var(--text); font-family: 'Lato', sans-serif; font-size: 14px; outline: none; margin-bottom: 14px; }
+        .field-input:focus, .field-textarea:focus { border-color: var(--teal); }
+        .field-textarea { resize: vertical; min-height: 70px; }
+        .slider-group { margin-bottom: 14px; }
+        .slider-header { display: flex; justify-content: space-between; margin-bottom: 4px; }
+        .slider-label { font-size: 13px; }
+        .slider-val { font-size: 13px; font-weight: 700; color: var(--teal); }
+        input[type="range"] { width: 100%; height: 4px; border-radius: 2px; background: rgba(255,255,255,.1); outline: none; -webkit-appearance: none; cursor: pointer; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--teal); border: 2px solid var(--navy-card); }
+        .modal-actions { display: flex; gap: 10px; margin-top: 8px; }
+        .btn-cancel { padding: 10px 20px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--text-muted); font-family: 'Lato', sans-serif; font-size: 14px; cursor: pointer; }
+        .btn-submit { flex: 1; padding: 10px; border: none; border-radius: 8px; background: linear-gradient(135deg, var(--teal), var(--teal-dark)); color: #fff; font-family: 'Lato', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; }
+
+        .checkbox-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 12px; }
+        .checkbox-item { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px; }
+        .checkbox-item input { display: none; }
+        .checkbox-box { width: 16px; height: 16px; border: 2px solid var(--border-hover); border-radius: 3px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .checkbox-item input:checked + .checkbox-box { background: var(--teal); border-color: var(--teal); }
+        .checkbox-box svg { width: 10px; height: 10px; stroke: #fff; fill: none; stroke-width: 3; opacity: 0; }
+        .checkbox-item input:checked + .checkbox-box svg { opacity: 1; }
+
+        .empty-state { text-align: center; padding: 50px 20px; color: var(--text-muted); }
+        .empty-state h3 { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--text); margin-bottom: 6px; }
+        .empty-state p { font-size: 13px; margin-bottom: 16px; }
+
+        .toast { position: fixed; bottom: 24px; right: 24px; padding: 14px 22px; border-radius: 10px; font-size: 13px; font-weight: 600; z-index: 999; opacity: 0; transform: translateY(10px); transition: all .3s ease; pointer-events: none; }
+        .toast.show { opacity: 1; transform: translateY(0); }
+        .toast.success { background: rgba(91,184,140,.15); border: 1px solid rgba(91,184,140,.3); color: var(--success); }
+        .toast.error { background: rgba(232,93,93,.15); border: 1px solid rgba(232,93,93,.3); color: var(--error); }
+
+        .d-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 49; }
+        .d-overlay.open { display: block; }
+        .d-mob-btn { display: none; position: fixed; bottom: 20px; right: 20px; z-index: 200; width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, var(--teal), var(--teal-light)); color: #fff; border: none; cursor: pointer; box-shadow: 0 4px 20px rgba(91,168,178,.4); align-items: center; justify-content: center; }
+        .d-mob-btn svg { width: 20px; height: 20px; stroke: #fff; fill: none; stroke-width: 2; }
+        @media (max-width: 960px) {
+            .d-sidebar { display: none; width: 270px; } .d-sidebar.open { display: flex; z-index: 300; }
+            .d-mob-btn { display: flex; } .d-main { margin-left: 0; padding: 20px 18px 100px; }
+            .overview-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 480px) { .overview-grid { grid-template-columns: 1fr 1fr; } .checkbox-grid { grid-template-columns: 1fr; } }
+        .d-footer { text-align: center; padding: 24px; border-top: 1px solid var(--border); margin-top: 32px; }
+        .d-footer p { color: var(--text-muted); font-size: 11px; }
+        .d-footer a { color: var(--teal); text-decoration: none; }
+    </style>
+</head>
+<body>
+
+<!-- SVG Sprites -->
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg"><defs>
+    <symbol id="i-layout" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></symbol>
+    <symbol id="i-cal" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></symbol>
+    <symbol id="i-grad" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
+    <symbol id="i-clipboard" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></symbol>
+    <symbol id="i-activity" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></symbol>
+    <symbol id="i-dollar" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></symbol>
+    <symbol id="i-film" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></symbol>
+    <symbol id="i-chevron-down" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="18" x2="20" y2="18"/></symbol>
+</defs></svg>
+
+<div class="d-layout">
+    <aside class="d-sidebar" id="sidebar">
+        <div class="logo"><a href="/"><img src="../assets/images/qp-logo.png" alt="Quantum Physician"></a></div>
+        <div class="d-profile">
+            <div class="d-avatar" id="avatar">?</div>
+            <div class="name" id="profileName">—</div>
+            <div class="email" id="profileEmail">—</div>
+        </div>
+        <nav class="d-nav">
+            <a href="/members/dashboard.html"><svg><use href="#i-layout"/></svg> Dashboard</a>
+            <div class="d-nav-group">
+                <button class="d-nav-group-toggle open" id="healthToggle"><svg class="nav-icon"><use href="#i-heart"/></svg> My Health <svg class="toggle-arrow" viewBox="0 0 24 24"><use href="#i-chevron-down"/></svg></button>
+                <div class="d-nav-group-items open" id="healthItems">
+                    <a href="/members/sessions.html"><svg><use href="#i-film"/></svg> Sessions &amp; Recordings</a>
+                    <a href="/members/intake.html"><svg><use href="#i-clipboard"/></svg> Intake Form</a>
+                    <a href="/members/progress.html" class="active"><svg><use href="#i-activity"/></svg> Progress Tracker</a>
+                    <a href="/members/billing.html"><svg><use href="#i-dollar"/></svg> Billing History</a>
+                </div>
+            </div>
+            <a href="/pages/one-on-sessions.html"><svg><use href="#i-cal"/></svg> Book a Session</a>
+            <a href="/academy/dashboard.html"><svg><use href="#i-grad"/></svg> Academy</a>
+            <a href="#" id="fusionLink" onclick="goToFusion(event)"><svg><use href="#i-layers"/></svg> Fusion Sessions</a>
+            <a href="/members/settings.html"><svg><use href="#i-settings"/></svg> Account Settings</a>
+            <div class="divider"></div>
+            <a href="/"><svg><use href="#i-home"/></svg> Main Site</a>
+        </nav>
+        <div class="d-sidebar-footer"><a href="#" id="signout-btn"><svg><use href="#i-logout"/></svg> Sign Out</a></div>
+    </aside>
+    <div class="d-overlay" id="overlay"></div>
+
+    <div class="d-main">
+        <div class="d-header">
+            <h1>Progress Tracker</h1>
+            <p>Your health journey with Dr. Tracey Clark</p>
+        </div>
+
+        <!-- Overview Cards -->
+        <div class="overview-grid">
+            <div class="overview-card"><div class="ov-val" id="ov-sessions">—</div><div class="ov-label">Sessions Completed</div></div>
+            <div class="overview-card"><div class="ov-val" id="ov-days">—</div><div class="ov-label">Days Since First</div></div>
+            <div class="overview-card"><div class="ov-val" id="ov-improvement">—</div><div class="ov-label">Avg Improvement</div></div>
+            <div class="overview-card"><div class="ov-val" id="ov-next">—</div><div class="ov-label">Next Session</div></div>
+        </div>
+
+        <!-- Symptom Chart -->
+        <div class="chart-section">
+            <div class="chart-header">
+                <div class="chart-title">Symptom Tracking</div>
+                <div class="chart-filters">
+                    <button class="chart-filter" data-range="30">1mo</button>
+                    <button class="chart-filter active" data-range="90">3mo</button>
+                    <button class="chart-filter" data-range="180">6mo</button>
+                    <button class="chart-filter" data-range="all">All</button>
+                </div>
+            </div>
+            <div class="chart-wrap"><canvas id="symptomChart"></canvas></div>
+            <div id="chart-empty" class="empty-state" style="display:none"><p>Add check-ins to see your symptom trends over time.</p></div>
+        </div>
+
+        <!-- Check-In Log -->
+        <div class="section-header">
+            <div class="section-title">Check-In Log</div>
+            <button class="btn-sm btn-teal" id="btn-add-checkin"><svg><use href="#i-plus"/></svg> Add Check-In</button>
+        </div>
+        <div class="timeline" id="checkin-list"></div>
+
+        <!-- Alignment Notes from Tracey -->
+        <div class="section-header"><div class="section-title">Notes from Dr. Tracey</div></div>
+        <div class="timeline" id="notes-list"></div>
+
+        <div class="d-footer"><p>&copy; 2026 <a href="/">Quantum Physician</a> &middot; Dr. Tracey Clark</p></div>
+    </div>
+</div>
+
+<button class="d-mob-btn" id="mob-btn"><svg><use href="#i-menu"/></svg></button>
+
+<!-- Check-In Modal -->
+<div class="modal-overlay" id="checkin-modal">
+    <div class="modal-box">
+        <div class="modal-title">New Check-In</div>
+        <label class="field-label">Date</label>
+        <input type="date" class="field-input" id="ci-date">
+        <label class="field-label">How are you feeling? (select symptoms)</label>
+        <div class="checkbox-grid" id="ci-symptoms"></div>
+        <div id="ci-sliders"></div>
+        <div class="slider-group">
+            <div class="slider-header"><span class="slider-label">Energy Level</span><span class="slider-val" id="ci-energy-val">5</span></div>
+            <input type="range" min="1" max="10" value="5" id="ci-energy">
+        </div>
+        <div class="slider-group">
+            <div class="slider-header"><span class="slider-label">Sleep Quality</span><span class="slider-val" id="ci-sleep-val">5</span></div>
+            <input type="range" min="1" max="10" value="5" id="ci-sleep">
+        </div>
+        <label class="field-label">Notes</label>
+        <textarea class="field-textarea" id="ci-notes" placeholder="How are you feeling today?"></textarea>
+        <div class="modal-actions">
+            <button class="btn-cancel" id="ci-cancel">Cancel</button>
+            <button class="btn-submit" id="ci-submit">Save Check-In</button>
+        </div>
+    </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+    const SUPABASE_URL = 'https://rihlrfiqokqrlmzjjyxj.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpaGxyZmlxb2txcmxtempqeXhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1MTU2NDYsImV4cCI6MjA4NDA5MTY0Nn0.G2TQKSmQpPYb8Cyzo7R833G7xkr0855faLRjrJ9ov-4';
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const LOGIN_URL = '/members/login.html';
+    const $ = id => document.getElementById(id);
+    const SYMPTOMS = ['Pain','Fatigue','Sleep Issues','Anxiety','Digestive Problems','Headaches','Brain Fog','Joint Stiffness','Muscle Tension','Low Energy'];
+    const CHART_COLORS = ['#5ba8b2','#c9a96e','#5bb88c','#e8a84c','#d4789c','#4acfd9','#e85d5d','#ad9b84','#8b7ec8','#6bc4a6'];
+
+    let currentUser = null, userEmail = '', allCheckins = [], allNotes = [], allBookings = [];
+    let symptomChart = null, currentRange = 90;
+
+    async function init() {
+        const { data: { session } } = await sb.auth.getSession();
+        if (!session) { window.location.href = LOGIN_URL; return; }
+        currentUser = session.user;
+        const { data: profile } = await sb.from('profiles').select('full_name, email, avatar_url').eq('id', currentUser.id).single();
+        const fullName = profile?.full_name || currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'User';
+        userEmail = (profile?.email || currentUser.email || '').toLowerCase();
+        const initials = fullName.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+        if (profile?.avatar_url) $('avatar').innerHTML = `<img src="${profile.avatar_url}" alt="${fullName}">`;
+        else $('avatar').textContent = initials;
+        $('profileName').textContent = fullName;
+        $('profileEmail').textContent = userEmail;
+
+        // Build symptom checkboxes for modal
+        $('ci-symptoms').innerHTML = SYMPTOMS.map((s, i) => `<label class="checkbox-item"><input type="checkbox" data-name="${s}" class="ci-sym" id="ci-sym-${i}"><span class="checkbox-box"><svg viewBox="0 0 24 24"><use href="#i-check"/></svg></span>${s}</label>`).join('');
+        $('ci-date').value = new Date().toISOString().split('T')[0];
+
+        // Symptom checkbox → sliders
+        document.querySelectorAll('.ci-sym').forEach(cb => {
+            cb.addEventListener('change', renderModalSliders);
+        });
+        $('ci-energy').addEventListener('input', () => $('ci-energy-val').textContent = $('ci-energy').value);
+        $('ci-sleep').addEventListener('input', () => $('ci-sleep-val').textContent = $('ci-sleep').value);
+
+        await loadAllData();
+    }
+
+    function renderModalSliders() {
+        const checked = Array.from(document.querySelectorAll('.ci-sym:checked'));
+        $('ci-sliders').innerHTML = checked.map(cb => {
+            const name = cb.dataset.name;
+            return `<div class="slider-group"><div class="slider-header"><span class="slider-label">${name}</span><span class="slider-val">5</span></div><input type="range" min="1" max="10" value="5" data-symptom="${name}"></div>`;
+        }).join('');
+        $('ci-sliders').querySelectorAll('input[type="range"]').forEach(s => {
+            s.addEventListener('input', () => s.previousElementSibling.querySelector('.slider-val').textContent = s.value);
+        });
+    }
+
+    async function loadAllData() {
+        const [bk, ci, pn] = await Promise.all([
+            sb.from('session_bookings').select('*').eq('email', userEmail).order('date', {ascending: true}),
+            sb.from('patient_checkins').select('*').eq('user_id', currentUser.id).order('checkin_date', {ascending: false}),
+            sb.from('patient_progress_notes').select('*').or(`user_id.eq.${currentUser.id},email.eq.${userEmail}`).order('created_at', {ascending: false})
+        ]);
+        allBookings = bk.data || [];
+        allCheckins = ci.data || [];
+        allNotes = pn.data || [];
+
+        renderOverview();
+        renderChart();
+        renderCheckins();
+        renderNotes();
+    }
+
+    function renderOverview() {
+        const completed = allBookings.filter(b => b.status === 'completed' || b.status === 'paid');
+        $('ov-sessions').textContent = completed.length;
+
+        if (completed.length > 0) {
+            const first = new Date(completed[0].date + 'T00:00:00');
+            const days = Math.floor((Date.now() - first) / 86400000);
+            $('ov-days').textContent = days;
+        } else { $('ov-days').textContent = '—'; }
+
+        // Average improvement: compare first checkin avg vs latest
+        if (allCheckins.length >= 2) {
+            const first = allCheckins[allCheckins.length - 1];
+            const latest = allCheckins[0];
+            const avgFirst = (first.symptoms || []).reduce((s, x) => s + x.severity, 0) / Math.max((first.symptoms || []).length, 1);
+            const avgLatest = (latest.symptoms || []).reduce((s, x) => s + x.severity, 0) / Math.max((latest.symptoms || []).length, 1);
+            if (avgFirst > 0) {
+                const pct = Math.round(((avgFirst - avgLatest) / avgFirst) * 100);
+                $('ov-improvement').textContent = (pct > 0 ? '+' : '') + pct + '%';
+            } else { $('ov-improvement').textContent = '—'; }
+        } else { $('ov-improvement').textContent = '—'; }
+
+        // Next session
+        const today = new Date().toISOString().split('T')[0];
+        const next = allBookings.find(b => b.date >= today && ['paid','confirmed','proposed'].includes(b.status));
+        if (next) {
+            const dt = new Date(next.date + 'T00:00:00');
+            const days = Math.ceil((dt - new Date()) / 86400000);
+            $('ov-next').textContent = days <= 0 ? 'Today' : days + 'd';
+        } else { $('ov-next').textContent = '—'; }
+    }
+
+    function renderChart() {
+        const canvas = $('symptomChart');
+        if (allCheckins.length === 0) {
+            canvas.style.display = 'none';
+            $('chart-empty').style.display = 'block';
+            return;
+        }
+        canvas.style.display = 'block';
+        $('chart-empty').style.display = 'none';
+
+        // Filter by range
+        let filtered = allCheckins;
+        if (currentRange !== 'all') {
+            const cutoff = new Date();
+            cutoff.setDate(cutoff.getDate() - currentRange);
+            filtered = allCheckins.filter(c => new Date(c.checkin_date) >= cutoff);
+        }
+        filtered = filtered.slice().reverse(); // chronological
+
+        // Collect unique symptoms
+        const symptomNames = new Set();
+        filtered.forEach(c => (c.symptoms || []).forEach(s => symptomNames.add(s.name)));
+
+        const labels = filtered.map(c => {
+            const d = new Date(c.checkin_date + 'T00:00:00');
+            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        });
+
+        const datasets = Array.from(symptomNames).map((name, i) => ({
+            label: name,
+            data: filtered.map(c => {
+                const s = (c.symptoms || []).find(x => x.name === name);
+                return s ? s.severity : null;
+            }),
+            borderColor: CHART_COLORS[i % CHART_COLORS.length],
+            backgroundColor: CHART_COLORS[i % CHART_COLORS.length] + '20',
+            tension: 0.3, fill: false, pointRadius: 4, pointHoverRadius: 6, spanGaps: true
+        }));
+
+        if (symptomChart) symptomChart.destroy();
+        symptomChart = new Chart(canvas, {
+            type: 'line',
+            data: { labels, datasets },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: 'rgba(255,255,255,.6)', font: { size: 11, family: 'Lato' } } } },
+                scales: {
+                    x: { ticks: { color: 'rgba(255,255,255,.4)', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,.04)' } },
+                    y: { min: 0, max: 10, ticks: { color: 'rgba(255,255,255,.4)', stepSize: 2, font: { size: 10 } }, grid: { color: 'rgba(255,255,255,.06)' } }
+                }
+            }
+        });
+    }
+
+    function renderCheckins() {
+        const list = $('checkin-list');
+        if (!allCheckins.length) { list.innerHTML = '<div class="empty-state"><p>No check-ins yet. Click "Add Check-In" to log how you're feeling.</p></div>'; return; }
+        list.innerHTML = allCheckins.map(c => {
+            const d = new Date(c.checkin_date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+            const symptoms = (c.symptoms || []).map(s => `<span class="tc-symptom">${s.name} <strong>${s.severity}/10</strong></span>`).join('');
+            return `<div class="timeline-card"><div class="tc-head"><span class="tc-date">${d}</span><span class="tc-type checkin">Check-In</span></div>${c.notes ? `<div class="tc-content">${esc(c.notes)}</div>` : ''}${symptoms ? `<div class="tc-symptoms">${symptoms}</div>` : ''}<div class="tc-metrics">${c.energy_level ? `Energy: ${c.energy_level}/10` : ''} ${c.sleep_quality ? `&middot; Sleep: ${c.sleep_quality}/10` : ''}</div></div>`;
+        }).join('');
+    }
+
+    function renderNotes() {
+        const list = $('notes-list');
+        if (!allNotes.length) { list.innerHTML = '<div class="empty-state"><p>No notes from Dr. Tracey yet. Notes will appear here after your sessions.</p></div>'; return; }
+        list.innerHTML = allNotes.map(n => {
+            const d = new Date(n.created_at).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+            return `<div class="timeline-card"><div class="tc-head"><span class="tc-date">${d}</span><span class="tc-type ${n.note_type}">${n.note_type === 'milestone' ? 'Milestone' : n.note_type === 'alignment' ? 'Alignment' : 'Observation'}</span></div><div class="tc-content">${esc(n.content)}</div></div>`;
+        }).join('');
+    }
+
+    // ═══ CHART FILTERS ═══
+    document.querySelectorAll('.chart-filter').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.chart-filter').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentRange = btn.dataset.range === 'all' ? 'all' : parseInt(btn.dataset.range);
+            renderChart();
+        });
+    });
+
+    // ═══ CHECK-IN MODAL ═══
+    $('btn-add-checkin').addEventListener('click', () => $('checkin-modal').classList.add('open'));
+    $('ci-cancel').addEventListener('click', () => $('checkin-modal').classList.remove('open'));
+    $('checkin-modal').addEventListener('click', e => { if (e.target === $('checkin-modal')) $('checkin-modal').classList.remove('open'); });
+
+    $('ci-submit').addEventListener('click', async () => {
+        const symptoms = [];
+        document.querySelectorAll('.ci-sym:checked').forEach(cb => {
+            const slider = $('ci-sliders').querySelector(`input[data-symptom="${cb.dataset.name}"]`);
+            symptoms.push({ name: cb.dataset.name, severity: slider ? parseInt(slider.value) : 5 });
+        });
+        const checkin = {
+            user_id: currentUser.id, email: userEmail,
+            checkin_date: $('ci-date').value || new Date().toISOString().split('T')[0],
+            symptoms, notes: $('ci-notes').value || null,
+            energy_level: parseInt($('ci-energy').value), sleep_quality: parseInt($('ci-sleep').value)
+        };
+        const { error } = await sb.from('patient_checkins').insert(checkin);
+        if (error) { showToast('Error: ' + error.message, 'error'); return; }
+        $('checkin-modal').classList.remove('open');
+        // Reset modal
+        document.querySelectorAll('.ci-sym').forEach(cb => cb.checked = false);
+        $('ci-sliders').innerHTML = ''; $('ci-notes').value = ''; $('ci-energy').value = 5; $('ci-sleep').value = 5;
+        $('ci-energy-val').textContent = '5'; $('ci-sleep-val').textContent = '5';
+        showToast('Check-in saved!', 'success');
+        await loadAllData();
+    });
+
+    // ═══ SHARED ═══
+    $('healthToggle').addEventListener('click', () => { $('healthToggle').classList.toggle('open'); $('healthItems').classList.toggle('open'); });
+    $('mob-btn').addEventListener('click', () => { $('sidebar').classList.toggle('open'); $('overlay').classList.toggle('open'); });
+    $('overlay').addEventListener('click', () => { $('sidebar').classList.remove('open'); $('overlay').classList.remove('open'); });
+    $('signout-btn').addEventListener('click', async e => { e.preventDefault(); await sb.auth.signOut(); window.location.href = LOGIN_URL + '?logged_out=true'; });
+    sb.auth.onAuthStateChange(e => { if (e === 'SIGNED_OUT') window.location.href = LOGIN_URL + '?session_expired=true'; });
+    async function goToFusion(e) { e.preventDefault(); const { data: { session } } = await sb.auth.getSession(); if (session?.access_token && session?.refresh_token) { window.location.href = `https://fusionsessions.com/dashboard.html#access_token=${session.access_token}&refresh_token=${session.refresh_token}&type=sso`; } else { window.location.href = 'https://fusionsessions.com/dashboard.html'; } }
+    function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+    function showToast(msg, type) { const t = $('toast'); t.textContent = msg; t.className = 'toast ' + type; setTimeout(() => t.classList.add('show'), 10); setTimeout(() => t.classList.remove('show'), 3500); }
+
+    init();
+</script>
+</body>
+</html>

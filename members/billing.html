@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Billing History — Quantum Physician</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Lato:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --sb-w: 260px; --teal: #5ba8b2; --teal-light: #4acfd9; --teal-dark: #4a939c;
+            --gold: #c9a96e; --taupe: #ad9b84; --navy: #0e1a30; --navy-deep: #0a1424;
+            --navy-mid: #12223d; --navy-card: #142640; --navy-hover: #193050;
+            --border: rgba(91,168,178,.15); --border-hover: rgba(91,168,178,.35);
+            --text: rgba(255,255,255,.88); --text-muted: rgba(255,255,255,.5);
+            --error: #e85d5d; --success: #5bb88c; --warning: #e8a84c; --radius: 12px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Lato', sans-serif; background: var(--navy); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+
+        /* ═══ SIDEBAR ═══ */
+        .d-layout { min-height: 100vh; }
+        .d-sidebar { background: var(--navy-deep); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; width: var(--sb-w); z-index: 50; overflow-y: auto; }
+        .d-sidebar .logo { padding: 24px 20px 16px; border-bottom: 1px solid var(--border); text-align: center; }
+        .d-sidebar .logo img { max-width: 160px; height: auto; display: block; margin: 0 auto; }
+        .d-profile { padding: 20px 18px; border-bottom: 1px solid var(--border); text-align: center; }
+        .d-avatar { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, var(--teal), var(--teal-light)); display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; color: #fff; font-family: "Playfair Display", serif; margin: 0 auto 10px; overflow: hidden; }
+        .d-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .d-profile .name { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+        .d-profile .email { font-size: 11px; color: var(--text-muted); word-break: break-all; }
+        .d-nav { padding: 12px 0; flex: 1; }
+        .d-nav a { display: flex; align-items: center; gap: 10px; padding: 11px 20px; font-size: 13px; color: var(--text-muted); text-decoration: none; transition: all .15s; border-left: 3px solid transparent; }
+        .d-nav a:hover { color: var(--text); background: rgba(255,255,255,.02); }
+        .d-nav a.active { color: var(--teal); background: rgba(91,168,178,.06); border-left-color: var(--teal); }
+        .d-nav a svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: .7; }
+        .d-nav a.active svg { opacity: 1; }
+        .d-nav .divider { height: 1px; background: var(--border); margin: 8px 20px; }
+        .d-nav-group-toggle { display: flex; align-items: center; gap: 8px; padding: 8px 20px; font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--taupe); cursor: pointer; border: none; background: none; width: 100%; }
+        .d-nav-group-toggle:hover { color: var(--teal); }
+        .d-nav-group-toggle svg.nav-icon { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; opacity: .7; }
+        .d-nav-group-toggle .toggle-arrow { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; margin-left: auto; transition: transform .25s ease; }
+        .d-nav-group-toggle.open .toggle-arrow { transform: rotate(180deg); }
+        .d-nav-group-items { max-height: 0; overflow: hidden; transition: max-height .3s ease; }
+        .d-nav-group-items.open { max-height: 200px; }
+        .d-nav-group-items a { padding-left: 34px; font-size: 12.5px; }
+        .d-sidebar-footer { padding: 12px 20px; border-top: 1px solid var(--border); }
+        .d-sidebar-footer a { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted); text-decoration: none; padding: 6px 0; }
+        .d-sidebar-footer a:hover { color: var(--text); }
+        .d-sidebar-footer a svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+        /* ═══ MAIN ═══ */
+        .d-main { margin-left: var(--sb-w); padding: 32px 32px 60px; min-height: 100vh; }
+        .d-header { margin-bottom: 28px; }
+        .d-header h1 { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 600; margin-bottom: 4px; }
+        .d-header p { color: var(--text-muted); font-size: 15px; font-weight: 300; }
+
+        /* Summary Cards */
+        .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 28px; }
+        .summary-card {
+            background: linear-gradient(170deg, var(--navy-card) 0%, var(--navy-mid) 100%);
+            border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; text-align: center;
+        }
+        .summary-card .sv { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; color: var(--teal); }
+        .summary-card .sl { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .8px; margin-top: 4px; }
+        .summary-card.credit .sv { color: var(--success); }
+        .summary-card.used .sv { color: var(--gold); }
+
+        /* Filters */
+        .filter-row { display: flex; gap: 4px; margin-bottom: 20px; }
+        .filter-btn {
+            padding: 7px 16px; border-radius: 8px; font-size: 12px; font-weight: 600;
+            background: transparent; border: 1px solid var(--border); color: var(--text-muted);
+            cursor: pointer; font-family: 'Lato', sans-serif; transition: all .15s;
+        }
+        .filter-btn:hover { border-color: rgba(91,168,178,.3); color: var(--text); }
+        .filter-btn.active { background: rgba(91,168,178,.15); border-color: var(--teal); color: var(--teal); }
+
+        /* Transaction Table */
+        .tx-table {
+            width: 100%; border-collapse: collapse;
+            background: linear-gradient(170deg, var(--navy-card) 0%, var(--navy-mid) 100%);
+            border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden;
+        }
+        .tx-table th {
+            text-align: left; padding: 12px 16px; font-size: 10px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: .8px; color: var(--text-muted);
+            border-bottom: 1px solid var(--border); background: rgba(0,0,0,.1);
+        }
+        .tx-table td { padding: 14px 16px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,.03); }
+        .tx-table tr:last-child td { border-bottom: none; }
+        .tx-table tr:hover td { background: rgba(255,255,255,.02); }
+        .tx-type {
+            padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: 700;
+            letter-spacing: .3px; text-transform: uppercase;
+        }
+        .tx-type.session { background: rgba(91,168,178,.12); color: var(--teal); }
+        .tx-type.academy { background: rgba(201,169,110,.12); color: var(--gold); }
+        .tx-type.fusion { background: rgba(91,184,140,.12); color: var(--success); }
+        .tx-status { font-size: 11px; }
+        .tx-status.paid { color: var(--success); }
+        .tx-status.refunded { color: var(--error); }
+        .tx-status.pending { color: var(--warning); }
+        .receipt-link {
+            font-size: 11px; color: var(--teal); text-decoration: none; font-weight: 600;
+            display: inline-flex; align-items: center; gap: 3px;
+        }
+        .receipt-link:hover { color: var(--teal-light); }
+        .receipt-link svg { width: 11px; height: 11px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+        .empty-state { text-align: center; padding: 50px 20px; color: var(--text-muted); }
+        .empty-state h3 { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--text); margin-bottom: 6px; }
+        .empty-state p { font-size: 13px; }
+
+        .d-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 49; }
+        .d-overlay.open { display: block; }
+        .d-mob-btn { display: none; position: fixed; bottom: 20px; right: 20px; z-index: 200; width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, var(--teal), var(--teal-light)); color: #fff; border: none; cursor: pointer; box-shadow: 0 4px 20px rgba(91,168,178,.4); align-items: center; justify-content: center; }
+        .d-mob-btn svg { width: 20px; height: 20px; stroke: #fff; fill: none; stroke-width: 2; }
+        @media (max-width: 960px) {
+            .d-sidebar { display: none; width: 270px; } .d-sidebar.open { display: flex; z-index: 300; }
+            .d-mob-btn { display: flex; } .d-main { margin-left: 0; padding: 20px 18px 100px; }
+            .summary-grid { grid-template-columns: 1fr; }
+            .tx-table { font-size: 12px; }
+            .tx-table th:nth-child(4), .tx-table td:nth-child(4) { display: none; }
+        }
+        .d-footer { text-align: center; padding: 24px; border-top: 1px solid var(--border); margin-top: 32px; }
+        .d-footer p { color: var(--text-muted); font-size: 11px; }
+        .d-footer a { color: var(--teal); text-decoration: none; }
+    </style>
+</head>
+<body>
+
+<!-- SVG Sprites -->
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg"><defs>
+    <symbol id="i-layout" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></symbol>
+    <symbol id="i-cal" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></symbol>
+    <symbol id="i-grad" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
+    <symbol id="i-clipboard" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></symbol>
+    <symbol id="i-activity" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></symbol>
+    <symbol id="i-dollar" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></symbol>
+    <symbol id="i-film" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></symbol>
+    <symbol id="i-chevron-down" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></symbol>
+    <symbol id="i-external" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="18" x2="20" y2="18"/></symbol>
+</defs></svg>
+
+<div class="d-layout">
+    <aside class="d-sidebar" id="sidebar">
+        <div class="logo"><a href="/"><img src="../assets/images/qp-logo.png" alt="Quantum Physician"></a></div>
+        <div class="d-profile">
+            <div class="d-avatar" id="avatar">?</div>
+            <div class="name" id="profileName">—</div>
+            <div class="email" id="profileEmail">—</div>
+        </div>
+        <nav class="d-nav">
+            <a href="/members/dashboard.html"><svg><use href="#i-layout"/></svg> Dashboard</a>
+            <div class="d-nav-group">
+                <button class="d-nav-group-toggle open" id="healthToggle"><svg class="nav-icon"><use href="#i-heart"/></svg> My Health <svg class="toggle-arrow" viewBox="0 0 24 24"><use href="#i-chevron-down"/></svg></button>
+                <div class="d-nav-group-items open" id="healthItems">
+                    <a href="/members/sessions.html"><svg><use href="#i-film"/></svg> Sessions &amp; Recordings</a>
+                    <a href="/members/intake.html"><svg><use href="#i-clipboard"/></svg> Intake Form</a>
+                    <a href="/members/progress.html"><svg><use href="#i-activity"/></svg> Progress Tracker</a>
+                    <a href="/members/billing.html" class="active"><svg><use href="#i-dollar"/></svg> Billing History</a>
+                </div>
+            </div>
+            <a href="/pages/one-on-sessions.html"><svg><use href="#i-cal"/></svg> Book a Session</a>
+            <a href="/academy/dashboard.html"><svg><use href="#i-grad"/></svg> Academy</a>
+            <a href="#" id="fusionLink" onclick="goToFusion(event)"><svg><use href="#i-layers"/></svg> Fusion Sessions</a>
+            <a href="/members/settings.html"><svg><use href="#i-settings"/></svg> Account Settings</a>
+            <div class="divider"></div>
+            <a href="/"><svg><use href="#i-home"/></svg> Main Site</a>
+        </nav>
+        <div class="d-sidebar-footer"><a href="#" id="signout-btn"><svg><use href="#i-logout"/></svg> Sign Out</a></div>
+    </aside>
+    <div class="d-overlay" id="overlay"></div>
+
+    <div class="d-main">
+        <div class="d-header">
+            <h1>Billing History</h1>
+            <p>Your payment history across all Quantum Physician services</p>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="summary-grid">
+            <div class="summary-card"><div class="sv" id="total-spent">$0</div><div class="sl">Total Spent</div></div>
+            <div class="summary-card credit"><div class="sv" id="credit-avail">$0</div><div class="sl">Referral Credits Available</div></div>
+            <div class="summary-card used"><div class="sv" id="credit-used">$0</div><div class="sl">Credits Used</div></div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filter-row">
+            <button class="filter-btn active" data-type="all">All</button>
+            <button class="filter-btn" data-type="session">Sessions</button>
+            <button class="filter-btn" data-type="academy">Academy</button>
+            <button class="filter-btn" data-type="fusion">Fusion</button>
+        </div>
+
+        <!-- Transaction Table -->
+        <div id="tx-container">
+            <table class="tx-table">
+                <thead>
+                    <tr><th>Date</th><th>Description</th><th>Type</th><th>Amount</th><th>Status</th><th></th></tr>
+                </thead>
+                <tbody id="tx-body"></tbody>
+            </table>
+        </div>
+        <div class="empty-state" id="empty-tx" style="display:none">
+            <h3>No transactions yet</h3>
+            <p>Your purchases will appear here once you book a session, enroll in a course, or join Fusion Sessions.</p>
+        </div>
+
+        <div class="d-footer"><p>&copy; 2026 <a href="/">Quantum Physician</a> &middot; Dr. Tracey Clark</p></div>
+    </div>
+</div>
+
+<button class="d-mob-btn" id="mob-btn"><svg><use href="#i-menu"/></svg></button>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+    const SUPABASE_URL = 'https://rihlrfiqokqrlmzjjyxj.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpaGxyZmlxb2txcmxtempqeXhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1MTU2NDYsImV4cCI6MjA4NDA5MTY0Nn0.G2TQKSmQpPYb8Cyzo7R833G7xkr0855faLRjrJ9ov-4';
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const LOGIN_URL = '/members/login.html';
+    const $ = id => document.getElementById(id);
+
+    let currentUser = null, userEmail = '';
+    let allPurchases = [], currentFilter = 'all';
+
+    async function init() {
+        const { data: { session } } = await sb.auth.getSession();
+        if (!session) { window.location.href = LOGIN_URL; return; }
+        currentUser = session.user;
+        const { data: profile } = await sb.from('profiles').select('full_name, email, avatar_url').eq('id', currentUser.id).single();
+        const fullName = profile?.full_name || currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'User';
+        userEmail = (profile?.email || currentUser.email || '').toLowerCase();
+        const initials = fullName.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+        if (profile?.avatar_url) $('avatar').innerHTML = `<img src="${profile.avatar_url}" alt="${fullName}">`;
+        else $('avatar').textContent = initials;
+        $('profileName').textContent = fullName;
+        $('profileEmail').textContent = userEmail;
+
+        await loadData();
+    }
+
+    async function loadData() {
+        // Purchases
+        const { data: purchases } = await sb.from('purchases').select('*').eq('email', userEmail).order('created_at', { ascending: false });
+        allPurchases = purchases || [];
+
+        // Referral credits
+        const { data: ref } = await sb.from('referral_codes').select('credit_balance, total_earned').eq('email', userEmail).single();
+        const { data: credits } = await sb.from('credit_history').select('amount, type').eq('email', userEmail);
+
+        // Summary
+        const totalSpent = allPurchases.reduce((s, p) => s + (parseFloat(p.amount) || 0), 0);
+        $('total-spent').textContent = '$' + totalSpent.toFixed(0);
+        $('credit-avail').textContent = '$' + (ref?.credit_balance || 0);
+        const used = (credits || []).filter(c => c.type === 'used').reduce((s, c) => s + Math.abs(parseFloat(c.amount) || 0), 0);
+        $('credit-used').textContent = '$' + used.toFixed(0);
+
+        renderTable();
+    }
+
+    function renderTable() {
+        let filtered = allPurchases;
+        if (currentFilter !== 'all') {
+            filtered = allPurchases.filter(p => guessType(p) === currentFilter);
+        }
+
+        if (!filtered.length) {
+            $('tx-container').style.display = 'none';
+            $('empty-tx').style.display = 'block';
+            return;
+        }
+        $('tx-container').style.display = 'block';
+        $('empty-tx').style.display = 'none';
+
+        $('tx-body').innerHTML = filtered.map(p => {
+            const d = new Date(p.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            const type = guessType(p);
+            const typeCls = type;
+            const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
+            const amt = '$' + (parseFloat(p.amount) || 0).toFixed(2);
+            const status = p.status || 'paid';
+            const receiptUrl = p.stripe_session_id ? `https://dashboard.stripe.com/payments/${p.stripe_session_id}` : '';
+            return `<tr>
+                <td>${d}</td>
+                <td>${esc(p.product || p.description || 'Purchase')}</td>
+                <td><span class="tx-type ${typeCls}">${typeLabel}</span></td>
+                <td style="font-weight:600">${amt}</td>
+                <td><span class="tx-status ${status}">${status.charAt(0).toUpperCase() + status.slice(1)}</span></td>
+                <td>${receiptUrl ? `<a href="${receiptUrl}" target="_blank" class="receipt-link"><svg><use href="#i-external"/></svg> Receipt</a>` : ''}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    function guessType(p) {
+        const product = ((p.product || '') + ' ' + (p.description || '')).toLowerCase();
+        if (product.includes('session') || product.includes('healing')) return 'session';
+        if (product.includes('academy') || product.includes('course')) return 'academy';
+        if (product.includes('fusion')) return 'fusion';
+        return 'session'; // default
+    }
+
+    // ═══ FILTERS ═══
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentFilter = btn.dataset.type;
+            renderTable();
+        });
+    });
+
+    // ═══ SHARED ═══
+    $('healthToggle').addEventListener('click', () => { $('healthToggle').classList.toggle('open'); $('healthItems').classList.toggle('open'); });
+    $('mob-btn').addEventListener('click', () => { $('sidebar').classList.toggle('open'); $('overlay').classList.toggle('open'); });
+    $('overlay').addEventListener('click', () => { $('sidebar').classList.remove('open'); $('overlay').classList.remove('open'); });
+    $('signout-btn').addEventListener('click', async e => { e.preventDefault(); await sb.auth.signOut(); window.location.href = LOGIN_URL + '?logged_out=true'; });
+    sb.auth.onAuthStateChange(e => { if (e === 'SIGNED_OUT') window.location.href = LOGIN_URL + '?session_expired=true'; });
+    async function goToFusion(e) { e.preventDefault(); const { data: { session } } = await sb.auth.getSession(); if (session?.access_token && session?.refresh_token) { window.location.href = `https://fusionsessions.com/dashboard.html#access_token=${session.access_token}&refresh_token=${session.refresh_token}&type=sso`; } else { window.location.href = 'https://fusionsessions.com/dashboard.html'; } }
+    function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+    init();
+</script>
+</body>
+</html>

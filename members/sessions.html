@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sessions &amp; Recordings — Quantum Physician</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Lato:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --sb-w: 260px;
+            --teal: #5ba8b2;
+            --teal-light: #4acfd9;
+            --teal-dark: #4a939c;
+            --gold: #c9a96e;
+            --taupe: #ad9b84;
+            --navy: #0e1a30;
+            --navy-deep: #0a1424;
+            --navy-mid: #12223d;
+            --navy-card: #142640;
+            --navy-hover: #193050;
+            --border: rgba(91,168,178,.15);
+            --border-hover: rgba(91,168,178,.35);
+            --text: rgba(255,255,255,.88);
+            --text-muted: rgba(255,255,255,.5);
+            --error: #e85d5d;
+            --success: #5bb88c;
+            --warning: #e8a84c;
+            --radius: 12px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Lato', sans-serif; background: var(--navy); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+
+        /* ═══ SIDEBAR (shared structure) ═══ */
+        .d-layout { min-height: 100vh; }
+        .d-sidebar {
+            background: var(--navy-deep);
+            border-right: 1px solid var(--border);
+            display: flex; flex-direction: column;
+            position: fixed; top: 0; left: 0; bottom: 0;
+            width: var(--sb-w); z-index: 50; overflow-y: auto;
+        }
+        .d-sidebar .logo { padding: 24px 20px 16px; border-bottom: 1px solid var(--border); text-align: center; }
+        .d-sidebar .logo img { max-width: 160px; height: auto; display: block; margin: 0 auto; transition: opacity .2s; }
+        .d-sidebar .logo img:hover { opacity: .8; }
+        .d-profile { padding: 20px 18px; border-bottom: 1px solid var(--border); text-align: center; }
+        .d-avatar {
+            width: 60px; height: 60px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--teal), var(--teal-light));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px; font-weight: 700; color: #fff;
+            font-family: "Playfair Display", serif;
+            margin: 0 auto 10px; overflow: hidden;
+            animation: avatarPulse 3s ease-in-out infinite;
+        }
+        .d-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        @keyframes avatarPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(91,168,178,.3); } 50% { box-shadow: 0 0 0 8px rgba(91,168,178,0); } }
+        .d-profile .name { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+        .d-profile .email { font-size: 11px; color: var(--text-muted); word-break: break-all; }
+
+        .d-nav { padding: 12px 0; flex: 1; }
+        .d-nav a {
+            display: flex; align-items: center; gap: 10px;
+            padding: 11px 20px; font-size: 13px; color: var(--text-muted);
+            text-decoration: none; transition: all .15s;
+            border-left: 3px solid transparent;
+        }
+        .d-nav a:hover { color: var(--text); background: rgba(255,255,255,.02); }
+        .d-nav a.active { color: var(--teal); background: rgba(91,168,178,.06); border-left-color: var(--teal); }
+        .d-nav a svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: .7; }
+        .d-nav a.active svg { opacity: 1; }
+        .d-nav .divider { height: 1px; background: var(--border); margin: 8px 20px; }
+
+        .d-nav-group-toggle {
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 20px; font-size: 10px; font-weight: 700;
+            letter-spacing: .1em; text-transform: uppercase;
+            color: var(--taupe); cursor: pointer;
+            border: none; background: none; width: 100%; transition: color .15s;
+        }
+        .d-nav-group-toggle:hover { color: var(--teal); }
+        .d-nav-group-toggle svg.nav-icon { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: .7; }
+        .d-nav-group-toggle .toggle-arrow { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; margin-left: auto; transition: transform .25s ease; }
+        .d-nav-group-toggle.open .toggle-arrow { transform: rotate(180deg); }
+        .d-nav-group-items { max-height: 0; overflow: hidden; transition: max-height .3s ease; }
+        .d-nav-group-items.open { max-height: 200px; }
+        .d-nav-group-items a { padding-left: 34px; font-size: 12.5px; }
+
+        .d-sidebar-footer { padding: 12px 20px; border-top: 1px solid var(--border); }
+        .d-sidebar-footer a {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 12px; color: var(--text-muted); text-decoration: none; padding: 6px 0; transition: color .15s;
+        }
+        .d-sidebar-footer a:hover { color: var(--text); }
+        .d-sidebar-footer a svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+        /* ═══ MAIN ═══ */
+        .d-main { margin-left: var(--sb-w); padding: 32px 32px 60px; min-height: 100vh; }
+        .d-header { margin-bottom: 28px; }
+        .d-header h1 { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 600; margin-bottom: 4px; }
+        .d-header p { color: var(--text-muted); font-size: 15px; font-weight: 300; }
+
+        /* ═══ TABS ═══ */
+        .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+        .tab-btn {
+            padding: 10px 20px; font-family: 'Lato', sans-serif; font-size: 13px;
+            font-weight: 600; color: var(--text-muted); background: none; border: none;
+            border-bottom: 2px solid transparent; cursor: pointer; transition: all .15s;
+        }
+        .tab-btn:hover { color: var(--text); }
+        .tab-btn.active { color: var(--teal); border-bottom-color: var(--teal); }
+
+        /* ═══ SESSION CARDS ═══ */
+        .session-list { display: flex; flex-direction: column; gap: 12px; }
+        .session-card {
+            background: linear-gradient(170deg, var(--navy-card) 0%, var(--navy-mid) 100%);
+            border: 1px solid var(--border); border-radius: var(--radius);
+            padding: 20px; transition: border-color .3s;
+        }
+        .session-card:hover { border-color: var(--border-hover); }
+        .session-top { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+        .session-date-badge {
+            width: 52px; height: 52px; border-radius: 10px;
+            background: rgba(91,168,178,.1); border: 1px solid rgba(91,168,178,.12);
+            display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .session-date-badge .month { font-size: 9px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: var(--teal); }
+        .session-date-badge .day { font-size: 18px; font-weight: 700; color: var(--text); line-height: 1; }
+        .session-info { flex: 1; min-width: 0; }
+        .session-info .primary { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+        .session-info .secondary { font-size: 12px; color: var(--text-muted); }
+        .session-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+        .status-pill {
+            padding: 4px 10px; border-radius: 10px; font-size: 10px;
+            font-weight: 700; letter-spacing: .5px; text-transform: uppercase;
+        }
+        .status-paid { background: rgba(91,184,140,.15); color: var(--success); }
+        .status-proposed { background: rgba(232,168,76,.15); color: var(--warning); }
+        .status-completed { background: rgba(91,168,178,.15); color: var(--teal); }
+        .status-cancelled { background: rgba(232,93,93,.1); color: rgba(232,93,93,.7); }
+        .status-no_show { background: rgba(255,255,255,.05); color: var(--text-muted); }
+        .status-declined { background: rgba(255,255,255,.05); color: var(--text-muted); }
+        .status-expired { background: rgba(255,255,255,.05); color: var(--text-muted); }
+
+        .countdown {
+            font-size: 11px; color: var(--teal); font-weight: 600;
+            display: flex; align-items: center; gap: 4px;
+        }
+        .countdown svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+        /* Session details expandable */
+        .session-details { border-top: 1px solid rgba(255,255,255,.05); margin-top: 12px; padding-top: 12px; }
+        .detail-section { margin-bottom: 14px; }
+        .detail-section:last-child { margin-bottom: 0; }
+        .detail-label {
+            font-size: 10px; font-weight: 700; letter-spacing: .1em;
+            text-transform: uppercase; color: var(--taupe); margin-bottom: 6px;
+            display: flex; align-items: center; gap: 5px;
+        }
+        .detail-label svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; }
+        .detail-content {
+            font-size: 13px; line-height: 1.6; color: var(--text);
+            background: rgba(255,255,255,.02); border-radius: 8px; padding: 12px 14px;
+        }
+
+        .btn-sm {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 7px 14px; border-radius: 8px; font-size: 12px;
+            font-weight: 600; text-decoration: none; border: none; cursor: pointer;
+            font-family: 'Lato', sans-serif; transition: all .15s;
+        }
+        .btn-teal { background: linear-gradient(135deg, var(--teal), var(--teal-dark)); color: #fff; }
+        .btn-teal:hover { opacity: .85; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
+        .btn-outline:hover { border-color: var(--teal); color: var(--teal); }
+        .btn-sm svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+        .recording-link {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 8px 14px; background: rgba(91,168,178,.08);
+            border: 1px solid rgba(91,168,178,.2); border-radius: 8px;
+            color: var(--teal); font-size: 12px; font-weight: 600;
+            text-decoration: none; transition: all .15s;
+        }
+        .recording-link:hover { background: rgba(91,168,178,.15); border-color: var(--teal); }
+        .recording-link svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center; padding: 60px 20px; color: var(--text-muted);
+        }
+        .empty-icon {
+            width: 48px; height: 48px; stroke: var(--teal); fill: none;
+            stroke-width: 1.5; opacity: .3; margin: 0 auto 16px; display: block;
+        }
+        .empty-state h3 { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--text); margin-bottom: 6px; font-weight: 600; }
+        .empty-state p { font-size: 13px; line-height: 1.6; margin-bottom: 16px; }
+        .empty-state a { color: var(--teal); font-weight: 600; text-decoration: none; }
+
+        .loading { text-align: center; padding: 40px; color: var(--text-muted); font-size: 13px; }
+
+        /* ═══ OVERLAY / MOBILE ═══ */
+        .d-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 49; }
+        .d-overlay.open { display: block; }
+        .d-mob-btn {
+            display: none; position: fixed; bottom: 20px; right: 20px; z-index: 200;
+            width: 48px; height: 48px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--teal), var(--teal-light));
+            color: #fff; border: none; cursor: pointer;
+            box-shadow: 0 4px 20px rgba(91,168,178,.4);
+            align-items: center; justify-content: center;
+        }
+        .d-mob-btn svg { width: 20px; height: 20px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+        @media (max-width: 960px) {
+            .d-sidebar { display: none; width: 270px; }
+            .d-sidebar.open { display: flex; z-index: 300; }
+            .d-mob-btn { display: flex; }
+            .d-main { margin-left: 0; padding: 20px 18px 100px; }
+        }
+
+        .d-footer { text-align: center; padding: 24px; border-top: 1px solid var(--border); margin-top: 32px; }
+        .d-footer p { color: var(--text-muted); font-size: 11px; }
+        .d-footer a { color: var(--teal); text-decoration: none; }
+    </style>
+</head>
+<body>
+
+<!-- SVG Sprites -->
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg"><defs>
+    <symbol id="i-layout" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></symbol>
+    <symbol id="i-cal" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></symbol>
+    <symbol id="i-video" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></symbol>
+    <symbol id="i-grad" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
+    <symbol id="i-clipboard" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></symbol>
+    <symbol id="i-activity" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></symbol>
+    <symbol id="i-dollar" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></symbol>
+    <symbol id="i-film" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/><line x1="17" y1="17" x2="22" y2="17"/></symbol>
+    <symbol id="i-chevron-down" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="18" x2="20" y2="18"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+    <symbol id="i-file-text" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></symbol>
+</defs></svg>
+
+<div class="d-layout">
+    <!-- ═══ SIDEBAR ═══ -->
+    <aside class="d-sidebar" id="sidebar">
+        <div class="logo"><a href="/"><img src="../assets/images/qp-logo.png" alt="Quantum Physician"></a></div>
+        <div class="d-profile">
+            <div class="d-avatar" id="avatar">?</div>
+            <div class="name" id="profileName">—</div>
+            <div class="email" id="profileEmail">—</div>
+        </div>
+        <nav class="d-nav">
+            <a href="/members/dashboard.html"><svg><use href="#i-layout"/></svg> Dashboard</a>
+            <div class="d-nav-group">
+                <button class="d-nav-group-toggle open" id="healthToggle">
+                    <svg class="nav-icon"><use href="#i-heart"/></svg> My Health
+                    <svg class="toggle-arrow" viewBox="0 0 24 24"><use href="#i-chevron-down"/></svg>
+                </button>
+                <div class="d-nav-group-items open" id="healthItems">
+                    <a href="/members/sessions.html" class="active"><svg><use href="#i-film"/></svg> Sessions &amp; Recordings</a>
+                    <a href="/members/intake.html"><svg><use href="#i-clipboard"/></svg> Intake Form</a>
+                    <a href="/members/progress.html"><svg><use href="#i-activity"/></svg> Progress Tracker</a>
+                    <a href="/members/billing.html"><svg><use href="#i-dollar"/></svg> Billing History</a>
+                </div>
+            </div>
+            <a href="/pages/one-on-sessions.html"><svg><use href="#i-cal"/></svg> Book a Session</a>
+            <a href="/academy/dashboard.html"><svg><use href="#i-grad"/></svg> Academy</a>
+            <a href="#" id="fusionLink" onclick="goToFusion(event)"><svg><use href="#i-layers"/></svg> Fusion Sessions</a>
+            <a href="/members/settings.html"><svg><use href="#i-settings"/></svg> Account Settings</a>
+            <div class="divider"></div>
+            <a href="/"><svg><use href="#i-home"/></svg> Main Site</a>
+        </nav>
+        <div class="d-sidebar-footer"><a href="#" id="signout-btn"><svg><use href="#i-logout"/></svg> Sign Out</a></div>
+    </aside>
+
+    <div class="d-overlay" id="overlay"></div>
+
+    <!-- ═══ MAIN ═══ -->
+    <div class="d-main">
+        <div class="d-header">
+            <h1>Sessions &amp; Recordings</h1>
+            <p>Your 1-on-1 session history with Dr. Tracey Clark</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="upcoming">Upcoming</button>
+            <button class="tab-btn" data-tab="past">Past</button>
+            <button class="tab-btn" data-tab="all">All</button>
+        </div>
+
+        <!-- Tab Content -->
+        <div id="tab-upcoming" class="tab-content">
+            <div class="loading" id="loading-upcoming">Loading sessions...</div>
+            <div class="session-list" id="list-upcoming"></div>
+        </div>
+        <div id="tab-past" class="tab-content" style="display:none">
+            <div class="loading" id="loading-past">Loading sessions...</div>
+            <div class="session-list" id="list-past"></div>
+        </div>
+        <div id="tab-all" class="tab-content" style="display:none">
+            <div class="loading" id="loading-all">Loading sessions...</div>
+            <div class="session-list" id="list-all"></div>
+        </div>
+
+        <div class="d-footer"><p>&copy; 2026 <a href="/">Quantum Physician</a> &middot; Dr. Tracey Clark</p></div>
+    </div>
+</div>
+
+<!-- Mobile toggle -->
+<button class="d-mob-btn" id="mob-btn"><svg><use href="#i-menu"/></svg></button>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+    const SUPABASE_URL = 'https://rihlrfiqokqrlmzjjyxj.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpaGxyZmlxb2txcmxtempqeXhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1MTU2NDYsImV4cCI6MjA4NDA5MTY0Nn0.G2TQKSmQpPYb8Cyzo7R833G7xkr0855faLRjrJ9ov-4';
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const LOGIN_URL = '/members/login.html';
+    const $ = id => document.getElementById(id);
+
+    let currentUser = null, userEmail = '';
+    let allBookings = [], allNotes = [], allRecordings = [];
+
+    async function init() {
+        const { data: { session } } = await sb.auth.getSession();
+        if (!session) { window.location.href = LOGIN_URL; return; }
+        currentUser = session.user;
+
+        const { data: profile } = await sb.from('profiles').select('full_name, email, avatar_url').eq('id', currentUser.id).single();
+        const fullName = profile?.full_name || currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'User';
+        userEmail = (profile?.email || currentUser.email || '').toLowerCase();
+        const initials = fullName.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+
+        // Sidebar profile
+        if (profile?.avatar_url) {
+            $('avatar').innerHTML = `<img src="${profile.avatar_url}" alt="${fullName}">`;
+        } else {
+            $('avatar').textContent = initials;
+        }
+        $('profileName').textContent = fullName;
+        $('profileEmail').textContent = userEmail;
+
+        await loadData();
+    }
+
+    async function loadData() {
+        // Fetch bookings by email
+        const { data: bookings } = await sb.from('session_bookings')
+            .select('*')
+            .eq('email', userEmail)
+            .order('date', { ascending: false });
+        allBookings = bookings || [];
+
+        // Fetch notes for patient-visible ones (RLS handles visibility)
+        const { data: notes } = await sb.from('session_notes').select('*');
+        allNotes = notes || [];
+
+        // Fetch recordings (RLS handles ownership)
+        const { data: recs } = await sb.from('session_recordings').select('*');
+        allRecordings = recs || [];
+
+        renderAll();
+    }
+
+    function renderAll() {
+        const today = new Date().toISOString().split('T')[0];
+
+        const upcoming = allBookings.filter(b => b.date >= today && ['proposed', 'paid', 'confirmed'].includes(b.status));
+        const past = allBookings.filter(b => b.date < today || ['completed', 'cancelled', 'no_show'].includes(b.status));
+
+        renderList('upcoming', upcoming.sort((a, b) => a.date.localeCompare(b.date)), true);
+        renderList('past', past, false);
+        renderList('all', allBookings, null);
+    }
+
+    function renderList(tabId, bookings, isUpcoming) {
+        const list = $('list-' + tabId);
+        const loading = $('loading-' + tabId);
+        loading.style.display = 'none';
+
+        if (!bookings.length) {
+            list.innerHTML = `
+                <div class="empty-state">
+                    <svg class="empty-icon"><use href="#i-cal"/></svg>
+                    <h3>${isUpcoming ? 'No upcoming sessions' : isUpcoming === false ? 'No past sessions' : 'No sessions yet'}</h3>
+                    <p>${isUpcoming ? 'Book your first session with Dr. Tracey.' : 'Your completed sessions will appear here.'}</p>
+                    ${isUpcoming !== false ? '<a href="/pages/one-on-sessions.html">Book a Session →</a>' : ''}
+                </div>`;
+            return;
+        }
+
+        list.innerHTML = bookings.map(b => renderSessionCard(b, isUpcoming)).join('');
+
+        // Wire up expand toggles
+        list.querySelectorAll('.expand-toggle').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const details = btn.closest('.session-card').querySelector('.session-details');
+                if (details) {
+                    details.style.display = details.style.display === 'none' ? 'block' : 'none';
+                    btn.textContent = details.style.display === 'none' ? 'Show Details' : 'Hide Details';
+                }
+            });
+        });
+    }
+
+    function renderSessionCard(b, isUpcoming) {
+        const dt = new Date(b.date + 'T00:00:00');
+        const month = dt.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+        const day = dt.getDate();
+        const weekday = dt.toLocaleDateString('en-US', { weekday: 'long' });
+        const time = fmtTime(b.start_time);
+        const endTime = fmtTime(b.end_time);
+
+        // Countdown for upcoming
+        let countdownHtml = '';
+        if (isUpcoming && ['paid', 'confirmed'].includes(b.status)) {
+            const sessionDate = new Date(b.date + 'T' + (b.start_time || '00:00'));
+            const diff = sessionDate - new Date();
+            if (diff > 0) {
+                const days = Math.floor(diff / 86400000);
+                const hours = Math.floor((diff % 86400000) / 3600000);
+                countdownHtml = `<div class="countdown"><svg><use href="#i-clock"/></svg> ${days > 0 ? 'in ' + days + ' day' + (days > 1 ? 's' : '') : 'in ' + hours + ' hour' + (hours > 1 ? 's' : '')}</div>`;
+            }
+        }
+
+        // Notes for this booking
+        const notes = allNotes.filter(n => n.booking_id === b.id);
+        const recordings = allRecordings.filter(r => r.booking_id === b.id);
+        const hasDetails = notes.length > 0 || recordings.length > 0;
+
+        // Status pill
+        const statusClass = 'status-' + b.status;
+        const statusLabel = b.status === 'no_show' ? 'No Show' : b.status.charAt(0).toUpperCase() + b.status.slice(1);
+
+        // Confirm & Pay button for proposed
+        let actionHtml = '';
+        if (b.status === 'proposed' && b.confirmation_token) {
+            actionHtml = `<a href="/pages/one-on-sessions.html?pay=${b.confirmation_token}" class="btn-sm btn-teal">Confirm &amp; Pay</a>`;
+        }
+
+        // Zoom link for upcoming paid
+        let zoomHtml = '';
+        if (isUpcoming && ['paid', 'confirmed'].includes(b.status) && b.zoom_link) {
+            zoomHtml = `<a href="${b.zoom_link}" target="_blank" class="btn-sm btn-outline"><svg><use href="#i-link"/></svg> Join Zoom</a>`;
+        }
+
+        // Details section
+        let detailsHtml = '';
+        if (hasDetails) {
+            detailsHtml = `<div class="session-details" style="display:none">`;
+            if (notes.length) {
+                detailsHtml += notes.map(n => `
+                    <div class="detail-section">
+                        <div class="detail-label"><svg><use href="#i-file-text"/></svg> ${n.note_type === 'followup' ? 'Follow-up Note' : 'Session Notes'}</div>
+                        <div class="detail-content">${escapeHtml(n.content)}</div>
+                    </div>
+                `).join('');
+            }
+            if (recordings.length) {
+                detailsHtml += `<div class="detail-section"><div class="detail-label"><svg><use href="#i-play"/></svg> Recordings</div>`;
+                detailsHtml += recordings.map(r => `
+                    <a href="${r.recording_url}" target="_blank" class="recording-link">
+                        <svg><use href="#i-play"/></svg> ${r.title || 'Session Recording'}
+                        ${r.duration_minutes ? ` · ${r.duration_minutes} min` : ''}
+                    </a>
+                `).join(' ');
+                detailsHtml += `</div>`;
+            }
+            detailsHtml += `</div>`;
+        }
+
+        return `
+        <div class="session-card">
+            <div class="session-top">
+                <div class="session-date-badge">
+                    <span class="month">${month}</span>
+                    <span class="day">${day}</span>
+                </div>
+                <div class="session-info">
+                    <div class="primary">${weekday} · ${time}${endTime ? ' – ' + endTime : ''}</div>
+                    <div class="secondary">Dr. Tracey Clark · 60 min session</div>
+                    ${countdownHtml}
+                </div>
+                <div class="session-actions">
+                    <span class="status-pill ${statusClass}">${statusLabel}</span>
+                    ${actionHtml}
+                    ${zoomHtml}
+                </div>
+            </div>
+            ${hasDetails ? `<button class="btn-sm btn-outline expand-toggle">Show Details</button>` : ''}
+            ${detailsHtml}
+        </div>`;
+    }
+
+    // ═══ TABS ═══
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+            btn.classList.add('active');
+            $('tab-' + btn.dataset.tab).style.display = 'block';
+        });
+    });
+
+    // ═══ MY HEALTH TOGGLE ═══
+    $('healthToggle').addEventListener('click', () => {
+        $('healthToggle').classList.toggle('open');
+        $('healthItems').classList.toggle('open');
+    });
+
+    // ═══ MOBILE ═══
+    $('mob-btn').addEventListener('click', () => { $('sidebar').classList.toggle('open'); $('overlay').classList.toggle('open'); });
+    $('overlay').addEventListener('click', () => { $('sidebar').classList.remove('open'); $('overlay').classList.remove('open'); });
+
+    // ═══ SIGNOUT ═══
+    $('signout-btn').addEventListener('click', async e => { e.preventDefault(); await sb.auth.signOut(); window.location.href = LOGIN_URL + '?logged_out=true'; });
+    sb.auth.onAuthStateChange(e => { if (e === 'SIGNED_OUT') window.location.href = LOGIN_URL + '?session_expired=true'; });
+
+    // ═══ CROSS-DOMAIN SSO ═══
+    async function goToFusion(e) {
+        e.preventDefault();
+        const { data: { session } } = await sb.auth.getSession();
+        if (session?.access_token && session?.refresh_token) {
+            window.location.href = `https://fusionsessions.com/dashboard.html#access_token=${session.access_token}&refresh_token=${session.refresh_token}&type=sso`;
+        } else {
+            window.location.href = 'https://fusionsessions.com/dashboard.html';
+        }
+    }
+
+    // ═══ HELPERS ═══
+    function fmtTime(t) { if (!t) return ''; const [h, m] = t.split(':').map(Number); return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`; }
+    function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+    init();
+</script>
+</body>
+</html>

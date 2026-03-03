@@ -7,7 +7,7 @@
 - Once QP admin covers everything, fusionsessions.com/admin.html gets decommissioned
 - One admin panel at qp-homepage.netlify.app/admin/ manages both platforms
 
-**Last updated:** Session 22 + Hotfixes (Feb 28, 2026) — Session 23 (1-on-1 Sessions) starting next
+**Last updated:** Session 25 (Mar 2, 2026)
 
 ---
 
@@ -18,70 +18,97 @@ All features from Fusion admin are now in QP admin. Zero gaps remain.
 
 ## QP Admin — Beyond Parity Features
 
-### Email Center (Sessions 4-6, 8, 11, 19-20)
-- ✅ Rich HTML email builder with Fusion + Academy brand templates
-- ✅ Tracking pixels + click tracking
-- ✅ Discount cards, QR codes in emails
-- ✅ Multi-card emails with unlimited cards, drag-reorder pills
-- ✅ Card Library — 11 pre-built templates (referral, community, session, testimonial, bold CTA, academy promo, QR, purchase confirmation, getting started, session product, bundle)
-- ✅ CTA Button Library — Watch Sessions, Go to Dashboard, Referral Hub, Explore Academy, Join Community, Custom CTA
-- ✅ Smart CTA detection — extracts button text/URL from markdown links, keyword fallback
-- ✅ Live auto-preview with 800ms debounce
-- ✅ Cursor-position merge tag insert
-- ✅ Discount auto-strip (prevents duplicates)
-- ✅ Session image token rendering (`{{session_image:session-XX}}`)
-- ✅ **Rich Text Editor** (SESSION 20) — Full WYSIWYG with font/size/color/heading/alignment/lists/links/emoji/image/table/blockquote/indent/line-spacing/source-toggle
-- ✅ **Test Email** (SESSION 20) — Themed modal, sends via Apps Script
-- ✅ **Auth Auto-Refresh** (SESSION 20) — onAuthStateChange + 45-min interval + 401 retry
+### Email Center (Sessions 4-6, 8, 11, 19-20, 22) ✅
+- Rich HTML email builder with Fusion + Academy brand templates
+- Unified Rich Editor component (`createRichEditor`) shared across Email Center, SG popup, Recovery popup
+- 11 pre-built card templates in Card Library
+- CTA Button Library (6 quick-insert + custom)
+- Campaign history with per-recipient tracking
 
-### Unified Rich Editor (Session 22) ✅
-- ✅ `createRichEditor(config)` reusable component with instance-based state
-- ✅ Mounted in Email Center (inline), SG popup, and Recovery popup
-- ✅ Selection save/restore fixes CTA focus-loss bug
-- ✅ Syncing guard prevents infinite input loops
+### Course Builder (Sessions 14-18) ✅
+- Full course builder with lesson creation, quiz builder, student tools
+- Light/dark mode, focus timer, interactive checkboxes
 
-### Course Builder (Sessions 14-18)
-- ✅ Full course builder with lesson creation, ordering, management
-- ✅ Quiz builder with multiple question types
-- ✅ Full-page lesson viewer with progress bars, tip boxes, images, key takeaways
-- ✅ Light/dark mode, theme toggle
-- ✅ Student notes panel, print notes
-- ✅ Interactive checkboxes, focus timer with Pomodoro presets
-- ✅ Demo course generator
+### Admin & Security (Sessions 9, 12, 20) ✅
+- Supabase-based admin login with roles + 12 permission flags
+- Admin-proxy server-side pattern (55+ operations)
+- Auth token auto-refresh (3-layer system)
 
-### Admin & Security (Sessions 9, 12)
-- ✅ Supabase-based admin login with roles (super_admin, admin, assistant)
-- ✅ 12 granular permission flags per admin
-- ✅ Admin-proxy server-side pattern (55+ operations)
-- ✅ Security headers on both repos
-- ✅ Service key rotation, client-side key removed
-- ✅ Webhook Recovery Tool with deduplication
+### 1-on-1 Sessions System (Sessions 23-24) ✅ CORE BUILT
+- Full admin panel tab with 5 sub-tabs
+- Cycle Manager, Availability Calendar, Client Roster, Bookings Grid
+- Offer Slot flow with branded emails
+- Stripe checkout (token-based + public modes)
+- Payment webhook with booking status updates
+- Public booking page with dynamic status
 
-### Other
-- ✅ Unified Referral Hub (auto-themed Fusion/Academy)
-- ✅ Weekly Marketing Goals widget
-- ✅ Downloadable CSV reports (6 types)
-- ✅ Custom Analytics Query
+### Member Portal (Session 25) ✅ NEW
+- **Login/signup/reset-password** — Full auth flow with Supabase
+- **Member dashboard** — Sidebar layout matching Academy, customizable 3-card grid (6 cards available), referral card, time-of-day greeting
+- **Settings page** — Profile editing, avatar upload (Supabase storage), password change, notification preferences
+- **Auth-aware shared header** — Avatar dropdown on all QP pages when logged in (via shared.js)
+- **SVG icon system** — Standardized across member portal, no emojis, matches Academy
+- **Cross-domain SSO** — Token passing from QP to Fusion (Fusion receiver pending)
+
+### Other ✅
+- Unified Referral Hub, Weekly Marketing Goals, CSV reports, Custom Analytics Query
+- Webhook Recovery Tool with deduplication
+
+---
+
+## QP Member Portal vs Fusion Member Experience
+
+### Feature Comparison
+| Feature | Fusion (fusionsessions.com) | QP (qp-homepage.netlify.app/members/) |
+|---------|---------------------------|---------------------------------------|
+| Login/Signup | ✅ login.html | ✅ login.html (SESSION 25) |
+| Dashboard | ✅ dashboard.html (retro neon) | ✅ dashboard.html (navy/teal sidebar) (SESSION 25) |
+| Profile/Avatar | ✅ Basic profile in sidebar | ✅ Full settings page + avatar upload (SESSION 25) |
+| Password Change | ❌ Not available | ✅ In settings (SESSION 25) |
+| Notification Prefs | ❌ Not available | ✅ Toggle switches (SESSION 25) |
+| Referral Code | ✅ In sidebar | ✅ In sidebar + earnings info (SESSION 25) |
+| Session History | ✅ Basic view | ✅ In dashboard cards + full page planned (SESSION 26) |
+| Achievements | ✅ Achievement system | ❌ Not yet (future) |
+| Community Forum | ✅ Full community | ✅ Card in dashboard (links to Fusion) |
+| Progress Tracking | ❌ Not available | ⬜ Planned (SESSION 26) |
+| Intake Forms | ❌ Not available | ⬜ Planned (SESSION 26) |
+| Billing History | ❌ Not available | ⬜ Planned (SESSION 26) |
+| Session Recordings | ❌ Not available | ⬜ Planned (SESSION 26) |
+| Auth-Aware Header | ❌ Only on Fusion pages | ✅ All QP pages via shared.js (SESSION 25) |
+
+**QP member portal already exceeds Fusion's member experience** with settings, notifications, avatar upload, and the auth-aware global header. Session 26 will add CRM features that Fusion doesn't have at all.
 
 ---
 
 ## Planned Features (Not Yet Built)
 
-### Session 23 — 1-on-1 Sessions System (STARTING IMMEDIATELY)
-- ⬜ 4-month booking cycle engine (Dr. Tracey's manual workflow → automated)
-- ⬜ Admin: Cycle Manager, Availability Builder (calendar), Auto-Populate Engine, Client Roster, Booking Grid, Confirmation Tracker, Public Booking Controls, Waitlist Manager
-- ⬜ Frontend: Session info page, dynamic booking status banner (open/closed/countdown), available slots calendar, Stripe checkout, client confirmation portal (tokenized), waitlist signup
-- ⬜ 6 new database tables: session_config, session_cycles, session_availability, session_clients, session_bookings, session_waitlist
-- ⬜ Automation: confirmation emails, 24hr/1hr reminders, waitlist notifications, cycle opening alerts
-- ⬜ Full design spec: `docs/session-system-design.md`
+### 🔴 Session 26 — Patient CRM / Portal (MAJOR NEW FEATURE)
+See `session-26-crm-plan.md` for full details.
+- ⬜ Sessions & Recordings page (`/members/sessions.html`)
+- ⬜ Intake Form page (`/members/intake.html`)
+- ⬜ Progress Tracker page (`/members/progress.html`)
+- ⬜ Billing History page (`/members/billing.html`)
+- ⬜ Sidebar "My Health" collapsible section
+- ⬜ 5 new database tables (session_notes, session_recordings, patient_intake, patient_checkins, patient_progress_notes)
+- ⬜ Admin CRM: Client Profiles tab with per-client detail view
 
-### Session 24 — Live Event Page
+### Session 26 Also — Pending Items
+- ⬜ Cross-domain SSO receiver on Fusion side
+- ⬜ End-to-end payment test with real Stripe transaction
+- ⬜ QP-branded premium email template for session communications
+- ⬜ Full email automation (confirmations, reminders, follow-ups)
+- ⬜ 72-hour offer expiry automation
+- ⬜ notification_preferences column verification
+
+### Session 27 — Stripe Checkout Polish (ALL PRODUCTS)
+- ⬜ Review all Stripe checkout screens (sessions, Academy, Fusion)
+- ⬜ Consistent branding, formatting, images
+- ⬜ Stripe Dashboard branding settings
+
+### Session 28 — Live Event Page
 - ⬜ Branded live Zoom experience page (pre/during/post states)
-- ⬜ Countdown timer, embedded Zoom (Web SDK), live reactions
-- ⬜ Session replay (Vimeo), product cards, referral widget
-- ⬜ Access control: free (email gate), paid (login+purchase), upsell, teaser
-- ⬜ Swappable layout templates (Classic/Immersive/Minimal)
-- ⬜ Admin config section for live events
+- ⬜ Countdown timer, embedded Zoom, live reactions, replay mode
+- ⬜ Access control, swappable layout templates
 
 ### Future
 - ⬜ Student tools: flashcards, highlighting, reflection journal, summarizer, progress dashboard, goal tracking
@@ -92,42 +119,59 @@ All features from Fusion admin are now in QP admin. Zero gaps remain.
 
 ---
 
-## Database Tables (17 tables + admin_users + auth.users)
+## Database Tables (23 tables + admin_users + auth.users)
 
-### Read by QP Admin
+### Existing Tables (17 + admin_users)
 | Table | Purpose |
 |-------|---------|
 | `purchases` | All transactions |
-| `referral_codes` | Referral system |
-| `profiles` | User profiles + community_role |
+| `referral_codes` | Referral system (keyed by email, NOT user_id) |
+| `profiles` | User profiles (includes avatar_url column) |
 | `credit_history` | Credit audit trail |
+| `notification_preferences` | Member notification toggles (SESSION 25) |
 | `qa_enrollments` | Academy enrollments |
 | `qa_courses` | Course catalog |
 | `qa_lesson_progress` | Lesson completion |
 | `admin_notes` | Admin notes per customer |
-| `discussion_posts` | Fusion community posts |
+| `discussion_posts` | Fusion community |
 | `qa_discussions` | Academy discussions |
 | `email_campaigns` | Sent campaign history |
 | `email_tracking` | Per-recipient tracking |
-| `promotions` | Promo codes and discounts |
+| `promotions` | Promo codes |
 | `scheduled_emails` | Automated email queue |
-| `email_log` | Individual email send records |
-| `session_schedule` | Fusion session dates and Zoom info |
+| `email_log` | Email send records |
+| `session_schedule` | Fusion session dates/Zoom info |
 | `admin_users` | Admin accounts + permissions |
-| `auth.users` (Admin API) | Email verification, last login, opt-in |
 
-### Written by QP Admin
-| Table | Operations |
-|-------|------------|
-| `admin_audit_log` | INSERT |
-| `admin_notes` | INSERT, DELETE |
-| `referral_codes` | INSERT, UPDATE |
-| `purchases` | INSERT, UPDATE, DELETE |
-| `profiles` | UPDATE |
-| `qa_enrollments` | INSERT, UPDATE |
-| `qa_lesson_progress` | DELETE |
-| `email_campaigns` | INSERT, UPDATE |
-| `email_tracking` | INSERT |
-| `promotions` | INSERT, UPDATE, DELETE |
-| `scheduled_emails` | UPDATE |
-| `admin_users` | SELECT, INSERT, UPDATE |
+### Session 23-24 Tables (6)
+| Table | Purpose |
+|-------|---------|
+| `session_config` | Global settings: price ($150), duration (60 min), timezone, buffer, booking status |
+| `session_cycles` | 4-month booking cycles with status pipeline |
+| `session_availability` | Daily time blocks: date, start/end time, status, visibility |
+| `session_clients` | Recurring client roster: frequency, preferred day/time, priority |
+| `session_bookings` | Individual appointments: date, time, status, type, stripe_payment_id, confirmation_token |
+| `session_waitlist` | Public waitlist queue with preferences |
+
+### Session 26 Tables (5 planned — NOT YET CREATED)
+| Table | Purpose |
+|-------|---------|
+| `session_notes` | Per-session notes from Tracey (visible_to_patient toggle) |
+| `session_recordings` | Zoom recording URLs per booking |
+| `patient_intake` | Pre-first-session health questionnaire |
+| `patient_checkins` | Patient self-reported symptom check-ins |
+| `patient_progress_notes` | Tracey's alignment/progress notes per patient |
+
+### Supabase Storage Buckets
+| Bucket | Access | Purpose |
+|--------|--------|---------|
+| `avatars` | PUBLIC (4 policies) | User profile photos (SESSION 25) |
+| `course-videos` | Private (2 policies) | Academy video content |
+| `course-files` | Private (2 policies) | Academy downloadable files |
+| `course-thumbnails` | PUBLIC (2 policies) | Academy course thumbnails |
+| `achievements` | PUBLIC (0 policies) | Achievement badge images |
+
+### RLS Policies Added (Session 23-24)
+- `session_config`, `session_cycles`, `session_availability`, `session_bookings`: Public SELECT
+- `session_waitlist`: Public INSERT
+- All session tables: Admin access via admin-proxy

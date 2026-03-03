@@ -124,6 +124,28 @@
         .d-nav a.active svg { opacity: 1; }
         .d-nav .divider { height: 1px; background: var(--border); margin: 8px 20px; }
 
+        /* My Health collapsible section */
+        .d-nav-group { margin: 0; }
+        .d-nav-group-toggle {
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 20px; font-size: 10px; font-weight: 700;
+            letter-spacing: .1em; text-transform: uppercase;
+            color: var(--taupe); cursor: pointer;
+            border: none; background: none; width: 100%;
+            transition: color .15s;
+        }
+        .d-nav-group-toggle:hover { color: var(--teal); }
+        .d-nav-group-toggle svg.nav-icon { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: .7; }
+        .d-nav-group-toggle .toggle-arrow { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; margin-left: auto; transition: transform .25s ease; }
+        .d-nav-group-toggle.open .toggle-arrow { transform: rotate(180deg); }
+        .d-nav-group-items {
+            max-height: 0; overflow: hidden; transition: max-height .3s ease;
+        }
+        .d-nav-group-items.open { max-height: 200px; }
+        .d-nav-group-items a {
+            padding-left: 34px; font-size: 12.5px;
+        }
+
         /* Sidebar footer */
         .d-sidebar-footer {
             padding: 12px 20px; border-top: 1px solid var(--border);
@@ -354,6 +376,11 @@
     <symbol id="i-play" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></symbol>
     <symbol id="i-zap" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
     <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="18" x2="20" y2="18"/></symbol>
+    <symbol id="i-clipboard" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></symbol>
+    <symbol id="i-activity" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></symbol>
+    <symbol id="i-dollar" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></symbol>
+    <symbol id="i-film" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/><line x1="17" y1="17" x2="22" y2="17"/></symbol>
+    <symbol id="i-chevron-down" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></symbol>
 </defs></svg>
 
 <div class="d-layout">
@@ -389,6 +416,18 @@
 
         <nav class="d-nav">
             <a href="/members/dashboard.html" class="active"><svg><use href="#i-layout"/></svg> Dashboard</a>
+            <div class="d-nav-group">
+                <button class="d-nav-group-toggle open" id="healthToggle">
+                    <svg class="nav-icon"><use href="#i-heart"/></svg> My Health
+                    <svg class="toggle-arrow" viewBox="0 0 24 24"><use href="#i-chevron-down"/></svg>
+                </button>
+                <div class="d-nav-group-items open" id="healthItems">
+                    <a href="/members/sessions.html"><svg><use href="#i-film"/></svg> Sessions &amp; Recordings</a>
+                    <a href="/members/intake.html"><svg><use href="#i-clipboard"/></svg> Intake Form</a>
+                    <a href="/members/progress.html"><svg><use href="#i-activity"/></svg> Progress Tracker</a>
+                    <a href="/members/billing.html"><svg><use href="#i-dollar"/></svg> Billing History</a>
+                </div>
+            </div>
             <a href="/pages/one-on-sessions.html"><svg><use href="#i-cal"/></svg> Book a Session</a>
             <a href="/academy/dashboard.html"><svg><use href="#i-grad"/></svg> Academy</a>
             <a href="#" id="fusionLink" onclick="goToFusion(event)"><svg><use href="#i-layers"/></svg> Fusion Sessions</a>
@@ -650,6 +689,12 @@
     $('modal-save').addEventListener('click', async () => {
         activeCards=[...tempSel]; localStorage.setItem(PREF_KEY,JSON.stringify(activeCards));
         $('customize-overlay').classList.remove('open'); renderCards(); await loadAllCardData();
+    });
+
+    // ═══ MY HEALTH TOGGLE ═══
+    $('healthToggle').addEventListener('click', () => {
+        $('healthToggle').classList.toggle('open');
+        $('healthItems').classList.toggle('open');
     });
 
     // ═══ MOBILE ═══
