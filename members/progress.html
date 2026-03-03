@@ -163,6 +163,11 @@
         /* Energy/Sleep chart reuses .chart-section */
 
         /* Before/After card */
+        .ov-select { padding: 5px 10px; font-size: 11px; background: rgba(0,0,0,.2); border: 1px solid var(--border); border-radius: 8px; color: var(--text-muted); font-family: 'Lato', sans-serif; cursor: pointer; outline: none; }
+        .ov-select:focus { border-color: var(--teal); }
+        .ba-toggle { display: flex; gap: 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+        .ba-toggle-btn { padding: 5px 12px; font-size: 11px; font-weight: 600; background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-family: 'Lato', sans-serif; transition: all .15s; }
+        .ba-toggle-btn.active { background: var(--teal); color: #fff; }
         .ba-card { background: linear-gradient(170deg, var(--navy-card) 0%, var(--navy-mid) 100%); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin: 24px 0; }
         .ba-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 18px; text-align: center; }
         .ba-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 0; align-items: start; }
@@ -243,7 +248,15 @@
         </div>
 
         <!-- Overview Cards -->
-        <div class="overview-grid">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <div style="font-size:12px;color:var(--text-muted)">Quick Stats</div>
+            <select class="ov-select" id="ov-preset" onchange="applyOvPreset(this.value)">
+                <option value="overview">Overview</option>
+                <option value="symptoms">Top Symptoms</option>
+                <option value="wellness">Wellness Scores</option>
+            </select>
+        </div>
+        <div class="overview-grid" id="ov-grid">
             <div class="overview-card"><div class="ov-val" id="ov-sessions">—</div><div class="ov-label">Sessions Completed</div></div>
             <div class="overview-card"><div class="ov-val" id="ov-days">—</div><div class="ov-label">Days Since First</div></div>
             <div class="overview-card"><div class="ov-val" id="ov-improvement">—</div><div class="ov-label">Avg Improvement</div></div>
@@ -275,7 +288,7 @@
 
         <!-- Before / After Comparison -->
         <div class="ba-card" id="ba-card" style="display:none">
-            <div class="ba-title">Your Healing Journey</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><div class="ba-title" style="margin-bottom:0">Your Healing Journey</div><div class="ba-toggle"><button class="ba-toggle-btn active" onclick="toggleBA('scores',this)">Scores</button><button class="ba-toggle-btn" onclick="toggleBA('pct',this)">% Change</button></div></div>
             <div class="ba-grid" id="ba-grid"></div>
             <div class="ba-summary" id="ba-summary"></div>
         </div>
@@ -426,6 +439,42 @@
         } else { $('ov-next').textContent = '—'; }
     }
 
+    function applyOvPreset(preset) {
+        const grid = $('ov-grid');
+        if (preset === 'overview') {
+            renderOverview();
+            return;
+        }
+        if (preset === 'symptoms' && allCheckins.length >= 2) {
+            const first = allCheckins[allCheckins.length - 1];
+            const latest = allCheckins[0];
+            const firstSym = first.symptoms || [];
+            const latestSym = latest.symptoms || [];
+            let cards = '';
+            firstSym.forEach(function(fs) {
+                const ls = latestSym.find(function(x){ return x.name === fs.name; });
+                if (!ls) return;
+                const pct = fs.severity > 0 ? Math.round(((fs.severity - ls.severity) / fs.severity) * 100) : 0;
+                const color = pct >= 50 ? 'var(--success)' : pct >= 25 ? 'var(--teal)' : 'var(--warning)';
+                cards += '<div class="overview-card"><div class="ov-val" style="color:' + color + '">-' + pct + '%</div><div class="ov-label">' + esc(fs.name) + '</div></div>';
+            });
+            grid.innerHTML = cards || '<div class="overview-card"><div class="ov-val">—</div><div class="ov-label">No symptom data</div></div>';
+        }
+        if (preset === 'wellness' && allCheckins.length >= 2) {
+            const first = allCheckins[allCheckins.length - 1];
+            const latest = allCheckins[0];
+            const ePct = first.energy_level > 0 ? Math.round(((latest.energy_level - first.energy_level) / first.energy_level) * 100) : 0;
+            const sPct = first.sleep_quality > 0 ? Math.round(((latest.sleep_quality - first.sleep_quality) / first.sleep_quality) * 100) : 0;
+            const avgSymFirst = (first.symptoms||[]).reduce(function(s,x){return s+x.severity},0) / Math.max((first.symptoms||[]).length,1);
+            const avgSymLatest = (latest.symptoms||[]).reduce(function(s,x){return s+x.severity},0) / Math.max((latest.symptoms||[]).length,1);
+            const symPct = avgSymFirst > 0 ? Math.round(((avgSymFirst - avgSymLatest) / avgSymFirst) * 100) : 0;
+            grid.innerHTML = '<div class="overview-card"><div class="ov-val" style="color:var(--success)">+' + ePct + '%</div><div class="ov-label">Energy Improvement</div></div>' +
+                '<div class="overview-card"><div class="ov-val" style="color:var(--success)">+' + sPct + '%</div><div class="ov-label">Sleep Improvement</div></div>' +
+                '<div class="overview-card"><div class="ov-val" style="color:var(--success)">-' + symPct + '%</div><div class="ov-label">Symptom Reduction</div></div>' +
+                '<div class="overview-card"><div class="ov-val">' + allCheckins.length + '</div><div class="ov-label">Total Check-Ins</div></div>';
+        }
+    }
+
     function renderChart() {
         const canvas = $('symptomChart');
         if (allCheckins.length === 0) {
@@ -531,6 +580,14 @@
         });
     }
 
+    var baMode = 'scores';
+    function toggleBA(mode, btn) {
+        baMode = mode;
+        document.querySelectorAll('.ba-toggle-btn').forEach(function(b){ b.classList.remove('active'); });
+        if (btn) btn.classList.add('active');
+        renderBeforeAfter();
+    }
+
     function renderBeforeAfter() {
         if (allCheckins.length < 2) { $('ba-card').style.display = 'none'; return; }
         $('ba-card').style.display = 'block';
@@ -538,28 +595,45 @@
         const latest = allCheckins[0];
         const firstSymptoms = first.symptoms || [];
         const latestSymptoms = latest.symptoms || [];
+        const showPct = baMode === 'pct';
 
         let beforeHTML = '<div class="ba-col"><div style="text-align:center;margin-bottom:14px"><span class="ba-col-label before">First Check-In</span><div style="font-size:11px;color:var(--text-dim);margin-top:4px">' + new Date(first.checkin_date+'T00:00:00').toLocaleDateString('en-US',{month:'short',year:'numeric'}) + '</div></div>';
         let afterHTML = '<div class="ba-col"><div style="text-align:center;margin-bottom:14px"><span class="ba-col-label after">Latest</span><div style="font-size:11px;color:var(--text-dim);margin-top:4px">' + new Date(latest.checkin_date+'T00:00:00').toLocaleDateString('en-US',{month:'short',year:'numeric'}) + '</div></div>';
 
         let totalBefore = 0, totalAfter = 0, count = 0;
 
-        firstSymptoms.forEach(fs => {
-            const ls = latestSymptoms.find(x => x.name === fs.name);
+        firstSymptoms.forEach(function(fs) {
+            const ls = latestSymptoms.find(function(x){ return x.name === fs.name; });
             if (!ls) return;
             const pct = fs.severity > 0 ? Math.round(((fs.severity - ls.severity) / fs.severity) * 100) : 0;
             totalBefore += fs.severity;
             totalAfter += ls.severity;
             count++;
-            beforeHTML += '<div class="ba-row"><span class="ba-symptom">' + esc(fs.name) + '</span><span class="ba-val high">' + fs.severity + '/10</span></div>';
-            afterHTML += '<div class="ba-row"><span class="ba-symptom">' + esc(fs.name) + '</span><span class="ba-val low">' + ls.severity + '/10</span></div>';
+            if (showPct) {
+                const sign = pct > 0 ? '-' : '+';
+                beforeHTML += '<div class="ba-row"><span class="ba-symptom">' + esc(fs.name) + '</span><span class="ba-val high">' + fs.severity + '/10</span></div>';
+                afterHTML += '<div class="ba-row"><span class="ba-symptom">' + esc(fs.name) + '</span><span class="ba-val low">' + ls.severity + '/10 <span style="font-size:11px;opacity:.7">(' + sign + Math.abs(pct) + '%)</span></span></div>';
+            } else {
+                beforeHTML += '<div class="ba-row"><span class="ba-symptom">' + esc(fs.name) + '</span><span class="ba-val high">' + fs.severity + '/10</span></div>';
+                afterHTML += '<div class="ba-row"><span class="ba-symptom">' + esc(fs.name) + '</span><span class="ba-val low">' + ls.severity + '/10</span></div>';
+            }
         });
 
-        // Energy/Sleep
-        beforeHTML += '<div class="ba-row"><span class="ba-symptom">Energy</span><span class="ba-val high">' + (first.energy_level||'?') + '/10</span></div>';
-        beforeHTML += '<div class="ba-row"><span class="ba-symptom">Sleep</span><span class="ba-val high">' + (first.sleep_quality||'?') + '/10</span></div>';
-        afterHTML += '<div class="ba-row"><span class="ba-symptom">Energy</span><span class="ba-val low">' + (latest.energy_level||'?') + '/10</span></div>';
-        afterHTML += '<div class="ba-row"><span class="ba-symptom">Sleep</span><span class="ba-val low">' + (latest.sleep_quality||'?') + '/10</span></div>';
+        // Energy/Sleep (inverted — higher is better)
+        var ePct = first.energy_level > 0 ? Math.round(((latest.energy_level - first.energy_level) / first.energy_level) * 100) : 0;
+        var sPct = first.sleep_quality > 0 ? Math.round(((latest.sleep_quality - first.sleep_quality) / first.sleep_quality) * 100) : 0;
+
+        if (showPct) {
+            beforeHTML += '<div class="ba-row"><span class="ba-symptom">Energy</span><span class="ba-val high">' + (first.energy_level||'?') + '/10</span></div>';
+            beforeHTML += '<div class="ba-row"><span class="ba-symptom">Sleep</span><span class="ba-val high">' + (first.sleep_quality||'?') + '/10</span></div>';
+            afterHTML += '<div class="ba-row"><span class="ba-symptom">Energy</span><span class="ba-val low">' + (latest.energy_level||'?') + '/10 <span style="font-size:11px;opacity:.7">(+' + ePct + '%)</span></span></div>';
+            afterHTML += '<div class="ba-row"><span class="ba-symptom">Sleep</span><span class="ba-val low">' + (latest.sleep_quality||'?') + '/10 <span style="font-size:11px;opacity:.7">(+' + sPct + '%)</span></span></div>';
+        } else {
+            beforeHTML += '<div class="ba-row"><span class="ba-symptom">Energy</span><span class="ba-val high">' + (first.energy_level||'?') + '/10</span></div>';
+            beforeHTML += '<div class="ba-row"><span class="ba-symptom">Sleep</span><span class="ba-val high">' + (first.sleep_quality||'?') + '/10</span></div>';
+            afterHTML += '<div class="ba-row"><span class="ba-symptom">Energy</span><span class="ba-val low">' + (latest.energy_level||'?') + '/10</span></div>';
+            afterHTML += '<div class="ba-row"><span class="ba-symptom">Sleep</span><span class="ba-val low">' + (latest.sleep_quality||'?') + '/10</span></div>';
+        }
 
         beforeHTML += '</div>';
         afterHTML += '</div>';
@@ -567,7 +641,7 @@
         const overallPct = totalBefore > 0 ? Math.round(((totalBefore - totalAfter) / totalBefore) * 100) : 0;
 
         $('ba-grid').innerHTML = beforeHTML + '<div class="ba-divider"></div>' + afterHTML;
-        $('ba-summary').innerHTML = '<div class="ba-overall">' + (overallPct > 0 ? '-' : '') + Math.abs(overallPct) + '%</div><div class="ba-overall-label">Overall Symptom Reduction in ' + allCheckins.length + ' Check-Ins</div>';
+        $('ba-summary').innerHTML = '<div class="ba-overall">' + (overallPct > 0 ? '-' : '') + Math.abs(overallPct) + '%</div><div class="ba-overall-label">Overall Symptom Reduction across ' + allCheckins.length + ' Check-Ins over ' + Math.floor((new Date(latest.checkin_date) - new Date(first.checkin_date)) / 86400000) + ' days</div>';
     }
 
     function renderMilestoneMarkers() {
@@ -598,7 +672,7 @@
 
     function renderCheckins() {
         const list = $('checkin-list');
-        if (!allCheckins.length) { list.innerHTML = '<div class="empty-state"><p>No check-ins yet. Click "Add Check-In" to log how you&rsquo;re feeling.</p></div>'; return; }
+        if (!allCheckins.length) { list.innerHTML = '<div class="empty-state"><p>No check-ins yet. Click "Add Check-In" to log how you're feeling.</p></div>'; return; }
         list.innerHTML = allCheckins.map(c => {
             const d = new Date(c.checkin_date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
             const symptoms = (c.symptoms || []).map(s => `<span class="tc-symptom">${s.name} <strong>${s.severity}/10</strong></span>`).join('');
