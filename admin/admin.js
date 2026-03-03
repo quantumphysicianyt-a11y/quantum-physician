@@ -4399,6 +4399,7 @@ function renderBookingsGrid(){
         +(b.status==='proposed'&&payLink?'<button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText(\''+payLink+'\');showToast(\'Pay link copied\',\'success\')" title="Copy payment link">🔗 Pay Link</button>':'')
         +(b.status==='proposed'?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'paid\')">Mark Paid</button><button class="btn btn-danger btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'declined\')">Decline</button>':'')
         +(b.status==='paid'?'<button class="btn btn-ghost btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'completed\')">Complete</button><button class="btn btn-ghost btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'no_show\')">No Show</button><button class="btn btn-danger btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'cancelled\')">Cancel</button>':'')
+        +(b.status==='completed'||b.status==='paid'?'<button class="btn btn-primary btn-sm" onclick="crmAddNote(\''+b.id+'\')">+ Note</button>':'')
         +'<button class="btn btn-ghost btn-sm" onclick="deleteBooking(\''+b.id+'\')">🗑</button>'
         +'</div></td></tr>';
     }).join('')+'</tbody></table>';
@@ -5046,9 +5047,10 @@ async function crmAddNote(bookingId){
           body_regions: regions.length ? regions : null,
           visible_to_patient: !!visible, created_by: currentAdmin.id || null
         });
-        await logAudit('crm_add_note', crmCurrentClient, 'Added session note' + (regions.length ? ' (' + regions.length + ' regions)' : ''));
+        await logAudit('crm_add_note', crmCurrentClient || 'admin', 'Added session note' + (regions.length ? ' (' + regions.length + ' regions)' : ''));
         showToast('Note added' + (regions.length ? ' with ' + regions.length + ' body regions' : ''), 'success');
-        await crmOpenClient(crmCurrentClient);
+        if (crmCurrentClient) { await crmOpenClient(crmCurrentClient); }
+        if (typeof renderBookingsGrid === 'function') { try { var nbr = await proxyFrom('session_bookings').select('*').order('date',{ascending:false}); sessBookingsData = nbr.data || []; renderBookingsGrid(); } catch(e2){} }
       } catch(e){ showToast('Error adding note: '+e.message, 'error'); }
       resolve();
     };
