@@ -705,7 +705,7 @@
 
     function renderCheckins() {
         const list = $('checkin-list');
-        if (!allCheckins.length) { list.innerHTML = '<div class="empty-state"><p>No check-ins yet. Click "Add Check-In" to log how you're feeling.</p></div>'; return; }
+        if (!allCheckins.length) { list.innerHTML = '<div class="empty-state"><p>No check-ins yet. Click "Add Check-In" to log how you&rsquo;re feeling.</p></div>'; return; }
         list.innerHTML = allCheckins.map(c => {
             const d = new Date(c.checkin_date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
             const symptoms = (c.symptoms || []).map(s => `<span class="tc-symptom">${s.name} <strong>${s.severity}/10</strong></span>`).join('');
