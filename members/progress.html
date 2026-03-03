@@ -159,6 +159,29 @@
         .d-footer { text-align: center; padding: 24px; border-top: 1px solid var(--border); margin-top: 32px; }
         .d-footer p { color: var(--text-muted); font-size: 11px; }
         .d-footer a { color: var(--teal); text-decoration: none; }
+
+        /* Energy/Sleep chart reuses .chart-section */
+
+        /* Before/After card */
+        .ba-card { background: linear-gradient(170deg, var(--navy-card) 0%, var(--navy-mid) 100%); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin: 24px 0; }
+        .ba-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 18px; text-align: center; }
+        .ba-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 0; align-items: start; }
+        .ba-col { padding: 0 16px; }
+        .ba-col-label { font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 14px; text-align: center; padding: 4px 12px; border-radius: 6px; display: inline-block; }
+        .ba-col-label.before { background: rgba(232,93,93,.12); color: var(--error); }
+        .ba-col-label.after { background: rgba(91,184,140,.12); color: var(--success); }
+        .ba-divider { width: 1px; background: var(--border); min-height: 100%; }
+        .ba-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.03); }
+        .ba-symptom { font-size: 12px; color: var(--text-muted); }
+        .ba-val { font-size: 14px; font-weight: 700; }
+        .ba-val.high { color: var(--error); }
+        .ba-val.low { color: var(--success); }
+        .ba-change { font-size: 13px; font-weight: 700; text-align: center; padding: 3px 8px; border-radius: 6px; }
+        .ba-change.positive { background: rgba(91,184,140,.1); color: var(--success); }
+        .ba-summary { text-align: center; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border); }
+        .ba-overall { font-size: 36px; font-weight: 700; color: var(--success); font-family: 'Playfair Display', serif; }
+        .ba-overall-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+        @media (max-width: 480px) { .ba-grid { grid-template-columns: 1fr; } .ba-divider { display: none; height: 1px; width: 100%; background: var(--border); min-height: auto; margin: 12px 0; } }
     </style>
 </head>
 <body>
@@ -240,6 +263,21 @@
             </div>
             <div class="chart-wrap"><canvas id="symptomChart"></canvas></div>
             <div id="chart-empty" class="empty-state" style="display:none"><p>Add check-ins to see your symptom trends over time.</p></div>
+        </div>
+
+        <!-- Energy & Sleep Chart -->
+        <div class="chart-section" style="margin-top:24px">
+            <div class="chart-header">
+                <div class="chart-title">Energy &amp; Sleep Recovery</div>
+            </div>
+            <div class="chart-wrap"><canvas id="wellnessChart"></canvas></div>
+        </div>
+
+        <!-- Before / After Comparison -->
+        <div class="ba-card" id="ba-card" style="display:none">
+            <div class="ba-title">Your Healing Journey</div>
+            <div class="ba-grid" id="ba-grid"></div>
+            <div class="ba-summary" id="ba-summary"></div>
         </div>
 
         <!-- Check-In Log -->
@@ -349,6 +387,9 @@
 
         renderOverview();
         renderChart();
+        renderWellnessChart();
+        renderBeforeAfter();
+        renderMilestoneMarkers();
         renderCheckins();
         renderNotes();
     }
@@ -439,9 +480,125 @@
         });
     }
 
+    let wellnessChart = null;
+    function renderWellnessChart() {
+        const canvas = $('wellnessChart');
+        if (allCheckins.length < 2) { canvas.parentElement.parentElement.style.display = 'none'; return; }
+        canvas.parentElement.parentElement.style.display = 'block';
+
+        let filtered = allCheckins;
+        if (currentRange !== 'all') {
+            const cutoff = new Date();
+            cutoff.setDate(cutoff.getDate() - currentRange);
+            filtered = allCheckins.filter(c => new Date(c.checkin_date) >= cutoff);
+        }
+        filtered = filtered.slice().reverse();
+
+        const labels = filtered.map(c => {
+            const d = new Date(c.checkin_date + 'T00:00:00');
+            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        });
+
+        const energyData = filtered.map(c => c.energy_level || null);
+        const sleepData = filtered.map(c => c.sleep_quality || null);
+
+        if (wellnessChart) wellnessChart.destroy();
+        wellnessChart = new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [
+                    { label: 'Energy Level', data: energyData, borderColor: '#f0c674', backgroundColor: '#f0c67420', tension: 0.3, fill: true, pointRadius: 5, pointHoverRadius: 7, borderWidth: 2.5 },
+                    { label: 'Sleep Quality', data: sleepData, borderColor: '#81a2be', backgroundColor: '#81a2be20', tension: 0.3, fill: true, pointRadius: 5, pointHoverRadius: 7, borderWidth: 2.5 }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: 'rgba(255,255,255,.6)', font: { size: 11, family: 'Lato' }, usePointStyle: true, pointStyle: 'circle' } },
+                    annotation: allNotes.length ? {
+                        annotations: allNotes.filter(n => n.note_type === 'milestone').reduce((acc, n, i) => {
+                            acc['m'+i] = { type: 'line', xMin: i, xMax: i, borderColor: 'rgba(91,184,140,.4)', borderWidth: 1, borderDash: [4,4] };
+                            return acc;
+                        }, {})
+                    } : undefined
+                },
+                scales: {
+                    x: { ticks: { color: 'rgba(255,255,255,.4)', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,.04)' } },
+                    y: { min: 0, max: 10, ticks: { color: 'rgba(255,255,255,.4)', stepSize: 2, font: { size: 10 } }, grid: { color: 'rgba(255,255,255,.06)' } }
+                }
+            }
+        });
+    }
+
+    function renderBeforeAfter() {
+        if (allCheckins.length < 2) { $('ba-card').style.display = 'none'; return; }
+        $('ba-card').style.display = 'block';
+        const first = allCheckins[allCheckins.length - 1];
+        const latest = allCheckins[0];
+        const firstSymptoms = first.symptoms || [];
+        const latestSymptoms = latest.symptoms || [];
+
+        let beforeHTML = '<div class="ba-col"><div style="text-align:center;margin-bottom:14px"><span class="ba-col-label before">First Check-In</span><div style="font-size:11px;color:var(--text-dim);margin-top:4px">' + new Date(first.checkin_date+'T00:00:00').toLocaleDateString('en-US',{month:'short',year:'numeric'}) + '</div></div>';
+        let afterHTML = '<div class="ba-col"><div style="text-align:center;margin-bottom:14px"><span class="ba-col-label after">Latest</span><div style="font-size:11px;color:var(--text-dim);margin-top:4px">' + new Date(latest.checkin_date+'T00:00:00').toLocaleDateString('en-US',{month:'short',year:'numeric'}) + '</div></div>';
+
+        let totalBefore = 0, totalAfter = 0, count = 0;
+
+        firstSymptoms.forEach(fs => {
+            const ls = latestSymptoms.find(x => x.name === fs.name);
+            if (!ls) return;
+            const pct = fs.severity > 0 ? Math.round(((fs.severity - ls.severity) / fs.severity) * 100) : 0;
+            totalBefore += fs.severity;
+            totalAfter += ls.severity;
+            count++;
+            beforeHTML += '<div class="ba-row"><span class="ba-symptom">' + esc(fs.name) + '</span><span class="ba-val high">' + fs.severity + '/10</span></div>';
+            afterHTML += '<div class="ba-row"><span class="ba-symptom">' + esc(fs.name) + '</span><span class="ba-val low">' + ls.severity + '/10</span></div>';
+        });
+
+        // Energy/Sleep
+        beforeHTML += '<div class="ba-row"><span class="ba-symptom">Energy</span><span class="ba-val high">' + (first.energy_level||'?') + '/10</span></div>';
+        beforeHTML += '<div class="ba-row"><span class="ba-symptom">Sleep</span><span class="ba-val high">' + (first.sleep_quality||'?') + '/10</span></div>';
+        afterHTML += '<div class="ba-row"><span class="ba-symptom">Energy</span><span class="ba-val low">' + (latest.energy_level||'?') + '/10</span></div>';
+        afterHTML += '<div class="ba-row"><span class="ba-symptom">Sleep</span><span class="ba-val low">' + (latest.sleep_quality||'?') + '/10</span></div>';
+
+        beforeHTML += '</div>';
+        afterHTML += '</div>';
+
+        const overallPct = totalBefore > 0 ? Math.round(((totalBefore - totalAfter) / totalBefore) * 100) : 0;
+
+        $('ba-grid').innerHTML = beforeHTML + '<div class="ba-divider"></div>' + afterHTML;
+        $('ba-summary').innerHTML = '<div class="ba-overall">' + (overallPct > 0 ? '-' : '') + Math.abs(overallPct) + '%</div><div class="ba-overall-label">Overall Symptom Reduction in ' + allCheckins.length + ' Check-Ins</div>';
+    }
+
+    function renderMilestoneMarkers() {
+        // Add milestone annotations to symptom chart if available
+        if (!symptomChart || !allNotes.length) return;
+        const milestones = allNotes.filter(n => n.note_type === 'milestone');
+        if (!milestones.length) return;
+
+        // Get the chart labels (dates) and find closest match for milestone dates
+        const labels = symptomChart.data.labels;
+        if (!labels || !labels.length) return;
+
+        // Rebuild chart with annotation plugin (if available) or add point labels
+        // For now, we add milestone badges below the chart
+        const container = $('symptomChart').parentElement;
+        let existing = container.querySelector('.milestone-markers');
+        if (existing) existing.remove();
+
+        let html = '<div class="milestone-markers" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;justify-content:center">';
+        milestones.forEach(m => {
+            const date = new Date(m.created_at).toLocaleDateString('en-US', {month:'short', day:'numeric'});
+            const preview = m.content.length > 60 ? m.content.substring(0,60) + '...' : m.content;
+            html += '<div style="background:rgba(91,184,140,.1);border:1px solid rgba(91,184,140,.2);border-radius:8px;padding:6px 10px;font-size:11px;max-width:280px"><span style="color:var(--success);font-weight:700">&#9733; Milestone</span> <span style="color:var(--text-dim)">' + date + '</span><div style="color:var(--text);margin-top:3px;font-size:11px">' + esc(preview) + '</div></div>';
+        });
+        html += '</div>';
+        container.insertAdjacentHTML('afterend', html);
+    }
+
     function renderCheckins() {
         const list = $('checkin-list');
-        if (!allCheckins.length) { list.innerHTML = '<div class="empty-state"><p>No check-ins yet. Click "Add Check-In" to log how you&rsquo;re feeling.</p></div>'; return; }
+        if (!allCheckins.length) { list.innerHTML = '<div class="empty-state"><p>No check-ins yet. Click "Add Check-In" to log how you're feeling.</p></div>'; return; }
         list.innerHTML = allCheckins.map(c => {
             const d = new Date(c.checkin_date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
             const symptoms = (c.symptoms || []).map(s => `<span class="tc-symptom">${s.name} <strong>${s.severity}/10</strong></span>`).join('');
@@ -464,7 +621,7 @@
             document.querySelectorAll('.chart-filter').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             currentRange = btn.dataset.range === 'all' ? 'all' : parseInt(btn.dataset.range);
-            renderChart();
+            renderChart(); renderWellnessChart();
         });
     });
 
