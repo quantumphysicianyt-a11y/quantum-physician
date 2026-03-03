@@ -256,7 +256,48 @@ proposed → expired (72 hours without payment)
 
 ---
 
-## Known Issues (Session 25)
+## Session 26-27 Additions
+
+### New Database Tables (5)
+| Table | Purpose | RLS |
+|-------|---------|-----|
+| session_notes | Per-booking practitioner notes | Admin write, patient read (if visible_to_patient=true) |
+| session_recordings | Zoom recording metadata per booking | Admin write, patient read |
+| patient_intake | Health questionnaire responses (30+ fields) | Patient CRUD own row |
+| patient_checkins | Self-reported symptom tracking (jsonb) | Patient CRUD own rows |
+| patient_progress_notes | Longitudinal alignment/milestone/observation notes | Admin write, patient read |
+
+### New Member Portal Pages (4)
+| Page | Lines | Purpose |
+|------|-------|---------|
+| members/sessions.html | ~551 | Upcoming/Past/All session cards with status badges |
+| members/intake.html | ~751 | 5-section health intake form with auto-save |
+| members/progress.html | ~700 | Symptom chart, energy/sleep chart, before/after card, check-in log |
+| members/billing.html | ~332 | Purchase history with totals |
+
+### Admin CRM: Client Profiles Tab
+- Client list with search/filter/sort/pagination
+- Client detail view with 5 sub-tabs: Sessions, Intake, Progress, Billing, Notes
+- Inline note adding, recording adding, visibility toggles
+- All actions logged to admin_audit_log
+
+### Cross-Domain SSO (Fixed)
+- QP goToFusion() passes access_token + refresh_token in URL hash
+- Fusion boot() checks hash for SSO tokens before getSession()
+- Calls setSession(), clears hash, proceeds to normal flow
+- Commit: 84cc1d2 (Fusion repo)
+
+### Progress Page Features
+- Chart.js symptom tracking with time range filters (1mo/3mo/6mo/All)
+- Energy & Sleep Recovery chart (inverse trend)
+- Before/After Healing Journey card with Scores/% Change toggle
+- Quick Stats dropdown (Overview / Top Symptoms / Wellness Scores)
+- Milestone markers from practitioner notes
+- All chart sections collapsible (collapsed by default)
+
+---
+
+## Known Issues (Session 27)
 1. **email-decode.min.js 404** — Netlify phantom, harmless.
 2. **Test email delivery** — `mode:'no-cors'` means no confirmation. Check inbox manually.
 3. **Rich editor → email fidelity** — Advanced formatting may not render in all clients.
@@ -264,6 +305,6 @@ proposed → expired (72 hours without payment)
 5. **Dead code from Session 19-20** — Old EC overrides still present. Low priority cleanup.
 6. **Webhook untested with real payment** — session-webhook.js deployed but awaiting first real Stripe payment.
 7. **Calendar needs active cycle** — Frontend shows "filled" when all cycles completed. Intentional.
-8. **Cross-domain SSO incomplete** — QP sends tokens, Fusion receiver NOT YET ADDED.
+8. **Cross-domain SSO working** — QP→Fusion deployed and tested (Session 27). Fusion→QP not yet needed.
 9. **notification_preferences columns** — Need to verify boolean columns exist for settings page toggles.
 10. **Stripe checkout formatting** — Stripe ignores `\n` in descriptions.

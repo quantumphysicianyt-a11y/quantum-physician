@@ -1,4 +1,24 @@
-# Session 26 Build Plan — Patient Portal & CRM
+# Session 26-27 Build Plan — Patient Portal & CRM
+
+## Status (Post Session 27)
+
+| Component | Status |
+|-----------|--------|
+| My Health sidebar | DONE (S26) |
+| sessions.html | DONE (S26) - recordings not wired |
+| intake.html | DONE (S26) |
+| progress.html | DONE (S26+S27 enhancements) |
+| billing.html | DONE (S26) |
+| SQL migration (5 tables) | DONE (S26) |
+| Admin CRM Client Profiles | DONE (S27) - merge into Clients tab |
+| Cross-domain SSO | DONE (S27) |
+| Demo data | DONE (S27) - 12mo check-ins |
+| Progress charts/toggle/collapse | DONE (S27) |
+| Recordings on sessions page | PENDING |
+| CRM merge into Clients tab | PENDING |
+| Email reminders/invoicing | PENDING |
+
+---
 
 ## Overview
 

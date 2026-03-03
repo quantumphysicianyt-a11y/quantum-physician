@@ -49,6 +49,99 @@ See previous handoff docs for full details. Key milestones:
 
 ---
 
+## Session 26 Summary — Patient Portal Pages + SQL Migration (Mar 3, 2026)
+
+### Patient Portal Pages Built (QP Repo) ✅
+- **members/sessions.html** (~551 lines) — Sessions & Recordings page with Upcoming/Past/All tabs, session cards with date/time/status badges, Confirm & Pay buttons for proposed sessions
+- **members/intake.html** (~751 lines) — Health Intake Form with 5 sections (Personal Info, Health History, Current Symptoms, Lifestyle, Consent), auto-save, severity sliders
+- **members/progress.html** (~512 lines) — Progress Tracker with Chart.js symptom tracking, check-in log, practitioner notes, Add Check-In modal
+- **members/billing.html** (~332 lines) — Billing History with purchase list and totals
+- **members/dashboard.html** (~734 lines) — Updated with collapsible My Health sidebar section linking to all 4 patient pages
+
+### SQL Migration (5 New Tables) ✅
+- **session_notes** — Admin notes per session booking (note_type, content, visible_to_patient)
+- **session_recordings** — Video recording metadata (booking_id, recording_url, title, duration)
+- **patient_intake** — Health intake form responses (30+ fields, jsonb symptoms)
+- **patient_checkins** — Patient self-reported progress (symptoms jsonb, energy, sleep)
+- **patient_progress_notes** — Longitudinal practitioner notes (alignment, milestone, observation)
+- All tables have RLS policies for patient self-access
+
+### Admin-Proxy Updated ✅
+- ALLOWED_TABLES expanded from 25 to 30 (added 5 new CRM tables)
+- Committed and deployed (commit 22a3267)
+
+### Cross-Domain SSO Attempted ⚠️
+- QP side: goToFusion() passes tokens via URL hash (commit 84a9b6e)
+- Fusion side: SSO receiver built but caused Loading hang
+- ROOT CAUSE: Cloudflare truncation of dashboard.html, not SSO code
+- SSO receiver reverted from Fusion — deferred to Session 27
+
+### Fusion Netlify Deploy Issues
+- Builds stuck on Starting Up for 7+ minutes
+- FIX: Unlinked/relinked GitHub repo to Netlify
+- Removed @netlify/plugin-functions-install-core from netlify.toml
+
+---
+
+## Session 27 Summary — SSO Fix + Admin CRM + Progress Enhancements (Mar 3, 2026)
+
+### Cross-Domain SSO Fixed ✅
+- Fusion dashboard.html was truncated by Cloudflare (cut off at line 469, mid-word)
+- Local repo had complete file — SSO receiver patch applied via Python script
+- SSO check inserted BEFORE getSession() in Fusion boot() function
+- Reads hash params, calls supabase.auth.setSession(), clears hash with replaceState
+- Commit pushed to Fusion repo (84cc1d2)
+- **Tested and working** — clicking Fusion Sessions from QP dashboard goes straight to Fusion dashboard
+
+### Admin CRM: Client Profiles Tab ✅
+- New sidebar button + page (page-crm) added to admin panel
+- **Client List View**: searchable/filterable/sortable table of all 1-on-1 clients
+- **Client Detail View** with 5 tabs:
+  - Sessions — all bookings with inline notes/recordings, + Note / + Recording buttons, visibility toggle
+  - Intake Form — read-only view of patient health questionnaire (5 sections)
+  - Progress — patient check-ins + practitioner notes with add buttons (alignment/milestone/observation)
+  - Billing — purchase history with totals
+  - Notes — internal admin notes (add/delete)
+- Added to TITLES, loadPageData switch, sidebar nav
+- Files: admin/index.html (~773 lines), admin/admin.js (~5048 lines)
+
+### Demo Data Populated ✅
+- 4 session bookings for btsol@hey.com (2 completed, 1 paid, 1 proposed)
+- 4 session notes (2 session, 2 followup) with visibility controls
+- 2 session recordings (Zoom links)
+- Complete intake form (30+ fields filled)
+- 12 monthly check-ins over 1 year showing dramatic symptom improvement (8/10 down to 1/10)
+- 3 practitioner progress notes (alignment, milestone, observation)
+
+### Progress Page Enhancements ✅
+- **Energy & Sleep Recovery chart** — Chart.js line chart showing energy/sleep climbing upward
+- **Before/After Healing Journey card** — side-by-side first vs latest check-in with all symptoms
+  - Scores/% Change toggle showing raw values or percentage improvements
+  - Overall symptom reduction summary (shows -80%)
+- **Milestone markers** — badges below symptom chart from practitioner milestone notes
+- **Quick Stats dropdown** — top cards switchable between Overview / Top Symptoms / Wellness Scores
+- **All three chart sections collapsible** — collapsed by default, click to expand with smooth animation
+
+### My Health Sidebar Icon Alignment ✅
+- Fixed nav-icon size from 14px to 17px to match other nav items
+- Fixed gap from 8px to 10px
+- Fixed left padding to account for border-left offset
+
+### Bug Fix
+- Apostrophe in you are causing SyntaxError on progress page (single quote inside single-quoted string)
+
+### Pending for Session 28
+- [ ] Merge CRM into existing Clients tab (remove standalone page-crm)
+- [ ] Add recordings to sessions.html (Past tab, per-session)
+- [ ] Session reminders (day-before email with Zoom link + update request)
+- [ ] Multi-currency invoicing (CAD+HST for Canadian, EUR for international)
+- [ ] End-to-end Stripe payment test
+- [ ] 72-hour offer expiry automation
+- [ ] notification_preferences column verification
+- [ ] Stripe checkout branding review (all 3 checkout flows)
+
+---
+
 ## Session 25 Summary — QP Member Portal + Dashboard (Mar 2, 2026)
 
 ### Member Area Pages Built ✅
@@ -267,20 +360,24 @@ Full plan documented in `session-26-crm-plan.md`. Summary:
 7. **Calendar needs active cycle** — Frontend shows "filled" when all cycles completed. Intentional.
 8. **Pre-deploy bookings lack tokens** — Bookings before Session 24 don't have `confirmation_token`.
 9. **Stripe checkout formatting** — Stripe ignores `\n` in descriptions.
-10. **Cross-domain SSO incomplete** — QP side sends tokens, Fusion side doesn't have receiver yet. Clicking "Fusion Sessions" in QP dashboard still shows Fusion login.
+10. **Cross-domain SSO working** — QP→Fusion SSO deployed and tested. Fusion→QP not yet implemented.
 11. **notification_preferences columns** — Need to verify boolean columns exist: session_reminders, booking_confirmations, cycle_announcements, academy_updates.
 
 ---
 
-## File Sizes (Session 25)
-- `admin/index.html` — ~555 lines (unchanged)
-- `admin/admin.js` — ~4789 lines (unchanged)
+## File Sizes (Session 27)
+- `admin/index.html` — ~773 lines (CRM tab added)
+- `admin/admin.js` — ~5048 lines (CRM functions added)
 - `admin/admin.css` — ~142 lines (unchanged)
 - `pages/one-on-sessions.html` — ~1333 lines (unchanged)
 - `members/login.html` — ~NEW (Session 25)
 - `members/dashboard.html` — ~NEW (Session 25, sidebar layout)
 - `members/settings.html` — ~NEW (Session 25)
 - `members/reset-password.html` — ~NEW (Session 25)
+- `members/sessions.html` — ~551 lines (NEW Session 26)
+- `members/intake.html` — ~751 lines (NEW Session 26)
+- `members/progress.html` — ~700 lines (NEW Session 26, enhanced Session 27)
+- `members/billing.html` — ~332 lines (NEW Session 26)
 - `js/shared.js` — UPDATED (auth-aware header with avatar dropdown)
 - `components/header.html` — UPDATED (login/signup links)
 
@@ -296,3 +393,8 @@ Full plan documented in `session-26-crm-plan.md`. Summary:
 28. **Cross-domain auth requires token passing** — Supabase sessions are in localStorage, which is domain-specific. QP and Fusion are on different domains, so auth doesn't carry across. Solution: pass access_token + refresh_token in URL hash.
 29. **SVG sprites are the icon standard** — No emojis anywhere in the member portal or dashboard. All icons are `<symbol>` elements referenced via `<use href="#i-xxx"/>`. Matches Academy dashboard system.
 30. **Sidebar layout creates visual consistency** — Member dashboard matches Academy dashboard layout for ecosystem coherence.
+31. **Apostrophes in JS template literals crash pages** — Use `&rsquo;` HTML entity inside single-quoted strings.
+32. **Cloudflare can truncate served files** — GitHub has the complete file; always pull from repo, not the served URL.
+33. **SSO receiver must go before getSession()** — setSession() with passed tokens needs to happen first so getSession() finds them.
+34. **RLS policies work but JS syntax errors mask data** — If data exists in SQL but page shows empty, check browser console first.
+35. **Collapsible sections need chart resize trigger** — Chart.js canvases inside collapsed containers need window.dispatchEvent(new Event('resize')) after expanding.

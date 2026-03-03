@@ -175,3 +175,25 @@ See `session-26-crm-plan.md` for full details.
 - `session_config`, `session_cycles`, `session_availability`, `session_bookings`: Public SELECT
 - `session_waitlist`: Public INSERT
 - All session tables: Admin access via admin-proxy
+
+### RLS Policies Added (Session 26-27)
+- patient_checkins: ALL for user_id = auth.uid()
+- patient_progress_notes: SELECT for user_id = auth.uid()
+- session_bookings: Added "Users can read own bookings" SELECT for email match
+- session_notes: SELECT via email join (patient reads own visible notes)
+- session_recordings: SELECT via email join (patient reads own recordings)
+
+---
+
+## Session 27 Status Update
+
+### QP Admin Now Covers Nearly All Fusion Admin Features
+Remaining Fusion-only features to port: Forum moderation, achievement badge management, notification center management. All other features have QP equivalents or are QP-only additions.
+
+### Cross-Domain Integration Status
+- SSO QP to Fusion: WORKING (token passing via URL hash, commit 84cc1d2)
+- SSO Fusion to QP: Not yet implemented
+- Shared Supabase project: Same project (rihlrfiqokqrlmzjjyxj)
+- Shared Stripe account: Same account
+- Cross-site credit sharing: Via referral system
+- Unified admin panel: QP admin manages both platforms
