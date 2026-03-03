@@ -4399,7 +4399,7 @@ function renderBookingsGrid(){
         +(b.status==='proposed'&&payLink?'<button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText(\''+payLink+'\');showToast(\'Pay link copied\',\'success\')" title="Copy payment link">🔗 Pay Link</button>':'')
         +(b.status==='proposed'?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'paid\')">Mark Paid</button><button class="btn btn-danger btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'declined\')">Decline</button>':'')
         +(b.status==='paid'?'<button class="btn btn-ghost btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'completed\')">Complete</button><button class="btn btn-ghost btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'no_show\')">No Show</button><button class="btn btn-danger btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'cancelled\')">Cancel</button>':'')
-        +(b.status==='completed'||b.status==='paid'?'<button class="btn btn-primary btn-sm" onclick="crmAddNote(\''+b.id+'\')">+ Note</button>':'')
+        +(b.status==='completed'||b.status==='paid'?'<button class="btn btn-primary btn-sm" onclick="crmAddNote(\''+b.id+'\')">+ Note</button>':'<button class="btn btn-ghost btn-sm" onclick="crmAddNote(\''+b.id+'\')">+ Note</button>')
         +'<button class="btn btn-ghost btn-sm" onclick="deleteBooking(\''+b.id+'\')">🗑</button>'
         +'</div></td></tr>';
     }).join('')+'</tbody></table>';
@@ -4950,7 +4950,7 @@ function renderCrmSessions(){
         n.body_regions.forEach(function(rid) { regionBadges += '<span style="display:inline-block;padding:2px 7px;font-size:10px;border-radius:10px;background:rgba(91,168,178,.15);color:var(--teal);border:1px solid rgba(91,168,178,.25)">' + esc(rid.replace(/-/g,' ')) + '</span>'; });
         regionBadges += '</div>';
       }
-      html += '<tr style="background:rgba(91,168,178,0.05)"><td colspan="6" style="padding:8px 16px;font-size:13px"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><span style="color:var(--teal);font-weight:600;font-size:11px;text-transform:uppercase">'+esc(n.note_type)+' note</span>'+(n.visible_to_patient ? ' <span class="badge badge-info" style="font-size:10px">Visible to patient</span>' : ' <span class="badge badge-muted" style="font-size:10px">Private</span>')+'<div style="margin-top:4px;color:var(--text)">'+esc(n.content)+'</div>'+regionBadges+'<div style="margin-top:4px;font-size:11px;color:var(--text-dim)">'+timeAgo(n.created_at)+'</div></div><button class="btn btn-ghost btn-sm" onclick="crmToggleNoteVisibility(\''+n.id+'\','+ !n.visible_to_patient+')" title="Toggle visibility">'+(n.visible_to_patient?'\uD83D\uDD13':'\uD83D\uDD12')+'</button></div></td></tr>';
+      html += '<tr style="background:rgba(91,168,178,0.05)" data-noteid="'+n.id+'"><td colspan="6" style="padding:8px 16px;font-size:13px"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div style="flex:1"><span style="color:var(--teal);font-weight:600;font-size:11px;text-transform:uppercase">'+esc(n.note_type)+' note</span>'+(n.visible_to_patient ? ' <span class="badge badge-info" style="font-size:10px">Patient visible</span>' : ' <span class="badge badge-muted" style="font-size:10px">Private</span>')+'<div style="margin-top:4px;color:var(--text);white-space:pre-wrap">'+esc(n.content)+'</div>'+regionBadges+'<div style="margin-top:4px;font-size:11px;color:var(--text-dim)">'+timeAgo(n.created_at)+'</div></div><div style="display:flex;gap:4px;flex-shrink:0;margin-left:8px"><button class="btn btn-ghost btn-sm note-edit-btn" data-nid="'+n.id+'" title="Edit note" style="font-size:11px">✏️</button><button class="btn btn-ghost btn-sm" onclick="crmToggleNoteVisibility(\''+n.id+'\','+ !n.visible_to_patient+')" title="'+(n.visible_to_patient?'Make private':'Share with patient')+'" style="font-size:11px">'+(n.visible_to_patient?'🔓':'🔒')+'</button><button class="btn btn-ghost btn-sm" onclick="crmDeleteNote(\''+n.id+'\')" title="Delete note" style="font-size:11px;color:var(--error)">🗑</button></div></div></td></tr>';
     });
     recs.forEach(function(r){
       html += '<tr style="background:rgba(91,184,140,0.05)"><td colspan="6" style="padding:8px 16px;font-size:13px"><span style="color:var(--success);font-weight:600;font-size:11px">\uD83C\uDFA5 RECORDING</span> '+esc(r.title||'Session Recording')+(r.duration_minutes ? ' ('+r.duration_minutes+' min)' : '')+' <a href="'+esc(r.recording_url)+'" target="_blank" class="btn btn-ghost btn-sm" style="margin-left:8px">Open \u2197</a></td></tr>';
@@ -4958,6 +4958,15 @@ function renderCrmSessions(){
   });
   html += '</tbody></table>';
   el.innerHTML = html;
+
+  // Wire up edit buttons via delegation (avoids escaping issues in onclick)
+  el.querySelectorAll('.note-edit-btn').forEach(function(btn){
+    btn.onclick = function(){
+      var nid = btn.getAttribute('data-nid');
+      var note = crmNotes.find(function(n){ return n.id === nid; });
+      if(note) crmEditNote(nid, note.content, note.body_regions || [], !!note.visible_to_patient);
+    };
+  });
 }
 
 const BODY_REGION_OPTIONS = [
@@ -5117,7 +5126,70 @@ async function crmAddRecording(bookingId){
 }
 
 async function crmToggleNoteVisibility(noteId, visible){
-  try{ await proxyFrom('session_notes').update({ visible_to_patient: visible }).eq('id', noteId); showToast(visible ? 'Note now visible to patient' : 'Note hidden from patient', 'success'); await crmOpenClient(crmCurrentClient); } catch(e){ showToast('Error updating note: '+e.message, 'error'); }
+  try{ await proxyFrom('session_notes').update({ visible_to_patient: visible }).eq('id', noteId); showToast(visible ? 'Note shared with patient' : 'Note set to private', 'success'); if(crmCurrentClient) await crmOpenClient(crmCurrentClient); } catch(e){ showToast('Error updating note: '+e.message, 'error'); }
+}
+
+async function crmEditNote(noteId, currentContent, currentRegions, currentVisible){
+  return new Promise(function(resolve){
+    var o = document.createElement('div');
+    o.className = 'modal-overlay';
+    var html = '<div class="modal-box" style="max-width:620px;max-height:90vh;overflow-y:auto">';
+    html += '<div class="modal-title">Edit Session Note</div>';
+    html += '<div style="margin-bottom:14px"><label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">Session Notes</label>';
+    html += '<textarea id="edit-note-text" class="input" style="width:100%;min-height:100px;resize:vertical;font-size:13px">' + esc(currentContent) + '</textarea></div>';
+
+    // Body region picker
+    html += '<div style="margin-bottom:14px"><label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:8px">Body Regions Addressed <span style="opacity:.6">(click to select)</span></label>';
+    BODY_REGION_OPTIONS.forEach(function(section){
+      html += '<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:600;color:var(--taupe);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">' + esc(section.section) + '</div>';
+      html += '<div style="display:flex;flex-wrap:wrap;gap:5px">';
+      section.regions.forEach(function(r){
+        var sel = currentRegions && currentRegions.indexOf(r.id) > -1 ? ' selected' : '';
+        html += '<button type="button" class="region-chip' + sel + '" data-rid="' + r.id + '" onclick="this.classList.toggle(\'selected\')" style="padding:4px 10px;font-size:11px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;transition:all .15s">' + esc(r.label) + '</button>';
+      });
+      html += '</div></div>';
+    });
+    html += '</div>';
+
+    // Visibility
+    html += '<div style="margin-bottom:16px;padding:10px 12px;background:rgba(0,0,0,.15);border-radius:8px;display:flex;align-items:center;gap:12px">';
+    html += '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text)">Share with Patient</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Patient will see this note on their progress page</div></div>';
+    html += '<button type="button" id="edit-note-visible-btn" class="' + (currentVisible ? 'on' : '') + '" onclick="this.classList.toggle(\'on\');this.textContent=this.classList.contains(\'on\')?\'YES\':\'NO\'" style="min-width:52px;padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-muted);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s">' + (currentVisible ? 'YES' : 'NO') + '</button>';
+    html += '</div>';
+
+    html += '<div class="modal-actions"><button class="btn btn-ghost btn-sm" id="edit-cancel">Cancel</button><button class="btn btn-primary btn-sm" id="edit-save">Save Changes</button></div>';
+    html += '</div>';
+    o.innerHTML = html;
+
+    var style = document.createElement('style');
+    style.textContent = '.region-chip.selected{background:var(--teal)!important;color:#fff!important;border-color:var(--teal)!important;font-weight:600} #edit-note-visible-btn.on{background:var(--teal)!important;color:#fff!important;border-color:var(--teal)!important}';
+    o.querySelector('.modal-box').prepend(style);
+    document.body.appendChild(o);
+    document.getElementById('edit-note-text').focus();
+
+    document.getElementById('edit-save').onclick = async function(){
+      var content = document.getElementById('edit-note-text').value.trim();
+      if(!content){ showToast('Please enter a note', 'warning'); return; }
+      var chips = o.querySelectorAll('.region-chip.selected');
+      var regions = [];
+      chips.forEach(function(c){ regions.push(c.getAttribute('data-rid')); });
+      var visible = document.getElementById('edit-note-visible-btn').classList.contains('on');
+      o.remove();
+      try{
+        await proxyFrom('session_notes').update({ content: content, body_regions: regions.length ? regions : null, visible_to_patient: !!visible }).eq('id', noteId);
+        showToast('Note updated', 'success');
+        if(crmCurrentClient) await crmOpenClient(crmCurrentClient);
+      } catch(e){ showToast('Error: '+e.message, 'error'); }
+      resolve();
+    };
+    document.getElementById('edit-cancel').onclick = function(){ o.remove(); resolve(); };
+    o.onclick = function(e){ if(e.target===o){ o.remove(); resolve(); }};
+  });
+}
+
+async function crmDeleteNote(noteId){
+  if(!await qpConfirm('Delete Note', 'Are you sure you want to delete this note? This cannot be undone.', {danger:true, okText:'Delete'})) return;
+  try{ await proxyFrom('session_notes').delete().eq('id', noteId); showToast('Note deleted', 'success'); if(crmCurrentClient) await crmOpenClient(crmCurrentClient); } catch(e){ showToast('Error: '+e.message, 'error'); }
 }
 
 function renderCrmIntake(){
