@@ -163,7 +163,45 @@
         /* Energy/Sleep chart reuses .chart-section */
 
         /* Before/After card */
-        .collapse-section { margin-bottom: 14px; }
+        .collapse-section { margin-bottom: 4px; }
+
+        /* Body Map */
+        .bodymap-container { background: linear-gradient(170deg, var(--navy-card) 0%, var(--navy-mid) 100%); border: 1px solid var(--border); border-radius: 0 0 var(--radius) var(--radius); padding: 24px; }
+        .bodymap-svg-wrap { display: flex; justify-content: center; margin-bottom: 16px; }
+        .bodymap-svg-wrap svg { max-height: 420px; width: auto; }
+        .bodymap-region { cursor: pointer; transition: all .2s; opacity: .15; }
+        .bodymap-region.active { opacity: 1; }
+        .bodymap-region:hover { opacity: .8; }
+        .bodymap-legend { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 12px; }
+        .bodymap-legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-muted); cursor: pointer; padding: 3px 8px; border-radius: 6px; border: 1px solid transparent; transition: all .15s; }
+        .bodymap-legend-item:hover { border-color: var(--border-hover); }
+        .bodymap-legend-item .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+        .bodymap-detail { font-size: 13px; color: var(--text); min-height: 40px; text-align: center; padding: 12px; }
+
+        /* Healing Timeline */
+        .timeline-strip { background: linear-gradient(170deg, var(--navy-card) 0%, var(--navy-mid) 100%); border: 1px solid var(--border); border-radius: 0 0 var(--radius) var(--radius); padding: 24px; overflow-x: auto; }
+        .tl-track { display: flex; align-items: flex-start; gap: 0; min-width: max-content; position: relative; padding: 20px 0 10px; }
+        .tl-line { position: absolute; top: 38px; left: 20px; right: 20px; height: 2px; background: var(--border); z-index: 0; }
+        .tl-item { display: flex; flex-direction: column; align-items: center; min-width: 110px; position: relative; z-index: 1; padding: 0 6px; }
+        .tl-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--navy-card); z-index: 2; flex-shrink: 0; }
+        .tl-dot.session { background: var(--teal); }
+        .tl-dot.checkin { background: var(--gold); }
+        .tl-dot.milestone { background: var(--success); }
+        .tl-dot.alignment { background: #b294d6; }
+        .tl-connector { width: 2px; height: 8px; background: var(--border); }
+        .tl-card { margin-top: 4px; background: rgba(0,0,0,.2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; max-width: 130px; text-align: center; transition: border-color .15s; cursor: default; }
+        .tl-card:hover { border-color: var(--border-hover); }
+        .tl-card .tl-date { font-size: 10px; color: var(--text-muted); margin-bottom: 3px; }
+        .tl-card .tl-label { font-size: 9px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 4px; }
+        .tl-card .tl-label.session { color: var(--teal); }
+        .tl-card .tl-label.checkin { color: var(--gold); }
+        .tl-card .tl-label.milestone { color: var(--success); }
+        .tl-card .tl-label.alignment { color: #b294d6; }
+        .tl-card .tl-desc { font-size: 11px; color: var(--text); line-height: 1.4; }
+        .tl-legend { display: flex; gap: 14px; justify-content: center; margin-top: 14px; }
+        .tl-legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-muted); }
+        .tl-legend-item .tl-ldot { width: 8px; height: 8px; border-radius: 50%; }
+        @media (max-width: 480px) { .tl-item { min-width: 90px; } }
         .collapse-toggle { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; background: linear-gradient(170deg, var(--navy-card) 0%, var(--navy-mid) 100%); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; transition: all .15s; width: 100%; font-family: 'Lato', sans-serif; color: var(--text); }
         .collapse-toggle:hover { border-color: var(--border-hover); }
         .collapse-toggle .ct-title { font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 600; }
@@ -317,6 +355,26 @@
             </div>
         </div>
 
+        <!-- Body Map -->
+        <div class="collapse-section">
+            <button class="collapse-toggle" onclick="toggleCollapse(this)"><span class="ct-title">Alignment Body Map</span><svg class="ct-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></button>
+            <div class="collapse-body">
+                <div class="bodymap-container">
+                    <div class="bodymap-svg-wrap" id="bodymap-wrap"></div>
+                    <div class="bodymap-legend" id="bodymap-legend"></div>
+                    <div class="bodymap-detail" id="bodymap-detail"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Session Timeline -->
+        <div class="collapse-section">
+            <button class="collapse-toggle" onclick="toggleCollapse(this)"><span class="ct-title">Healing Timeline</span><svg class="ct-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></button>
+            <div class="collapse-body">
+                <div class="timeline-strip" id="timeline-strip"></div>
+            </div>
+        </div>
+
         <!-- Check-In Log -->
         <div class="section-header">
             <div class="section-title">Check-In Log</div>
@@ -371,7 +429,7 @@
     const SYMPTOMS = ['Pain','Fatigue','Sleep Issues','Anxiety','Digestive Problems','Headaches','Brain Fog','Joint Stiffness','Muscle Tension','Low Energy'];
     const CHART_COLORS = ['#5ba8b2','#c9a96e','#5bb88c','#e8a84c','#d4789c','#4acfd9','#e85d5d','#ad9b84','#8b7ec8','#6bc4a6'];
 
-    let currentUser = null, userEmail = '', allCheckins = [], allNotes = [], allBookings = [];
+    let currentUser = null, userEmail = '', allCheckins = [], allNotes = [], allBookings = [], allSessionNotes = [];
     let symptomChart = null, currentRange = 90;
 
     function toggleCollapse(btn) {
@@ -422,14 +480,16 @@
     }
 
     async function loadAllData() {
-        const [bk, ci, pn] = await Promise.all([
+        const [bk, ci, pn, sn] = await Promise.all([
             sb.from('session_bookings').select('*').eq('email', userEmail).order('date', {ascending: true}),
             sb.from('patient_checkins').select('*').eq('user_id', currentUser.id).order('checkin_date', {ascending: false}),
-            sb.from('patient_progress_notes').select('*').or(`user_id.eq.${currentUser.id},email.eq.${userEmail}`).order('created_at', {ascending: false})
+            sb.from('patient_progress_notes').select('*').or(`user_id.eq.${currentUser.id},email.eq.${userEmail}`).order('created_at', {ascending: false}),
+            sb.from('session_notes').select('*').eq('visible_to_patient', true).order('created_at', {ascending: true})
         ]);
         allBookings = bk.data || [];
         allCheckins = ci.data || [];
         allNotes = pn.data || [];
+        allSessionNotes = (sn.data || []).filter(n => allBookings.some(b => b.id === n.booking_id));
 
         renderOverview();
         renderChart();
@@ -438,6 +498,8 @@
         renderMilestoneMarkers();
         renderCheckins();
         renderNotes();
+        renderBodyMap();
+        renderTimeline();
     }
 
     function renderOverview() {
@@ -701,6 +763,200 @@
         });
         html += '</div>';
         container.insertAdjacentHTML('afterend', html);
+    }
+
+    // ═══ BODY MAP ═══
+    const BODY_REGIONS = {
+        'cervical-spine': { label: 'Cervical Spine (C1-C7)', cx: 150, cy: 72, r: 14 },
+        'atlas': { label: 'Atlas (C1-C2)', cx: 150, cy: 58, r: 10 },
+        'upper-trapezius': { label: 'Upper Trapezius', cx: 120, cy: 95, r: 16 },
+        'right-shoulder': { label: 'Right Shoulder', cx: 98, cy: 112, r: 16 },
+        'left-neck': { label: 'Left SCM / Scalenes', cx: 168, cy: 82, r: 12 },
+        'thoracic-spine': { label: 'Thoracic Spine (T1-T12)', cx: 150, cy: 155, r: 18 },
+        'ribcage': { label: 'Ribcage', cx: 130, cy: 148, r: 16 },
+        'diaphragm': { label: 'Diaphragm', cx: 150, cy: 195, r: 18 },
+        'lumbar-spine': { label: 'Lumbar Spine (L1-L5)', cx: 150, cy: 235, r: 16 },
+        'pelvis': { label: 'Pelvis / Pelvic Floor', cx: 150, cy: 270, r: 18 },
+        'tmj': { label: 'TMJ / Jaw', cx: 130, cy: 42, r: 10 },
+        'full-spine': { label: 'Full Spine Assessment', cx: 150, cy: 155, r: 30 }
+    };
+
+    const SESSION_COLORS = ['#5ba8b2','#c9a96e','#5bb88c','#b294d6','#e85d5d','#f0c674','#81a2be','#a3be8c'];
+
+    function renderBodyMap() {
+        if (!allSessionNotes.length) {
+            var wrap = $('bodymap-wrap');
+            if (wrap) wrap.parentElement.parentElement.style.display = 'none';
+            return;
+        }
+
+        // Build region-to-sessions mapping
+        var regionMap = {};
+        allSessionNotes.forEach(function(note) {
+            if (!note.body_regions || !note.body_regions.length) return;
+            var booking = allBookings.find(function(b){ return b.id === note.booking_id; });
+            if (!booking) return;
+            note.body_regions.forEach(function(regionId) {
+                if (!regionMap[regionId]) regionMap[regionId] = [];
+                regionMap[regionId].push({ date: booking.date, note: note.content, booking: booking });
+            });
+        });
+
+        if (Object.keys(regionMap).length === 0) {
+            $('bodymap-wrap').parentElement.parentElement.style.display = 'none';
+            return;
+        }
+
+        // Get unique session dates for color coding
+        var sessionDates = [];
+        allSessionNotes.forEach(function(n) {
+            var b = allBookings.find(function(bk){ return bk.id === n.booking_id; });
+            if (b && sessionDates.indexOf(b.date) === -1) sessionDates.push(b.date);
+        });
+        sessionDates.sort();
+
+        // Build SVG body outline with region circles
+        var svg = '<svg viewBox="0 0 300 380" xmlns="http://www.w3.org/2000/svg" style="max-height:420px">';
+
+        // Body outline
+        svg += '<g stroke="rgba(255,255,255,.12)" fill="none" stroke-width="1.5">';
+        // Head
+        svg += '<ellipse cx="150" cy="30" rx="22" ry="26"/>';
+        // Neck
+        svg += '<line x1="140" y1="56" x2="140" y2="70"/><line x1="160" y1="56" x2="160" y2="70"/>';
+        // Torso
+        svg += '<path d="M108,75 Q90,85 85,115 L80,190 Q78,220 90,250 L110,280 Q130,295 150,300 Q170,295 190,280 L210,250 Q222,220 220,190 L215,115 Q210,85 192,75 Z"/>';
+        // Arms
+        svg += '<path d="M85,115 Q70,120 55,145 L40,200 Q35,215 40,225"/>';
+        svg += '<path d="M215,115 Q230,120 245,145 L260,200 Q265,215 260,225"/>';
+        // Legs
+        svg += '<path d="M110,280 Q105,310 100,340 L95,370"/>';
+        svg += '<path d="M190,280 Q195,310 200,340 L205,370"/>';
+        // Spine line
+        svg += '<line x1="150" y1="56" x2="150" y2="280" stroke-dasharray="3,3" stroke="rgba(255,255,255,.06)"/>';
+        svg += '</g>';
+
+        // Region circles
+        Object.keys(BODY_REGIONS).forEach(function(id) {
+            var reg = BODY_REGIONS[id];
+            var sessions = regionMap[id] || [];
+            var isActive = sessions.length > 0;
+            var colorIdx = 0;
+            if (isActive && sessions.length > 0) {
+                colorIdx = sessionDates.indexOf(sessions[sessions.length-1].date);
+            }
+            var color = SESSION_COLORS[colorIdx % SESSION_COLORS.length];
+            svg += '<circle class="bodymap-region' + (isActive ? ' active' : '') + '" cx="' + reg.cx + '" cy="' + reg.cy + '" r="' + reg.r + '" fill="' + color + '" data-region="' + id + '" onclick="showRegionDetail(\'' + id + '\')" style="opacity:' + (isActive ? '.65' : '.08') + '"/>';
+            // Pulse ring for active
+            if (isActive) {
+                svg += '<circle cx="' + reg.cx + '" cy="' + reg.cy + '" r="' + (reg.r + 3) + '" fill="none" stroke="' + color + '" stroke-width="1" opacity=".3"/>';
+            }
+        });
+        svg += '</svg>';
+        $('bodymap-wrap').innerHTML = svg;
+
+        // Legend - session dates with colors
+        var legendHTML = '';
+        sessionDates.forEach(function(d, i) {
+            var dt = new Date(d + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+            legendHTML += '<div class="bodymap-legend-item"><span class="dot" style="background:' + SESSION_COLORS[i % SESSION_COLORS.length] + '"></span>Session ' + (i+1) + ' - ' + dt + '</div>';
+        });
+        $('bodymap-legend').innerHTML = legendHTML;
+
+        // Default detail
+        var activeCount = Object.keys(regionMap).length;
+        $('bodymap-detail').innerHTML = '<span style="color:var(--text-muted)">Click a highlighted region to see treatment details. ' + activeCount + ' areas addressed across ' + sessionDates.length + ' sessions.</span>';
+
+        // Store for click handler
+        window._regionMap = regionMap;
+        window._sessionDates = sessionDates;
+    }
+
+    function showRegionDetail(regionId) {
+        var reg = BODY_REGIONS[regionId];
+        var sessions = window._regionMap[regionId] || [];
+        if (!sessions.length) {
+            $('bodymap-detail').innerHTML = '<span style="color:var(--text-muted)">' + reg.label + ' - Not yet addressed</span>';
+            return;
+        }
+        var html = '<div style="text-align:left;max-width:600px;margin:0 auto">';
+        html += '<div style="font-weight:700;margin-bottom:8px;color:var(--teal)">' + reg.label + '</div>';
+        sessions.forEach(function(s) {
+            var dt = new Date(s.date + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+            var colorIdx = window._sessionDates.indexOf(s.date);
+            var color = SESSION_COLORS[colorIdx % SESSION_COLORS.length];
+            var preview = s.note.length > 120 ? s.note.substring(0,120) + '...' : s.note;
+            html += '<div style="padding:8px;margin-bottom:6px;background:rgba(0,0,0,.15);border-radius:6px;border-left:3px solid ' + color + '">';
+            html += '<div style="font-size:11px;color:var(--text-muted);margin-bottom:3px">' + dt + '</div>';
+            html += '<div style="font-size:12px;line-height:1.5">' + esc(preview) + '</div>';
+            html += '</div>';
+        });
+        html += '</div>';
+        $('bodymap-detail').innerHTML = html;
+    }
+
+    // ═══ HEALING TIMELINE ═══
+    function renderTimeline() {
+        var events = [];
+
+        // Sessions
+        allBookings.forEach(function(b) {
+            if (b.status === 'completed' || b.status === 'paid') {
+                var note = allSessionNotes.find(function(n){ return n.booking_id === b.id && n.note_type === 'session'; });
+                var desc = note ? (note.content.length > 50 ? note.content.substring(0,50) + '...' : note.content) : 'Session with Dr. Tracey';
+                events.push({ date: b.date, type: 'session', label: 'Session', desc: desc });
+            }
+        });
+
+        // Check-ins
+        allCheckins.forEach(function(ci) {
+            var avgSev = (ci.symptoms || []).reduce(function(s,x){return s+x.severity},0) / Math.max((ci.symptoms||[]).length,1);
+            events.push({ date: ci.checkin_date, type: 'checkin', label: 'Check-In', desc: 'Avg severity: ' + avgSev.toFixed(1) + '/10' });
+        });
+
+        // Milestones
+        allNotes.filter(function(n){return n.note_type==='milestone'}).forEach(function(n) {
+            var d = n.created_at ? n.created_at.split('T')[0] : allCheckins.length ? allCheckins[Math.floor(allCheckins.length/2)].checkin_date : new Date().toISOString().split('T')[0];
+            events.push({ date: d, type: 'milestone', label: 'Milestone', desc: n.content.length > 50 ? n.content.substring(0,50) + '...' : n.content });
+        });
+
+        // Alignments
+        allNotes.filter(function(n){return n.note_type==='alignment'}).forEach(function(n) {
+            var d = n.created_at ? n.created_at.split('T')[0] : allCheckins.length ? allCheckins[0].checkin_date : new Date().toISOString().split('T')[0];
+            events.push({ date: d, type: 'alignment', label: 'Alignment', desc: n.content.length > 50 ? n.content.substring(0,50) + '...' : n.content });
+        });
+
+        if (!events.length) {
+            $('timeline-strip').parentElement.parentElement.style.display = 'none';
+            return;
+        }
+
+        // Sort chronologically
+        events.sort(function(a,b){ return a.date.localeCompare(b.date); });
+
+        var html = '<div class="tl-track"><div class="tl-line"></div>';
+        events.forEach(function(ev) {
+            var dt = new Date(ev.date + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric'});
+            html += '<div class="tl-item">';
+            html += '<div class="tl-dot ' + ev.type + '"></div>';
+            html += '<div class="tl-connector"></div>';
+            html += '<div class="tl-card">';
+            html += '<div class="tl-date">' + dt + '</div>';
+            html += '<div class="tl-label ' + ev.type + '">' + ev.label + '</div>';
+            html += '<div class="tl-desc">' + esc(ev.desc) + '</div>';
+            html += '</div></div>';
+        });
+        html += '</div>';
+
+        // Legend
+        html += '<div class="tl-legend">';
+        html += '<div class="tl-legend-item"><span class="tl-ldot" style="background:var(--teal)"></span>Session</div>';
+        html += '<div class="tl-legend-item"><span class="tl-ldot" style="background:var(--gold)"></span>Check-In</div>';
+        html += '<div class="tl-legend-item"><span class="tl-ldot" style="background:var(--success)"></span>Milestone</div>';
+        html += '<div class="tl-legend-item"><span class="tl-ldot" style="background:#b294d6"></span>Alignment</div>';
+        html += '</div>';
+
+        $('timeline-strip').innerHTML = html;
     }
 
     function renderCheckins() {
