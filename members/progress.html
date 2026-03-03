@@ -796,18 +796,40 @@
 
     // ═══ 3D BODY MAP (Three.js) ═══
     const BODY_REGIONS_3D = {
-        'tmj':              { label: 'TMJ / Jaw',               male: [0, 3.08, 0.17],     female: [0.01, 2.96, 0.10],  r: 0.06 },
-        'atlas':            { label: 'Atlas (C1-C2)',            male: [0.01, 3.15, 0.08],  female: [0.02, 3.04, 0.01],  r: 0.06 },
-        'cervical-spine':   { label: 'Cervical Spine (C1-C7)',   male: [0, 2.94, 0.0],      female: [0.01, 2.84, -0.02], r: 0.07 },
-        'left-neck':        { label: 'Left SCM / Scalenes',      male: [0.12, 2.94, 0.06],  female: [0.10, 2.84, 0.04],  r: 0.06 },
-        'upper-trapezius':  { label: 'Upper Trapezius',          male: [-0.15, 2.80, -0.02],female: [-0.12, 2.72, -0.02],r: 0.08 },
-        'right-shoulder':   { label: 'Right Shoulder',           male: [-0.30, 2.79, -0.04],female: [-0.24, 2.72, -0.02],r: 0.08 },
-        'thoracic-spine':   { label: 'Thoracic Spine (T1-T12)', male: [0, 2.40, -0.02],    female: [0.01, 2.38, 0.01],  r: 0.08 },
-        'ribcage':          { label: 'Ribcage',                  male: [0.20, 2.55, 0.05],  female: [0.16, 2.50, 0.04],  r: 0.08 },
-        'diaphragm':        { label: 'Diaphragm',               male: [0, 2.07, 0.04],     female: [0.01, 2.09, 0.02],  r: 0.08 },
-        'lumbar-spine':     { label: 'Lumbar Spine (L1-L5)',     male: [0, 1.81, -0.04],    female: [0.01, 1.88, -0.07], r: 0.08 },
-        'pelvis':           { label: 'Pelvis / Pelvic Floor',    male: [0, 1.58, -0.02],    female: [0.01, 1.60, -0.04], r: 0.09 },
-        'full-spine':       { label: 'Full Spine Assessment',    male: [0, 2.40, -0.03],    female: [0.01, 2.38, -0.01], r: 0.16 }
+        // ── HEAD & NECK ──
+        'cranial':          { label: 'Cranial',                  male: [0.01, 3.35, 0.04],  female: [0.02, 3.22, 0.0],   r: 0.06 },
+        'tmj':              { label: 'TMJ / Jaw',               male: [0, 3.08, 0.17],     female: [0.01, 2.96, 0.10],  r: 0.05 },
+        'atlas':            { label: 'Atlas (C1-C2)',            male: [0.01, 3.15, 0.08],  female: [0.02, 3.04, 0.01],  r: 0.05 },
+        'cervical-spine':   { label: 'Cervical Spine (C1-C7)',   male: [0, 2.94, 0.0],      female: [0.01, 2.84, -0.02], r: 0.06 },
+        'left-neck':        { label: 'Left SCM / Scalenes',      male: [0.12, 2.94, 0.06],  female: [0.10, 2.84, 0.04],  r: 0.05 },
+        'right-neck':       { label: 'Right SCM / Scalenes',     male: [-0.12, 2.94, 0.06], female: [-0.10, 2.84, 0.04], r: 0.05 },
+        // ── SHOULDERS & UPPER BACK ──
+        'upper-trapezius':  { label: 'Upper Trapezius',          male: [-0.15, 2.80, -0.02],female: [-0.12, 2.72, -0.02],r: 0.07 },
+        'left-shoulder':    { label: 'Left Shoulder',            male: [0.30, 2.79, -0.04], female: [0.24, 2.71, -0.04], r: 0.07 },
+        'right-shoulder':   { label: 'Right Shoulder',           male: [-0.30, 2.79, -0.04],female: [-0.22, 2.71, -0.04],r: 0.07 },
+        'left-scapula':     { label: 'Left Scapula',             male: [0.22, 2.65, -0.08], female: [0.18, 2.58, -0.06], r: 0.07 },
+        'right-scapula':    { label: 'Right Scapula',            male: [-0.22, 2.65, -0.08],female: [-0.18, 2.58, -0.06],r: 0.07 },
+        // ── SPINE ──
+        'thoracic-spine':   { label: 'Thoracic Spine (T1-T12)', male: [0, 2.40, -0.02],    female: [0.01, 2.38, 0.01],  r: 0.07 },
+        'lumbar-spine':     { label: 'Lumbar Spine (L1-L5)',     male: [0, 1.81, -0.04],    female: [0.01, 1.88, -0.07], r: 0.07 },
+        'sacrum':           { label: 'Sacrum / Coccyx',          male: [0, 1.68, -0.06],    female: [0.01, 1.72, -0.08], r: 0.06 },
+        'full-spine':       { label: 'Full Spine Assessment',    male: [0, 2.40, -0.03],    female: [0.01, 2.38, -0.01], r: 0.14 },
+        // ── CHEST & TORSO ──
+        'sternum':          { label: 'Sternum / Chest',          male: [0, 2.55, 0.12],     female: [0.01, 2.50, 0.10],  r: 0.07 },
+        'ribcage':          { label: 'Ribcage',                  male: [0.20, 2.55, 0.05],  female: [0.16, 2.50, 0.04],  r: 0.07 },
+        'diaphragm':        { label: 'Diaphragm',               male: [0, 2.07, 0.04],     female: [0.01, 2.09, 0.02],  r: 0.07 },
+        'abdomen':          { label: 'Abdomen',                  male: [0, 1.94, 0.10],     female: [0.01, 1.98, 0.08],  r: 0.07 },
+        // ── PELVIS & HIPS ──
+        'pelvis':           { label: 'Pelvis / Pelvic Floor',    male: [0, 1.58, -0.02],    female: [0.01, 1.60, -0.04], r: 0.08 },
+        'left-si-joint':    { label: 'Left SI Joint',            male: [0.10, 1.72, -0.05], female: [0.10, 1.78, -0.06], r: 0.05 },
+        'right-si-joint':   { label: 'Right SI Joint',           male: [-0.10, 1.72, -0.05],female: [-0.08, 1.78, -0.06],r: 0.05 },
+        'left-hip':         { label: 'Left Hip',                 male: [0.20, 1.83, 0.06],  female: [0.20, 1.90, 0.03],  r: 0.06 },
+        'right-hip':        { label: 'Right Hip',                male: [-0.20, 1.84, 0.05], female: [-0.18, 1.90, 0.03], r: 0.06 },
+        // ── LEGS ──
+        'left-knee':        { label: 'Left Knee',                male: [0.30, 0.88, 0.01],  female: [0.30, 0.90, -0.02], r: 0.06 },
+        'right-knee':       { label: 'Right Knee',               male: [-0.29, 0.88, 0.01], female: [-0.30, 0.91, 0.0],  r: 0.06 },
+        'left-ankle':       { label: 'Left Ankle / Foot',        male: [0.34, 0.12, 0.02],  female: [0.32, 0.11, -0.01], r: 0.05 },
+        'right-ankle':      { label: 'Right Ankle / Foot',       male: [-0.33, 0.12, 0.02], female: [-0.34, 0.11, 0.01], r: 0.05 }
     };
 
     const SESSION_COLORS_HEX = [0x5ba8b2, 0xc9a96e, 0x5bb88c, 0xb294d6, 0xe85d5d, 0xf0c674, 0x81a2be, 0xa3be8c];
@@ -1177,35 +1199,34 @@
             var pos = reg[posKey];
             var sessions = filteredRegionMap[id] || [];
             var isActive = sessions.length > 0;
-            var colorIdx = 0;
-            if (isActive && sessions.length > 0) {
-                colorIdx = sessionDates.indexOf(sessions[sessions.length - 1].date);
-            }
-            var hexColor = isActive ? SESSION_COLORS_HEX[colorIdx % SESSION_COLORS_HEX.length] : 0x2a4060;
+
+            // Only render markers for regions with session data
+            if (!isActive) return;
+
+            var colorIdx = sessionDates.indexOf(sessions[sessions.length - 1].date);
+            var hexColor = SESSION_COLORS_HEX[colorIdx % SESSION_COLORS_HEX.length];
 
             // Outer glow
-            var glowMat = new THREE.MeshBasicMaterial({ color: hexColor, transparent: true, opacity: isActive ? 0.2 : 0.03, depthWrite: false });
-            var glow = new THREE.Mesh(new THREE.SphereGeometry(reg.r * 2.5, 16, 12), glowMat);
+            var glowMat = new THREE.MeshBasicMaterial({ color: hexColor, transparent: true, opacity: 0.18, depthWrite: false });
+            var glow = new THREE.Mesh(new THREE.SphereGeometry(reg.r * 2.2, 16, 12), glowMat);
             glow.position.set(pos[0], pos[1], pos[2]);
             s.markerGroup.add(glow);
 
             // Inner marker
-            var markerMat = new THREE.MeshPhongMaterial({ color: hexColor, transparent: true, opacity: isActive ? 0.85 : 0.08, emissive: hexColor, emissiveIntensity: isActive ? 0.5 : 0, shininess: 80 });
+            var markerMat = new THREE.MeshPhongMaterial({ color: hexColor, transparent: true, opacity: 0.85, emissive: hexColor, emissiveIntensity: 0.5, shininess: 80 });
             var marker = new THREE.Mesh(new THREE.SphereGeometry(reg.r, 16, 12), markerMat);
             marker.position.set(pos[0], pos[1], pos[2]);
-            marker.userData = { regionId: id, isActive: isActive, glowMesh: glow };
+            marker.userData = { regionId: id, isActive: true, glowMesh: glow };
             s.markerGroup.add(marker);
             s.markerMeshes.push(marker);
 
-            // Pulse ring for active
-            if (isActive) {
-                var ringGeo = new THREE.RingGeometry(reg.r * 1.5, reg.r * 1.9, 24);
-                var ringMat = new THREE.MeshBasicMaterial({ color: hexColor, transparent: true, opacity: 0.12, side: THREE.DoubleSide, depthWrite: false });
-                var ring = new THREE.Mesh(ringGeo, ringMat);
-                ring.position.set(pos[0], pos[1], pos[2]);
-                ring.userData = { isPulse: true };
-                s.markerGroup.add(ring);
-            }
+            // Pulse ring
+            var ringGeo = new THREE.RingGeometry(reg.r * 1.4, reg.r * 1.7, 24);
+            var ringMat = new THREE.MeshBasicMaterial({ color: hexColor, transparent: true, opacity: 0.1, side: THREE.DoubleSide, depthWrite: false });
+            var ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.position.set(pos[0], pos[1], pos[2]);
+            ring.userData = { isPulse: true };
+            s.markerGroup.add(ring);
         });
     }
 
