@@ -5026,8 +5026,10 @@ async function crmAddNote(bookingId){
     html += '</div><div id="custom-chips-area" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px"></div></div>';
 
     // Visibility toggle
-    html += '<div style="margin-bottom:16px;display:flex;align-items:center;gap:8px"><label style="font-size:12px;color:var(--text-muted)">Visible to patient?</label>';
-    html += '<label style="position:relative;width:36px;height:20px;display:inline-block"><input type="checkbox" id="crm-note-visible" style="opacity:0;width:0;height:0"><span style="position:absolute;inset:0;background:var(--border);border-radius:10px;transition:.2s;cursor:pointer"></span></label></div>';
+    html += '<div style="margin-bottom:16px;padding:10px 12px;background:rgba(0,0,0,.15);border-radius:8px;display:flex;align-items:center;gap:12px">';
+    html += '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text)">Share with Patient</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Patient will see this note on their progress page</div></div>';
+    html += '<button type="button" id="crm-note-visible-btn" onclick="this.classList.toggle(\'on\');this.textContent=this.classList.contains(\'on\')?\'YES\':\'NO\'" style="min-width:52px;padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-muted);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s">NO</button>';
+    html += '</div>';
 
     // Actions
     html += '<div class="modal-actions"><button class="btn btn-ghost btn-sm" id="modal-cancel">Cancel</button><button class="btn btn-primary btn-sm" id="modal-ok">Save Note</button></div>';
@@ -5036,7 +5038,7 @@ async function crmAddNote(bookingId){
 
     // Inject chip styling
     var style = document.createElement('style');
-    style.textContent = '.region-chip.selected{background:var(--teal)!important;color:#fff!important;border-color:var(--teal)!important;font-weight:600}';
+    style.textContent = '.region-chip.selected{background:var(--teal)!important;color:#fff!important;border-color:var(--teal)!important;font-weight:600} #crm-note-visible-btn.on{background:var(--teal)!important;color:#fff!important;border-color:var(--teal)!important}';
     o.querySelector('.modal-box').prepend(style);
 
     document.body.appendChild(o);
@@ -5063,10 +5065,7 @@ async function crmAddNote(bookingId){
       nameInp.focus();
     };
 
-    // Toggle switch styling
-    var cb = document.getElementById('crm-note-visible');
-    var track = cb.nextElementSibling;
-    cb.addEventListener('change', function(){ track.style.background = cb.checked ? 'var(--teal)' : 'var(--border)'; });
+    // Toggle switch styling handled by CSS above
 
     document.getElementById('modal-ok').onclick = async function(){
       var content = document.getElementById('crm-note-text').value.trim();
@@ -5090,7 +5089,7 @@ async function crmAddNote(bookingId){
       });
       // Append custom labels to note content for reference
       if(customLabels.length) content += '\n\n[Custom alignments: ' + customLabels.join(', ') + ']';
-      var visible = document.getElementById('crm-note-visible').checked;
+      var visible = document.getElementById('crm-note-visible-btn').classList.contains('on');
       o.remove();
       try{
         await proxyFrom('session_notes').insert({
