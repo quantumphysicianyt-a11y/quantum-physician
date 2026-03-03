@@ -4406,17 +4406,20 @@ function renderBookingsGrid(){
         +(b.status==='completed'||b.status==='paid'?'<button class="btn btn-primary btn-sm" onclick="crmAddNote(\''+b.id+'\')">+ Note</button>':'<button class="btn btn-ghost btn-sm" onclick="crmAddNote(\''+b.id+'\')">+ Note</button>')
         +'<button class="btn btn-ghost btn-sm" onclick="deleteBooking(\''+b.id+'\')">🗑</button>'
         +'</div></td></tr>';
-      // Render notes under this booking
+      // Render notes under this booking (collapsed by default)
       var bNotes = sessNotesData.filter(function(n){ return n.booking_id === b.id; });
-      bNotes.forEach(function(n){
-        var regionBadges = '';
-        if (n.body_regions && n.body_regions.length) {
-          regionBadges = '<div style="margin-top:5px;display:flex;flex-wrap:wrap;gap:3px">';
-          n.body_regions.forEach(function(rid) { regionBadges += '<span style="display:inline-block;padding:2px 7px;font-size:10px;border-radius:10px;background:rgba(91,168,178,.15);color:var(--teal);border:1px solid rgba(91,168,178,.25)">' + esc(rid.replace(/-/g,' ')) + '</span>'; });
-          regionBadges += '</div>';
-        }
-        row += '<tr style="background:rgba(91,168,178,0.05)"><td colspan="6" style="padding:8px 16px;font-size:13px"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div style="flex:1"><span style="color:var(--teal);font-weight:600;font-size:11px;text-transform:uppercase">'+esc(n.note_type)+' note</span>'+(n.visible_to_patient ? ' <span class="badge badge-info" style="font-size:10px">Patient visible</span>' : ' <span class="badge badge-muted" style="font-size:10px">Private</span>')+'<div style="margin-top:4px;color:var(--text);white-space:pre-wrap">'+esc(n.content)+'</div>'+regionBadges+'<div style="margin-top:4px;font-size:11px;color:var(--text-dim)">'+timeAgo(n.created_at)+'</div></div><div style="display:flex;gap:4px;flex-shrink:0;margin-left:8px"><button class="btn btn-ghost btn-sm sess-note-edit" data-nid="'+n.id+'" title="Edit" style="font-size:11px">✏️</button><button class="btn btn-ghost btn-sm" onclick="crmToggleNoteVisibility(\''+n.id+'\','+!n.visible_to_patient+')" title="'+(n.visible_to_patient?'Make private':'Share with patient')+'" style="font-size:11px">'+(n.visible_to_patient?'🔓':'🔒')+'</button><button class="btn btn-ghost btn-sm" onclick="crmDeleteNote(\''+n.id+'\')" title="Delete" style="font-size:11px;color:var(--error)">🗑</button></div></div></td></tr>';
-      });
+      if (bNotes.length) {
+        row += '<tr class="note-toggle-row" data-bid="'+b.id+'" style="cursor:pointer;background:rgba(91,168,178,0.03)" onclick="var rows=document.querySelectorAll(\'.note-row-'+b.id.replace(/-/g,'')+'\');var show=rows[0]&&rows[0].style.display===\'none\';rows.forEach(function(r){r.style.display=show?\'table-row\':\'none\'});this.querySelector(\'.note-arrow\').textContent=show?\'▾\':\'▸\'"><td colspan="6" style="padding:5px 16px;font-size:12px"><span class="note-arrow" style="margin-right:6px;color:var(--teal)">▸</span><span class="badge badge-info" style="font-size:10px">'+bNotes.length+' note'+(bNotes.length>1?'s':'')+'</span> <span style="color:var(--text-dim);font-size:11px;margin-left:4px">click to expand</span></td></tr>';
+        bNotes.forEach(function(n){
+          var regionBadges = '';
+          if (n.body_regions && n.body_regions.length) {
+            regionBadges = '<div style="margin-top:5px;display:flex;flex-wrap:wrap;gap:3px">';
+            n.body_regions.forEach(function(rid) { regionBadges += '<span style="display:inline-block;padding:2px 7px;font-size:10px;border-radius:10px;background:rgba(91,168,178,.15);color:var(--teal);border:1px solid rgba(91,168,178,.25)">' + esc(rid.replace(/-/g,' ')) + '</span>'; });
+            regionBadges += '</div>';
+          }
+          row += '<tr class="note-row-'+b.id.replace(/-/g,'')+'" style="display:none;background:rgba(91,168,178,0.05)"><td colspan="6" style="padding:8px 16px 8px 32px;font-size:13px"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div style="flex:1"><span style="color:var(--teal);font-weight:600;font-size:11px;text-transform:uppercase">'+esc(n.note_type)+' note</span>'+(n.visible_to_patient ? ' <span class="badge badge-info" style="font-size:10px">Patient visible</span>' : ' <span class="badge badge-muted" style="font-size:10px">Private</span>')+'<div style="margin-top:4px;color:var(--text);white-space:pre-wrap">'+esc(n.content)+'</div>'+regionBadges+'<div style="margin-top:4px;font-size:11px;color:var(--text-dim)">'+timeAgo(n.created_at)+'</div></div><div style="display:flex;gap:4px;flex-shrink:0;margin-left:8px"><button class="btn btn-ghost btn-sm sess-note-edit" data-nid="'+n.id+'" title="Edit" style="font-size:11px">✏️</button><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();crmToggleNoteVisibility(\''+n.id+'\','+!n.visible_to_patient+')" title="'+(n.visible_to_patient?'Make private':'Share with patient')+'" style="font-size:11px">'+(n.visible_to_patient?'🔓':'🔒')+'</button><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();crmDeleteNote(\''+n.id+'\')" title="Delete" style="font-size:11px;color:var(--error)">🗑</button></div></div></td></tr>';
+        });
+      }
       return row;
     }).join('')+'</tbody></table>';
 
