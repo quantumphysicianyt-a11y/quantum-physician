@@ -165,14 +165,13 @@
         /* Before/After card */
         .collapse-section { margin-bottom: 4px; }
 
-        /* Body Map */
+        /* 3D Body Model */
         .bodymap-container { background: linear-gradient(170deg, var(--navy-card) 0%, var(--navy-mid) 100%); border: 1px solid var(--border); border-radius: 0 0 var(--radius) var(--radius); padding: 24px; }
-        .bodymap-svg-wrap { display: flex; justify-content: center; margin-bottom: 16px; perspective: 800px; }
-        .bodymap-svg-wrap > div { max-width: 280px; width: 100%; }
-        
-        .bodymap-region { cursor: pointer; transition: all .2s; }
-        .bodymap-region.active { opacity: 1; }
-        .bodymap-region:hover { opacity: .8; }
+        .bodymap-canvas-wrap { display: flex; justify-content: center; margin-bottom: 16px; position: relative; }
+        .bodymap-canvas-wrap canvas { border-radius: 8px; cursor: grab; max-width: 100%; }
+        .bodymap-canvas-wrap canvas:active { cursor: grabbing; }
+        .bodymap-controls { display: flex; align-items: center; gap: 12px; justify-content: center; margin-bottom: 12px; flex-wrap: wrap; }
+        .bodymap-controls .bc-hint { font-size: 11px; color: var(--text-muted); opacity: .6; }
         .bodymap-legend { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 12px; }
         .bodymap-legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-muted); cursor: pointer; padding: 3px 8px; border-radius: 6px; border: 1px solid transparent; transition: all .15s; }
         .bodymap-legend-item:hover { border-color: var(--border-hover); }
@@ -356,12 +355,16 @@
             </div>
         </div>
 
-        <!-- Body Map -->
+        <!-- 3D Body Model -->
         <div class="collapse-section">
             <button class="collapse-toggle" onclick="toggleCollapse(this)"><span class="ct-title">Alignment Body Map</span><svg class="ct-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></button>
             <div class="collapse-body">
                 <div class="bodymap-container">
-                    <div style="margin-bottom:10px;display:flex;align-items:center;gap:10px;justify-content:center"><div class="ba-toggle" style="margin-right:12px"><button class="ba-toggle-btn active" onclick="setBodyView('front',this)">Front</button><button class="ba-toggle-btn" onclick="setBodyView('back',this)">Back</button></div><span style="font-size:11px;color:var(--text-muted)">Zoom</span><input type="range" min="200" max="600" value="350" id="bodymap-zoom" oninput="document.getElementById('bodymap-wrap').querySelector('div').style.maxWidth=this.value+'px'" style="width:150px"></div><div class="bodymap-svg-wrap" id="bodymap-wrap"></div>
+                    <div class="bodymap-controls">
+                        <div class="ba-toggle"><button class="ba-toggle-btn active" onclick="resetBodyView('front',this)">Front</button><button class="ba-toggle-btn" onclick="resetBodyView('back',this)">Back</button></div>
+                        <span class="bc-hint">Drag to rotate &middot; Scroll to zoom</span>
+                    </div>
+                    <div class="bodymap-canvas-wrap" id="bodymap-wrap"><canvas id="bodymap-canvas" width="400" height="520"></canvas></div>
                     <div class="bodymap-legend" id="bodymap-legend"></div>
                     <div class="bodymap-detail" id="bodymap-detail"></div>
                 </div>
@@ -420,6 +423,7 @@
 </div>
 <div class="toast" id="toast"></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
     const SUPABASE_URL = 'https://rihlrfiqokqrlmzjjyxj.supabase.co';
@@ -767,40 +771,36 @@
     }
 
     var bodyView = 'front';
-    function setBodyView(view, btn) {
+    function resetBodyView(view, btn) {
         bodyView = view;
-        document.querySelectorAll('.ba-toggle-btn').forEach(function(b){ /* handled by parent toggle */ });
         if (btn) {
             btn.parentElement.querySelectorAll('.ba-toggle-btn').forEach(function(b){ b.classList.remove('active'); });
             btn.classList.add('active');
         }
-        var wrap = $('bodymap-wrap');
-        if (wrap && wrap.querySelector('div')) {
-            var container = wrap.querySelector('div');
-            container.style.transition = 'transform 0.6s ease';
-            container.style.transform = view === 'back' ? 'rotateY(180deg)' : 'rotateY(0deg)';
-            container.style.transformStyle = 'preserve-3d';
+        if (window._bodyScene) {
+            var target = view === 'back' ? Math.PI : 0;
+            window._bodyScene.targetRotY = target;
         }
-        renderBodyMap();
     }
 
-    // ═══ BODY MAP ═══
-    const BODY_REGIONS = {
-        'cervical-spine': { label: 'Cervical Spine (C1-C7)', cx: 150, cy: 72, r: 14 },
-        'atlas': { label: 'Atlas (C1-C2)', cx: 150, cy: 58, r: 10 },
-        'upper-trapezius': { label: 'Upper Trapezius', cx: 120, cy: 95, r: 16 },
-        'right-shoulder': { label: 'Right Shoulder', cx: 98, cy: 112, r: 16 },
-        'left-neck': { label: 'Left SCM / Scalenes', cx: 168, cy: 82, r: 12 },
-        'thoracic-spine': { label: 'Thoracic Spine (T1-T12)', cx: 150, cy: 155, r: 18 },
-        'ribcage': { label: 'Ribcage', cx: 130, cy: 148, r: 16 },
-        'diaphragm': { label: 'Diaphragm', cx: 150, cy: 195, r: 18 },
-        'lumbar-spine': { label: 'Lumbar Spine (L1-L5)', cx: 150, cy: 235, r: 16 },
-        'pelvis': { label: 'Pelvis / Pelvic Floor', cx: 150, cy: 270, r: 18 },
-        'tmj': { label: 'TMJ / Jaw', cx: 130, cy: 42, r: 10 },
-        'full-spine': { label: 'Full Spine Assessment', cx: 150, cy: 155, r: 30 }
+    // ═══ 3D BODY MAP (Three.js) ═══
+    const BODY_REGIONS_3D = {
+        'tmj':              { label: 'TMJ / Jaw',               pos: [0.35, 2.55, 0.35], r: 0.08 },
+        'atlas':            { label: 'Atlas (C1-C2)',            pos: [0, 2.35, -0.12],   r: 0.09 },
+        'cervical-spine':   { label: 'Cervical Spine (C1-C7)',   pos: [0, 2.15, -0.1],    r: 0.1  },
+        'left-neck':        { label: 'Left SCM / Scalenes',      pos: [0.22, 2.15, 0.08], r: 0.08 },
+        'upper-trapezius':  { label: 'Upper Trapezius',          pos: [-0.3, 1.95, -0.08],r: 0.12 },
+        'right-shoulder':   { label: 'Right Shoulder',           pos: [-0.6, 1.85, 0],    r: 0.12 },
+        'thoracic-spine':   { label: 'Thoracic Spine (T1-T12)', pos: [0, 1.55, -0.18],   r: 0.12 },
+        'ribcage':          { label: 'Ribcage',                  pos: [-0.25, 1.5, 0.15], r: 0.12 },
+        'diaphragm':        { label: 'Diaphragm',               pos: [0, 1.2, 0.1],      r: 0.14 },
+        'lumbar-spine':     { label: 'Lumbar Spine (L1-L5)',     pos: [0, 0.9, -0.15],    r: 0.12 },
+        'pelvis':           { label: 'Pelvis / Pelvic Floor',    pos: [0, 0.55, 0],       r: 0.14 },
+        'full-spine':       { label: 'Full Spine Assessment',    pos: [0, 1.5, -0.2],     r: 0.22 }
     };
 
-    const SESSION_COLORS = ['#5ba8b2','#c9a96e','#5bb88c','#b294d6','#e85d5d','#f0c674','#81a2be','#a3be8c'];
+    const SESSION_COLORS_HEX = [0x5ba8b2, 0xc9a96e, 0x5bb88c, 0xb294d6, 0xe85d5d, 0xf0c674, 0x81a2be, 0xa3be8c];
+    const SESSION_COLORS_STR = ['#5ba8b2','#c9a96e','#5bb88c','#b294d6','#e85d5d','#f0c674','#81a2be','#a3be8c'];
 
     function renderBodyMap() {
         if (!allSessionNotes.length) {
@@ -826,7 +826,7 @@
             return;
         }
 
-        // Get unique session dates for color coding
+        // Session dates for color coding
         var sessionDates = [];
         allSessionNotes.forEach(function(n) {
             var b = allBookings.find(function(bk){ return bk.id === n.booking_id; });
@@ -834,68 +834,376 @@
         });
         sessionDates.sort();
 
-        // Build body map with image background and positioned region circles
-        var mapHTML = '<div style="position:relative;display:inline-block;max-width:300px;margin:0 auto">';
-        mapHTML += '<img src="/assets/images/body-progress.png" style="width:100%;height:auto;opacity:.5;display:block" alt="Body map">';
+        // Store for click handler
+        window._regionMap = regionMap;
+        window._sessionDates = sessionDates;
 
-        // Overlay region circles positioned as percentages of image dimensions
-        var REGION_POS = {
-            'cervical-spine': { x: 50, y: 15, r: 3 },
-            'atlas': { x: 50, y: 12.5, r: 2.5 },
-            'upper-trapezius': { x: 40, y: 19, r: 3.5 },
-            'right-shoulder': { x: 30, y: 22, r: 3.5 },
-            'left-neck': { x: 55, y: 14, r: 2.5 },
-            'thoracic-spine': { x: 50, y: 28, r: 3.5 },
-            'ribcage': { x: 44, y: 26, r: 3.5 },
-            'diaphragm': { x: 50, y: 35, r: 4 },
-            'lumbar-spine': { x: 50, y: 42, r: 3.5 },
-            'pelvis': { x: 50, y: 50, r: 4 },
-            'tmj': { x: 46, y: 9, r: 2 },
-            'full-spine': { x: 50, y: 30, r: 6 }
-        };
+        // Legend
+        var legendHTML = '';
+        sessionDates.forEach(function(d, i) {
+            var dt = new Date(d + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+            legendHTML += '<div class="bodymap-legend-item"><span class="dot" style="background:' + SESSION_COLORS_STR[i % SESSION_COLORS_STR.length] + '"></span>Session ' + (i+1) + ' - ' + dt + '</div>';
+        });
+        $('bodymap-legend').innerHTML = legendHTML;
 
-        Object.keys(BODY_REGIONS).forEach(function(id) {
-            var reg = BODY_REGIONS[id];
-            var pos = REGION_POS[id];
+        var activeCount = Object.keys(regionMap).length;
+        $('bodymap-detail').innerHTML = '<span style="color:var(--text-muted)">Click a highlighted region to see treatment details. ' + activeCount + ' areas addressed across ' + sessionDates.length + ' sessions.</span>';
+
+        // ─── THREE.JS SCENE ───
+        var canvas = $('bodymap-canvas');
+        var W = 400, H = 520;
+        canvas.width = W; canvas.height = H;
+
+        var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+        renderer.setSize(W, H);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setClearColor(0x000000, 0);
+
+        var scene = new THREE.Scene();
+        var camera = new THREE.PerspectiveCamera(32, W / H, 0.1, 100);
+        camera.position.set(0, 1.4, 6);
+        camera.lookAt(0, 1.4, 0);
+
+        // Lighting
+        var amb = new THREE.AmbientLight(0x4a6a8a, 0.6);
+        scene.add(amb);
+        var dir1 = new THREE.DirectionalLight(0x5ba8b2, 0.8);
+        dir1.position.set(2, 4, 3);
+        scene.add(dir1);
+        var dir2 = new THREE.DirectionalLight(0xc9a96e, 0.3);
+        dir2.position.set(-2, 2, -2);
+        scene.add(dir2);
+        var rim = new THREE.PointLight(0x4acfd9, 0.4, 10);
+        rim.position.set(0, 3, -3);
+        scene.add(rim);
+
+        // Body material
+        var bodyMat = new THREE.MeshPhongMaterial({
+            color: 0x1a3050,
+            transparent: true,
+            opacity: 0.35,
+            shininess: 40,
+            side: THREE.DoubleSide,
+            depthWrite: false
+        });
+        var bodyMatSolid = new THREE.MeshPhongMaterial({
+            color: 0x1e3858,
+            transparent: true,
+            opacity: 0.55,
+            shininess: 60,
+            side: THREE.DoubleSide
+        });
+
+        var bodyGroup = new THREE.Group();
+
+        // Helper: create smooth capsule from cylinder + sphere caps
+        function makeCapsule(rTop, rBot, h, segs) {
+            var group = new THREE.Group();
+            var cyl = new THREE.Mesh(new THREE.CylinderGeometry(rTop, rBot, h, segs || 16), bodyMatSolid);
+            group.add(cyl);
+            var capTop = new THREE.Mesh(new THREE.SphereGeometry(rTop, segs || 16, 8, 0, Math.PI*2, 0, Math.PI/2), bodyMatSolid);
+            capTop.position.y = h/2;
+            group.add(capTop);
+            var capBot = new THREE.Mesh(new THREE.SphereGeometry(rBot, segs || 16, 8, 0, Math.PI*2, Math.PI/2, Math.PI/2), bodyMatSolid);
+            capBot.position.y = -h/2;
+            group.add(capBot);
+            return group;
+        }
+
+        // HEAD
+        var head = new THREE.Mesh(new THREE.SphereGeometry(0.28, 24, 18), bodyMatSolid);
+        head.position.set(0, 2.62, 0);
+        head.scale.set(1, 1.15, 0.95);
+        bodyGroup.add(head);
+
+        // NECK
+        var neck = makeCapsule(0.12, 0.15, 0.28, 12);
+        neck.position.set(0, 2.22, -0.02);
+        bodyGroup.add(neck);
+
+        // TORSO - upper chest
+        var chest = makeCapsule(0.42, 0.38, 0.55, 20);
+        chest.position.set(0, 1.72, 0);
+        chest.scale.set(1, 1, 0.65);
+        bodyGroup.add(chest);
+
+        // TORSO - mid/lower
+        var torso = makeCapsule(0.38, 0.35, 0.5, 20);
+        torso.position.set(0, 1.22, 0);
+        torso.scale.set(1, 1, 0.6);
+        bodyGroup.add(torso);
+
+        // TORSO - waist/hip
+        var hip = makeCapsule(0.35, 0.38, 0.35, 20);
+        hip.position.set(0, 0.78, 0);
+        hip.scale.set(1, 1, 0.6);
+        bodyGroup.add(hip);
+
+        // PELVIS
+        var pelvis = new THREE.Mesh(new THREE.SphereGeometry(0.38, 20, 14), bodyMat);
+        pelvis.position.set(0, 0.55, 0);
+        pelvis.scale.set(1, 0.45, 0.6);
+        bodyGroup.add(pelvis);
+
+        // SHOULDERS
+        [-1, 1].forEach(function(side) {
+            var shoulder = new THREE.Mesh(new THREE.SphereGeometry(0.14, 14, 10), bodyMatSolid);
+            shoulder.position.set(side * 0.52, 1.92, 0);
+            bodyGroup.add(shoulder);
+
+            // UPPER ARM
+            var upperArm = makeCapsule(0.1, 0.08, 0.5, 10);
+            upperArm.position.set(side * 0.58, 1.58, 0);
+            upperArm.rotation.z = side * 0.12;
+            bodyGroup.add(upperArm);
+
+            // FOREARM
+            var forearm = makeCapsule(0.08, 0.06, 0.45, 10);
+            forearm.position.set(side * 0.62, 1.08, 0.03);
+            forearm.rotation.z = side * 0.08;
+            bodyGroup.add(forearm);
+
+            // HAND
+            var hand = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 8), bodyMat);
+            hand.position.set(side * 0.64, 0.78, 0.04);
+            hand.scale.set(0.9, 1.2, 0.5);
+            bodyGroup.add(hand);
+        });
+
+        // LEGS
+        [-1, 1].forEach(function(side) {
+            // UPPER LEG
+            var thigh = makeCapsule(0.14, 0.11, 0.65, 12);
+            thigh.position.set(side * 0.18, 0.15, 0);
+            bodyGroup.add(thigh);
+
+            // LOWER LEG
+            var shin = makeCapsule(0.1, 0.07, 0.6, 10);
+            shin.position.set(side * 0.18, -0.55, 0.02);
+            bodyGroup.add(shin);
+
+            // FOOT
+            var foot = new THREE.Mesh(new THREE.SphereGeometry(0.08, 10, 8), bodyMat);
+            foot.position.set(side * 0.18, -0.9, 0.06);
+            foot.scale.set(0.8, 0.4, 1.4);
+            bodyGroup.add(foot);
+        });
+
+        // Spine line (subtle glow)
+        var spinePts = [
+            new THREE.Vector3(0, 2.35, -0.15),
+            new THREE.Vector3(0, 2.0, -0.18),
+            new THREE.Vector3(0, 1.5, -0.2),
+            new THREE.Vector3(0, 1.0, -0.18),
+            new THREE.Vector3(0, 0.6, -0.12)
+        ];
+        var spineCurve = new THREE.CatmullRomCurve3(spinePts);
+        var spineGeo = new THREE.TubeGeometry(spineCurve, 20, 0.02, 6, false);
+        var spineMat = new THREE.MeshBasicMaterial({ color: 0x4acfd9, transparent: true, opacity: 0.3 });
+        bodyGroup.add(new THREE.Mesh(spineGeo, spineMat));
+
+        scene.add(bodyGroup);
+
+        // ─── REGION MARKERS ───
+        var markerGroup = new THREE.Group();
+        var markerMeshes = [];
+        var raycaster = new THREE.Raycaster();
+        var mouse = new THREE.Vector2();
+
+        Object.keys(BODY_REGIONS_3D).forEach(function(id) {
+            var reg = BODY_REGIONS_3D[id];
             var sessions = regionMap[id] || [];
             var isActive = sessions.length > 0;
             var colorIdx = 0;
             if (isActive && sessions.length > 0) {
-                colorIdx = sessionDates.indexOf(sessions[sessions.length-1].date);
+                colorIdx = sessionDates.indexOf(sessions[sessions.length - 1].date);
             }
-            var color = SESSION_COLORS[colorIdx % SESSION_COLORS.length];
-            var opacity = isActive ? '0.7' : '0.08';
-            var size = pos.r * 2;
-            mapHTML += '<div class="bodymap-region' + (isActive ? ' active' : '') + '" data-region="' + id + '" onclick="showRegionDetail(this.dataset.region)" style="position:absolute;left:' + pos.x + '%;top:' + pos.y + '%;width:' + size + '%;padding-bottom:' + size + '%;transform:translate(-50%,-50%);border-radius:50%;background:' + color + ';opacity:' + opacity + ';cursor:pointer;transition:all .2s"></div>';
+            var hexColor = isActive ? SESSION_COLORS_HEX[colorIdx % SESSION_COLORS_HEX.length] : 0x2a4060;
+
+            // Outer glow sphere
+            var glowMat = new THREE.MeshBasicMaterial({
+                color: hexColor,
+                transparent: true,
+                opacity: isActive ? 0.25 : 0.04,
+                depthWrite: false
+            });
+            var glow = new THREE.Mesh(new THREE.SphereGeometry(reg.r * 2.2, 16, 12), glowMat);
+            glow.position.set(reg.pos[0], reg.pos[1], reg.pos[2]);
+            markerGroup.add(glow);
+
+            // Inner marker
+            var markerMat = new THREE.MeshPhongMaterial({
+                color: hexColor,
+                transparent: true,
+                opacity: isActive ? 0.85 : 0.1,
+                emissive: hexColor,
+                emissiveIntensity: isActive ? 0.5 : 0,
+                shininess: 80
+            });
+            var marker = new THREE.Mesh(new THREE.SphereGeometry(reg.r, 16, 12), markerMat);
+            marker.position.set(reg.pos[0], reg.pos[1], reg.pos[2]);
+            marker.userData = { regionId: id, isActive: isActive, glowMesh: glow, baseMat: markerMat };
+            markerGroup.add(marker);
+            markerMeshes.push(marker);
+
+            // Pulse ring for active regions
             if (isActive) {
-                mapHTML += '<div style="position:absolute;left:' + pos.x + '%;top:' + pos.y + '%;width:' + (size+2) + '%;padding-bottom:' + (size+2) + '%;transform:translate(-50%,-50%);border-radius:50%;border:1px solid ' + color + ';opacity:.3;pointer-events:none"></div>';
+                var ringGeo = new THREE.RingGeometry(reg.r * 1.5, reg.r * 1.8, 24);
+                var ringMat = new THREE.MeshBasicMaterial({ color: hexColor, transparent: true, opacity: 0.15, side: THREE.DoubleSide, depthWrite: false });
+                var ring = new THREE.Mesh(ringGeo, ringMat);
+                ring.position.set(reg.pos[0], reg.pos[1], reg.pos[2]);
+                ring.userData.isPulse = true;
+                ring.userData.baseScale = 1;
+                markerGroup.add(ring);
             }
         });
-        mapHTML += '</div>';
-        $('bodymap-wrap').innerHTML = mapHTML;
 
-        // Legend - session dates with colors
-        var legendHTML = '';
-        sessionDates.forEach(function(d, i) {
-            var dt = new Date(d + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
-            legendHTML += '<div class="bodymap-legend-item"><span class="dot" style="background:' + SESSION_COLORS[i % SESSION_COLORS.length] + '"></span>Session ' + (i+1) + ' - ' + dt + '</div>';
+        scene.add(markerGroup);
+
+        // ─── INTERACTION STATE ───
+        var state = {
+            isDragging: false,
+            prevX: 0,
+            prevY: 0,
+            rotY: 0,
+            rotX: 0,
+            targetRotY: 0,
+            targetRotX: 0,
+            zoom: 6,
+            targetZoom: 6,
+            hovered: null,
+            time: 0
+        };
+        window._bodyScene = state;
+
+        // Mouse/touch interaction
+        canvas.addEventListener('mousedown', function(e) { state.isDragging = true; state.prevX = e.clientX; state.prevY = e.clientY; });
+        window.addEventListener('mouseup', function() { state.isDragging = false; });
+        window.addEventListener('mousemove', function(e) {
+            if (!state.isDragging) return;
+            var dx = e.clientX - state.prevX;
+            var dy = e.clientY - state.prevY;
+            state.targetRotY += dx * 0.008;
+            state.targetRotX += dy * 0.005;
+            state.targetRotX = Math.max(-0.6, Math.min(0.6, state.targetRotX));
+            state.prevX = e.clientX;
+            state.prevY = e.clientY;
         });
-        $('bodymap-legend').innerHTML = legendHTML;
 
-        // Default detail
-        var activeCount = Object.keys(regionMap).length;
-        $('bodymap-detail').innerHTML = '<span style="color:var(--text-muted)">Click a highlighted region to see treatment details. ' + activeCount + ' areas addressed across ' + sessionDates.length + ' sessions.</span>';
+        canvas.addEventListener('wheel', function(e) {
+            e.preventDefault();
+            state.targetZoom += e.deltaY * 0.005;
+            state.targetZoom = Math.max(3.5, Math.min(10, state.targetZoom));
+        }, { passive: false });
 
-        // Store for click handler
-        window._regionMap = regionMap;
-        window._sessionDates = sessionDates;
+        // Touch support
+        canvas.addEventListener('touchstart', function(e) {
+            if (e.touches.length === 1) { state.isDragging = true; state.prevX = e.touches[0].clientX; state.prevY = e.touches[0].clientY; }
+        }, { passive: true });
+        canvas.addEventListener('touchmove', function(e) {
+            if (!state.isDragging || e.touches.length !== 1) return;
+            var dx = e.touches[0].clientX - state.prevX;
+            var dy = e.touches[0].clientY - state.prevY;
+            state.targetRotY += dx * 0.008;
+            state.targetRotX += dy * 0.005;
+            state.targetRotX = Math.max(-0.6, Math.min(0.6, state.targetRotX));
+            state.prevX = e.touches[0].clientX;
+            state.prevY = e.touches[0].clientY;
+        }, { passive: true });
+        canvas.addEventListener('touchend', function() { state.isDragging = false; }, { passive: true });
+
+        // Click / tap detection for region markers
+        canvas.addEventListener('click', function(e) {
+            var rect = canvas.getBoundingClientRect();
+            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            var hits = raycaster.intersectObjects(markerMeshes);
+            if (hits.length > 0) {
+                var m = hits[0].object;
+                if (m.userData.isActive) showRegionDetail(m.userData.regionId);
+            }
+        });
+
+        // Hover effect
+        canvas.addEventListener('mousemove', function(e) {
+            if (state.isDragging) return;
+            var rect = canvas.getBoundingClientRect();
+            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            var hits = raycaster.intersectObjects(markerMeshes);
+
+            // Reset previous hover
+            if (state.hovered) {
+                var hm = state.hovered;
+                hm.scale.set(1, 1, 1);
+                if (hm.userData.glowMesh) hm.userData.glowMesh.scale.set(1, 1, 1);
+            }
+
+            if (hits.length > 0 && hits[0].object.userData.isActive) {
+                var hit = hits[0].object;
+                hit.scale.set(1.3, 1.3, 1.3);
+                if (hit.userData.glowMesh) hit.userData.glowMesh.scale.set(1.4, 1.4, 1.4);
+                canvas.style.cursor = 'pointer';
+                state.hovered = hit;
+            } else {
+                canvas.style.cursor = state.isDragging ? 'grabbing' : 'grab';
+                state.hovered = null;
+            }
+        });
+
+        // ─── ANIMATION LOOP ───
+        function animate() {
+            requestAnimationFrame(animate);
+            state.time += 0.016;
+
+            // Smooth rotation
+            state.rotY += (state.targetRotY - state.rotY) * 0.08;
+            state.rotX += (state.targetRotX - state.rotX) * 0.08;
+            state.zoom += (state.targetZoom - state.zoom) * 0.08;
+
+            bodyGroup.rotation.y = state.rotY;
+            bodyGroup.rotation.x = state.rotX;
+            markerGroup.rotation.y = state.rotY;
+            markerGroup.rotation.x = state.rotX;
+
+            camera.position.z = state.zoom;
+            camera.lookAt(0, 1.4, 0);
+
+            // Pulse rings
+            markerGroup.children.forEach(function(child) {
+                if (child.userData && child.userData.isPulse) {
+                    var s = 1 + Math.sin(state.time * 2) * 0.15;
+                    child.scale.set(s, s, s);
+                    child.material.opacity = 0.08 + Math.sin(state.time * 2) * 0.06;
+                    child.lookAt(camera.position);
+                }
+            });
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // Handle resize when collapse opens
+        var resizeObs = new ResizeObserver(function() {
+            var wrap = $('bodymap-wrap');
+            if (!wrap) return;
+            var w = Math.min(wrap.clientWidth, 500);
+            var h = Math.round(w * 1.3);
+            canvas.width = w; canvas.height = h;
+            renderer.setSize(w, h);
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+        });
+        resizeObs.observe($('bodymap-wrap'));
     }
 
     function showRegionDetail(regionId) {
-        var reg = BODY_REGIONS[regionId];
+        var reg = BODY_REGIONS_3D[regionId];
         var sessions = window._regionMap[regionId] || [];
         if (!sessions.length) {
-            $('bodymap-detail').innerHTML = '<span style="color:var(--text-muted)">' + reg.label + ' - Not yet addressed</span>';
+            $('bodymap-detail').innerHTML = '<span style="color:var(--text-muted)">' + reg.label + ' \u2014 Not yet addressed</span>';
             return;
         }
         var html = '<div style="text-align:left;max-width:600px;margin:0 auto">';
@@ -903,8 +1211,8 @@
         sessions.forEach(function(s) {
             var dt = new Date(s.date + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
             var colorIdx = window._sessionDates.indexOf(s.date);
-            var color = SESSION_COLORS[colorIdx % SESSION_COLORS.length];
-            var preview = s.note.length > 120 ? s.note.substring(0,120) + '...' : s.note;
+            var color = SESSION_COLORS_STR[colorIdx % SESSION_COLORS_STR.length];
+            var preview = s.note.length > 120 ? s.note.substring(0, 120) + '...' : s.note;
             html += '<div style="padding:8px;margin-bottom:6px;background:rgba(0,0,0,.15);border-radius:6px;border-left:3px solid ' + color + '">';
             html += '<div style="font-size:11px;color:var(--text-muted);margin-bottom:3px">' + dt + '</div>';
             html += '<div style="font-size:12px;line-height:1.5">' + esc(preview) + '</div>';
