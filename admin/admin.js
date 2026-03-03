@@ -4403,13 +4403,18 @@ function renderBookingsGrid(){
         +(b.status==='proposed'&&payLink?'<button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText(\''+payLink+'\');showToast(\'Pay link copied\',\'success\')" title="Copy payment link">🔗 Pay Link</button>':'')
         +(b.status==='proposed'?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'paid\')">Mark Paid</button><button class="btn btn-danger btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'declined\')">Decline</button>':'')
         +(b.status==='paid'?'<button class="btn btn-ghost btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'completed\')">Complete</button><button class="btn btn-ghost btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'no_show\')">No Show</button><button class="btn btn-danger btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'cancelled\')">Cancel</button>':'')
-        +(b.status==='completed'||b.status==='paid'?'<button class="btn btn-primary btn-sm" onclick="crmAddNote(\''+b.id+'\')">+ Note</button>':'<button class="btn btn-ghost btn-sm" onclick="crmAddNote(\''+b.id+'\')">+ Note</button>')
+        +(b.status==='completed'||b.status==='paid'?'<button class="btn btn-primary btn-sm" onclick="crmAddNote(\''+b.id+'\')">+ Note</button><button class="btn btn-ghost btn-sm" onclick="crmAddRecording(\''+b.id+'\')">+ Recording</button>':'<button class="btn btn-ghost btn-sm" onclick="crmAddNote(\''+b.id+'\')">+ Note</button>')
         +'<button class="btn btn-ghost btn-sm" onclick="deleteBooking(\''+b.id+'\')">🗑</button>'
         +'</div></td></tr>';
-      // Render notes under this booking (collapsed by default)
+      // Render notes & recordings under this booking (collapsed by default)
       var bNotes = sessNotesData.filter(function(n){ return n.booking_id === b.id; });
-      if (bNotes.length) {
-        row += '<tr class="note-toggle-row" data-bid="'+b.id+'" style="cursor:pointer;background:rgba(91,168,178,0.03)" onclick="var rows=document.querySelectorAll(\'.note-row-'+b.id.replace(/-/g,'')+'\');var show=rows[0]&&rows[0].style.display===\'none\';rows.forEach(function(r){r.style.display=show?\'table-row\':\'none\'});this.querySelector(\'.note-arrow\').textContent=show?\'▾\':\'▸\'"><td colspan="6" style="padding:5px 16px;font-size:12px"><span class="note-arrow" style="margin-right:6px;color:var(--teal)">▸</span><span class="badge badge-info" style="font-size:10px">'+bNotes.length+' note'+(bNotes.length>1?'s':'')+'</span> <span style="color:var(--text-dim);font-size:11px;margin-left:4px">click to expand</span></td></tr>';
+      var bRecs = sessRecsData.filter(function(r){ return r.booking_id === b.id; });
+      var totalItems = bNotes.length + bRecs.length;
+      if (totalItems) {
+        var badgeText = [];
+        if (bNotes.length) badgeText.push(bNotes.length + ' note' + (bNotes.length > 1 ? 's' : ''));
+        if (bRecs.length) badgeText.push(bRecs.length + ' recording' + (bRecs.length > 1 ? 's' : ''));
+        row += '<tr class="note-toggle-row" data-bid="'+b.id+'" style="cursor:pointer;background:rgba(91,168,178,0.03)" onclick="var rows=document.querySelectorAll(\'.note-row-'+b.id.replace(/-/g,'')+'\');var show=rows[0]&&rows[0].style.display===\'none\';rows.forEach(function(r){r.style.display=show?\'table-row\':\'none\'});this.querySelector(\'.note-arrow\').textContent=show?\'▾\':\'▸\'"><td colspan="6" style="padding:5px 16px;font-size:12px"><span class="note-arrow" style="margin-right:6px;color:var(--teal)">▸</span><span class="badge badge-info" style="font-size:10px">'+badgeText.join(' · ')+'</span> <span style="color:var(--text-dim);font-size:11px;margin-left:4px">click to expand</span></td></tr>';
         bNotes.forEach(function(n){
           var regionBadges = '';
           if (n.body_regions && n.body_regions.length) {
@@ -4418,6 +4423,11 @@ function renderBookingsGrid(){
             regionBadges += '</div>';
           }
           row += '<tr class="note-row-'+b.id.replace(/-/g,'')+'" style="display:none;background:rgba(91,168,178,0.05)"><td colspan="6" style="padding:8px 16px 8px 32px;font-size:13px"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div style="flex:1"><span style="color:var(--teal);font-weight:600;font-size:11px;text-transform:uppercase">'+esc(n.note_type)+' note</span>'+(n.visible_to_patient ? ' <span class="badge badge-info" style="font-size:10px">Patient visible</span>' : ' <span class="badge badge-muted" style="font-size:10px">Private</span>')+'<div style="margin-top:4px;color:var(--text);white-space:pre-wrap">'+esc(n.content)+'</div>'+regionBadges+'<div style="margin-top:4px;font-size:11px;color:var(--text-dim)">'+timeAgo(n.created_at)+'</div></div><div style="display:flex;gap:4px;flex-shrink:0;margin-left:8px"><button class="btn btn-ghost btn-sm sess-note-edit" data-nid="'+n.id+'" title="Edit" style="font-size:11px">✏️</button><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();crmToggleNoteVisibility(\''+n.id+'\','+!n.visible_to_patient+')" title="'+(n.visible_to_patient?'Make private':'Share with patient')+'" style="font-size:11px">'+(n.visible_to_patient?'🔓':'🔒')+'</button><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();crmDeleteNote(\''+n.id+'\')" title="Delete" style="font-size:11px;color:var(--error)">🗑</button></div></div></td></tr>';
+        });
+        bRecs.forEach(function(r){
+          var sizeTxt = r.file_size_mb ? ' · ' + r.file_size_mb + ' MB' : '';
+          var srcBadge = r.source_type === 'supabase' ? '<span class="badge badge-success" style="font-size:10px">Hosted</span>' : '<span class="badge badge-muted" style="font-size:10px">External</span>';
+          row += '<tr class="note-row-'+b.id.replace(/-/g,'')+'" style="display:none;background:rgba(91,184,140,0.05)"><td colspan="6" style="padding:8px 16px 8px 32px;font-size:13px"><div style="display:flex;justify-content:space-between;align-items:center"><div><span style="color:var(--success);font-weight:600;font-size:11px">🎥 RECORDING</span> '+srcBadge+' <span style="margin-left:6px">'+esc(r.title||'Session Recording')+sizeTxt+'</span><div style="font-size:11px;color:var(--text-dim);margin-top:2px">'+timeAgo(r.created_at)+'</div></div><div style="display:flex;gap:4px"><a href="'+esc(r.recording_url)+'" target="_blank" class="btn btn-ghost btn-sm" style="font-size:11px">▶ Play</a><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();crmDeleteRecording(\''+r.id+'\')" title="Delete" style="font-size:11px;color:var(--error)">🗑</button></div></div></td></tr>';
         });
       }
       return row;
@@ -5147,10 +5157,148 @@ async function crmAddNote(bookingId){
 }
 
 async function crmAddRecording(bookingId){
-  var url = await qpPrompt('Add Recording', 'Paste the Zoom recording URL:', 'https://zoom.us/rec/share/...');
-  if(!url) return;
-  var title = await qpPrompt('Recording Title', 'Optional title for this recording:', 'Session Recording');
-  try{ await proxyFrom('session_recordings').insert({ booking_id: bookingId, recording_url: url, title: title || 'Session Recording' }); await logAudit('crm_add_recording', crmCurrentClient, 'Added recording'); showToast('Recording added', 'success'); await crmOpenClient(crmCurrentClient); } catch(e){ showToast('Error adding recording: '+e.message, 'error'); }
+  return new Promise(function(resolve){
+    var o = document.createElement('div');
+    o.className = 'modal-overlay';
+    var html = '<div class="modal-box" style="max-width:520px">';
+    html += '<div class="modal-title">Add Session Recording</div>';
+
+    // Title
+    html += '<div style="margin-bottom:14px"><label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">Title</label>';
+    html += '<input type="text" class="input" id="rec-title" placeholder="Session Recording" style="width:100%;font-size:13px"></div>';
+
+    // Upload tab toggle
+    html += '<div style="display:flex;gap:0;margin-bottom:14px;border:1px solid var(--border);border-radius:8px;overflow:hidden">';
+    html += '<button type="button" id="rec-tab-upload" class="rec-tab active" onclick="document.getElementById(\'rec-upload-area\').style.display=\'block\';document.getElementById(\'rec-url-area\').style.display=\'none\';this.classList.add(\'active\');document.getElementById(\'rec-tab-url\').classList.remove(\'active\')" style="flex:1;padding:8px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:var(--teal);color:#fff;transition:all .15s">Upload File</button>';
+    html += '<button type="button" id="rec-tab-url" class="rec-tab" onclick="document.getElementById(\'rec-url-area\').style.display=\'block\';document.getElementById(\'rec-upload-area\').style.display=\'none\';this.classList.add(\'active\');document.getElementById(\'rec-tab-upload\').classList.remove(\'active\')" style="flex:1;padding:8px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:transparent;color:var(--text-muted);transition:all .15s">Paste URL</button>';
+    html += '</div>';
+
+    // Upload area
+    html += '<div id="rec-upload-area">';
+    html += '<div id="rec-dropzone" style="border:2px dashed var(--border);border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:border-color .2s" onclick="document.getElementById(\'rec-file-input\').click()">';
+    html += '<div style="font-size:24px;margin-bottom:8px">📹</div>';
+    html += '<div style="font-size:13px;color:var(--text-muted)">Click to select or drag & drop</div>';
+    html += '<div style="font-size:11px;color:var(--text-dim);margin-top:4px">MP4, MOV, WebM · Max 50MB on Free plan</div>';
+    html += '<input type="file" id="rec-file-input" accept="video/*" style="display:none">';
+    html += '</div>';
+    html += '<div id="rec-file-info" style="display:none;margin-top:8px;padding:8px 12px;background:rgba(91,168,178,.08);border-radius:8px;font-size:12px;color:var(--teal);display:none"></div>';
+    html += '<div id="rec-upload-progress" style="display:none;margin-top:8px"><div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden"><div id="rec-progress-bar" style="height:100%;width:0%;background:var(--teal);transition:width .3s"></div></div><div id="rec-progress-text" style="font-size:11px;color:var(--text-dim);margin-top:4px">Uploading...</div></div>';
+    html += '</div>';
+
+    // URL area (hidden by default)
+    html += '<div id="rec-url-area" style="display:none">';
+    html += '<input type="text" class="input" id="rec-url" placeholder="https://zoom.us/rec/share/... or Vimeo URL" style="width:100%;font-size:13px">';
+    html += '<div style="font-size:11px;color:var(--text-dim);margin-top:4px">Zoom, Vimeo, or any direct video link</div>';
+    html += '</div>';
+
+    html += '<div class="modal-actions" style="margin-top:16px"><button class="btn btn-ghost btn-sm" id="rec-cancel">Cancel</button><button class="btn btn-primary btn-sm" id="rec-save">Save Recording</button></div>';
+    html += '</div>';
+    o.innerHTML = html;
+
+    // Tab active styling
+    var style = document.createElement('style');
+    style.textContent = '.rec-tab.active{background:var(--teal)!important;color:#fff!important} .rec-tab:not(.active){background:transparent!important;color:var(--text-muted)!important}';
+    o.querySelector('.modal-box').prepend(style);
+
+    document.body.appendChild(o);
+
+    // File handling
+    var selectedFile = null;
+    var fileInput = document.getElementById('rec-file-input');
+    var dropzone = document.getElementById('rec-dropzone');
+    var fileInfo = document.getElementById('rec-file-info');
+
+    fileInput.onchange = function(){ if(fileInput.files[0]) selectFile(fileInput.files[0]); };
+    dropzone.ondragover = function(e){ e.preventDefault(); dropzone.style.borderColor='var(--teal)'; };
+    dropzone.ondragleave = function(){ dropzone.style.borderColor='var(--border)'; };
+    dropzone.ondrop = function(e){ e.preventDefault(); dropzone.style.borderColor='var(--border)'; if(e.dataTransfer.files[0]) selectFile(e.dataTransfer.files[0]); };
+
+    function selectFile(f){
+      selectedFile = f;
+      var sizeMB = (f.size / 1048576).toFixed(1);
+      fileInfo.style.display = 'block';
+      fileInfo.innerHTML = '📎 <strong>' + esc(f.name) + '</strong> (' + sizeMB + ' MB)';
+    }
+
+    document.getElementById('rec-save').onclick = async function(){
+      var title = document.getElementById('rec-title').value.trim() || 'Session Recording';
+      var urlArea = document.getElementById('rec-url-area');
+      var isUrlMode = urlArea.style.display !== 'none';
+
+      if(isUrlMode){
+        var url = document.getElementById('rec-url').value.trim();
+        if(!url){ showToast('Enter a URL', 'warning'); return; }
+        o.remove();
+        try{
+          await proxyFrom('session_recordings').insert({ booking_id: bookingId, recording_url: url, title: title, source_type: 'external' });
+          await logAudit('crm_add_recording', crmCurrentClient || 'admin', 'Added external recording');
+          showToast('Recording link added', 'success');
+          if(crmCurrentClient) await crmOpenClient(crmCurrentClient);
+          var nr = await proxyFrom('session_recordings').select('*').order('created_at',{ascending:false}); sessRecsData = nr.data || [];
+          if(typeof renderBookingsGrid === 'function') renderBookingsGrid();
+        } catch(e){ showToast('Error: '+e.message, 'error'); }
+      } else {
+        if(!selectedFile){ showToast('Select a video file', 'warning'); return; }
+        // Upload to Supabase Storage
+        var progressDiv = document.getElementById('rec-upload-progress');
+        var progressBar = document.getElementById('rec-progress-bar');
+        var progressText = document.getElementById('rec-progress-text');
+        progressDiv.style.display = 'block';
+        document.getElementById('rec-save').disabled = true;
+
+        var ext = selectedFile.name.split('.').pop().toLowerCase();
+        var fileName = bookingId + '/' + Date.now() + '.' + ext;
+
+        try{
+          progressBar.style.width = '30%';
+          progressText.textContent = 'Uploading...';
+
+          var { data, error } = await sb.storage.from('session-recordings').upload(fileName, selectedFile, {
+            cacheControl: '3600',
+            upsert: false,
+            contentType: selectedFile.type
+          });
+
+          if(error) throw error;
+
+          progressBar.style.width = '80%';
+          progressText.textContent = 'Saving...';
+
+          // Get public URL
+          var { data: urlData } = sb.storage.from('session-recordings').getPublicUrl(fileName);
+          var storageUrl = urlData.publicUrl;
+
+          await proxyFrom('session_recordings').insert({
+            booking_id: bookingId,
+            recording_url: storageUrl,
+            title: title,
+            source_type: 'supabase',
+            file_path: fileName,
+            file_size_mb: Math.round(selectedFile.size / 1048576 * 10) / 10
+          });
+          await logAudit('crm_add_recording', crmCurrentClient || 'admin', 'Uploaded recording (' + (selectedFile.size / 1048576).toFixed(1) + ' MB)');
+
+          progressBar.style.width = '100%';
+          progressText.textContent = 'Done!';
+          o.remove();
+          showToast('Recording uploaded!', 'success');
+          if(crmCurrentClient) await crmOpenClient(crmCurrentClient);
+          var nr = await proxyFrom('session_recordings').select('*').order('created_at',{ascending:false}); sessRecsData = nr.data || [];
+          if(typeof renderBookingsGrid === 'function') renderBookingsGrid();
+        } catch(e){
+          progressBar.style.width = '0%';
+          progressText.textContent = 'Upload failed: ' + e.message;
+          progressText.style.color = 'var(--error)';
+          document.getElementById('rec-save').disabled = false;
+          showToast('Upload failed: ' + e.message, 'error');
+        }
+      }
+      resolve();
+    };
+
+    document.getElementById('rec-cancel').onclick = function(){ o.remove(); resolve(); };
+    o.onclick = function(e){ if(e.target===o){ o.remove(); resolve(); }};
+  });
 }
 
 async function crmToggleNoteVisibility(noteId, visible){
@@ -5219,6 +5367,21 @@ async function crmEditNote(noteId, currentContent, currentRegions, currentVisibl
 async function crmDeleteNote(noteId){
   if(!await qpConfirm('Delete Note', 'Are you sure you want to delete this note? This cannot be undone.', {danger:true, okText:'Delete'})) return;
   try{ await proxyFrom('session_notes').delete().eq('id', noteId); showToast('Note deleted', 'success'); var nr = await proxyFrom('session_notes').select('*').order('created_at',{ascending:false}); sessNotesData = nr.data || []; if(crmCurrentClient) await crmOpenClient(crmCurrentClient); else renderBookingsGrid(); } catch(e){ showToast('Error: '+e.message, 'error'); }
+}
+
+async function crmDeleteRecording(recId){
+  if(!await qpConfirm('Delete Recording', 'Are you sure? The file will be permanently deleted.', {danger:true, okText:'Delete'})) return;
+  try{
+    // If hosted on Supabase, delete the file too
+    var rec = sessRecsData.find(function(r){ return r.id === recId; });
+    if(rec && rec.source_type === 'supabase' && rec.file_path){
+      await sb.storage.from('session-recordings').remove([rec.file_path]);
+    }
+    await proxyFrom('session_recordings').delete().eq('id', recId);
+    showToast('Recording deleted', 'success');
+    var rr = await proxyFrom('session_recordings').select('*').order('created_at',{ascending:false}); sessRecsData = rr.data || [];
+    if(crmCurrentClient) await crmOpenClient(crmCurrentClient); else renderBookingsGrid();
+  } catch(e){ showToast('Error: '+e.message, 'error'); }
 }
 
 function renderCrmIntake(){

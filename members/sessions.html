@@ -247,6 +247,7 @@
     <symbol id="i-film" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/><line x1="17" y1="17" x2="22" y2="17"/></symbol>
     <symbol id="i-chevron-down" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></symbol>
     <symbol id="i-play" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
     <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="18" x2="20" y2="18"/></symbol>
     <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
     <symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
@@ -505,12 +506,27 @@
             }
             if (recordings.length) {
                 detailsHtml += `<div class="detail-section"><div class="detail-label"><svg><use href="#i-play"/></svg> Recordings</div>`;
-                detailsHtml += recordings.map(r => `
-                    <a href="${r.recording_url}" target="_blank" class="recording-link">
-                        <svg><use href="#i-play"/></svg> ${r.title || 'Session Recording'}
-                        ${r.duration_minutes ? ` · ${r.duration_minutes} min` : ''}
-                    </a>
-                `).join(' ');
+                detailsHtml += recordings.map(r => {
+                    const isHosted = r.source_type === 'supabase' || r.recording_url.includes('supabase');
+                    if (isHosted) {
+                        return `
+                        <div style="margin-bottom:12px">
+                            <video controls preload="metadata" style="width:100%;max-width:640px;border-radius:8px;background:#000" controlsList="nodownload">
+                                <source src="${r.recording_url}" type="video/mp4">
+                            </video>
+                            <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+                                <span style="font-size:12px;color:var(--text-muted)">${escapeHtml(r.title || 'Session Recording')}${r.file_size_mb ? ` · ${r.file_size_mb} MB` : ''}</span>
+                                <a href="${r.recording_url}" download class="recording-link" style="font-size:11px"><svg><use href="#i-download"/></svg> Download</a>
+                            </div>
+                        </div>`;
+                    } else {
+                        return `
+                        <a href="${r.recording_url}" target="_blank" class="recording-link">
+                            <svg><use href="#i-play"/></svg> ${escapeHtml(r.title || 'Session Recording')}
+                            ${r.duration_minutes ? ` · ${r.duration_minutes} min` : ''}
+                        </a>`;
+                    }
+                }).join(' ');
                 detailsHtml += `</div>`;
             }
             detailsHtml += `</div>`;
