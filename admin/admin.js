@@ -4585,9 +4585,40 @@ async function bulkRequestPayments(){
     return isRegular;
   });
   if(!targets.length){showToast('No unpaid completed regular sessions found','info');return}
-  var ok=await qpConfirm('Bulk Request Payments','Send payment requests to '+targets.length+' completed session(s) from regular clients?',{okText:'Send All Requests'});
-  if(!ok) return;
+  // Build checklist modal
+  var old=document.getElementById('bulk-send-modal');if(old)old.remove();
+  var ov=document.createElement('div');ov.id='bulk-send-modal';ov.className='modal-overlay';
+  ov.onclick=function(e){if(e.target===ov)ov.remove()};
+  var box=document.createElement('div');
+  box.style.cssText='background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;max-width:520px;width:94%;max-height:80vh;overflow-y:auto';
+  var rows=targets.map(function(b,i){
+    var name=b.name||b.email.split('@')[0];
+    var date=new Date(b.date+'T12:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+    var already=b.payment_requested_at?'<span style="font-size:10px;color:var(--warning);margin-left:6px">previously sent '+new Date(b.payment_requested_at).toLocaleDateString()+'</span>':'';
+    return '<label style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer">'
+      +'<input type="checkbox" checked class="bulk-pay-check" data-idx="'+i+'" style="width:16px;height:16px;accent-color:var(--teal)">'
+      +'<div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text)">'+esc(name)+'</div>'
+      +'<div style="font-size:11px;color:var(--text-dim)">'+esc(b.email)+' · '+date+already+'</div></div></label>';
+  }).join('');
+  box.innerHTML='<div style="font-weight:600;font-size:16px;margin-bottom:4px">Bulk Request Payments</div>'
+    +'<div style="font-size:12px;color:var(--text-dim);margin-bottom:14px">Uncheck anyone you don\'t want to send to.</div>'
+    +'<div style="margin-bottom:10px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--teal)"><input type="checkbox" checked id="bulk-pay-all" onchange="document.querySelectorAll(\'.bulk-pay-check\').forEach(function(c){c.checked=document.getElementById(\'bulk-pay-all\').checked})" style="width:16px;height:16px;accent-color:var(--teal)"> Select All ('+targets.length+')</label></div>'
+    +'<div style="max-height:300px;overflow-y:auto">'+rows+'</div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">'
+    +'<button class="btn btn-ghost btn-sm" onclick="document.getElementById(\'bulk-send-modal\').remove()">Cancel</button>'
+    +'<button class="btn btn-primary btn-sm" id="bulk-pay-send-btn" onclick="executeBulkPayments()">Send Payment Requests</button></div>';
+  ov.appendChild(box);document.body.appendChild(ov);
+  window._bulkPayTargets=targets;
+}
+
+async function executeBulkPayments(){
+  var checks=document.querySelectorAll('.bulk-pay-check:checked');
+  var indices=[];checks.forEach(function(c){indices.push(parseInt(c.dataset.idx))});
+  if(!indices.length){showToast('No clients selected','error');return}
+  var targets=indices.map(function(i){return window._bulkPayTargets[i]});
+  document.getElementById('bulk-send-modal').remove();
   var sent=0,failed=0;
+  showToast('Sending '+targets.length+' payment request(s)…','info');
   for(var i=0;i<targets.length;i++){
     var b=targets[i];
     try{
@@ -4620,8 +4651,39 @@ async function bulkSendReminders(){
     return (b.status==='paid'||b.status==='confirmed')&&b.date===tomorrow;
   });
   if(!targets.length){showToast('No sessions scheduled for tomorrow','info');return}
-  var ok=await qpConfirm('Bulk Send Reminders','Send day-before reminders to '+targets.length+' client(s) with sessions tomorrow?',{okText:'Send All Reminders'});
-  if(!ok) return;
+  // Build checklist modal
+  var old=document.getElementById('bulk-send-modal');if(old)old.remove();
+  var ov=document.createElement('div');ov.id='bulk-send-modal';ov.className='modal-overlay';
+  ov.onclick=function(e){if(e.target===ov)ov.remove()};
+  var box=document.createElement('div');
+  box.style.cssText='background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;max-width:520px;width:94%;max-height:80vh;overflow-y:auto';
+  var rows=targets.map(function(b,i){
+    var name=b.name||b.email.split('@')[0];
+    var time=b.start_time.slice(0,5)+'–'+b.end_time.slice(0,5);
+    var statusLabel=b.status==='confirmed'?'<span class="badge teal" style="font-size:9px">Confirmed</span>':'<span class="badge green" style="font-size:9px">Paid</span>';
+    return '<label style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer">'
+      +'<input type="checkbox" checked class="bulk-rem-check" data-idx="'+i+'" style="width:16px;height:16px;accent-color:var(--teal)">'
+      +'<div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text)">'+esc(name)+' '+statusLabel+'</div>'
+      +'<div style="font-size:11px;color:var(--text-dim)">'+esc(b.email)+' · '+time+'</div></div></label>';
+  }).join('');
+  box.innerHTML='<div style="font-weight:600;font-size:16px;margin-bottom:4px">Bulk Send Day-Before Reminders</div>'
+    +'<div style="font-size:12px;color:var(--text-dim);margin-bottom:14px">Sessions scheduled for tomorrow ('+new Date(Date.now()+24*60*60*1000).toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'})+').</div>'
+    +'<div style="margin-bottom:10px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--teal)"><input type="checkbox" checked id="bulk-rem-all" onchange="document.querySelectorAll(\'.bulk-rem-check\').forEach(function(c){c.checked=document.getElementById(\'bulk-rem-all\').checked})" style="width:16px;height:16px;accent-color:var(--teal)"> Select All ('+targets.length+')</label></div>'
+    +'<div style="max-height:300px;overflow-y:auto">'+rows+'</div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">'
+    +'<button class="btn btn-ghost btn-sm" onclick="document.getElementById(\'bulk-send-modal\').remove()">Cancel</button>'
+    +'<button class="btn btn-primary btn-sm" onclick="executeBulkReminders()">Send Reminders</button></div>';
+  ov.appendChild(box);document.body.appendChild(ov);
+  window._bulkRemTargets=targets;
+}
+
+async function executeBulkReminders(){
+  var checks=document.querySelectorAll('.bulk-rem-check:checked');
+  var indices=[];checks.forEach(function(c){indices.push(parseInt(c.dataset.idx))});
+  if(!indices.length){showToast('No clients selected','error');return}
+  var targets=indices.map(function(i){return window._bulkRemTargets[i]});
+  document.getElementById('bulk-send-modal').remove();
+  showToast('Sending '+targets.length+' reminder(s)…','info');
   for(var i=0;i<targets.length;i++){
     await sendSessionReminder('day-before',targets[i].id,targets[i].email);
   }
