@@ -4436,6 +4436,11 @@ function renderBookingsGrid(){
     else if(sessBookSortCol==='client'){va=(a.name||a.email).toLowerCase();vb=(b.name||b.email).toLowerCase()}
     else if(sessBookSortCol==='type'){va=a.type;vb=b.type}
     else if(sessBookSortCol==='status'){va=a.status;vb=b.status}
+    else if(sessBookSortCol==='payment'){
+      var pa=a.stripe_payment_id?2:(a.status==='paid'?2:(a.payment_requested_at?1:0));
+      var pb=b.stripe_payment_id?2:(b.status==='paid'?2:(b.payment_requested_at?1:0));
+      va=pa;vb=pb;
+    }
     else{va=a.date;vb=b.date}
     if(va<vb)return -1*dir;if(va>vb)return 1*dir;return 0;
   });
@@ -4474,23 +4479,39 @@ function renderBookingsGrid(){
     +'<th style="'+thStyle+';'+thActive('client')+'" onclick="sortBookingsGrid(\'client\')">Client'+sortArrow('client')+'</th>'
     +'<th style="'+thStyle+';'+thActive('type')+'" onclick="sortBookingsGrid(\'type\')">Type'+sortArrow('type')+'</th>'
     +'<th style="'+thStyle+';'+thActive('status')+'" onclick="sortBookingsGrid(\'status\')">Status'+sortArrow('status')+'</th>'
+    +'<th style="'+thStyle+';'+thActive('payment')+'" onclick="sortBookingsGrid(\'payment\')">Payment'+sortArrow('payment')+'</th>'
     +'<th></th></tr></thead><tbody>'
     +page.map(function(b){
       var payLink=b.confirmation_token?'https://qp-homepage.netlify.app/pages/one-on-sessions.html?pay='+b.confirmation_token:'';
       var isRegular=sessClientsData.some(function(cl){return cl.id===b.client_id&&cl.client_type==='regular'});
+
+      // Payment column content
+      var payCol='';
+      if(b.stripe_payment_id){
+        payCol='<span class="badge green" style="font-size:10px">Paid</span><br><span style="font-size:9px;color:var(--text-dim);font-family:monospace">'+b.stripe_payment_id.slice(0,14)+'…</span>';
+      }else if(b.status==='paid'){
+        payCol='<span class="badge green" style="font-size:10px">Paid</span>';
+      }else if(b.status==='completed'&&isRegular&&b.payment_requested_at){
+        payCol='<span class="badge yellow" style="font-size:10px" title="Sent '+new Date(b.payment_requested_at).toLocaleString()+'">Requested</span><br><button class="btn btn-ghost btn-sm" onclick="requestRegularPayment(\''+b.id+'\')" style="font-size:9px;padding:1px 6px">Resend</button>';
+      }else if(b.status==='completed'&&isRegular&&!b.stripe_payment_id){
+        payCol='<span class="badge danger" style="font-size:10px">Unpaid</span><br><button class="btn btn-primary btn-sm" onclick="requestRegularPayment(\''+b.id+'\')" style="font-size:10px;padding:2px 8px">Request</button>';
+      }else if(b.status==='proposed'||b.status==='confirmed'){
+        payCol='<span style="font-size:11px;color:var(--text-dim)">—</span>';
+      }else{
+        payCol='<span style="font-size:11px;color:var(--text-dim)">—</span>';
+      }
+
       var row='<tr><td style="white-space:nowrap">'+fmtDate(b.date)+'</td>'
         +'<td>'+b.start_time.slice(0,5)+'–'+b.end_time.slice(0,5)+'</td>'
         +'<td class="email">'+esc(b.email)+(b.name?'<br><span class="name" style="font-size:11px">'+esc(b.name)+'</span>':'')+(isRegular?' <span class="badge teal" style="font-size:9px;vertical-align:middle">Regular</span>':'')+'</td>'
         +'<td>'+typeBadges[b.type]+'</td>'
-        +'<td>'+(statusBadges[b.status]||'<span class="badge muted">'+b.status+'</span>')+(b.stripe_payment_id?'<br><span style="font-size:9px;color:var(--text-dim);font-family:monospace">'+b.stripe_payment_id.slice(0,18)+'…</span>':'')+'</td>'
+        +'<td>'+(statusBadges[b.status]||'<span class="badge muted">'+b.status+'</span>')+'</td>'
+        +'<td>'+payCol+'</td>'
         +'<td><div style="display:flex;gap:4px;flex-wrap:wrap">'
-        +(b.status==='proposed'&&payLink?'<button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText(\''+payLink+'\');showToast(\'Pay link copied\',\'success\')" title="Copy payment link">🔗 Pay Link</button>':'')
-        +(b.status==='proposed'&&isRegular?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'confirmed\')" title="Confirm without payment (Regular client)">✓ Confirm</button>':'')
+        +(b.status==='proposed'&&payLink?'<button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText(\''+payLink+'\');showToast(\'Pay link copied\',\'success\')" title="Copy payment link">🔗</button>':'')
+        +(b.status==='proposed'&&isRegular?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'confirmed\')" title="Confirm without payment">Confirm</button>':'')
         +(b.status==='proposed'?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'paid\')">Mark Paid</button><button class="btn btn-danger btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'declined\')">Decline</button>':'')
-        +(b.status==='confirmed'?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'completed\')">Complete</button><button class="btn btn-ghost btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'no_show\')">No Show</button><button class="btn btn-danger btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'cancelled\')">Cancel</button>':'')
-        +(b.status==='paid'?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'completed\')">Complete</button><button class="btn btn-ghost btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'no_show\')">No Show</button><button class="btn btn-danger btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'cancelled\')">Cancel</button>':'')
-        +(b.status==='completed'&&isRegular&&!b.stripe_payment_id&&!b.payment_requested_at?'<button class="btn btn-primary btn-sm" onclick="requestRegularPayment(\''+b.id+'\')">💳 Request Payment</button>':'')
-        +(b.status==='completed'&&isRegular&&!b.stripe_payment_id&&b.payment_requested_at?'<span class="badge yellow" style="font-size:10px" title="Sent '+new Date(b.payment_requested_at).toLocaleString()+'">Payment Requested</span> <button class="btn btn-ghost btn-sm" onclick="requestRegularPayment(\''+b.id+'\')" style="font-size:10px">Resend</button>':'')
+        +(b.status==='confirmed'||b.status==='paid'?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'completed\')">Complete</button><button class="btn btn-ghost btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'no_show\')">No Show</button><button class="btn btn-danger btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'cancelled\')">Cancel</button>':'')
         +(b.status==='completed'||b.status==='paid'||b.status==='confirmed'?'<button class="btn btn-primary btn-sm" onclick="crmAddNote(\''+b.id+'\')">+ Note</button><button class="btn btn-ghost btn-sm" onclick="crmAddRecording(\''+b.id+'\')">+ Recording</button>':'<button class="btn btn-ghost btn-sm" onclick="crmAddNote(\''+b.id+'\')">+ Note</button>')
         +'<button class="btn btn-ghost btn-sm" onclick="deleteBooking(\''+b.id+'\')">🗑</button>'
         +'</div></td></tr>';
@@ -4502,7 +4523,7 @@ function renderBookingsGrid(){
         var badgeHtml = [];
         if (bNotes.length) badgeHtml.push('<span style="color:var(--teal)">📝 ' + bNotes.length + ' note' + (bNotes.length > 1 ? 's' : '') + '</span>');
         if (bRecs.length) badgeHtml.push('<span style="color:var(--success)">🎥 ' + bRecs.length + ' recording' + (bRecs.length > 1 ? 's' : '') + '</span>');
-        row += '<tr class="note-toggle-row" data-bid="'+b.id+'" style="cursor:pointer;background:rgba(91,168,178,0.03)" onclick="var rows=document.querySelectorAll(\'.note-row-'+b.id.replace(/-/g,'')+'\');var show=rows[0]&&rows[0].style.display===\'none\';rows.forEach(function(r){r.style.display=show?\'table-row\':\'none\'});this.querySelector(\'.note-arrow\').textContent=show?\'▾\':\'▸\'"><td colspan="6" style="padding:5px 16px;font-size:12px"><span class="note-arrow" style="margin-right:6px;color:var(--teal)">▸</span>' + badgeHtml.join(' <span style="color:var(--border)">·</span> ') + ' <span style="color:var(--text-dim);font-size:11px;margin-left:4px">click to expand</span></td></tr>';
+        row += '<tr class="note-toggle-row" data-bid="'+b.id+'" style="cursor:pointer;background:rgba(91,168,178,0.03)" onclick="var rows=document.querySelectorAll(\'.note-row-'+b.id.replace(/-/g,'')+'\');var show=rows[0]&&rows[0].style.display===\'none\';rows.forEach(function(r){r.style.display=show?\'table-row\':\'none\'});this.querySelector(\'.note-arrow\').textContent=show?\'▾\':\'▸\'"><td colspan="7" style="padding:5px 16px;font-size:12px"><span class="note-arrow" style="margin-right:6px;color:var(--teal)">▸</span>' + badgeHtml.join(' <span style="color:var(--border)">·</span> ') + ' <span style="color:var(--text-dim);font-size:11px;margin-left:4px">click to expand</span></td></tr>';
         bNotes.forEach(function(n){
           var regionBadges = '';
           if (n.body_regions && n.body_regions.length) {
@@ -4510,12 +4531,12 @@ function renderBookingsGrid(){
             n.body_regions.forEach(function(rid) { regionBadges += '<span style="display:inline-block;padding:2px 7px;font-size:10px;border-radius:10px;background:rgba(91,168,178,.15);color:var(--teal);border:1px solid rgba(91,168,178,.25)">' + esc(rid.replace(/-/g,' ')) + '</span>'; });
             regionBadges += '</div>';
           }
-          row += '<tr class="note-row-'+b.id.replace(/-/g,'')+'" style="display:none;background:rgba(91,168,178,0.05)"><td colspan="6" style="padding:8px 16px 8px 32px;font-size:13px"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div style="flex:1"><span style="color:var(--teal);font-weight:600;font-size:11px;text-transform:uppercase">'+esc(n.note_type)+' note</span>'+(n.visible_to_patient ? ' <span class="badge badge-info" style="font-size:10px">Patient visible</span>' : ' <span class="badge badge-muted" style="font-size:10px">Private</span>')+'<div style="margin-top:4px;color:var(--text);white-space:pre-wrap">'+esc(n.content)+'</div>'+regionBadges+'<div style="margin-top:4px;font-size:11px;color:var(--text-dim)">'+timeAgo(n.created_at)+'</div></div><div style="display:flex;gap:4px;flex-shrink:0;margin-left:8px"><button class="btn btn-ghost btn-sm sess-note-edit" data-nid="'+n.id+'" title="Edit" style="font-size:11px">✏️</button><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();crmToggleNoteVisibility(\''+n.id+'\','+!n.visible_to_patient+')" title="'+(n.visible_to_patient?'Make private':'Share with patient')+'" style="font-size:11px">'+(n.visible_to_patient?'🔓':'🔒')+'</button><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();crmDeleteNote(\''+n.id+'\')" title="Delete" style="font-size:11px;color:var(--error)">🗑</button></div></div></td></tr>';
+          row += '<tr class="note-row-'+b.id.replace(/-/g,'')+'" style="display:none;background:rgba(91,168,178,0.05)"><td colspan="7" style="padding:8px 16px 8px 32px;font-size:13px"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div style="flex:1"><span style="color:var(--teal);font-weight:600;font-size:11px;text-transform:uppercase">'+esc(n.note_type)+' note</span>'+(n.visible_to_patient ? ' <span class="badge badge-info" style="font-size:10px">Patient visible</span>' : ' <span class="badge badge-muted" style="font-size:10px">Private</span>')+'<div style="margin-top:4px;color:var(--text);white-space:pre-wrap">'+esc(n.content)+'</div>'+regionBadges+'<div style="margin-top:4px;font-size:11px;color:var(--text-dim)">'+timeAgo(n.created_at)+'</div></div><div style="display:flex;gap:4px;flex-shrink:0;margin-left:8px"><button class="btn btn-ghost btn-sm sess-note-edit" data-nid="'+n.id+'" title="Edit" style="font-size:11px">✏️</button><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();crmToggleNoteVisibility(\''+n.id+'\','+!n.visible_to_patient+')" title="'+(n.visible_to_patient?'Make private':'Share with patient')+'" style="font-size:11px">'+(n.visible_to_patient?'🔓':'🔒')+'</button><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();crmDeleteNote(\''+n.id+'\')" title="Delete" style="font-size:11px;color:var(--error)">🗑</button></div></div></td></tr>';
         });
         bRecs.forEach(function(r){
           var sizeTxt = r.file_size_mb ? ' · ' + r.file_size_mb + ' MB' : '';
           var srcBadge = r.source_type === 'supabase' ? '<span class="badge badge-success" style="font-size:10px">Hosted</span>' : '<span class="badge badge-muted" style="font-size:10px">External</span>';
-          row += '<tr class="note-row-'+b.id.replace(/-/g,'')+'" style="display:none;background:rgba(91,184,140,0.05)"><td colspan="6" style="padding:8px 16px 8px 32px;font-size:13px"><div style="display:flex;justify-content:space-between;align-items:center"><div><span style="color:var(--success);font-weight:600;font-size:11px">🎥 RECORDING</span> '+srcBadge+' <span style="margin-left:6px">'+esc(r.title||'Session Recording')+sizeTxt+'</span><div style="font-size:11px;color:var(--text-dim);margin-top:2px">'+timeAgo(r.uploaded_at)+'</div></div><div style="display:flex;gap:4px"><a href="'+esc(r.recording_url)+'" target="_blank" class="btn btn-ghost btn-sm" style="font-size:11px">▶ Play</a><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();crmDeleteRecording(\''+r.id+'\')" title="Delete" style="font-size:11px;color:var(--error)">🗑</button></div></div></td></tr>';
+          row += '<tr class="note-row-'+b.id.replace(/-/g,'')+'" style="display:none;background:rgba(91,184,140,0.05)"><td colspan="7" style="padding:8px 16px 8px 32px;font-size:13px"><div style="display:flex;justify-content:space-between;align-items:center"><div><span style="color:var(--success);font-weight:600;font-size:11px">🎥 RECORDING</span> '+srcBadge+' <span style="margin-left:6px">'+esc(r.title||'Session Recording')+sizeTxt+'</span><div style="font-size:11px;color:var(--text-dim);margin-top:2px">'+timeAgo(r.uploaded_at)+'</div></div><div style="display:flex;gap:4px"><a href="'+esc(r.recording_url)+'" target="_blank" class="btn btn-ghost btn-sm" style="font-size:11px">▶ Play</a><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();crmDeleteRecording(\''+r.id+'\')" title="Delete" style="font-size:11px;color:var(--error)">🗑</button></div></div></td></tr>';
         });
       }
       return row;
@@ -5306,7 +5327,7 @@ function renderCrmSessions(){
     html += '<tr style="'+(hasDetails?'cursor:pointer':'') +'" '+(hasDetails?'onclick="toggleCrmBookingDetails(\''+b.id+'\')"':'')+'><td>'+date+'</td><td>'+time+'</td><td><span class="badge badge-'+statusClass+'">'+esc(b.status)+'</span></td><td>'+noteCount+'</td><td>'+recCount+'</td><td onclick="event.stopPropagation()"><button class="btn btn-ghost btn-sm" onclick="crmAddNote(\''+b.id+'\')">+ Note</button> <button class="btn btn-ghost btn-sm" onclick="crmAddRecording(\''+b.id+'\')">+ Recording</button>'+(hasDetails?' <span style="font-size:10px;color:var(--teal);margin-left:4px;cursor:pointer;padding:4px" id="crm-expand-icon-'+b.id+'" onclick="toggleCrmBookingDetails(\''+b.id+'\')">\u25BC</span>':'')+'</td></tr>';
     // Detail rows — hidden by default
     if(hasDetails){
-      html += '<tr class="crm-booking-detail" data-bid="'+b.id+'" style="display:none"><td colspan="6" style="padding:0">';
+      html += '<tr class="crm-booking-detail" data-bid="'+b.id+'" style="display:none"><td colspan="7" style="padding:0">';
       notes.forEach(function(n){
         var regionBadges = '';
         if (n.body_regions && n.body_regions.length) {
