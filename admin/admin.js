@@ -3496,6 +3496,8 @@ async function refreshBookingsView(){
     sessBookingsData = bk.data || [];
     sessNotesData = nt.data || [];
     sessRecsData = rc.data || [];
+    console.log('[refreshBookingsView] bookings:', sessBookingsData.length, 'notes:', sessNotesData.length, 'recordings:', sessRecsData.length);
+    if(sessRecsData.length) console.log('[refreshBookingsView] rec booking_ids:', sessRecsData.map(function(r){return r.booking_id}));
     renderBookingsGrid();
     renderSessionsStats();
   }catch(e){ console.error('Refresh error:', e); }
