@@ -247,12 +247,14 @@
 <button class="tab-btn" onclick="switchCrmTab('progress',this)">Progress</button>
 <button class="tab-btn" onclick="switchCrmTab('billing',this)">Billing</button>
 <button class="tab-btn" onclick="switchCrmTab('notes',this)">Notes</button>
+<button class="tab-btn" onclick="switchCrmTab('emails',this)">Emails</button>
 </div>
 <div class="tab-content active" id="crm-tab-sessions"><div class="card"><div class="card-body" id="crm-sessions-content"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div></div>
 <div class="tab-content" id="crm-tab-intake"><div class="card"><div class="card-body" id="crm-intake-content"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div></div>
 <div class="tab-content" id="crm-tab-progress"><div class="card"><div class="card-body" id="crm-progress-content"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div></div>
 <div class="tab-content" id="crm-tab-billing"><div class="card"><div class="card-body" id="crm-billing-content"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div></div>
 <div class="tab-content" id="crm-tab-notes"><div class="card"><div class="card-body" id="crm-notes-content"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div></div>
+<div class="tab-content" id="crm-tab-emails"><div class="card"><div class="card-body" id="crm-emails-content"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div></div>
 </div>
 
 </div>
@@ -592,6 +594,14 @@
 <div style="font-size:11px;color:var(--text-dim)">Sends a reminder at 48h, then auto-expires proposed bookings that haven't been paid within 72 hours.</div>
 </div>
 
+<div style="padding:16px;border:1px solid var(--border);border-radius:10px;background:rgba(0,0,0,.08)">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+<div style="font-weight:600;font-size:13px;color:var(--text)">7-Day Regular Expiry</div>
+<label style="display:flex;align-items:center;cursor:pointer"><input type="checkbox" id="auto-reminder-regular-expiry" onchange="toggleAutomationConfig('auto_regular_expiry',this)" style="accent-color:var(--teal);width:16px;height:16px"></label>
+</div>
+<div style="font-size:11px;color:var(--text-dim)">For regular (trusted) clients: sends a payment reminder at 5 days post-session, then auto-expires confirmed bookings at 7 days if unpaid.</div>
+</div>
+
 </div>
 
 <!-- Actions -->
@@ -604,6 +614,15 @@
 <!-- Pending reminders list -->
 <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:10px">Pending Session Reminders</div>
 <div id="session-reminders-list"><div class="empty"><p>Click "Generate Reminders Now" to scan upcoming bookings and create reminders.</p></div></div>
+
+<!-- Next Run Preview -->
+<div style="margin-top:28px;border-top:1px solid var(--border);padding-top:20px">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+<div style="font-size:14px;font-weight:600;color:var(--text)">Next Cron Run Preview</div>
+<div style="font-size:11px;color:var(--text-dim)">What the daily 8 AM ET cron will process based on current bookings</div>
+</div>
+<div id="next-run-preview"><div class="empty"><p>Loading preview...</p></div></div>
+</div>
 
 <!-- Automation Send Log -->
 <div style="margin-top:28px;border-top:1px solid var(--border);padding-top:20px">

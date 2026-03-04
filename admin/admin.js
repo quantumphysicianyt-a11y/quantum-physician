@@ -5502,13 +5502,13 @@ function crmBackToList(){
 function switchCrmTab(tab, btn){
   document.querySelectorAll('#crm-detail-tabs .tab-btn').forEach(function(b){ b.classList.remove('active'); });
   if(btn) btn.classList.add('active');
-  ['sessions','intake','progress','billing','notes'].forEach(function(t){
+  ['sessions','intake','progress','billing','notes','emails'].forEach(function(t){
     var el = document.getElementById('crm-tab-'+t);
     if(el) el.classList.remove('active');
   });
   var el = document.getElementById('crm-tab-'+tab);
   if(el) el.classList.add('active');
-  switch(tab){ case 'sessions': renderCrmSessions(); break; case 'intake': renderCrmIntake(); break; case 'progress': renderCrmProgress(); break; case 'billing': renderCrmBilling(); break; case 'notes': renderCrmNotes(); break; }
+  switch(tab){ case 'sessions': renderCrmSessions(); break; case 'intake': renderCrmIntake(); break; case 'progress': renderCrmProgress(); break; case 'billing': renderCrmBilling(); break; case 'notes': renderCrmNotes(); break; case 'emails': renderCrmEmails(); break; }
 }
 
 function renderCrmSessions(){
@@ -6127,6 +6127,138 @@ function renderCrmNotes(){
 async function crmAddInternalNote(){ var text = await qpPrompt('Internal Note', 'This note is only visible to admins:', 'Internal observations, follow-up reminders...'); if(!text) return; await saveAdminNote(crmCurrentClient, text); showToast('Note saved', 'success'); renderCrmNotes(); }
 async function crmDeleteInternalNote(id){ var ok = await qpConfirm('Delete Note', 'Delete this internal note?', {danger:true,okText:'Delete'}); if(!ok) return; await deleteAdminNote(crmCurrentClient, id); showToast('Note deleted', 'success'); renderCrmNotes(); }
 
+async function renderCrmEmails(){
+  var el = document.getElementById('crm-emails-content');
+  if(!crmCurrentClient){ el.innerHTML = '<div class="empty"><p>No client selected.</p></div>'; return; }
+  el.innerHTML = '<div class="loading-center"><div class="spinner"></div>Loading email history...</div>';
+  var email = crmCurrentClient;
+  var allEmails = [];
+
+  // 1. Session automation emails (email_automation_log)
+  try {
+    var autoRes = await proxyFrom('email_automation_log').select('*').eq('email', email).order('sent_at',{ascending:false}).limit(100);
+    (autoRes.data||[]).forEach(function(r){
+      allEmails.push({
+        date: r.sent_at || r.created_at,
+        type: formatAutomationType(r.automation_type),
+        pipeline: 'Session Automation',
+        status: r.status,
+        subject: getAutoSubject(r.automation_type),
+        error: r.error_message || null,
+        badgeClass: getAutomationBadgeClass(r.automation_type)
+      });
+    });
+  } catch(e){ console.error('CRM emails: automation log error', e); }
+
+  // 2. Marketing campaigns (email_tracking)
+  try {
+    var trackRes = emailTrackingData.filter(function(t){ return t.recipient_email && t.recipient_email.toLowerCase() === email; });
+    trackRes.forEach(function(t){
+      var campaign = emailCampaignsData.find(function(c){ return c.id === t.campaign_id; });
+      allEmails.push({
+        date: t.sent_at,
+        type: t.email_type === 'promotional' ? 'Promotional' : (t.email_type || 'Campaign'),
+        pipeline: 'Marketing',
+        status: t.clicked_at ? 'clicked' : (t.opened_at ? 'opened' : 'sent'),
+        subject: campaign ? campaign.subject : (t.email_type || 'Campaign Email'),
+        error: null,
+        badgeClass: 'purple'
+      });
+    });
+  } catch(e){ console.error('CRM emails: tracking error', e); }
+
+  // 3. Fusion scheduled emails (email_log)
+  try {
+    var logRes = emailLogData.filter(function(l){ return l.recipient_email && l.recipient_email.toLowerCase() === email; });
+    logRes.forEach(function(l){
+      allEmails.push({
+        date: l.sent_at,
+        type: 'Fusion Drip',
+        pipeline: 'Fusion',
+        status: l.status || 'sent',
+        subject: l.subject || 'Fusion Session Email',
+        error: l.error_message || null,
+        badgeClass: 'ghost'
+      });
+    });
+  } catch(e){ console.error('CRM emails: log error', e); }
+
+  // Sort all emails by date descending
+  allEmails.sort(function(a,b){ return (b.date||'') > (a.date||'') ? 1 : -1; });
+
+  if(!allEmails.length){
+    el.innerHTML = '<div class="empty"><p>No emails found for this client across any pipeline.</p></div>';
+    return;
+  }
+
+  // Summary stats
+  var totalSent = allEmails.filter(function(e){ return e.status==='sent'||e.status==='opened'||e.status==='clicked'; }).length;
+  var totalOpened = allEmails.filter(function(e){ return e.status==='opened'||e.status==='clicked'; }).length;
+  var totalFailed = allEmails.filter(function(e){ return e.status==='failed'; }).length;
+  var totalSkipped = allEmails.filter(function(e){ return e.status==='skipped'; }).length;
+
+  var html = '<div style="display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap">';
+  html += '<div style="text-align:center;padding:12px 20px;background:rgba(91,168,178,.08);border:1px solid rgba(91,168,178,.2);border-radius:10px"><div style="font-size:22px;font-weight:700;color:var(--teal)">'+totalSent+'</div><div style="font-size:11px;color:var(--text-dim)">Sent</div></div>';
+  html += '<div style="text-align:center;padding:12px 20px;background:rgba(131,56,236,.08);border:1px solid rgba(131,56,236,.2);border-radius:10px"><div style="font-size:22px;font-weight:700;color:var(--purple)">'+totalOpened+'</div><div style="font-size:11px;color:var(--text-dim)">Opened</div></div>';
+  if(totalFailed) html += '<div style="text-align:center;padding:12px 20px;background:rgba(239,83,80,.08);border:1px solid rgba(239,83,80,.2);border-radius:10px"><div style="font-size:22px;font-weight:700;color:var(--danger)">'+totalFailed+'</div><div style="font-size:11px;color:var(--text-dim)">Failed</div></div>';
+  if(totalSkipped) html += '<div style="text-align:center;padding:12px 20px;background:rgba(255,193,7,.08);border:1px solid rgba(255,193,7,.2);border-radius:10px"><div style="font-size:22px;font-weight:700;color:var(--warning)">'+totalSkipped+'</div><div style="font-size:11px;color:var(--text-dim)">Skipped</div></div>';
+  html += '<div style="text-align:center;padding:12px 20px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px"><div style="font-size:22px;font-weight:700;color:var(--text)">'+allEmails.length+'</div><div style="font-size:11px;color:var(--text-dim)">Total</div></div>';
+  html += '</div>';
+
+  // Filter controls
+  html += '<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">';
+  html += '<button class="btn btn-sm crm-email-filter active" onclick="filterCrmEmails(\'all\',this)" style="font-size:11px">All</button>';
+  html += '<button class="btn btn-ghost btn-sm crm-email-filter" onclick="filterCrmEmails(\'Session Automation\',this)" style="font-size:11px">Session Automation</button>';
+  html += '<button class="btn btn-ghost btn-sm crm-email-filter" onclick="filterCrmEmails(\'Marketing\',this)" style="font-size:11px">Marketing</button>';
+  html += '<button class="btn btn-ghost btn-sm crm-email-filter" onclick="filterCrmEmails(\'Fusion\',this)" style="font-size:11px">Fusion</button>';
+  html += '</div>';
+
+  // Email table
+  html += '<div id="crm-emails-table-wrap">';
+  html += buildCrmEmailsTable(allEmails);
+  html += '</div>';
+
+  el.innerHTML = html;
+  window._crmEmailsAll = allEmails;
+}
+
+function filterCrmEmails(pipeline, btn){
+  document.querySelectorAll('.crm-email-filter').forEach(function(b){ b.classList.remove('active'); b.classList.add('btn-ghost'); });
+  btn.classList.add('active'); btn.classList.remove('btn-ghost');
+  var filtered = pipeline === 'all' ? window._crmEmailsAll : window._crmEmailsAll.filter(function(e){ return e.pipeline === pipeline; });
+  document.getElementById('crm-emails-table-wrap').innerHTML = buildCrmEmailsTable(filtered);
+}
+
+function buildCrmEmailsTable(emails){
+  if(!emails.length) return '<div class="empty"><p>No emails match this filter.</p></div>';
+  var html = '<table class="tbl"><thead><tr><th>Date</th><th>Subject</th><th>Type</th><th>Pipeline</th><th>Status</th></tr></thead><tbody>';
+  emails.forEach(function(e){
+    var date = e.date ? new Date(e.date).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}) : '\u2014';
+    var statusColor = e.status==='clicked'?'var(--success)':e.status==='opened'?'var(--purple)':e.status==='sent'?'var(--teal)':e.status==='skipped'?'var(--warning)':'var(--danger)';
+    var pipelineColor = e.pipeline==='Session Automation'?'var(--teal)':e.pipeline==='Marketing'?'var(--purple)':'var(--text-dim)';
+    html += '<tr><td style="font-size:12px;white-space:nowrap">'+date+'</td>';
+    html += '<td style="font-size:12px;max-width:250px;overflow:hidden;text-overflow:ellipsis">'+esc(e.subject||'\u2014')+'</td>';
+    html += '<td><span class="badge badge-'+e.badgeClass+'" style="font-size:10px">'+esc(e.type)+'</span></td>';
+    html += '<td style="font-size:11px;color:'+pipelineColor+'">'+esc(e.pipeline)+'</td>';
+    html += '<td><span style="color:'+statusColor+';font-weight:600;font-size:10px;text-transform:uppercase">'+esc(e.status||'unknown')+'</span>'+(e.error ? ' <span title="'+esc(e.error)+'" style="cursor:help;font-size:10px;color:var(--danger)">\u26a0</span>' : '')+'</td></tr>';
+  });
+  html += '</tbody></table>';
+  return html;
+}
+
+function getAutoSubject(type){
+  var map = {
+    day_before:'Your Session Tomorrow with Dr. Tracey Clark',
+    follow_up:'Thank You \u2014 Session Follow-Up from Dr. Tracey',
+    intake_nudge:'Please Complete Your Intake Form',
+    payment_expiry_48h:'Your Session Booking Expires Soon',
+    payment_expiry_72h:'Booking Expired',
+    regular_expiry_5d:'Payment Reminder \u2014 Your Session with Dr. Tracey Clark',
+    regular_expiry_7d:'Session Booking Expired \u2014 Payment Not Received'
+  };
+  return map[type] || type;
+}
+
 // ═══════════════════════════════════════
 // 1-ON-1 SESSION EMAIL AUTOMATION (Session 29)
 // ═══════════════════════════════════════
@@ -6145,6 +6277,8 @@ async function loadSessionRemindersTab(){
     if(fuEl) fuEl.checked = cfg.auto_follow_up ? cfg.auto_follow_up.enabled !== false : true;
     if(intEl) intEl.checked = cfg.auto_intake_nudge ? !!cfg.auto_intake_nudge.enabled : false;
     if(expEl) expEl.checked = cfg.auto_payment_expiry ? !!cfg.auto_payment_expiry.enabled : false;
+    var regExpEl = document.getElementById('auto-reminder-regular-expiry');
+    if(regExpEl) regExpEl.checked = cfg.auto_regular_expiry ? !!cfg.auto_regular_expiry.enabled : false;
   }catch(e){ console.error('Failed to load automation config:', e); }
   // Refresh bookings data if stale
   if(!sessBookingsData.length && !sessConfigData){
@@ -6178,33 +6312,177 @@ async function loadAutomationLog(){
   if(!el) return;
   el.innerHTML = '<div class="empty"><p>Loading automation log...</p></div>';
   try{
-    var res = await proxyFrom('email_automation_log').select('*').order('sent_at', {ascending:false}).limit(50);
+    var res = await proxyFrom('email_automation_log').select('*').order('sent_at', {ascending:false}).limit(200);
     var rows = res.data || [];
+    window._autoLogAll = rows;
     if(!rows.length){
       el.innerHTML = '<div class="empty"><p>No automated emails sent yet. Once the daily cron runs, sends will appear here.</p></div>';
+      renderNextRunPreview();
       return;
     }
-    var html = '<table class="tbl"><thead><tr><th>Sent</th><th>Recipient</th><th>Type</th><th>Status</th><th>Error</th></tr></thead><tbody>';
-    rows.forEach(function(r){
-      var sentDate = r.sent_at ? new Date(r.sent_at).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : '—';
-      var typeBadge = '<span class="badge badge-' + getAutomationBadgeClass(r.automation_type) + '" style="font-size:10px">' + formatAutomationType(r.automation_type) + '</span>';
-      var statusBadge = '<span class="badge badge-' + (r.status==='sent'?'success':r.status==='skipped'?'info':'danger') + '" style="font-size:10px">' + (r.status||'unknown') + '</span>';
-      html += '<tr><td style="font-size:12px;white-space:nowrap">' + sentDate + '</td><td style="font-size:12px">' + esc(r.email) + '</td><td>' + typeBadge + '</td><td>' + statusBadge + '</td><td style="font-size:11px;color:var(--text-dim);max-width:200px;overflow:hidden;text-overflow:ellipsis">' + esc(r.error_message||'') + '</td></tr>';
+
+    // Summary stats for last 7 days
+    var weekAgo = new Date(Date.now() - 7*24*60*60*1000).toISOString();
+    var recent = rows.filter(function(r){ return r.sent_at >= weekAgo; });
+    var sentCount = recent.filter(function(r){ return r.status==='sent'; }).length;
+    var failedCount = recent.filter(function(r){ return r.status==='failed'; }).length;
+    var skippedCount = recent.filter(function(r){ return r.status==='skipped'; }).length;
+    var typeCounts = {};
+    recent.filter(function(r){ return r.status==='sent'; }).forEach(function(r){ typeCounts[r.automation_type] = (typeCounts[r.automation_type]||0) + 1; });
+
+    var html = '';
+    // Stats bar
+    html += '<div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">';
+    html += '<div style="padding:8px 14px;background:rgba(91,168,178,.08);border:1px solid rgba(91,168,178,.2);border-radius:8px;font-size:12px"><strong style="color:var(--teal)">'+sentCount+'</strong> <span style="color:var(--text-dim)">sent (7d)</span></div>';
+    if(failedCount) html += '<div style="padding:8px 14px;background:rgba(239,83,80,.08);border:1px solid rgba(239,83,80,.2);border-radius:8px;font-size:12px"><strong style="color:var(--danger)">'+failedCount+'</strong> <span style="color:var(--text-dim)">failed</span></div>';
+    if(skippedCount) html += '<div style="padding:8px 14px;background:rgba(255,193,7,.08);border:1px solid rgba(255,193,7,.2);border-radius:8px;font-size:12px"><strong style="color:var(--warning)">'+skippedCount+'</strong> <span style="color:var(--text-dim)">skipped</span></div>';
+    Object.keys(typeCounts).forEach(function(t){
+      html += '<div style="padding:8px 14px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;font-size:12px"><strong style="color:var(--text)">'+typeCounts[t]+'</strong> <span style="color:var(--text-dim)">'+formatAutomationType(t)+'</span></div>';
     });
-    html += '</tbody></table>';
+    html += '</div>';
+
+    // Filter buttons
+    html += '<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">';
+    html += '<button class="btn btn-sm auto-log-filter active" onclick="filterAutoLog(\'all\',this)" style="font-size:11px">All ('+rows.length+')</button>';
+    html += '<button class="btn btn-ghost btn-sm auto-log-filter" onclick="filterAutoLog(\'sent\',this)" style="font-size:11px">Sent</button>';
+    html += '<button class="btn btn-ghost btn-sm auto-log-filter" onclick="filterAutoLog(\'failed\',this)" style="font-size:11px">Failed</button>';
+    html += '<button class="btn btn-ghost btn-sm auto-log-filter" onclick="filterAutoLog(\'skipped\',this)" style="font-size:11px">Skipped</button>';
+    html += '<span style="border-left:1px solid var(--border);margin:0 4px"></span>';
+    html += '<button class="btn btn-ghost btn-sm auto-log-filter" onclick="filterAutoLog(\'day_before\',this)" style="font-size:11px">Day-Before</button>';
+    html += '<button class="btn btn-ghost btn-sm auto-log-filter" onclick="filterAutoLog(\'follow_up\',this)" style="font-size:11px">Follow-Up</button>';
+    html += '<button class="btn btn-ghost btn-sm auto-log-filter" onclick="filterAutoLog(\'intake_nudge\',this)" style="font-size:11px">Intake</button>';
+    html += '<button class="btn btn-ghost btn-sm auto-log-filter" onclick="filterAutoLog(\'expiry\',this)" style="font-size:11px">Expiry (all)</button>';
+    html += '</div>';
+
+    html += '<div id="auto-log-table-wrap">';
+    html += buildAutoLogTable(rows);
+    html += '</div>';
+
     el.innerHTML = html;
+    renderNextRunPreview();
   }catch(e){
     el.innerHTML = '<div class="empty"><p>Error loading log: ' + esc(e.message) + '</p></div>';
   }
 }
 
+function filterAutoLog(filter, btn){
+  document.querySelectorAll('.auto-log-filter').forEach(function(b){ b.classList.remove('active'); b.classList.add('btn-ghost'); });
+  btn.classList.add('active'); btn.classList.remove('btn-ghost');
+  var rows = window._autoLogAll || [];
+  if(filter === 'sent' || filter === 'failed' || filter === 'skipped'){
+    rows = rows.filter(function(r){ return r.status === filter; });
+  } else if(filter === 'expiry'){
+    rows = rows.filter(function(r){ return r.automation_type && r.automation_type.indexOf('expiry') !== -1; });
+  } else if(filter !== 'all'){
+    rows = rows.filter(function(r){ return r.automation_type === filter; });
+  }
+  document.getElementById('auto-log-table-wrap').innerHTML = buildAutoLogTable(rows);
+}
+
+function buildAutoLogTable(rows){
+  if(!rows.length) return '<div class="empty"><p>No emails match this filter.</p></div>';
+  var html = '<table class="tbl"><thead><tr><th>Sent</th><th>Recipient</th><th>Type</th><th>Status</th><th>Error</th></tr></thead><tbody>';
+  rows.slice(0, 100).forEach(function(r){
+    var sentDate = r.sent_at ? new Date(r.sent_at).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : '\u2014';
+    var typeBadge = '<span class="badge badge-' + getAutomationBadgeClass(r.automation_type) + '" style="font-size:10px">' + formatAutomationType(r.automation_type) + '</span>';
+    var statusBadge = '<span class="badge badge-' + (r.status==='sent'?'success':r.status==='skipped'?'info':'danger') + '" style="font-size:10px">' + (r.status||'unknown') + '</span>';
+    html += '<tr><td style="font-size:12px;white-space:nowrap">' + sentDate + '</td><td style="font-size:12px">' + esc(r.email) + '</td><td>' + typeBadge + '</td><td>' + statusBadge + '</td><td style="font-size:11px;color:var(--text-dim);max-width:200px;overflow:hidden;text-overflow:ellipsis">' + esc(r.error_message||'') + '</td></tr>';
+  });
+  html += '</tbody></table>';
+  if(rows.length > 100) html += '<div style="font-size:11px;color:var(--text-dim);margin-top:8px">Showing first 100 of '+rows.length+' results.</div>';
+  return html;
+}
+
+function renderNextRunPreview(){
+  var el = document.getElementById('next-run-preview');
+  if(!el) return;
+  var now = new Date();
+  var todayStr = now.toISOString().slice(0,10);
+  var tomorrowStr = new Date(now.getTime() + 24*60*60*1000).toISOString().slice(0,10);
+  var yesterdayStr = new Date(now.getTime() - 24*60*60*1000).toISOString().slice(0,10);
+  var h48ago = new Date(now.getTime() - 48*60*60*1000).toISOString();
+  var h72ago = new Date(now.getTime() - 72*60*60*1000).toISOString();
+  var d5ago = new Date(now.getTime() - 5*24*60*60*1000).toISOString();
+  var d7ago = new Date(now.getTime() - 7*24*60*60*1000).toISOString();
+  var autoLog = window._autoLogAll || [];
+
+  function wasAlreadySent(bookingId, type){
+    return autoLog.some(function(r){ return r.booking_id === bookingId && r.automation_type === type && r.status === 'sent'; });
+  }
+
+  var html = '';
+  var sections = [];
+
+  // Day-before reminders (tomorrow's paid/confirmed bookings)
+  var tomorrowBookings = sessBookingsData.filter(function(b){
+    return b.date === tomorrowStr && (b.status==='paid'||b.status==='confirmed') && !wasAlreadySent(b.id, 'day_before');
+  });
+  if(tomorrowBookings.length){
+    sections.push({label:'Day-Before Reminders', color:'var(--teal)', items: tomorrowBookings.map(function(b){ return esc(b.name||b.email)+' \u2014 '+fmtTime(b.start_time); })});
+  }
+
+  // Follow-ups (yesterday's completed, not yet sent)
+  var yesterdayCompleted = sessBookingsData.filter(function(b){
+    return b.date === yesterdayStr && b.status==='completed' && !wasAlreadySent(b.id, 'follow_up');
+  });
+  if(yesterdayCompleted.length){
+    sections.push({label:'Follow-Up Emails', color:'var(--success)', items: yesterdayCompleted.map(function(b){ return esc(b.name||b.email); })});
+  }
+
+  // 48h expiry warnings (proposed, 48-72h old)
+  var warn48 = sessBookingsData.filter(function(b){
+    return b.status==='proposed' && b.created_at < h48ago && b.created_at >= h72ago && !wasAlreadySent(b.id, 'payment_expiry_48h');
+  });
+  if(warn48.length){
+    sections.push({label:'48h Expiry Warnings', color:'var(--warning)', items: warn48.map(function(b){ return esc(b.name||b.email)+' \u2014 '+esc(b.date); })});
+  }
+
+  // 72h auto-expire (proposed, >72h old)
+  var expire72 = sessBookingsData.filter(function(b){
+    return b.status==='proposed' && b.created_at < h72ago && !wasAlreadySent(b.id, 'payment_expiry_72h');
+  });
+  if(expire72.length){
+    sections.push({label:'72h Auto-Expire', color:'var(--danger)', items: expire72.map(function(b){ return esc(b.name||b.email)+' \u2014 '+esc(b.date); })});
+  }
+
+  // 5-day regular warning (confirmed, 5-7 days old, session date passed)
+  var warn5d = sessBookingsData.filter(function(b){
+    return b.status==='confirmed' && b.created_at < d5ago && b.created_at >= d7ago && b.date < todayStr && !wasAlreadySent(b.id, 'regular_expiry_5d');
+  });
+  if(warn5d.length){
+    sections.push({label:'5-Day Regular Warnings', color:'var(--warning)', items: warn5d.map(function(b){ return esc(b.name||b.email)+' \u2014 '+esc(b.date); })});
+  }
+
+  // 7-day regular expire (confirmed, >7 days old, session date passed)
+  var expire7d = sessBookingsData.filter(function(b){
+    return b.status==='confirmed' && b.created_at < d7ago && b.date < todayStr && !wasAlreadySent(b.id, 'regular_expiry_7d');
+  });
+  if(expire7d.length){
+    sections.push({label:'7-Day Regular Expire', color:'var(--danger)', items: expire7d.map(function(b){ return esc(b.name||b.email)+' \u2014 '+esc(b.date); })});
+  }
+
+  if(!sections.length){
+    html = '<div style="padding:12px 16px;background:rgba(91,168,178,.04);border:1px solid rgba(91,168,178,.15);border-radius:8px;font-size:13px;color:var(--text-dim)"><span style="color:var(--success);font-weight:600">\u2713</span> Nothing queued \u2014 no automations will fire on the next cron run (based on current bookings data).</div>';
+  } else {
+    html = '<div style="display:flex;flex-direction:column;gap:10px">';
+    sections.forEach(function(s){
+      html += '<div style="padding:12px 16px;border-left:3px solid '+s.color+';background:rgba(0,0,0,.06);border-radius:0 8px 8px 0">';
+      html += '<div style="font-size:12px;font-weight:600;color:'+s.color+';margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">'+s.label+' ('+s.items.length+')</div>';
+      s.items.forEach(function(item){ html += '<div style="font-size:12px;color:var(--text);padding:2px 0">'+item+'</div>'; });
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+  el.innerHTML = html;
+}
+
 function formatAutomationType(t){
-  var map = {day_before:'Day Before', follow_up:'Follow-Up', intake_nudge:'Intake Nudge', payment_expiry_48h:'48h Warning', payment_expiry_72h:'72h Expired'};
+  var map = {day_before:'Day Before', follow_up:'Follow-Up', intake_nudge:'Intake Nudge', payment_expiry_48h:'48h Warning', payment_expiry_72h:'72h Expired', regular_expiry_5d:'5-Day Regular Warning', regular_expiry_7d:'7-Day Regular Expired'};
   return map[t] || t;
 }
 
 function getAutomationBadgeClass(t){
-  var map = {day_before:'primary', follow_up:'success', intake_nudge:'info', payment_expiry_48h:'warning', payment_expiry_72h:'danger'};
+  var map = {day_before:'primary', follow_up:'success', intake_nudge:'info', payment_expiry_48h:'warning', payment_expiry_72h:'danger', regular_expiry_5d:'warning', regular_expiry_7d:'danger'};
   return map[t] || 'ghost';
 }
 

@@ -230,12 +230,16 @@ exports.handler = async (event) => {
           results.errors++;
         }
       }
+    }
 
-      // =============================================
-      // 7-DAY EXPIRY FOR CONFIRMED REGULARS
-      // Regulars auto-confirm without payment.
-      // 5-day warning, 7-day auto-expire if session date has passed and still unpaid.
-      // =============================================
+    // =============================================
+    // 7-DAY EXPIRY FOR CONFIRMED REGULARS
+    // Regulars auto-confirm without payment.
+    // 5-day warning, 7-day auto-expire if session date has passed and still unpaid.
+    // =============================================
+
+    if (config.auto_regular_expiry?.enabled) {
+      console.log("[session-cron] Processing 7-day regular expiry");
 
       // 5-day warning: confirmed bookings created 5-7 days ago with no payment
       const { data: warn5d } = await sb
