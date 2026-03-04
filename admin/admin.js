@@ -4161,7 +4161,9 @@ async function addClientDate(clientId,cycleId){
   try{
     var isRegular=cl&&cl.client_type==='regular';
     var initialStatus=isRegular?'confirmed':'proposed';
-    var res=await proxyFrom('session_bookings').insert({cycle_id:cycleId,client_id:clientId,email:cl?cl.email:'',name:cl?cl.name:'',date:dateStr,start_time:time,end_time:endTime,status:initialStatus,type:'recurring',confirmation_token:generateBookingToken(),proposed_at:new Date().toISOString(),confirmed_at:isRegular?new Date().toISOString():null});
+    var insertData={cycle_id:cycleId,client_id:clientId,email:cl?cl.email:'',name:cl?cl.name:'',date:dateStr,start_time:time,end_time:endTime,status:initialStatus,type:'recurring',confirmation_token:generateBookingToken(),proposed_at:new Date().toISOString()};
+    if(isRegular) insertData.confirmed_at=new Date().toISOString();
+    var res=await proxyFrom('session_bookings').insert(insertData);
     if(res.error){showToast('Error: '+res.error.message,'error');return}
     showToast('Date added'+(isRegular?' (auto-confirmed)':''),'success');
     var r=await proxyFrom('session_bookings').select('*').order('date',{ascending:true});sessBookingsData=r.data||[];
@@ -4181,7 +4183,9 @@ async function addClientDateCustom(clientId,cycleId){
   try{
     var isRegular=cl&&cl.client_type==='regular';
     var initialStatus=isRegular?'confirmed':'proposed';
-    var res=await proxyFrom('session_bookings').insert({cycle_id:cycleId,client_id:clientId,email:cl?cl.email:'',name:cl?cl.name:'',date:dateStr,start_time:time,end_time:endTime,status:initialStatus,type:'recurring',confirmation_token:generateBookingToken(),proposed_at:new Date().toISOString(),confirmed_at:isRegular?new Date().toISOString():null});
+    var insertData={cycle_id:cycleId,client_id:clientId,email:cl?cl.email:'',name:cl?cl.name:'',date:dateStr,start_time:time,end_time:endTime,status:initialStatus,type:'recurring',confirmation_token:generateBookingToken(),proposed_at:new Date().toISOString()};
+    if(isRegular) insertData.confirmed_at=new Date().toISOString();
+    var res=await proxyFrom('session_bookings').insert(insertData);
     if(res.error){showToast('Error: '+res.error.message,'error');return}
     showToast('Custom date added'+(isRegular?' (auto-confirmed)':''),'success');
     var r=await proxyFrom('session_bookings').select('*').order('date',{ascending:true});sessBookingsData=r.data||[];
