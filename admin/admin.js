@@ -4159,16 +4159,19 @@ async function addClientDate(clientId,cycleId){
   endH+=Math.floor(endM/60);endM=endM%60;
   var endTime=String(endH).padStart(2,'0')+':'+String(endM).padStart(2,'0');
   try{
+    await ensureFreshToken();
     var isRegular=cl&&cl.client_type==='regular';
     var initialStatus=isRegular?'confirmed':'proposed';
     var insertData={cycle_id:cycleId,client_id:clientId,email:cl?cl.email:'',name:cl?cl.name:'',date:dateStr,start_time:time,end_time:endTime,status:initialStatus,type:'recurring',confirmation_token:generateBookingToken(),proposed_at:new Date().toISOString()};
     if(isRegular) insertData.confirmed_at=new Date().toISOString();
+    console.log('[addClientDate] payload:', JSON.stringify(insertData));
     var res=await proxyFrom('session_bookings').insert(insertData);
+    console.log('[addClientDate] result:', JSON.stringify(res));
     if(res.error){showToast('Error: '+res.error.message,'error');return}
     showToast('Date added'+(isRegular?' (auto-confirmed)':''),'success');
     var r=await proxyFrom('session_bookings').select('*').order('date',{ascending:true});sessBookingsData=r.data||[];
     openClientDates(clientId);renderClientRoster();
-  }catch(e){showToast('Error: '+e.message,'error')}
+  }catch(e){console.error('addClientDate error:',e);showToast('Error: '+e.message,'error')}
 }
 
 async function addClientDateCustom(clientId,cycleId){
@@ -4181,6 +4184,7 @@ async function addClientDateCustom(clientId,cycleId){
   endH+=Math.floor(endM/60);endM=endM%60;
   var endTime=String(endH).padStart(2,'0')+':'+String(endM).padStart(2,'0');
   try{
+    await ensureFreshToken();
     var isRegular=cl&&cl.client_type==='regular';
     var initialStatus=isRegular?'confirmed':'proposed';
     var insertData={cycle_id:cycleId,client_id:clientId,email:cl?cl.email:'',name:cl?cl.name:'',date:dateStr,start_time:time,end_time:endTime,status:initialStatus,type:'recurring',confirmation_token:generateBookingToken(),proposed_at:new Date().toISOString()};
