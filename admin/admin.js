@@ -67,7 +67,7 @@ async function doAuth(){var emailEl=document.getElementById('auth-email'),passEl
 function doLogout(){sessionStorage.removeItem('qp_admin_auth');currentAdmin=null;location.reload()}
 try{var savedAdmin=sessionStorage.getItem('qp_admin_auth');if(savedAdmin){currentAdmin=JSON.parse(savedAdmin);applyPermissions();document.getElementById('auth-screen').style.display='none';document.getElementById('admin-layout').style.display='block';setTimeout(initAdmin,50)}}catch(e){sessionStorage.removeItem('qp_admin_auth')}
 let currentPage='dashboard';
-const TITLES={dashboard:'Dashboard',customers:'Customers',academy:'Academy',fusion:'Fusion Sessions',sessions:'1-on-1 Sessions',memberships:'Memberships',community:'Community',referrals:'Referrals & Credits',email:'Email Campaigns',automation:'Email Automation',promotions:'Promotions',orders:'Orders',analytics:'Analytics',audit:'Audit Log','admin-users':'Admin Users',crm:'Client Profiles'};
+const TITLES={dashboard:'Dashboard',customers:'Customers',academy:'Academy',fusion:'Fusion Sessions',sessions:'1-on-1 Sessions',memberships:'Memberships',community:'Community',referrals:'Referrals & Credits',email:'Email Campaigns',automation:'Email Automation',promotions:'Promotions',orders:'Orders',analytics:'Analytics',audit:'Audit Log','admin-users':'Admin Users'};
 function go(page,btn){
   _reCleanupPickers();_ecEditor=null;if(_reInstances["ec"])delete _reInstances["ec"];currentPage=page;document.querySelectorAll('.sb-link').forEach(l=>l.classList.remove('active'));if(btn)btn.classList.add('active');document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));var el=document.getElementById('page-'+page);if(el)el.classList.add('active');document.getElementById('topbar-title').textContent=TITLES[page]||page;loadPageData(page);document.getElementById('sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('open')}
 function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sb-overlay').classList.toggle('open')}
@@ -79,7 +79,7 @@ async function loadAllData(){try{var r=await Promise.all([sb.from('purchases').s
 async function loadAuthUsers(){try{var page=1,allUsers=[];while(true){var r=await authAdminAPI('list_users',{page:page,per_page:500});var data=r.data;var users=data.users||data||[];if(!Array.isArray(users)||!users.length)break;allUsers=allUsers.concat(users);if(users.length<500)break;page++}authUsersMap=new Map();allUsers.forEach(function(u){if(u.email)authUsersMap.set(u.email.toLowerCase(),u)})}catch(e){console.error('Auth users load error:',e)}}
 function buildCustomerList(){var map=new Map();profilesData.forEach(function(p){if(!p.email)return;var k=p.email.toLowerCase();map.set(k,{email:p.email,name:p.full_name||'',userId:p.id,hasAccount:true,isBlocked:p.is_blocked||false,createdAt:p.created_at,purchases:[],academyPurchases:[],fusionPurchases:[],hasBundle:false,hasAcademyBundle:false,creditBalance:0,referralCount:0,referralCode:'',totalEarned:0,totalSpent:0})});purchasesData.forEach(function(p){if(!p.email)return;var k=p.email.toLowerCase();if(!map.has(k))map.set(k,{email:p.email,name:'',userId:null,hasAccount:false,isBlocked:false,createdAt:p.purchased_at,purchases:[],academyPurchases:[],fusionPurchases:[],hasBundle:false,hasAcademyBundle:false,creditBalance:0,referralCount:0,referralCode:'',totalEarned:0,totalSpent:0});var c=map.get(k);if(!c.purchases.includes(p.product_id)){c.purchases.push(p.product_id);if(isFusion(p.product_id))c.fusionPurchases.push(p.product_id);if(isAcademy(p.product_id))c.academyPurchases.push(p.product_id)}if(p.product_id==='bundle-all')c.hasBundle=true;if(p.product_id==='transformational-mastery')c.hasAcademyBundle=true;c.totalSpent+=(Number(p.amount_paid)||0)});referralData.forEach(function(r){if(!r.email)return;var k=r.email.toLowerCase();if(!map.has(k))map.set(k,{email:r.email,name:'',userId:null,hasAccount:false,isBlocked:false,createdAt:null,purchases:[],academyPurchases:[],fusionPurchases:[],hasBundle:false,hasAcademyBundle:false,creditBalance:0,referralCount:0,referralCode:'',totalEarned:0,totalSpent:0});var c=map.get(k);c.creditBalance=Number(r.credit_balance)||0;c.referralCount=r.successful_referrals||0;c.referralCode=r.code||'';c.totalEarned=Number(r.total_earned)||0});allCustomers=Array.from(map.values())}
 async function initAdmin(){document.addEventListener('keydown',function(e){if(e.ctrlKey&&e.shiftKey&&e.key==='R'){e.preventDefault();webhookRecovery()}});await loadAllData();loadPageData('dashboard')}
-function loadPageData(page){if(!dataLoaded&&page!=='dashboard')return;switch(page){case'dashboard':loadDashboard();break;case'customers':loadCustomerBrowser();break;case'academy':loadAcademyData();break;case'fusion':loadFusionData();break;case'referrals':loadReferralData();break;case'community':loadCommunityData();break;case'email':loadEmailPage();break;case'automation':loadAutomationPage();break;case'promotions':loadPromotionsPage();break;case'orders':loadOrdersPage();break;case'audit':loadAuditLog();break;case'analytics':loadAnalyticsPage();break;case'admin-users':loadAdminUsers();break;case'sessions':loadSessionsData();break;case'crm':loadCrmData();break}}
+function loadPageData(page){if(!dataLoaded&&page!=='dashboard')return;switch(page){case'dashboard':loadDashboard();break;case'customers':loadCustomerBrowser();break;case'academy':loadAcademyData();break;case'fusion':loadFusionData();break;case'referrals':loadReferralData();break;case'community':loadCommunityData();break;case'email':loadEmailPage();break;case'automation':loadAutomationPage();break;case'promotions':loadPromotionsPage();break;case'orders':loadOrdersPage();break;case'audit':loadAuditLog();break;case'analytics':loadAnalyticsPage();break;case'admin-users':loadAdminUsers();break;case'sessions':loadSessionsData();break}}
 function getAdminNotes(email){return adminNotesData.filter(function(n){return n.target_email&&n.target_email.toLowerCase()===email.toLowerCase()})}
 async function saveAdminNote(email,text){try{await proxyFrom('admin_notes').insert({target_email:email.toLowerCase(),note_text:text});await logAudit('add_note',email,'Added note: '+text.substring(0,80));var r=await proxyFrom('admin_notes').select('*').order('created_at',{ascending:false});adminNotesData=r.data||[]}catch(e){showToast('Error saving note: '+e.message,'error')}}
 async function deleteAdminNote(email,id){try{await proxyFrom('admin_notes').delete().eq('id',id);await logAudit('delete_note',email,'Deleted a note');var r=await proxyFrom('admin_notes').select('*').order('created_at',{ascending:false});adminNotesData=r.data||[]}catch(e){showToast('Error deleting note: '+e.message,'error')}}
@@ -1316,7 +1316,8 @@ document.querySelectorAll('.auto-tab-btn').forEach(function(b){b.classList.remov
 btn.classList.add('active');
 if(tab==='scheduled') loadScheduledEmails();
 if(tab==='logs') loadEmailLogs();
-if(tab==='sessions') loadSessionSchedule()
+if(tab==='sessions') loadSessionSchedule();
+if(tab==='reminders') loadSessionRemindersTab();
 }
 
 async function loadAutomationStats(){
@@ -3506,9 +3507,21 @@ function switchSessTab(tab,btn){
   btn.closest('.tab-nav').querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active')});
   btn.classList.add('active');
   if(tab==='availability') loadAvailabilityCalendar();
-  if(tab==='clients') renderClientRoster();
+  if(tab==='clients'){ renderClientRoster(); }
   if(tab==='bookings') loadBookingsForCycle();
   if(tab==='public') renderPublicWaitlist();
+}
+
+/* ---------- Client Sub-View Switching (Roster / All Profiles / Detail) ---------- */
+var clientSubView = 'roster'; // 'roster' | 'all'
+function switchClientView(view, btn){
+  clientSubView = view;
+  document.querySelectorAll('.client-sub-btn').forEach(function(b){ b.classList.remove('active'); });
+  if(btn) btn.classList.add('active');
+  document.getElementById('client-view-roster').style.display = view==='roster' ? 'block' : 'none';
+  document.getElementById('client-view-all').style.display = view==='all' ? 'block' : 'none';
+  document.getElementById('crm-detail-view').style.display = 'none';
+  if(view==='all' && !crmClients.length) loadCrmData();
 }
 
 /* ---------- Data Loading ---------- */
@@ -4030,6 +4043,7 @@ function renderClientRoster(){
       +'<div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">'
       +'<button class="btn btn-ghost btn-sm" onclick="openClientDates(\''+cl.id+'\')" title="Assign Dates"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;vertical-align:middle;margin-right:2px"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Dates</button>'
       +'<button class="btn btn-ghost btn-sm" onclick="openClientEmail(\''+cl.id+'\')" title="Send Email"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;vertical-align:middle;margin-right:2px"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Email</button>'
+      +'<button class="btn btn-ghost btn-sm" style="color:var(--teal);font-weight:600" onclick="crmOpenClient(\''+esc(cl.email)+'\')" title="View full client profile">Profile \u2192</button>'
       +'<button class="btn btn-ghost btn-sm" onclick="editClient(\''+cl.id+'\')">Edit</button>'
       +(cl.status==='active'?'<button class="btn btn-ghost btn-sm" onclick="pauseClient(\''+cl.id+'\')">Pause</button>':'<button class="btn btn-success btn-sm" onclick="activateClient(\''+cl.id+'\')">Activate</button>')
       +'<button class="btn btn-danger btn-sm" onclick="removeClient(\''+cl.id+'\',\''+esc(cl.email)+'\')">Remove</button>'
@@ -4935,8 +4949,12 @@ function renderCrmList(){
 
 async function crmOpenClient(email){
   crmCurrentClient = email.toLowerCase();
-  document.getElementById('crm-list-view').style.display = 'none';
+  // Hide both roster and list views, show detail
+  document.getElementById('client-view-roster').style.display = 'none';
+  document.getElementById('client-view-all').style.display = 'none';
   document.getElementById('crm-detail-view').style.display = 'block';
+  // Also hide the sub-nav buttons
+  document.querySelectorAll('.client-sub-btn').forEach(function(b){ b.style.opacity = '0.4'; });
   var emailLower = crmCurrentClient;
   try {
     var [bookRes, notesRes, recRes, intakeRes, checkinRes, progRes, profileRes] = await Promise.all([
@@ -4965,16 +4983,29 @@ async function crmOpenClient(email){
     var paidSess = crmBookings.filter(function(b){ return b.status==='paid'||b.status==='completed'; }).length;
     var firstSess = crmBookings.length ? crmBookings[crmBookings.length-1].date : null;
     document.getElementById('crm-detail-header').innerHTML = '<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">'+avatar+'<div><div style="font-size:20px;font-weight:700;color:var(--text)">'+esc(name)+'</div><div style="font-size:13px;color:var(--text-dim)">'+esc(emailLower)+'</div></div><div style="margin-left:auto;display:flex;gap:20px;flex-wrap:wrap"><div style="text-align:center"><div style="font-size:22px;font-weight:700;color:var(--teal)">'+totalSess+'</div><div style="font-size:11px;color:var(--text-dim)">Total</div></div><div style="text-align:center"><div style="font-size:22px;font-weight:700;color:var(--success)">'+paidSess+'</div><div style="font-size:11px;color:var(--text-dim)">Paid</div></div>'+(firstSess ? '<div style="text-align:center"><div style="font-size:13px;font-weight:600;color:var(--text)">'+new Date(firstSess).toLocaleDateString('en-US',{month:'short',year:'numeric'})+'</div><div style="font-size:11px;color:var(--text-dim)">Client Since</div></div>' : '')+'</div></div>';
-    switchCrmTab('sessions', document.querySelector('#page-crm .tab-btn'));
+    switchCrmTab('sessions', document.querySelector('#crm-detail-tabs .tab-btn'));
   } catch(e){ console.error('CRM client load error:', e); showToast('Error loading client data', 'error'); }
 }
 
-function crmBackToList(){ document.getElementById('crm-detail-view').style.display = 'none'; document.getElementById('crm-list-view').style.display = 'block'; crmCurrentClient = null; }
+function crmBackToList(){
+  document.getElementById('crm-detail-view').style.display = 'none';
+  crmCurrentClient = null;
+  document.querySelectorAll('.client-sub-btn').forEach(function(b){ b.style.opacity = '1'; });
+  // Restore whichever sub-view was active
+  if(clientSubView === 'all'){
+    document.getElementById('client-view-all').style.display = 'block';
+  } else {
+    document.getElementById('client-view-roster').style.display = 'block';
+  }
+}
 
 function switchCrmTab(tab, btn){
-  document.querySelectorAll('#page-crm .tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.querySelectorAll('#crm-detail-tabs .tab-btn').forEach(function(b){ b.classList.remove('active'); });
   if(btn) btn.classList.add('active');
-  document.querySelectorAll('#page-crm .tab-content').forEach(function(t){ t.classList.remove('active'); });
+  ['sessions','intake','progress','billing','notes'].forEach(function(t){
+    var el = document.getElementById('crm-tab-'+t);
+    if(el) el.classList.remove('active');
+  });
   var el = document.getElementById('crm-tab-'+tab);
   if(el) el.classList.add('active');
   switch(tab){ case 'sessions': renderCrmSessions(); break; case 'intake': renderCrmIntake(); break; case 'progress': renderCrmProgress(); break; case 'billing': renderCrmBilling(); break; case 'notes': renderCrmNotes(); break; }
@@ -5413,7 +5444,29 @@ function renderCrmIntake(){
   el.innerHTML = html;
 }
 
-async function crmSendIntakeReminder(){ showToast('Intake reminder \u2014 coming soon (email automation)', 'info'); }
+async function crmSendIntakeReminder(){
+  if(!crmCurrentClient){ showToast('No client selected', 'error'); return; }
+  var ok = await qpConfirm('Send Intake Reminder', 'Send an intake form reminder to ' + crmCurrentClient + '?', { okText: 'Send Reminder' });
+  if(!ok) return;
+  var portalUrl = 'https://qp-homepage.netlify.app/members/intake.html';
+  var name = crmCurrentClient.split('@')[0];
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f5f0eb;font-family:Georgia,serif">'
+    + '<div style="max-width:600px;margin:0 auto;padding:20px">'
+    + '<div style="text-align:center;padding:20px 0"><img src="https://qp-homepage.netlify.app/assets/images/qp-logo.png" alt="Quantum Physician" style="height:50px" onerror="this.style.display=\'none\'"></div>'
+    + '<div style="background:#fff;border-radius:12px;padding:32px;box-shadow:0 2px 8px rgba(0,0,0,.06)">'
+    + '<h1 style="margin:0 0 8px;font-size:22px;color:#0e1a30;font-family:Georgia,serif">Please Complete Your Intake Form</h1>'
+    + '<p style="color:#5a5a5a;font-size:15px;line-height:1.6;margin:0 0 20px">Hi ' + esc(name) + ',</p>'
+    + '<p style="color:#5a5a5a;font-size:15px;line-height:1.6;margin:0 0 20px">Before our upcoming session, I\u2019d love for you to complete your health intake form. This helps me prepare and tailor our time together to your specific needs.</p>'
+    + '<div style="text-align:center;margin:24px 0"><a href="' + portalUrl + '" style="display:inline-block;padding:14px 32px;background:#5ba8b2;color:#fff;text-decoration:none;border-radius:8px;font-size:15px;font-weight:600;font-family:Georgia,serif">Complete Intake Form</a></div>'
+    + '<p style="color:#5a5a5a;font-size:14px;line-height:1.6;margin:20px 0 0">It only takes about 10 minutes, and your information is kept confidential.</p>'
+    + '<p style="color:#5a5a5a;font-size:14px;margin:8px 0 0">With care,<br><strong style="color:#0e1a30">Dr. Tracey Clark</strong></p>'
+    + '</div></div></body></html>';
+  try{
+    await fetch(APPS_SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ action:'sendEmail', to:crmCurrentClient, subject:'Please Complete Your Health Intake Form', htmlBody:html, fromAlias:'tracey@quantumphysician.com' }) });
+    await logAudit('send_intake_reminder', crmCurrentClient, 'Sent intake form reminder');
+    showToast('Intake reminder sent', 'success');
+  } catch(e){ showToast('Email queued (no-cors)', 'info'); }
+}
 
 function renderCrmProgress(){
   var el = document.getElementById('crm-progress-content');
@@ -5463,9 +5516,226 @@ function renderCrmNotes(){
   var notes = getAdminNotes(crmCurrentClient);
   var html = '<div style="margin-bottom:16px"><button class="btn btn-primary btn-sm" onclick="crmAddInternalNote()">+ Add Internal Note</button></div>';
   if(!notes.length){ html += '<div class="empty"><p>No internal notes for this client.</p></div>'; }
-  else { notes.forEach(function(n){ html += '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font-size:13px;color:var(--text)">'+esc(n.note_text)+'</div><div style="font-size:11px;color:var(--text-dim);margin-top:6px">'+timeAgo(n.created_at)+'</div></div><button class="btn btn-ghost btn-sm" onclick="crmDeleteNote(\''+n.id+'\')" style="color:var(--danger);flex-shrink:0">\u2715</button></div>'; }); }
+  else { notes.forEach(function(n){ html += '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font-size:13px;color:var(--text)">'+esc(n.note_text)+'</div><div style="font-size:11px;color:var(--text-dim);margin-top:6px">'+timeAgo(n.created_at)+'</div></div><button class="btn btn-ghost btn-sm" onclick="crmDeleteInternalNote(\''+n.id+'\')" style="color:var(--danger);flex-shrink:0">\u2715</button></div>'; }); }
   el.innerHTML = html;
 }
 
 async function crmAddInternalNote(){ var text = await qpPrompt('Internal Note', 'This note is only visible to admins:', 'Internal observations, follow-up reminders...'); if(!text) return; await saveAdminNote(crmCurrentClient, text); showToast('Note saved', 'success'); renderCrmNotes(); }
-async function crmDeleteNote(id){ var ok = await qpConfirm('Delete Note', 'Delete this internal note?', {danger:true,okText:'Delete'}); if(!ok) return; await deleteAdminNote(crmCurrentClient, id); showToast('Note deleted', 'success'); renderCrmNotes(); }
+async function crmDeleteInternalNote(id){ var ok = await qpConfirm('Delete Note', 'Delete this internal note?', {danger:true,okText:'Delete'}); if(!ok) return; await deleteAdminNote(crmCurrentClient, id); showToast('Note deleted', 'success'); renderCrmNotes(); }
+
+// ═══════════════════════════════════════
+// 1-ON-1 SESSION EMAIL AUTOMATION (Session 29)
+// ═══════════════════════════════════════
+
+function loadSessionRemindersTab(){
+  // Refresh bookings data if stale
+  if(!sessBookingsData.length && !sessConfigData){
+    loadSessionsData().then(function(){ renderSessionReminders(); });
+  } else {
+    renderSessionReminders();
+  }
+}
+
+function renderSessionReminders(){
+  var el = document.getElementById('session-reminders-list');
+  if(!el) return;
+  // Find upcoming paid sessions that need day-before reminders
+  var now = new Date();
+  var tomorrow = new Date(now.getTime() + 24*60*60*1000);
+  var tomorrowStr = tomorrow.toISOString().slice(0,10);
+  var todayStr = now.toISOString().slice(0,10);
+  
+  var upcoming = sessBookingsData.filter(function(b){
+    return b.status === 'paid' && b.date >= todayStr;
+  }).sort(function(a,b){ return a.date < b.date ? -1 : 1; });
+
+  // Find recently completed sessions (last 7 days) for follow-up
+  var weekAgo = new Date(now.getTime() - 7*24*60*60*1000).toISOString().slice(0,10);
+  var completed = sessBookingsData.filter(function(b){
+    return b.status === 'completed' && b.date >= weekAgo;
+  }).sort(function(a,b){ return b.date > a.date ? -1 : 1; });
+
+  if(!upcoming.length && !completed.length){
+    el.innerHTML = '<div class="empty"><p>No upcoming paid sessions or recent completions to generate reminders for.</p></div>';
+    return;
+  }
+
+  var zoomLink = sessConfigData && sessConfigData.zoom_link ? sessConfigData.zoom_link : 'https://zoom.us/j/your-meeting-id';
+  var html = '';
+
+  if(upcoming.length){
+    html += '<div style="font-size:12px;font-weight:600;color:var(--teal);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Upcoming Sessions (' + upcoming.length + ')</div>';
+    upcoming.forEach(function(b){
+      var date = new Date(b.date+'T12:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+      var time = b.start_time ? fmtTime(b.start_time) : '';
+      var needsReminder = b.date === tomorrowStr;
+      html += '<div style="padding:10px 14px;border:1px solid '+(needsReminder?'var(--teal)':'var(--border)')+';border-radius:8px;margin-bottom:6px;background:'+(needsReminder?'rgba(91,168,178,.06)':'rgba(0,0,0,.06)')+'"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">';
+      html += '<div><span style="font-weight:600;font-size:13px">'+esc(b.name||b.email)+'</span> <span style="font-size:12px;color:var(--text-dim)">' + date + (time ? ' at ' + time : '') + '</span>';
+      if(needsReminder) html += ' <span class="badge badge-warning" style="font-size:10px">Tomorrow!</span>';
+      html += '</div>';
+      html += '<div style="display:flex;gap:4px">';
+      if(needsReminder && document.getElementById('auto-reminder-day').checked){
+        html += '<button class="btn btn-primary btn-sm" onclick="sendSessionReminder(\'day-before\',\''+b.id+'\',\''+esc(b.email)+'\')">Send Reminder</button>';
+      }
+      html += '<button class="btn btn-ghost btn-sm" onclick="previewSessionReminderFor(\''+b.id+'\',\'day-before\')">Preview</button>';
+      html += '</div></div></div>';
+    });
+  }
+
+  if(completed.length){
+    html += '<div style="font-size:12px;font-weight:600;color:var(--success);margin:16px 0 8px;text-transform:uppercase;letter-spacing:.5px">Recently Completed (' + completed.length + ')</div>';
+    completed.forEach(function(b){
+      var date = new Date(b.date+'T12:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+      html += '<div style="padding:10px 14px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;background:rgba(0,0,0,.06)"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">';
+      html += '<div><span style="font-weight:600;font-size:13px">'+esc(b.name||b.email)+'</span> <span style="font-size:12px;color:var(--text-dim)">' + date + '</span> <span class="badge badge-success" style="font-size:10px">Completed</span></div>';
+      html += '<div style="display:flex;gap:4px">';
+      if(document.getElementById('auto-reminder-followup').checked){
+        html += '<button class="btn btn-success btn-sm" onclick="sendSessionReminder(\'follow-up\',\''+b.id+'\',\''+esc(b.email)+'\')">Send Follow-Up</button>';
+      }
+      html += '<button class="btn btn-ghost btn-sm" onclick="previewSessionReminderFor(\''+b.id+'\',\'follow-up\')">Preview</button>';
+      html += '</div></div></div>';
+    });
+  }
+
+  el.innerHTML = html;
+}
+
+async function generateSessionReminders(){
+  showToast('Scanning bookings...', 'info');
+  // Refresh sessions data first
+  await loadSessionsData();
+  renderSessionReminders();
+  showToast('Reminder list updated', 'success');
+}
+
+function buildSessionReminderHtml(type, booking){
+  var zoomLink = sessConfigData && sessConfigData.zoom_link ? sessConfigData.zoom_link : 'https://zoom.us/j/your-meeting-id';
+  var name = booking.name || booking.email.split('@')[0];
+  var date = new Date(booking.date+'T12:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  var time = booking.start_time ? fmtTime(booking.start_time) : 'TBD';
+  var portalUrl = 'https://qp-homepage.netlify.app/members/sessions.html?highlight=' + booking.id;
+
+  if(type === 'day-before'){
+    return '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f5f0eb;font-family:Georgia,serif">'
+      + '<div style="max-width:600px;margin:0 auto;padding:20px">'
+      + '<div style="text-align:center;padding:20px 0"><img src="https://qp-homepage.netlify.app/assets/images/qp-logo.png" alt="Quantum Physician" style="height:50px" onerror="this.style.display=\'none\'"></div>'
+      + '<div style="background:#fff;border-radius:12px;padding:32px;box-shadow:0 2px 8px rgba(0,0,0,.06)">'
+      + '<h1 style="margin:0 0 8px;font-size:22px;color:#0e1a30;font-family:Georgia,serif">Your Session is Tomorrow</h1>'
+      + '<p style="color:#5a5a5a;font-size:15px;line-height:1.6;margin:0 0 20px">Hi ' + esc(name) + ',</p>'
+      + '<p style="color:#5a5a5a;font-size:15px;line-height:1.6;margin:0 0 20px">This is a friendly reminder that your 1-on-1 session with Dr. Tracey Clark is scheduled for <strong>tomorrow</strong>.</p>'
+      + '<div style="background:linear-gradient(135deg,#0e1a30 0%,#1a3a4a 100%);border-radius:10px;padding:20px;margin:20px 0;color:#fff">'
+      + '<div style="font-size:13px;opacity:.7;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">Session Details</div>'
+      + '<div style="font-size:18px;font-weight:700;margin-bottom:4px">' + esc(date) + '</div>'
+      + '<div style="font-size:15px;opacity:.9">' + esc(time) + '</div>'
+      + '</div>'
+      + '<div style="text-align:center;margin:24px 0">'
+      + '<a href="' + esc(zoomLink) + '" style="display:inline-block;padding:14px 32px;background:#5ba8b2;color:#fff;text-decoration:none;border-radius:8px;font-size:15px;font-weight:600;font-family:Georgia,serif">Join Zoom Session</a>'
+      + '</div>'
+      + '<div style="background:#f9f7f4;border-radius:8px;padding:16px;margin:20px 0"><div style="font-size:13px;font-weight:600;color:#0e1a30;margin-bottom:6px">Before Your Session</div>'
+      + '<ul style="margin:0;padding-left:18px;color:#5a5a5a;font-size:13px;line-height:1.8"><li>Find a quiet, comfortable space</li><li>Have water nearby</li><li>Allow yourself 5 minutes to settle before we begin</li><li>If you have specific areas of concern, note them down</li></ul></div>'
+      + '<p style="color:#5a5a5a;font-size:14px;line-height:1.6;margin:20px 0 0">Looking forward to our session together.</p>'
+      + '<p style="color:#5a5a5a;font-size:14px;margin:8px 0 0">With care,<br><strong style="color:#0e1a30">Dr. Tracey Clark</strong></p>'
+      + '</div>'
+      + '<div style="text-align:center;padding:20px;font-size:11px;color:#999">Quantum Physician &middot; <a href="' + esc(portalUrl) + '" style="color:#5ba8b2">View in Patient Portal</a></div>'
+      + '</div></body></html>';
+  }
+
+  if(type === 'follow-up'){
+    return '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f5f0eb;font-family:Georgia,serif">'
+      + '<div style="max-width:600px;margin:0 auto;padding:20px">'
+      + '<div style="text-align:center;padding:20px 0"><img src="https://qp-homepage.netlify.app/assets/images/qp-logo.png" alt="Quantum Physician" style="height:50px" onerror="this.style.display=\'none\'"></div>'
+      + '<div style="background:#fff;border-radius:12px;padding:32px;box-shadow:0 2px 8px rgba(0,0,0,.06)">'
+      + '<h1 style="margin:0 0 8px;font-size:22px;color:#0e1a30;font-family:Georgia,serif">Thank You for Your Session</h1>'
+      + '<p style="color:#5a5a5a;font-size:15px;line-height:1.6;margin:0 0 20px">Hi ' + esc(name) + ',</p>'
+      + '<p style="color:#5a5a5a;font-size:15px;line-height:1.6;margin:0 0 20px">Thank you for our session on <strong>' + esc(date) + '</strong>. It was wonderful working with you, and I appreciate your openness and trust in this process.</p>'
+      + '<div style="background:#f9f7f4;border-radius:8px;padding:16px;margin:20px 0"><div style="font-size:13px;font-weight:600;color:#0e1a30;margin-bottom:6px">Post-Session Guidance</div>'
+      + '<ul style="margin:0;padding-left:18px;color:#5a5a5a;font-size:13px;line-height:1.8"><li>Drink plenty of water over the next 24-48 hours</li><li>Rest when your body tells you to</li><li>Notice any shifts in how you feel \u2014 physical, emotional, or energetic</li><li>Jot down any observations to share at our next session</li></ul></div>'
+      + '<div style="text-align:center;margin:24px 0">'
+      + '<a href="' + esc(portalUrl) + '" style="display:inline-block;padding:14px 32px;background:#5ba8b2;color:#fff;text-decoration:none;border-radius:8px;font-size:15px;font-weight:600;font-family:Georgia,serif">View Your Progress</a>'
+      + '</div>'
+      + '<p style="color:#5a5a5a;font-size:14px;line-height:1.6;margin:20px 0 0">Your session notes and any recordings will be available in your patient portal once I\u2019ve reviewed everything.</p>'
+      + '<p style="color:#5a5a5a;font-size:14px;margin:8px 0 0">With care,<br><strong style="color:#0e1a30">Dr. Tracey Clark</strong></p>'
+      + '</div>'
+      + '<div style="text-align:center;padding:20px;font-size:11px;color:#999">Quantum Physician &middot; <a href="https://qp-homepage.netlify.app/members/dashboard.html" style="color:#5ba8b2">Patient Portal</a></div>'
+      + '</div></body></html>';
+  }
+
+  return '<p>Unknown template type: ' + type + '</p>';
+}
+
+function previewSessionReminder(type){
+  // Preview with dummy data
+  var dummy = { id: 'preview', email: 'patient@example.com', name: 'Jane Smith', date: new Date(Date.now()+86400000).toISOString().slice(0,10), start_time: '10:00:00' };
+  var html = buildSessionReminderHtml(type, dummy);
+  showEmailPreviewModal(type === 'day-before' ? 'Day-Before Reminder' : 'Post-Session Follow-Up', html);
+}
+
+function previewSessionReminderFor(bookingId, type){
+  var b = sessBookingsData.find(function(x){ return x.id === bookingId; });
+  if(!b){ showToast('Booking not found', 'error'); return; }
+  var html = buildSessionReminderHtml(type, b);
+  showEmailPreviewModal(type === 'day-before' ? 'Day-Before Reminder' : 'Post-Session Follow-Up', html);
+}
+
+function showEmailPreviewModal(title, html){
+  var o = document.createElement('div');
+  o.className = 'modal-overlay';
+  o.onclick = function(e){ if(e.target===o) o.remove(); };
+  o.innerHTML = '<div class="modal-box" style="max-width:700px"><div class="modal-title">' + esc(title) + ' Preview</div><div style="background:#fff;color:#333;padding:0;border-radius:8px;max-height:60vh;overflow-y:auto"><iframe id="reminder-preview-frame" style="width:100%;border:none;min-height:500px" sandbox="allow-same-origin"></iframe></div><div class="modal-actions" style="margin-top:12px"><button class="btn btn-ghost btn-sm" onclick="this.closest(\'.modal-overlay\').remove()">Close</button></div></div>';
+  document.body.appendChild(o);
+  var iframe = document.getElementById('reminder-preview-frame');
+  iframe.srcdoc = html;
+}
+
+async function sendSessionReminder(type, bookingId, email){
+  var b = sessBookingsData.find(function(x){ return x.id === bookingId; });
+  if(!b){ showToast('Booking not found', 'error'); return; }
+  var ok = await qpConfirm('Send ' + (type==='day-before' ? 'Day-Before Reminder' : 'Follow-Up Email'), 'Send this email to ' + email + '?', { okText: 'Send Email' });
+  if(!ok) return;
+
+  var html = buildSessionReminderHtml(type, b);
+  var subject = type === 'day-before'
+    ? 'Your Session Tomorrow with Dr. Tracey Clark'
+    : 'Thank You \u2014 Session Follow-Up from Dr. Tracey';
+  var name = b.name || email.split('@')[0];
+
+  try{
+    await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        action: 'sendEmail',
+        to: email,
+        subject: subject,
+        htmlBody: html,
+        fromAlias: 'tracey@quantumphysician.com'
+      })
+    });
+    // Log it
+    await logAudit('send_session_reminder', email, type + ' reminder sent for booking ' + bookingId);
+    showToast('Reminder sent to ' + email, 'success');
+  } catch(e){
+    showToast('Email queued (no-cors response)', 'info');
+  }
+}
+
+// Send batch reminders for all tomorrow's sessions
+async function sendBatchReminders(type){
+  var now = new Date();
+  var targetDate;
+  if(type === 'day-before'){
+    targetDate = new Date(now.getTime() + 24*60*60*1000).toISOString().slice(0,10);
+  }
+  var targets = sessBookingsData.filter(function(b){
+    if(type === 'day-before') return b.status === 'paid' && b.date === targetDate;
+    return false;
+  });
+  if(!targets.length){ showToast('No sessions to remind for', 'info'); return; }
+  var ok = await qpConfirm('Send Batch Reminders', 'Send ' + type + ' reminders to ' + targets.length + ' client(s)?', { okText: 'Send All' });
+  if(!ok) return;
+  for(var i = 0; i < targets.length; i++){
+    await sendSessionReminder(type, targets[i].id, targets[i].email);
+  }
+  showToast('All reminders sent', 'success');
+}

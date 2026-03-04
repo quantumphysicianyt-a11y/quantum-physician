@@ -1,22 +1,33 @@
-# Session 26-27 Build Plan — Patient Portal & CRM
+# Session 26-28 Build Plan — Patient Portal & CRM
 
-## Status (Post Session 27)
+## Status (Post Session 28)
 
 | Component | Status |
 |-----------|--------|
-| My Health sidebar | DONE (S26) |
-| sessions.html | DONE (S26) - recordings not wired |
-| intake.html | DONE (S26) |
-| progress.html | DONE (S26+S27 enhancements) |
-| billing.html | DONE (S26) |
-| SQL migration (5 tables) | DONE (S26) |
-| Admin CRM Client Profiles | DONE (S27) - merge into Clients tab |
-| Cross-domain SSO | DONE (S27) |
-| Demo data | DONE (S27) - 12mo check-ins |
-| Progress charts/toggle/collapse | DONE (S27) |
-| Recordings on sessions page | PENDING |
-| CRM merge into Clients tab | PENDING |
-| Email reminders/invoicing | PENDING |
+| My Health sidebar | ✅ DONE (S26) |
+| sessions.html | ✅ DONE (S26+S28) - recordings wired, deep linking, smart embeds |
+| intake.html | ✅ DONE (S26) |
+| progress.html | ✅ DONE (S26+S27) - charts, body map, before/after, milestones |
+| billing.html | ✅ DONE (S26) |
+| SQL migration (5 tables) | ✅ DONE (S26) |
+| Admin CRM Client Profiles | ✅ DONE (S27) - needs merge into Clients tab |
+| Cross-domain SSO | ✅ DONE (S27) |
+| Demo data | ✅ DONE (S27) - 12mo check-ins |
+| Progress charts/toggle/collapse | ✅ DONE (S27) |
+| Session notes full CRUD | ✅ DONE (S28) - add/edit/delete, body regions, visibility |
+| 28 bone-accurate body regions | ✅ DONE (S28) - extracted from GLB skeleton |
+| Custom alignment regions | ✅ DONE (S28) - label + nearest standard region |
+| Recording upload (Supabase) | ✅ DONE (S28) - drag & drop MP4 to storage bucket |
+| Recording URL paste | ✅ DONE (S28) - Vimeo/GDrive/YouTube/Zoom |
+| Smart video embeds | ✅ DONE (S28) - auto-detect source, inline player |
+| Recording indicators in grid | ✅ DONE (S28) - emoji badges in toggle row |
+| Real-time refresh | ✅ DONE (S28) - refreshBookingsView() |
+| Green Complete button | ✅ DONE (S28) |
+| Deep linking (progress→sessions) | ✅ DONE (S28) - ?highlight=bookingId |
+| Recordings on sessions page | ✅ DONE (S28) |
+| CRM merge into Clients tab | ⬜ PENDING (S29) |
+| Email reminders/invoicing | ⬜ PENDING (S29) |
+| 3D body model (Three.js) | ⬜ PENDING (S29-30) |
 
 ---
 
@@ -28,18 +39,7 @@ Build the patient-facing portal pages and matching admin CRM panel for the 1-on-
 
 ## Sidebar Navigation Update
 
-Current sidebar:
-```
-Dashboard (active)
-Book a Session
-Academy
-Fusion Sessions
-Account Settings
-─────────
-Main Site
-```
-
-Updated sidebar with collapsible "My Health" section:
+Current sidebar (BUILT):
 ```
 Dashboard
 ─── My Health ──────
@@ -56,483 +56,137 @@ Account Settings
 Main Site
 ```
 
-The "My Health" section appears as a subtle group label with indented sub-items. Uses the same SVG icon style as other nav items. Collapsible on mobile. Active state highlights the current sub-page.
-
 ---
 
-## Page 1: Sessions & Recordings (`/members/sessions.html`)
+## Page 1: Sessions & Recordings (`/members/sessions.html`) — ✅ COMPLETE
 
-### Purpose
-Complete 1-on-1 session history — upcoming, past, notes, and recordings.
-
-### Layout
-- Same sidebar layout as dashboard
-- Main content: tabbed view (Upcoming | Past | All)
-
-### Features
-
-**Upcoming Sessions:**
-- Date badge, time, status pill (Paid/Proposed/Confirmed)
-- "Confirm & Pay" button for proposed sessions
-- Zoom link (if provided) with "Join" button
-- Countdown indicator ("in 3 days")
-
-**Past Sessions:**
-- Date, time, duration
-- Session notes (shared by Dr. Tracey from admin) — expandable
-- Session recording link (Zoom recording URL) — play button
-- Status: Completed / No-Show / Cancelled
-
-**Empty State:**
-"No sessions yet. Book your first session with Dr. Tracey."
+### Built Features (Session 26 + 28)
+- Tabbed view: Upcoming | Past | All
+- Session cards with date badges, time, status pills
+- Confirm & Pay buttons for proposed sessions (links to checkout)
+- Zoom link "Join" button for upcoming paid sessions
+- Countdown indicators ("in 3 days")
+- **Session notes** (visible_to_patient only) with body region badges (S28)
+- **Smart recording embeds** (S28):
+  - Supabase hosted → native HTML5 `<video>` player + Download button
+  - Vimeo → embedded Vimeo player (no overlay)
+  - Google Drive → embedded GDrive preview
+  - YouTube → embedded YouTube player
+  - Zoom/other → "Opens in new tab" link
+- **Deep linking**: `?highlight=bookingId` auto-opens Past tab, expands details, scrolls to card
+- Download icon in SVG sprite
 
 ### Database Tables Used
-- `session_bookings` — all booking data
-- `session_notes` (NEW) — per-session notes from Tracey
-- `session_recordings` (NEW) — Zoom recording URLs per booking
+- `session_bookings` — booking data
+- `session_notes` — per-session notes (filtered by `visible_to_patient = true`)
+- `session_recordings` — recording URLs/uploads
 
-### New Tables Needed
+---
 
+## Page 2: Intake Form (`/members/intake.html`) — ✅ COMPLETE
+
+### Built Features (Session 26)
+- 5 sections: Personal Info, Health History, Current Symptoms, Lifestyle, Consent
+- Auto-save to Supabase on section change
+- Severity sliders for symptoms
+- Pre-fills from existing intake data
+
+---
+
+## Page 3: Progress Tracker (`/members/progress.html`) — ✅ COMPLETE
+
+### Built Features (Session 26 + 27)
+- Chart.js symptom tracking with time range filters (1mo/3mo/6mo/All)
+- Energy & Sleep Recovery chart
+- Before/After Healing Journey card with Scores/% Change toggle
+- Quick Stats dropdown (Overview / Top Symptoms / Wellness Scores)
+- Milestone markers from practitioner notes
+- All chart sections collapsible (collapsed by default)
+- Add Check-In modal
+- 2D body map overlay (to be replaced with Three.js 3D model)
+
+---
+
+## Page 4: Billing History (`/members/billing.html`) — ✅ COMPLETE
+
+### Built Features (Session 26)
+- Purchase history list with date, description, amount
+- Running totals
+
+---
+
+## Admin CRM: Client Profiles — ✅ COMPLETE (needs merge)
+
+### Built Features (Session 27 + 28)
+- **Client List View**: searchable, filterable, sortable, paginated
+- **Client Detail View** with 5 tabs:
+  - **Sessions**: all bookings with collapsible notes/recordings, + Note / + Recording buttons, edit/delete/toggle visibility, recording indicators
+  - **Intake Form**: read-only view of patient health questionnaire
+  - **Progress**: patient check-ins + practitioner notes with add buttons
+  - **Billing**: purchase history with totals
+  - **Notes**: internal admin notes (add/delete)
+
+### Session 28 Additions to CRM/Bookings
+- **28 body region chips** in note modal with custom region support
+- **YES/NO visibility toggle** with helper text
+- **Edit note modal** with pre-filled content, regions, visibility
+- **Delete note** with confirmation
+- **Recording upload modal** (Upload File + Paste URL tabs)
+- **Delete recording** with Supabase Storage file cleanup
+- **Collapsible rows**: `▸ 📝 2 notes · 🎥 1 recording click to expand`
+- **refreshBookingsView()**: unified parallel refresh for all actions
+- **Green "✓ Complete" button** on paid bookings
+
+### PENDING: Merge into Clients Tab (Session 29)
+The CRM is currently a standalone `page-crm` sidebar entry. It should be merged into the existing Clients tab within 1-on-1 Sessions to avoid duplication. The client roster in the Clients tab and the CRM client list overlap — combine them into one unified view.
+
+---
+
+## Session Recordings Architecture (Session 28)
+
+### Storage Options
+| Source | Patient Experience | Tracey's Workflow | Cost |
+|--------|-------------------|-------------------|------|
+| Supabase upload | Native HTML5 player + download | Drag & drop in admin | $25/mo Pro (100GB) |
+| Vimeo URL | Embedded Vimeo player | Upload to Vimeo, paste link | Free (existing account) |
+| Google Drive URL | Embedded GDrive player | Upload to Drive, paste link | $2-10/mo |
+| YouTube URL | Embedded YouTube player | Upload to YouTube, paste link | Free |
+| Zoom URL | Link out (can't embed) | Copy share link | Free with paid Zoom |
+
+### Recommendation
+Use both upload + URL paste. Start with URL pasting (free), switch to Supabase upload when convenient. System supports both simultaneously per recording.
+
+### Database: session_recordings
 ```sql
-CREATE TABLE session_notes (
-    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-    booking_id uuid REFERENCES session_bookings(id),
-    note_type text DEFAULT 'session', -- 'session', 'followup', 'internal'
-    content text NOT NULL,
-    visible_to_patient boolean DEFAULT false,
-    created_by uuid REFERENCES auth.users(id),
-    created_at timestamptz DEFAULT now(),
-    updated_at timestamptz DEFAULT now()
-);
-
-CREATE TABLE session_recordings (
-    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-    booking_id uuid REFERENCES session_bookings(id),
-    recording_url text NOT NULL,
-    title text,
-    duration_minutes integer,
-    uploaded_at timestamptz DEFAULT now()
-);
+id uuid PRIMARY KEY,
+booking_id uuid REFERENCES session_bookings(id),
+recording_url text NOT NULL,
+title text DEFAULT 'Session Recording',
+duration_minutes int4,
+uploaded_at timestamptz DEFAULT now(),  -- ⚠️ NOT created_at
+source_type text DEFAULT 'external',    -- 'external' or 'supabase'
+file_path text,                          -- Supabase Storage path
+file_size_mb numeric                     -- File size for display
 ```
 
----
-
-## Page 2: Intake Form (`/members/intake.html`)
-
-### Purpose
-Pre-first-session health questionnaire. Submitted once, editable anytime, visible to Tracey in admin.
-
-### Layout
-- Same sidebar layout
-- Clean form with sections
-- Progress indicator at top showing completion status
-
-### Form Sections
-
-**1. Personal Information**
-- Full name (pre-filled from profile)
-- Date of birth
-- Phone number
-- Emergency contact (name + phone)
-
-**2. Health History**
-- Current medical conditions (multi-select checkboxes + "Other" text)
-- Current medications (text area)
-- Allergies (text area)
-- Previous surgeries or hospitalizations (text area)
-- Family health history (text area)
-
-**3. Current Symptoms & Concerns**
-- Primary reason for seeking treatment (text area)
-- Current symptoms checklist (pain, fatigue, sleep issues, anxiety, digestive, headaches, etc.)
-- Symptom severity scale (1-10 slider for each checked symptom)
-- How long have you experienced these symptoms? (dropdown)
-- What treatments have you tried? (text area)
-
-**4. Lifestyle & Wellness**
-- Exercise frequency (dropdown)
-- Diet description (dropdown + text)
-- Sleep quality (1-10)
-- Stress level (1-10)
-- Wellness goals (text area)
-
-**5. Consent & Acknowledgment**
-- Checkbox: "I understand this is for wellness purposes, not a substitute for medical care"
-- Checkbox: "I consent to Dr. Tracey Clark accessing this information"
-- Digital signature (typed name + date)
-
-### Features
-- Auto-save as draft on each section
-- "Submit" button at end
-- Status badge in sidebar: "Not Started" / "In Progress" / "Completed"
-- Edit mode after submission (with "Update" button)
-- Timestamp showing when submitted/last updated
-
-### Database Table
-
-```sql
-CREATE TABLE patient_intake (
-    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-    user_id uuid REFERENCES auth.users(id) UNIQUE,
-    email text NOT NULL,
-    status text DEFAULT 'not_started', -- 'not_started', 'in_progress', 'completed'
-    
-    -- Personal
-    date_of_birth date,
-    phone text,
-    emergency_contact_name text,
-    emergency_contact_phone text,
-    
-    -- Health History
-    medical_conditions jsonb DEFAULT '[]',
-    medications text,
-    allergies text,
-    surgeries text,
-    family_history text,
-    
-    -- Current Symptoms
-    primary_concern text,
-    symptoms jsonb DEFAULT '[]', -- [{name, severity}]
-    symptom_duration text,
-    previous_treatments text,
-    
-    -- Lifestyle
-    exercise_frequency text,
-    diet_description text,
-    sleep_quality integer,
-    stress_level integer,
-    wellness_goals text,
-    
-    -- Consent
-    consent_wellness boolean DEFAULT false,
-    consent_access boolean DEFAULT false,
-    signature_name text,
-    signature_date date,
-    
-    submitted_at timestamptz,
-    created_at timestamptz DEFAULT now(),
-    updated_at timestamptz DEFAULT now()
-);
-```
+### Supabase Storage Bucket: session-recordings
+- Public read, authenticated write/delete
+- File organization: `{booking_id}/{timestamp}.{ext}`
+- Max 50MB per file
+- Free plan: 1GB total, Pro: 100GB ($0.021/GB overage)
 
 ---
 
-## Page 3: Progress Tracker (`/members/progress.html`)
+## Body Regions System (Session 28)
 
-### Purpose
-Visual health journey — alignment tracking, symptom logging, progress notes from Tracey, trend charts.
+### 28 Standard Regions
+atlas, c1-c2, cervical-spine, left-neck, right-neck, thoracic-spine, lumbar-spine, sacrum, coccyx, left-shoulder, right-shoulder, left-elbow, right-elbow, left-wrist, right-wrist, left-hip, right-hip, left-knee, right-knee, left-ankle, right-ankle, pelvis, sternum, left-ribs, right-ribs, tmj, cranium, full-spine
 
-### Layout
-- Same sidebar layout
-- Main content: overview cards at top, chart below, log entries
+### Custom Regions
+- Admin enters custom label (e.g. "Right Psoas", "Occipital Ridge")
+- Selects nearest standard region from dropdown for 3D map positioning
+- Creates teal chip showing: custom label + placement region
+- Stored: standard region slug goes in `body_regions` jsonb, custom label appended to note content as `[Custom alignments: ...]`
 
-### Features
-
-**Overview Cards (top row):**
-- Total sessions completed
-- Days since first session
-- Average symptom improvement (% change)
-- Next session countdown
-
-**Symptom Tracking Chart:**
-- Line chart (Recharts or Chart.js via CDN)
-- X-axis: dates, Y-axis: severity (1-10)
-- Multiple lines for tracked symptoms
-- Toggle symptoms on/off
-- Time range filter (1mo, 3mo, 6mo, All)
-
-**Check-In Log:**
-- Self-reported entries (patient can add new ones)
-- "Add Check-In" button → modal with:
-  - Date (defaults to today)
-  - Symptoms + severity sliders
-  - Notes (how are you feeling?)
-  - Energy level (1-10)
-  - Sleep quality (1-10)
-- Entries shown as timeline cards
-
-**Alignment Notes (from Tracey):**
-- Read-only cards showing Tracey's alignment/progress notes
-- Date, type (alignment, observation, milestone), content
-- Badge for milestones
-
-### Database Tables
-
-```sql
-CREATE TABLE patient_checkins (
-    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-    user_id uuid REFERENCES auth.users(id),
-    email text NOT NULL,
-    checkin_date date DEFAULT CURRENT_DATE,
-    symptoms jsonb DEFAULT '[]', -- [{name, severity}]
-    notes text,
-    energy_level integer,
-    sleep_quality integer,
-    created_at timestamptz DEFAULT now()
-);
-
-CREATE TABLE patient_progress_notes (
-    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-    user_id uuid,
-    email text NOT NULL,
-    note_type text DEFAULT 'observation', -- 'alignment', 'observation', 'milestone'
-    content text NOT NULL,
-    created_by uuid REFERENCES auth.users(id), -- Tracey
-    created_at timestamptz DEFAULT now()
-);
-```
-
----
-
-## Page 4: Billing History (`/members/billing.html`)
-
-### Purpose
-Complete payment history across all QP products — sessions, Academy, Fusion.
-
-### Layout
-- Same sidebar layout
-- Main content: summary cards + transaction table
-
-### Features
-
-**Summary Cards:**
-- Total spent (all time)
-- Referral credits available
-- Referral credits used
-
-**Transaction Table:**
-- Date, description, amount, status, receipt link
-- Filterable by type (Sessions, Academy, Fusion, All)
-- Sortable by date
-- Each row has a "View Receipt" link → opens Stripe receipt URL
-
-**Data Source:**
-- `purchases` table (existing) — has email, product, amount, stripe_session_id
-- Stripe receipt URLs can be constructed from session IDs
-- Referral credit info from `referral_codes` + `credit_history`
-
-### No New Tables Needed
-Uses existing: `purchases`, `referral_codes`, `credit_history`
-
----
-
-## Admin CRM Side (Session 26+)
-
-### Client Profiles Tab in Admin Panel
-
-**Client List View:**
-- Table of all 1-on-1 session clients
-- Columns: Name, Email, Sessions (count), Intake Status, Last Session, Next Session
-- Search + filter
-- Click row → Client Detail View
-
-**Client Detail View (expanded profile):**
-- Header: Name, email, avatar, member since, total sessions
-- Tabs:
-  1. **Sessions** — All bookings, add notes, upload recordings
-  2. **Intake Form** — Read-only view of patient's intake, flag incomplete
-  3. **Progress** — Add alignment notes, view patient check-ins, add milestones
-  4. **Billing** — Payment history for this client
-  5. **Notes** — Internal notes (not visible to patient)
-
-### Admin Actions:
-- Add session notes (per booking, toggle patient visibility)
-- Upload recording URL (per booking)
-- Add progress notes (alignment, observation, milestone)
-- View intake form responses
-- Mark intake as "reviewed"
-- Send reminder emails (prompt patient to complete intake, check in, etc.)
-
----
-
-## File Structure After Build
-
-```
-members/
-├── dashboard.html        ← Updated sidebar with "My Health" section
-├── login.html            ← Existing
-├── reset-password.html   ← Existing
-├── settings.html         ← Existing
-├── sessions.html         ← NEW — Session history + recordings + notes
-├── intake.html           ← NEW — Health intake form
-├── progress.html         ← NEW — Progress tracker + charts
-└── billing.html          ← NEW — Payment history
-```
-
----
-
-## Database Migration Script (Run in Supabase SQL Editor)
-
-```sql
--- Session Notes
-CREATE TABLE IF NOT EXISTS session_notes (
-    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-    booking_id uuid REFERENCES session_bookings(id),
-    note_type text DEFAULT 'session',
-    content text NOT NULL,
-    visible_to_patient boolean DEFAULT false,
-    created_by uuid REFERENCES auth.users(id),
-    created_at timestamptz DEFAULT now(),
-    updated_at timestamptz DEFAULT now()
-);
-
--- Session Recordings
-CREATE TABLE IF NOT EXISTS session_recordings (
-    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-    booking_id uuid REFERENCES session_bookings(id),
-    recording_url text NOT NULL,
-    title text,
-    duration_minutes integer,
-    uploaded_at timestamptz DEFAULT now()
-);
-
--- Patient Intake
-CREATE TABLE IF NOT EXISTS patient_intake (
-    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-    user_id uuid REFERENCES auth.users(id) UNIQUE,
-    email text NOT NULL,
-    status text DEFAULT 'not_started',
-    date_of_birth date,
-    phone text,
-    emergency_contact_name text,
-    emergency_contact_phone text,
-    medical_conditions jsonb DEFAULT '[]',
-    medications text,
-    allergies text,
-    surgeries text,
-    family_history text,
-    primary_concern text,
-    symptoms jsonb DEFAULT '[]',
-    symptom_duration text,
-    previous_treatments text,
-    exercise_frequency text,
-    diet_description text,
-    sleep_quality integer,
-    stress_level integer,
-    wellness_goals text,
-    consent_wellness boolean DEFAULT false,
-    consent_access boolean DEFAULT false,
-    signature_name text,
-    signature_date date,
-    submitted_at timestamptz,
-    created_at timestamptz DEFAULT now(),
-    updated_at timestamptz DEFAULT now()
-);
-
--- Patient Check-Ins
-CREATE TABLE IF NOT EXISTS patient_checkins (
-    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-    user_id uuid REFERENCES auth.users(id),
-    email text NOT NULL,
-    checkin_date date DEFAULT CURRENT_DATE,
-    symptoms jsonb DEFAULT '[]',
-    notes text,
-    energy_level integer,
-    sleep_quality integer,
-    created_at timestamptz DEFAULT now()
-);
-
--- Patient Progress Notes (from Tracey)
-CREATE TABLE IF NOT EXISTS patient_progress_notes (
-    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-    user_id uuid,
-    email text NOT NULL,
-    note_type text DEFAULT 'observation',
-    content text NOT NULL,
-    created_by uuid REFERENCES auth.users(id),
-    created_at timestamptz DEFAULT now()
-);
-
--- RLS Policies
-ALTER TABLE session_notes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE session_recordings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE patient_intake ENABLE ROW LEVEL SECURITY;
-ALTER TABLE patient_checkins ENABLE ROW LEVEL SECURITY;
-ALTER TABLE patient_progress_notes ENABLE ROW LEVEL SECURITY;
-
--- Patients can read their own notes (visible ones)
-CREATE POLICY "Patients read own visible notes" ON session_notes
-    FOR SELECT USING (
-        visible_to_patient = true AND
-        booking_id IN (
-            SELECT id FROM session_bookings WHERE email = (
-                SELECT email FROM profiles WHERE id = auth.uid()
-            )
-        )
-    );
-
--- Patients can read their own recordings
-CREATE POLICY "Patients read own recordings" ON session_recordings
-    FOR SELECT USING (
-        booking_id IN (
-            SELECT id FROM session_bookings WHERE email = (
-                SELECT email FROM profiles WHERE id = auth.uid()
-            )
-        )
-    );
-
--- Patients can CRUD their own intake
-CREATE POLICY "Patients manage own intake" ON patient_intake
-    FOR ALL USING (user_id = auth.uid());
-
--- Patients can CRUD their own check-ins
-CREATE POLICY "Patients manage own checkins" ON patient_checkins
-    FOR ALL USING (user_id = auth.uid());
-
--- Patients can read progress notes about them
-CREATE POLICY "Patients read own progress notes" ON patient_progress_notes
-    FOR SELECT USING (user_id = auth.uid() OR email = (
-        SELECT email FROM profiles WHERE id = auth.uid()
-    ));
-```
-
----
-
-## Pre-Session 26 Checklist
-
-Before starting the build, Todd should:
-
-1. **Run the SQL migration** above in Supabase SQL Editor
-2. **Verify tables created** — check Table Editor for all 5 new tables
-3. **Upload latest handoff docs** — master-plan, fusion-gap, infrastructure (updated with Session 25 changes)
-4. **Upload current files** — admin/index.html, admin/admin.js, admin/admin.css, members/dashboard.html
-
----
-
-## Design Notes
-
-- All pages use the same sidebar layout as the dashboard
-- Same QP color palette: navy (#0e1a30), teal (#5ba8b2), gold (#c9a96e)
-- Same SVG sprite icon system
-- Same Playfair Display headings, Lato body text
-- Charts use Chart.js via CDN (lightweight, matches aesthetic)
-- Mobile: sidebar collapses, floating hamburger button
-- All pages auth-gated (redirect to login if no session)
-
----
-
-## Handoff Doc Reminders for Session 25
-
-Items to add to the 3 handoff docs:
-
-### master-plan.md
-- Session 25: Member portal built (login, dashboard, settings, reset-password)
-- Auth-aware shared header with avatar dropdown (shared.js)
-- Customizable 3-card dashboard grid
-- Sidebar layout matching Academy
-- Cross-domain SSO tokens for Fusion links
-- SVG sprite icon system (no emojis) — document this as standard
-- Patient Portal CRM planned for Session 26
-
-### infrastructure.md
-- New files: members/login.html, dashboard.html, settings.html, reset-password.html
-- Updated: js/shared.js (auth header), components/header.html (login links)
-- Avatar storage: Supabase `avatars` bucket (public, existing)
-- Dashboard card preferences: localStorage key `qp_dash_cards`
-- Referral lookup: by email (not user_id) in referral_codes table
-- 5 new tables planned (session_notes, session_recordings, patient_intake, patient_checkins, patient_progress_notes)
-
-### fusion-gap.md
-- Member portal: QP now has feature parity with Fusion's account.html
-- QP adds: intake forms, progress tracking, billing history (Fusion doesn't have these)
-- Cross-domain SSO: implemented QP→Fusion token passing, Fusion side needs SSO snippet added
+### Coordinates
+All 28 regions have precise 3D coordinates extracted from the GLB skeleton's inverse bind matrices. Male/female coordinate offsets applied. Stored in `bodyRegionCoords` object in admin.js.

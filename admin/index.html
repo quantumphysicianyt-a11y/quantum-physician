@@ -27,7 +27,7 @@
 <a class="sb-link" href="/academy/builder.html" target="_blank" style="font-size:12px;padding-left:38px;opacity:.7"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Course Builder ↗</a>
 <button class="sb-link" onclick="go('fusion',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>Fusion Sessions</button>
 <button class="sb-link" onclick="go('sessions',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>1-on-1 Sessions</button>
-<button class="sb-link" onclick="go('crm',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>Client Profiles</button>
+
 <button class="sb-link" onclick="go('memberships',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Memberships</button></div>
 <div class="sb-divider"></div>
 <div class="sb-section"><div class="sb-section-label">Engage</div>
@@ -176,6 +176,15 @@
 
 <!-- TAB: Clients -->
 <div class="tab-content" id="sess-tab-clients">
+
+<!-- Sub-nav: Roster vs All Clients -->
+<div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+<button class="btn btn-ghost btn-sm client-sub-btn active" onclick="switchClientView('roster',this)">Client Roster</button>
+<button class="btn btn-ghost btn-sm client-sub-btn" onclick="switchClientView('all',this)">All Client Profiles</button>
+</div>
+
+<!-- SUB-VIEW: Client Roster -->
+<div id="client-view-roster">
 <div class="card" style="margin-bottom:16px">
 <div class="card-header"><div class="card-title">Add Client</div></div>
 <div class="card-body">
@@ -198,6 +207,53 @@
 </div></div>
 <div class="card-body" id="sess-clients-list"><div class="loading-center"><div class="spinner"></div>Loading...</div></div>
 </div></div>
+
+<!-- SUB-VIEW: All Client Profiles (CRM list) -->
+<div id="client-view-all" style="display:none">
+<div class="stats-grid" id="crm-stats"></div>
+<div class="card">
+<div class="card-header"><div class="card-title">Client Profiles</div><button class="btn btn-ghost btn-sm" onclick="loadCrmData()">Refresh</button></div>
+<div class="card-body">
+<div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+<input type="text" class="input" style="width:260px" id="crm-search" autocomplete="off" placeholder="Search by name or email..." oninput="crmPage=1;renderCrmList()">
+<select class="input" style="width:160px" id="crm-filter" onchange="crmPage=1;renderCrmList()">
+<option value="all">All Clients</option>
+<option value="active">Active (Has Bookings)</option>
+<option value="intake-pending">Intake Incomplete</option>
+<option value="intake-done">Intake Complete</option>
+</select>
+<select class="input" style="width:150px" id="crm-sort" onchange="renderCrmList()">
+<option value="name-asc">Name A→Z</option>
+<option value="sessions-desc">Most Sessions</option>
+<option value="recent">Last Session</option>
+</select>
+</div>
+<div style="overflow-x:auto" id="crm-table"><div class="loading-center"><div class="spinner"></div>Loading...</div></div>
+<div class="pagination" id="crm-pagination"></div>
+</div></div>
+</div>
+
+<!-- SUB-VIEW: Client Detail (CRM detail — hidden until a client is opened) -->
+<div id="crm-detail-view" style="display:none">
+<button class="btn btn-ghost btn-sm" onclick="crmBackToList()" style="margin-bottom:16px">&larr; Back to Clients</button>
+<div class="card" style="margin-bottom:20px">
+<div class="card-body" id="crm-detail-header" style="padding:20px"></div>
+</div>
+<div class="tab-nav" id="crm-detail-tabs">
+<button class="tab-btn active" onclick="switchCrmTab('sessions',this)">Sessions</button>
+<button class="tab-btn" onclick="switchCrmTab('intake',this)">Intake Form</button>
+<button class="tab-btn" onclick="switchCrmTab('progress',this)">Progress</button>
+<button class="tab-btn" onclick="switchCrmTab('billing',this)">Billing</button>
+<button class="tab-btn" onclick="switchCrmTab('notes',this)">Notes</button>
+</div>
+<div class="tab-content active" id="crm-tab-sessions"><div class="card"><div class="card-body" id="crm-sessions-content"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div></div>
+<div class="tab-content" id="crm-tab-intake"><div class="card"><div class="card-body" id="crm-intake-content"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div></div>
+<div class="tab-content" id="crm-tab-progress"><div class="card"><div class="card-body" id="crm-progress-content"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div></div>
+<div class="tab-content" id="crm-tab-billing"><div class="card"><div class="card-body" id="crm-billing-content"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div></div>
+<div class="tab-content" id="crm-tab-notes"><div class="card"><div class="card-body" id="crm-notes-content"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div></div>
+</div>
+
+</div>
 
 <!-- TAB: Bookings -->
 <div class="tab-content" id="sess-tab-bookings">
@@ -233,53 +289,7 @@
 </div>
 
 </div>
-<div class="page" id="page-crm">
-<div class="stats-grid" id="crm-stats"></div>
 
-<!-- Client List View -->
-<div id="crm-list-view">
-<div class="card">
-<div class="card-header"><div class="card-title">Client Profiles</div><button class="btn btn-ghost btn-sm" onclick="loadCrmData()">Refresh</button></div>
-<div class="card-body">
-<div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
-<input type="text" class="input" style="width:260px" id="crm-search" autocomplete="off" placeholder="Search by name or email..." oninput="crmPage=1;renderCrmList()">
-<select class="input" style="width:160px" id="crm-filter" onchange="crmPage=1;renderCrmList()">
-<option value="all">All Clients</option>
-<option value="active">Active (Has Bookings)</option>
-<option value="intake-pending">Intake Incomplete</option>
-<option value="intake-done">Intake Complete</option>
-</select>
-<select class="input" style="width:150px" id="crm-sort" onchange="renderCrmList()">
-<option value="name-asc">Name A→Z</option>
-<option value="sessions-desc">Most Sessions</option>
-<option value="recent">Last Session</option>
-</select>
-</div>
-<div style="overflow-x:auto" id="crm-table"><div class="loading-center"><div class="spinner"></div>Loading...</div></div>
-<div class="pagination" id="crm-pagination"></div>
-</div></div>
-</div>
-
-<!-- Client Detail View (hidden by default) -->
-<div id="crm-detail-view" style="display:none">
-<button class="btn btn-ghost btn-sm" onclick="crmBackToList()" style="margin-bottom:16px">← Back to Client List</button>
-<div class="card" style="margin-bottom:20px">
-<div class="card-body" id="crm-detail-header" style="padding:20px"></div>
-</div>
-<div class="tab-nav">
-<button class="tab-btn active" onclick="switchCrmTab('sessions',this)">Sessions</button>
-<button class="tab-btn" onclick="switchCrmTab('intake',this)">Intake Form</button>
-<button class="tab-btn" onclick="switchCrmTab('progress',this)">Progress</button>
-<button class="tab-btn" onclick="switchCrmTab('billing',this)">Billing</button>
-<button class="tab-btn" onclick="switchCrmTab('notes',this)">Notes</button>
-</div>
-<div class="tab-content active" id="crm-tab-sessions"><div class="card"><div class="card-body" id="crm-sessions-content"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div></div>
-<div class="tab-content" id="crm-tab-intake"><div class="card"><div class="card-body" id="crm-intake-content"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div></div>
-<div class="tab-content" id="crm-tab-progress"><div class="card"><div class="card-body" id="crm-progress-content"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div></div>
-<div class="tab-content" id="crm-tab-billing"><div class="card"><div class="card-body" id="crm-billing-content"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div></div>
-<div class="tab-content" id="crm-tab-notes"><div class="card"><div class="card-body" id="crm-notes-content"><div class="loading-center"><div class="spinner"></div>Loading...</div></div></div></div>
-</div>
-</div>
 
 <div class="page" id="page-memberships"><div class="card"><div class="card-body"><div class="empty"><p>Membership tiers coming in a future session.</p></div></div></div></div>
 
@@ -499,6 +509,7 @@
 <!-- Sub-tabs -->
 <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">
 <button class="btn btn-ghost btn-sm auto-tab-btn active" onclick="switchAutoTab('scheduled',this)">Scheduled Emails</button>
+<button class="btn btn-ghost btn-sm auto-tab-btn" onclick="switchAutoTab('reminders',this)">1-on-1 Reminders</button>
 <button class="btn btn-ghost btn-sm auto-tab-btn" onclick="switchAutoTab('logs',this)">Email Logs</button>
 <button class="btn btn-ghost btn-sm auto-tab-btn" onclick="switchAutoTab('sessions',this)">Session Schedule</button>
 </div>
@@ -516,6 +527,61 @@
 
 <!-- Email Logs Tab -->
 <div class="card auto-tab-panel" id="autotab-logs" style="display:none;margin-bottom:20px">
+
+<!-- 1-on-1 Session Reminders Tab -->
+<div class="card auto-tab-panel" id="autotab-reminders" style="display:none;margin-bottom:20px">
+<div class="card-header"><div class="card-title">1-on-1 Session Email Automation</div></div>
+<div class="card-body">
+<p style="font-size:12px;color:var(--text-dim);margin-bottom:20px">Configure automated emails for 1-on-1 session bookings. Emails are generated from existing bookings and use Dr. Tracey's branded QP template.</p>
+
+<!-- Automation toggles -->
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-bottom:24px">
+
+<div style="padding:16px;border:1px solid var(--border);border-radius:10px;background:rgba(0,0,0,.08)">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+<div style="font-weight:600;font-size:13px;color:var(--text)">Day-Before Reminder</div>
+<label style="display:flex;align-items:center;cursor:pointer"><input type="checkbox" id="auto-reminder-day" checked style="accent-color:var(--teal);width:16px;height:16px"></label>
+</div>
+<div style="font-size:11px;color:var(--text-dim)">Sent 24 hours before each session. Includes Zoom link, date/time, and preparation tips.</div>
+</div>
+
+<div style="padding:16px;border:1px solid var(--border);border-radius:10px;background:rgba(0,0,0,.08)">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+<div style="font-weight:600;font-size:13px;color:var(--text)">Post-Session Follow-Up</div>
+<label style="display:flex;align-items:center;cursor:pointer"><input type="checkbox" id="auto-reminder-followup" checked style="accent-color:var(--teal);width:16px;height:16px"></label>
+</div>
+<div style="font-size:11px;color:var(--text-dim)">Sent 2 hours after session is marked complete. Thanks the patient and links to their progress tracker.</div>
+</div>
+
+<div style="padding:16px;border:1px solid var(--border);border-radius:10px;background:rgba(0,0,0,.08)">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+<div style="font-weight:600;font-size:13px;color:var(--text)">Intake Form Nudge</div>
+<label style="display:flex;align-items:center;cursor:pointer"><input type="checkbox" id="auto-reminder-intake" style="accent-color:var(--teal);width:16px;height:16px"></label>
+</div>
+<div style="font-size:11px;color:var(--text-dim)">Sent to clients who have a paid session but haven't completed their intake form yet.</div>
+</div>
+
+<div style="padding:16px;border:1px solid var(--border);border-radius:10px;background:rgba(0,0,0,.08)">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+<div style="font-weight:600;font-size:13px;color:var(--text)">72-Hour Payment Expiry</div>
+<label style="display:flex;align-items:center;cursor:pointer"><input type="checkbox" id="auto-reminder-expiry" style="accent-color:var(--teal);width:16px;height:16px"></label>
+</div>
+<div style="font-size:11px;color:var(--text-dim)">Sends a reminder at 48h, then auto-expires proposed bookings that haven't been paid within 72 hours.</div>
+</div>
+
+</div>
+
+<!-- Actions -->
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">
+<button class="btn btn-primary" onclick="generateSessionReminders()">Generate Reminders Now</button>
+<button class="btn btn-ghost" onclick="previewSessionReminder('day-before')">Preview Day-Before Email</button>
+<button class="btn btn-ghost" onclick="previewSessionReminder('follow-up')">Preview Follow-Up Email</button>
+</div>
+
+<!-- Pending reminders list -->
+<div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:10px">Pending Session Reminders</div>
+<div id="session-reminders-list"><div class="empty"><p>Click "Generate Reminders Now" to scan upcoming bookings and create reminders.</p></div></div>
+</div></div>
 <div class="card-header"><div class="card-title">Email Logs</div><button class="btn btn-ghost btn-sm" onclick="loadEmailLogs()">Refresh</button></div>
 <div class="card-body">
 <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">

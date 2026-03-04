@@ -12,7 +12,7 @@ Both sites share the same Supabase project, same Stripe account, same user pool.
 ## 📋 SESSION HANDOFF PROTOCOL — READ THIS FIRST
 
 ### A Note on This Collaboration
-Todd (the founder/developer of Quantum Physician) and Claude have built this admin panel together across 25+ intensive sessions. Todd cares deeply about polish, design details, and getting things right. These handoff documents represent a **shared history** — every bug fix, every design decision, every architectural choice was made collaboratively and often through multiple iterations. The next Claude instance inherits this context and trust. **Treat these docs with the same care Todd does**: update them thoroughly at the end of every session, preserve hard-won lessons, and never make changes that contradict documented decisions without discussing with Todd first. This isn't just a codebase — it's a partnership.
+Todd (the founder/developer of Quantum Physician) and Claude have built this admin panel together across 28+ intensive sessions. Todd cares deeply about polish, design details, and getting things right. These handoff documents represent a **shared history** — every bug fix, every design decision, every architectural choice was made collaboratively and often through multiple iterations. The next Claude instance inherits this context and trust. **Treat these docs with the same care Todd does**: update them thoroughly at the end of every session, preserve hard-won lessons, and never make changes that contradict documented decisions without discussing with Todd first. This isn't just a codebase — it's a partnership.
 
 **These 3 docs are the ONLY source of truth across chat sessions. Claude has NO memory between sessions.**
 
@@ -33,324 +33,191 @@ Todd (the founder/developer of Quantum Physician) and Claude have built this adm
 - These 3 docs + the current `admin/index.html`, `admin/admin.js`, `admin/admin.css`
 - Claude reads all docs BEFORE writing any code
 
-**Last updated:** Session 25 (Mar 2, 2026)
+**Last updated:** Session 29 (Mar 3, 2026)
 
 ---
 
-## Sessions 14-24 Summary
+## Session 29 Summary — CRM Merge, Email Automation, Cleanup (Mar 3, 2026)
 
+### CRM Merged into Clients Tab ✅
+- **Removed** standalone `page-crm` sidebar entry and its page div
+- **Added sub-navigation** to Clients tab: "Client Roster" | "All Client Profiles"
+- Client Roster now has a **"Profile →" button** on each client that opens the 5-tab CRM detail view inline
+- "All Client Profiles" shows the full CRM list (including non-roster public clients) with search/filter/sort
+- CRM detail view (Sessions, Intake, Progress, Billing, Notes) now lives inside `sess-tab-clients`
+- **Back button** returns to whichever sub-view was active (roster or all profiles)
+- Sub-nav buttons dim when detail view is open
+- Removed `crm` from TITLES constant and loadPageData switch
+- **Bug fix**: renamed duplicate `crmDeleteNote` → `crmDeleteInternalNote` (was overwriting session note delete)
+
+### Email Automation — 1-on-1 Session Reminders ✅
+- **New "1-on-1 Reminders" sub-tab** in Email Automation page
+- **4 automation toggles**: Day-Before Reminder, Post-Session Follow-Up, Intake Form Nudge, 72-Hour Payment Expiry
+- **Day-before reminder email**: QP-branded (Georgia serif, gradient appointment card), includes Zoom link, date/time, preparation tips, portal deep link
+- **Post-session follow-up email**: Thanks patient, post-session guidance list, links to progress tracker
+- **Intake form reminder**: Sends branded email with link to `/members/intake.html` (replaces "coming soon" placeholder)
+- **Preview system**: iframe-based email preview modal for both templates
+- **Per-booking send**: individual "Send Reminder" / "Send Follow-Up" buttons next to each booking
+- **Batch send**: `sendBatchReminders()` for all tomorrow's sessions at once
+- **Pending reminders list**: shows upcoming paid sessions (highlights tomorrow's) and recently completed sessions
+- All sends go through existing Google Apps Script `APPS_SCRIPT_URL` with `mode:'no-cors'`
+- All sends logged via `logAudit()`
+
+### Files Modified
+- `admin/index.html` — ~839 lines (from ~773): removed page-crm, embedded CRM in Clients tab, added reminders tab
+- `admin/admin.js` — ~5741 lines (from ~5471): CRM merge functions, session reminder automation, email templates
+- `members/sessions.html` — unchanged (carried forward from S28)
+
+### No Database Changes
+- No new tables or columns needed this session
+
+---
+
+## Session 28 Summary — Body Regions, Notes System, Recording System, Real-Time Refresh (Mar 3, 2026)
+
+### 3D Body Model: 28 Bone-Accurate Regions ✅
+- Extracted inverse bind matrix positions from GLB skeleton using Three.js
+- 28 standard regions mapped to precise 3D coordinates (with male/female offsets)
+- Regions: atlas, c1-c2, cervical-spine, left-neck, right-neck, thoracic-spine, lumbar-spine, sacrum, coccyx, left-shoulder, right-shoulder, left-elbow, right-elbow, left-wrist, right-wrist, left-hip, right-hip, left-knee, right-knee, left-ankle, right-ankle, pelvis, sternum, left-ribs, right-ribs, tmj, cranium, full-spine
+- All positions verified against the GLB model's actual bone structure
+
+### Admin Region Picker Modal ✅
+- 28 tappable region chips in a grid layout
+- Multi-select: chips toggle teal when selected
+- **Custom regions**: text input + "nearest standard region" dropdown + "+ Add" button
+- Custom regions create teal chips showing custom label + placement region
+- Custom labels stored in note content as `[Custom alignments: ...]`
+- Placement mapped to nearest standard region's coordinates on 3D body map
+- No database schema changes — uses existing `body_regions` jsonb column
+
+### Session Notes System (Full CRUD) ✅
+- **Add note**: from any booking status (proposed, confirmed, paid, completed)
+- **Edit note**: reopens modal with content, regions pre-selected, visibility state
+- **Delete note**: with confirmation dialog
+- **Toggle visibility**: one-click 🔓/🔒 to share/hide from patient
+- **YES/NO visibility toggle** in modal — large button, dark card, helper text
+- **Multiple notes per session**: unlimited notes per booking
+- **Collapsible in bookings grid**: toggle row shows `▸ 📝 2 notes · 🎥 1 recording click to expand`
+- Notes show: type badge, content, body region pills, visibility badge, time ago, action buttons
+
+### Recording Upload System ✅
+- **Upload modal** with two tabs: "Upload File" and "Paste URL"
+- **Upload File tab**: drag & drop or click-to-select, MP4/MOV/WebM, 50MB max, progress bar
+  - Uploads to Supabase Storage bucket `session-recordings`
+  - Stores `source_type: 'supabase'`, `file_path`, `file_size_mb`
+- **Paste URL tab**: Zoom, Vimeo, Google Drive, YouTube, any link
+  - Stores `source_type: 'external'`
+- **Admin recording indicators**: `🎥 1 recording` in collapsible toggle row
+- **Expanded view**: shows each recording with Hosted/External badge, title, size, Play link, 🗑 Delete button
+- **Delete recording**: confirmation dialog, deletes from Supabase Storage if hosted
+
+### Smart Video Embeds (Patient Side — sessions.html) ✅
+- **Supabase hosted**: Native HTML5 `<video>` player + Download button
+- **Vimeo**: Embedded Vimeo player (title/byline/portrait stripped) + "Watch on Vimeo" link
+- **Google Drive**: Embedded Google Drive preview player
+- **YouTube**: Embedded YouTube player
+- **Zoom/other**: "Opens in new tab" fallback link (Zoom blocks iframe embeds)
+- **Detection**: regex matching on URL pattern, auto-selects correct embed type
+
+### Patient sessions.html Deep Linking ✅
+- `?highlight=bookingId` URL parameter
+- Auto-switches to Past tab
+- Finds session card by `data-booking-id`
+- Expands details, highlights with teal border, smooth scrolls
+- Triggered from progress.html 3D body map "View Session →" links
+
+### Real-Time Refresh System ✅
+- **New `refreshBookingsView()` function**: parallel fetch of bookings + notes + recordings via `Promise.all`
+- Replaces all scattered manual reload calls
+- **Every action triggers it**: add/edit/delete notes, add/delete recordings, status changes, delete bookings
+- **Bookings tab switch** also triggers fresh pull
+- Eliminates need for hard-refresh after actions
+
+### UI Polish ✅
+- **Green "✓ Complete" button** replaces subtle ghost-style "Complete" on paid bookings
+- **Body region badges** on patient sessions.html (teal pills matching admin styling)
+- **Download icon** added to SVG sprite in sessions.html
+
+### Bug Fixes ✅
+- **`session_recordings` column name**: table uses `uploaded_at`, not `created_at` — was causing 400 errors from admin-proxy, recordings returned 0. Fixed all 3 references.
+- **Recording indicator not showing**: was placed in status column which renders before bRecs is computed. Moved to collapsible toggle row where data is already filtered.
+
+### Database Changes
+- `session_recordings` table: added `source_type` (text, default 'external'), `file_path` (text), `file_size_mb` (numeric) via SQL migration
+- Supabase Storage bucket `session-recordings` created (public read, authenticated write/delete)
+
+### Files Modified
+- `admin/admin.js` — ~5471 lines (from ~5048)
+- `members/sessions.html` — ~649 lines (from ~551)
+- `netlify/functions/admin-proxy.js` — unchanged (session_recordings was already whitelisted)
+
+---
+
+## Sessions 26-27 Summary (condensed)
+
+### Session 26 — Patient Portal Pages + SQL Migration
+- 4 patient portal pages: sessions.html, intake.html, progress.html, billing.html
+- 5 new database tables with RLS policies
+- Admin-proxy updated (30 allowed tables)
+- Cross-domain SSO attempted (QP side done, Fusion caused loading hang)
+
+### Session 27 — SSO Fix + Admin CRM + Progress Enhancements
+- Cross-domain SSO fixed (Cloudflare truncation was root cause)
+- Admin CRM: Client Profiles with 5-tab detail view
+- Progress page: collapsible charts, symptom/energy charts, before/after toggle, quick stats, body map, milestone markers
+- Demo data populated for testing
+
+---
+
+## Sessions 14-25 Summary (condensed)
 See previous handoff docs for full details. Key milestones:
 - **Sessions 14-18**: Academy Course Builder + Student Experience
 - **Sessions 19-20**: Email Center Card Library, Rich Text Editor, Auth Auto-Refresh
 - **Session 21**: Unified Rich Editor (rolled back — lessons documented)
 - **Session 22**: Unified Rich Editor rebuilt successfully + 7 hotfixes
-- **Session 23**: Full 1-on-1 Sessions system — 6 database tables, admin panel tab, public booking page, offer slot flow
-- **Session 24**: Stripe payment backend + frontend checkout (session-checkout.js, session-webhook.js, pay token flow)
+- **Session 23**: Full 1-on-1 Sessions system — 6 database tables, admin panel tab, public booking page
+- **Session 24**: Stripe payment backend + frontend checkout
+- **Session 25**: QP Member Portal (login, dashboard, settings, reset-password, auth-aware header, SVG icons)
 
 ---
 
-## Session 26 Summary — Patient Portal Pages + SQL Migration (Mar 3, 2026)
+## 🔴 PRIORITY NEXT STEPS (Session 30)
 
-### Patient Portal Pages Built (QP Repo) ✅
-- **members/sessions.html** (~551 lines) — Sessions & Recordings page with Upcoming/Past/All tabs, session cards with date/time/status badges, Confirm & Pay buttons for proposed sessions
-- **members/intake.html** (~751 lines) — Health Intake Form with 5 sections (Personal Info, Health History, Current Symptoms, Lifestyle, Consent), auto-save, severity sliders
-- **members/progress.html** (~512 lines) — Progress Tracker with Chart.js symptom tracking, check-in log, practitioner notes, Add Check-In modal
-- **members/billing.html** (~332 lines) — Billing History with purchase list and totals
-- **members/dashboard.html** (~734 lines) — Updated with collapsible My Health sidebar section linking to all 4 patient pages
+### 1. Three.js 3D Body Model Rebuild (HIGH PRIORITY)
+- Replace 2D body map overlay on progress.html with proper 3D model
+- Use the 28 bone-accurate region coordinates from Session 28
+- Interactive: click markers to see session details
 
-### SQL Migration (5 New Tables) ✅
-- **session_notes** — Admin notes per session booking (note_type, content, visible_to_patient)
-- **session_recordings** — Video recording metadata (booking_id, recording_url, title, duration)
-- **patient_intake** — Health intake form responses (30+ fields, jsonb symptoms)
-- **patient_checkins** — Patient self-reported progress (symptoms jsonb, energy, sleep)
-- **patient_progress_notes** — Longitudinal practitioner notes (alignment, milestone, observation)
-- All tables have RLS policies for patient self-access
+### 2. End-to-End Stripe Payment Test
+- Test with real transaction or Stripe test mode
+- Verify webhook → booking update → confirmation email
+- Test all 3 checkout flows: sessions, Academy, Fusion
 
-### Admin-Proxy Updated ✅
-- ALLOWED_TABLES expanded from 25 to 30 (added 5 new CRM tables)
-- Committed and deployed (commit 22a3267)
+### 3. 72-Hour Offer Expiry Automation
+- Wire the toggle in Email Automation to actually auto-expire proposed bookings
+- Send 48-hour reminder, then auto-decline at 72 hours
+- Requires either a Netlify scheduled function or Google Apps Script time trigger
 
-### Cross-Domain SSO Attempted ⚠️
-- QP side: goToFusion() passes tokens via URL hash (commit 84a9b6e)
-- Fusion side: SSO receiver built but caused Loading hang
-- ROOT CAUSE: Cloudflare truncation of dashboard.html, not SSO code
-- SSO receiver reverted from Fusion — deferred to Session 27
+### 4. Email Automation Polish
+- Hook up toggles to persistent config (save to session_config or new automation_config table)
+- Add Supabase cron / Google Apps Script trigger for daily auto-scan (instead of manual "Generate")
+- Add email tracking for session reminders
 
-### Fusion Netlify Deploy Issues
-- Builds stuck on Starting Up for 7+ minutes
-- FIX: Unlinked/relinked GitHub repo to Netlify
-- Removed @netlify/plugin-functions-install-core from netlify.toml
+### 5. Outstanding Items
+- Stripe checkout branding review (all 3 checkout flows)
+- notification_preferences column verification
+- Fusion→QP SSO (not yet needed but planned)
 
----
-
-## Session 27 Summary — SSO Fix + Admin CRM + Progress Enhancements (Mar 3, 2026)
-
-### Cross-Domain SSO Fixed ✅
-- Fusion dashboard.html was truncated by Cloudflare (cut off at line 469, mid-word)
-- Local repo had complete file — SSO receiver patch applied via Python script
-- SSO check inserted BEFORE getSession() in Fusion boot() function
-- Reads hash params, calls supabase.auth.setSession(), clears hash with replaceState
-- Commit pushed to Fusion repo (84cc1d2)
-- **Tested and working** — clicking Fusion Sessions from QP dashboard goes straight to Fusion dashboard
-
-### Admin CRM: Client Profiles Tab ✅
-- New sidebar button + page (page-crm) added to admin panel
-- **Client List View**: searchable/filterable/sortable table of all 1-on-1 clients
-- **Client Detail View** with 5 tabs:
-  - Sessions — all bookings with inline notes/recordings, + Note / + Recording buttons, visibility toggle
-  - Intake Form — read-only view of patient health questionnaire (5 sections)
-  - Progress — patient check-ins + practitioner notes with add buttons (alignment/milestone/observation)
-  - Billing — purchase history with totals
-  - Notes — internal admin notes (add/delete)
-- Added to TITLES, loadPageData switch, sidebar nav
-- Files: admin/index.html (~773 lines), admin/admin.js (~5048 lines)
-
-### Demo Data Populated ✅
-- 4 session bookings for btsol@hey.com (2 completed, 1 paid, 1 proposed)
-- 4 session notes (2 session, 2 followup) with visibility controls
-- 2 session recordings (Zoom links)
-- Complete intake form (30+ fields filled)
-- 12 monthly check-ins over 1 year showing dramatic symptom improvement (8/10 down to 1/10)
-- 3 practitioner progress notes (alignment, milestone, observation)
-
-### Progress Page Enhancements ✅
-- **Energy & Sleep Recovery chart** — Chart.js line chart showing energy/sleep climbing upward
-- **Before/After Healing Journey card** — side-by-side first vs latest check-in with all symptoms
-  - Scores/% Change toggle showing raw values or percentage improvements
-  - Overall symptom reduction summary (shows -80%)
-- **Milestone markers** — badges below symptom chart from practitioner milestone notes
-- **Quick Stats dropdown** — top cards switchable between Overview / Top Symptoms / Wellness Scores
-- **All three chart sections collapsible** — collapsed by default, click to expand with smooth animation
-
-### My Health Sidebar Icon Alignment ✅
-- Fixed nav-icon size from 14px to 17px to match other nav items
-- Fixed gap from 8px to 10px
-- Fixed left padding to account for border-left offset
-
-### Bug Fix
-- Apostrophe in you are causing SyntaxError on progress page (single quote inside single-quoted string)
-
-### Pending for Session 28
-- [ ] Merge CRM into existing Clients tab (remove standalone page-crm)
-- [ ] Add recordings to sessions.html (Past tab, per-session)
-- [ ] Session reminders (day-before email with Zoom link + update request)
-- [ ] Multi-currency invoicing (CAD+HST for Canadian, EUR for international)
-- [ ] End-to-end Stripe payment test
-- [ ] 72-hour offer expiry automation
-- [ ] notification_preferences column verification
-- [ ] Stripe checkout branding review (all 3 checkout flows)
-
----
-
-## Session 25 Summary — QP Member Portal + Dashboard (Mar 2, 2026)
-
-### Member Area Pages Built ✅
-
-**`members/login.html`** — Auth gateway
-- Sign In / Create Account tabs
-- Supabase auth: signInWithPassword + signUp
-- Forgot password flow → sends reset email → redirects to reset-password.html
-- QP branding: navy bg, teal accents, logo hero
-- Redirects to dashboard on successful auth
-
-**`members/dashboard.html`** — Main member hub ✅
-- **Sidebar layout matching Academy dashboard** — fixed left sidebar with:
-  - Large QP logo at top
-  - Profile section: avatar (photo or initials with pulse animation), name, email
-  - Referral card: code + copy button, credit/earned/referrals stats, earning info ($10 session / $25 bundle), "Open Referral Hub →" link
-  - Nav links: Dashboard (active), Book a Session, Academy, Fusion Sessions, Account Settings, divider, Main Site
-  - Sign Out in footer
-- **Time-of-day greeting** ("Good afternoon, Todd")
-- **Customizable 3-card grid** — user picks 3 of 6 available cards:
-  1. Upcoming Sessions — pulls from `session_bookings` by email
-  2. Upcoming Events — pulls from `session_schedule`
-  3. Continue Learning — pulls from `qa_enrollments` + `qa_courses`, shows progress bar
-  4. Community — pulls from `discussion_posts`, shows latest threads
-  5. Live Events — checks `session_schedule` for today's events
-  6. Recent Progress — enrollment + lesson completion stats
-- **"Customize Dashboard" link** → modal with checkboxes, select exactly 3, saves to localStorage (`qp_dash_cards`)
-- **Quick Links + My Account** bottom grid
-- **Cross-domain SSO** — Fusion Sessions link passes access_token + refresh_token in URL hash for seamless auth
-- **Mobile responsive** — sidebar collapses, floating hamburger button
-
-**`members/settings.html`** — Account management ✅
-- **Profile & Avatar**: upload photo to Supabase `avatars` bucket, initials fallback, edit name
-- **Password**: verify current → set new (6+ chars, must match)
-- **Notifications**: 4 toggle switches (session_reminders, booking_confirmations, cycle_announcements, academy_updates) → saves to `notification_preferences` table
-- Same sidebar aesthetic, auth-gated
-
-**`members/reset-password.html`** — Password reset handler ✅
-- Detects Supabase recovery token from URL
-- New password + confirm fields
-- Updates via `sb.auth.updateUser()`
-
-### Auth-Aware Shared Header (`js/shared.js`) ✅
-- After shared header loads, checks Supabase session
-- **Logged out**: header unchanged (Sign Up / Login links)
-- **Logged in**: removes Sign Up/Login, injects avatar circle in top right
-  - Click → animated dropdown with: name, email, Member Dashboard, Academy Dashboard, Book a Session, Account Settings, Sign Out
-  - Closes on outside click or Escape
-- Works on ALL QP pages that load shared.js + Supabase SDK
-- Styles injected dynamically (no external CSS needed)
-
-### SVG Icon System Standardization ✅
-- **All member pages use SVG sprite icons** — NO emojis anywhere
-- Icons defined as `<symbol>` elements in hidden `<svg>`, referenced via `<use href="#i-xxx"/>`
-- Feather/Lucide style: stroke-based, 2px stroke-width, round linecaps/linejoins
-- Icons: i-cal, i-video, i-book, i-chat, i-radio, i-trophy, i-user, i-zap, i-settings, i-home, i-gift, i-logout, i-arrow, i-chevron, i-check, i-sliders, i-heart, i-grad, i-layers, i-mail, i-play, i-layout, i-menu, i-lock, i-camera, i-bell
-- Sizing: inline `width/height` or utility approach
-- Matches Academy dashboard icon system exactly
-
-### Key Technical Decisions
-- **Referral lookup by email** (not user_id) — matches how `referral_codes` table stores data
-- **Referral hub link**: `/referral-hub.html?brand=academy` opens teal/navy theme
-- **Cross-domain SSO**: QP passes `access_token` + `refresh_token` in URL hash to Fusion — Fusion side needs a small SSO receiver snippet (NOT YET ADDED to Fusion repo)
-- **Card preferences in localStorage**: key `qp_dash_cards`, defaults to `['sessions','learning','progress']`
-- **Avatars**: Supabase `avatars` bucket (public, already exists with 4 policies)
-- **Notification preferences**: `notification_preferences` table (exists, needs boolean columns verified)
-
-### What Was NOT Done (Deferred)
-- Cross-domain SSO receiver snippet on Fusion side (`fusionsessions.com/dashboard.html`)
-- Fusion link still shows login page until SSO receiver is added
-- Admin panel not modified in this session
-- No new Netlify functions
-
----
-
-## Session 24 Summary — Stripe Payment Backend + Frontend Checkout (Mar 2, 2026)
-
-### Netlify Functions Created ✅
-
-**`session-checkout.js`** (~240 lines) — NEW
-- **Two checkout modes**:
-  - **Token-based**: `{token: "abc123"}` → looks up proposed booking by `confirmation_token`, validates 72-hour expiry, creates Stripe checkout
-  - **Public booking**: `{email, name, date, start_time}` → validates availability, checks conflicts, creates proposed booking, redirects to Stripe
-- Fetches session config (price $150, duration 60 min) from `session_config` table
-- Product display: "Private Healing Session — {Date}" with session image
-- Success URL: `/pages/one-on-sessions.html?payment=success&booking_id={id}`
-- Cancel URL: `/pages/one-on-sessions.html?payment=cancelled`
-
-**`session-webhook.js`** (~300 lines) — NEW
-- Handles `checkout.session.completed` where `metadata.type === "session_booking"`
-- Updates booking: `proposed` → `paid`, stores `stripe_payment_id`, sets `confirmed_at`
-- Updates waitlist: if email matches `notified` entry → `status: "booked"`
-- Sends QP-branded confirmation email via Apps Script
-- Logs to `admin_audit_log`
-- Idempotency: skips if booking already `paid`
-- **Requires separate Stripe webhook endpoint** (configured)
-
-### Admin.js Updates ✅
-- `generateBookingToken()` — 64-char hex token generator
-- All 4 booking insert points now include `confirmation_token`
-- `buildOfferEmailBody()` — CTA links to real checkout URL with token
-- Bookings Grid: "🔗 Pay Link" button, "Mark Paid" replaces "Confirm", paid/expired badges
-- Status tracker: "proposed / paid / declined"
-
-### Frontend — one-on-sessions.html Updates ✅
-- **`?pay=TOKEN` handler** — Instant redirect: page hidden, calls session-checkout, redirects to Stripe. No flash of sessions page.
-- **`?payment=success` overlay** — Floating navy card over blurred sessions page: QP logo, checkmark, "Payment Confirmed!", "Back to Sessions" CTA
-- **`?payment=cancelled` overlay** — Same style: X icon, "Payment Cancelled", "Your slot is still reserved for 72 hours"
-- **Slot selection modal** — Replaces old alert. Clean modal: date/time/price display, name + email inputs, "Confirm & Pay" → calls session-checkout → redirects to Stripe
-
-### Database Changes ✅
-- `session_bookings`: Added `confirmation_token` column (text, nullable)
-- `session_bookings`: Updated status check constraint to include `paid` and `expired`
-- `qa_discussions`: Added `user_email`, `user_name`, `is_hidden`, `content` columns (fixed admin 400 error)
-
-### Stripe Configuration ✅
-- Webhook endpoint created: `https://qp-homepage.netlify.app/.netlify/functions/session-webhook`
-- Listens for: `checkout.session.completed`
-- Signing secret stored as `STRIPE_SESSION_WEBHOOK_SECRET` in Netlify env vars
-- Product image: `assets/images/1on1-sessions-payment.png`
-
-### Booking Status Flow (FINALIZED)
-```
-proposed → paid → completed
-                → cancelled (48-hour policy)
-                → no_show
-proposed → declined (slot freed)
-proposed → expired (72 hours passed without payment)
-```
-No separate "confirmed" state — confirm & pay is one atomic step via Stripe checkout.
-
----
-
-## Session 23 Summary — 1-on-1 Sessions System (Feb 28, 2026)
-
-### What Was Built (Previous Bot — Session 23a)
-
-**Database: 6 new Supabase tables created ✅**
-- `session_config`, `session_cycles`, `session_availability`, `session_clients`, `session_bookings`, `session_waitlist`
-
-**Admin Proxy: 6 tables added to allowlist ✅**
-- All session tables in `admin-proxy.js` ALLOWED_TABLES array
-
-**Admin Panel — Full Sessions Tab (page-sessions) ✅**
-- Tab switching (Cycles, Availability, Clients, Bookings, Public & Waitlist)
-- Cycle Manager, Availability Calendar, Client Roster, Auto-Populate, Bookings Grid
-- Offer Slot flow with email preview/test/send
-- Public booking controls + waitlist manager
-
-### Frontend — Dynamic Booking Page (pages/one-on-sessions.html) ✅
-- Three dynamic states based on `session_config.public_booking_status` + active cycle
-- Waitlist signup form → inserts into `session_waitlist`
-- Monthly calendar with time slot picker (when open)
-
----
-
-## 🔴 PRIORITY NEXT STEPS (Session 26)
-
-### 1. Patient CRM / Portal (MAJOR BUILD — see session-26-crm-plan.md)
-Full plan documented in `session-26-crm-plan.md`. Summary:
-- **4 new patient portal pages**: Sessions & Recordings, Intake Form, Progress Tracker, Billing History
-- **Sidebar update**: Collapsible "My Health" section in member dashboard sidebar
-- **5 new database tables**: session_notes, session_recordings, patient_intake, patient_checkins, patient_progress_notes
-- **Admin CRM**: Client Profiles tab with per-client detail view
-- **Pre-build**: Run SQL migration script from plan doc, verify tables
-
-### 2. Cross-Domain SSO — Fusion Side (PENDING)
-- QP→Fusion token passing built (Session 25)
-- **STILL NEEDED**: Add SSO receiver snippet to Fusion `dashboard.html`:
-```javascript
-// ─── Cross-domain SSO from QP ───
-(async function checkSSO() {
-    const hash = window.location.hash;
-    if (hash.includes('access_token=') && hash.includes('type=sso')) {
-        const params = new URLSearchParams(hash.substring(1));
-        const access = params.get('access_token');
-        const refresh = params.get('refresh_token');
-        if (access && refresh) {
-            await supabase.auth.setSession({ access_token: access, refresh_token: refresh });
-            window.location.hash = '';
-        }
-    }
-})();
-```
-
-### 3. End-to-End Payment Test
-- Switch to Stripe test mode OR do a real $150 payment + refund
-- Verify webhook fires → booking updates to `paid` → confirmation email sends
-- Test waitlist → offer slot → pay → booking complete flow
-
-### 4. QP-Branded Email Template for Sessions
-- Currently uses `buildAcademyEmail` (teal template) — needs proper QP branded template
-
-### 5. Full Email Automation System
-- Auto-send confirmations, 24hr/1hr reminders, post-session follow-up
-- Waitlist auto-notify on cancellations
-- 72-hour offer expiry automation
-
-### Session 27+ — Future Features
-- **Stripe Checkout Polish**: Consistent branding across all checkout screens
-- **Live Event Page**: Branded Zoom experience page
-- **Student tools**: Flashcards, highlighting, journal, summarizer
-- **Custom card templates**: Save your own
+### Future Features
+- **Student tools**: Flashcards, highlighting, reflection journal, summarizer, progress dashboard, goal tracking
+- **Custom card templates**: Save your own cards in Email Center
 - **AI Copilot**: Smart email writing
 - **Memberships / Subscriptions**
+- **Live Event Page**: Branded Zoom experience
 
 ---
 
-## Known Issues (Session 25)
+## Known Issues (Session 29)
 1. **email-decode.min.js 404** — Netlify phantom. Harmless.
 2. **Test email no delivery confirmation** — `mode:'no-cors'` means opaque response. Check inbox manually.
 3. **Rich editor → email fidelity** — Advanced formatting may not render perfectly in all email clients.
@@ -358,43 +225,42 @@ Full plan documented in `session-26-crm-plan.md`. Summary:
 5. **Dead code from Session 19-20** — Old EC overrides still present. Low priority cleanup.
 6. **Webhook untested with real payment** — session-webhook.js deployed but not yet triggered by actual Stripe payment.
 7. **Calendar needs active cycle** — Frontend shows "filled" when all cycles completed. Intentional.
-8. **Pre-deploy bookings lack tokens** — Bookings before Session 24 don't have `confirmation_token`.
-9. **Stripe checkout formatting** — Stripe ignores `\n` in descriptions.
-10. **Cross-domain SSO working** — QP→Fusion SSO deployed and tested. Fusion→QP not yet implemented.
-11. **notification_preferences columns** — Need to verify boolean columns exist: session_reminders, booking_confirmations, cycle_announcements, academy_updates.
+8. **Cross-domain SSO working** — QP→Fusion deployed and tested (Session 27). Fusion→QP not yet needed.
+9. **notification_preferences columns** — Need to verify boolean columns exist.
+10. **GitHub intermittent 500s** — Occurred during Session 27 deploys. Retry or manual Netlify deploy.
+11. **Zoom recordings can't embed** — Zoom blocks iframe embeds. Workaround: download MP4 from Zoom, upload via admin.
+12. **Supabase Free plan storage limit** — 1GB storage. Sufficient for ~3-4 recordings. Pro plan ($25/mo) gives 100GB with overage at $0.021/GB. Decision deferred.
+13. **Old test recordings have dummy booking_id** — 4 records with `aa000001-...` booking_id are orphaned. Can be deleted from session_recordings table. (SQL provided below)
+14. **Automation toggles not persisted** — The 4 reminder toggles in Email Automation are checkbox-only (no DB save). They reset on page reload. Future: save to session_config or new table.
+15. **Batch reminder needs cron** — "Generate Reminders Now" is manual. For true automation, add a Google Apps Script time trigger or Netlify scheduled function to auto-send day-before reminders daily.
 
 ---
 
-## File Sizes (Session 27)
-- `admin/index.html` — ~773 lines (CRM tab added)
-- `admin/admin.js` — ~5048 lines (CRM functions added)
-- `admin/admin.css` — ~142 lines (unchanged)
-- `pages/one-on-sessions.html` — ~1333 lines (unchanged)
+## File Sizes (Session 29)
+- `admin/index.html` — ~839 lines (was ~773 in S28)
+- `admin/admin.js` — ~5741 lines (was ~5471 in S28)
+- `admin/admin.css` — ~142 lines
+- `pages/one-on-sessions.html` — ~1333 lines
 - `members/login.html` — ~NEW (Session 25)
-- `members/dashboard.html` — ~NEW (Session 25, sidebar layout)
+- `members/dashboard.html` — ~734 lines (Session 26)
 - `members/settings.html` — ~NEW (Session 25)
 - `members/reset-password.html` — ~NEW (Session 25)
-- `members/sessions.html` — ~551 lines (NEW Session 26)
-- `members/intake.html` — ~751 lines (NEW Session 26)
-- `members/progress.html` — ~700 lines (NEW Session 26, enhanced Session 27)
-- `members/billing.html` — ~332 lines (NEW Session 26)
-- `js/shared.js` — UPDATED (auth-aware header with avatar dropdown)
-- `components/header.html` — UPDATED (login/signup links)
+- `members/sessions.html` — ~649 lines (Updated Session 28)
+- `members/intake.html` — ~751 lines (Session 26)
+- `members/progress.html` — ~700 lines (Session 27)
+- `members/billing.html` — ~332 lines (Session 26)
+- `js/shared.js` — UPDATED (auth-aware header)
+- `netlify/functions/admin-proxy.js` — 30 allowed tables
 
 ---
 
 ## Lessons Learned (ALL SESSIONS)
-1-22: See previous docs
-23. **Column name mismatches cause silent failures** — Always check `res.error` after inserts.
-24. **Frontend needs active cycle to show booking calendar** — Check both `public_booking_status` and cycle status.
-25. **Admin-proxy allowlist must be updated for new tables**
-26. **RLS policies needed for public-facing pages**
-27. **Referral codes stored by email, not user_id** — All referral lookups must use `.eq('email', email.toLowerCase())`, not `.eq('user_id', id)`. The `referral_codes` table doesn't have a user_id column.
-28. **Cross-domain auth requires token passing** — Supabase sessions are in localStorage, which is domain-specific. QP and Fusion are on different domains, so auth doesn't carry across. Solution: pass access_token + refresh_token in URL hash.
-29. **SVG sprites are the icon standard** — No emojis anywhere in the member portal or dashboard. All icons are `<symbol>` elements referenced via `<use href="#i-xxx"/>`. Matches Academy dashboard system.
-30. **Sidebar layout creates visual consistency** — Member dashboard matches Academy dashboard layout for ecosystem coherence.
-31. **Apostrophes in JS template literals crash pages** — Use `&rsquo;` HTML entity inside single-quoted strings.
-32. **Cloudflare can truncate served files** — GitHub has the complete file; always pull from repo, not the served URL.
-33. **SSO receiver must go before getSession()** — setSession() with passed tokens needs to happen first so getSession() finds them.
-34. **RLS policies work but JS syntax errors mask data** — If data exists in SQL but page shows empty, check browser console first.
-35. **Collapsible sections need chart resize trigger** — Chart.js canvases inside collapsed containers need window.dispatchEvent(new Event('resize')) after expanding.
+1-35: See previous docs.
+36. **Column name mismatches cause proxy 400 errors** — `session_recordings` uses `uploaded_at`, not `created_at`. Always verify actual column names in Supabase Table Editor before writing order-by queries.
+37. **Proxy 400 ≠ table not whitelisted** — The proxy returns 400 for both "invalid table" and "Postgres query error". Check the actual error message. If the table IS in ALLOWED_TABLES, the 400 is from the database query itself.
+38. **Promise.all silently swallows individual failures** — When one of 8 parallel proxy calls fails, the others succeed but the failed one returns `{data: null}`. This makes it look like data is missing rather than erroring. Add console.log to diagnose.
+39. **Recording upload works on Free plan** — Supabase Storage bucket works on Free tier (1GB limit, 50MB per file). No Pro plan required to start using it.
+40. **Vimeo embed cleanup** — Add `?title=0&byline=0&portrait=0` to Vimeo player URL to remove the overlay showing uploader name/avatar. Reduces dead space significantly.
+41. **refreshBookingsView() is the standard** — All bookings tab actions should call this one function instead of individual table refreshes. It does parallel fetch of bookings + notes + recordings and re-renders everything.
+42. **Duplicate function names silently overwrite** — Session 28 had two `crmDeleteNote` functions (one for session notes, one for internal notes). JS silently uses the last-defined one, causing the first to be unreachable. Always use unique names. Fixed in S29 by renaming to `crmDeleteInternalNote`.
+43. **Embedded sub-views beat standalone pages** — Merging CRM into the Clients tab (with sub-nav switching) is cleaner than a separate sidebar entry. Less navigation overhead, shared data context, and the client roster → profile flow is natural.
