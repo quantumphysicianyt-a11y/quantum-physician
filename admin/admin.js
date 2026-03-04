@@ -4853,6 +4853,16 @@ function fmtDate(d){
   return new Date(d+'T12:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
 }
 
+function fmtTime(t){
+  if(!t) return '—';
+  var parts = t.slice(0,5).split(':');
+  var h = parseInt(parts[0]), m = parts[1];
+  var ampm = h >= 12 ? 'PM' : 'AM';
+  if(h > 12) h -= 12;
+  if(h === 0) h = 12;
+  return h + ':' + m + ' ' + ampm;
+}
+
 
 // ═══════════════════════════════════════
 // CLIENT PROFILES / CRM (Session 27)
