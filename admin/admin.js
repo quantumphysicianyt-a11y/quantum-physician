@@ -3486,6 +3486,7 @@ function loadTemplate(key){
 var sessConfigData=null, sessCyclesData=[], sessAvailData=[], sessClientsData=[], sessBookingsData=[], sessWaitlistData=[], sessNotesData=[], sessRecsData=[];
 var sessAvailMonth=new Date().getMonth(), sessAvailYear=new Date().getFullYear();
 var sessBookPage=1, sessBookPS=20;
+var sessBookSortCol='date', sessBookSortDir='asc';
 
 /* Quick-refresh bookings + notes + recordings without full page reload */
 async function refreshBookingsView(){
@@ -4404,6 +4405,13 @@ async function autoPopulate(){
 /* ---------- Bookings Grid ---------- */
 function loadBookingsForCycle(){ refreshBookingsView(); }
 
+function sortBookingsGrid(col){
+  if(sessBookSortCol===col){sessBookSortDir=sessBookSortDir==='asc'?'desc':'asc'}
+  else{sessBookSortCol=col;sessBookSortDir='asc'}
+  sessBookPage=1;
+  renderBookingsGrid();
+}
+
 function renderBookingsGrid(){
   var c=document.getElementById('sess-bookings-grid');
   var cycleId=document.getElementById('sess-book-cycle').value;
@@ -4417,6 +4425,19 @@ function renderBookingsGrid(){
     if(typeFilter!=='all'&&b.type!==typeFilter) return false;
     if(search&&b.email.toLowerCase().indexOf(search)<0&&(b.name||'').toLowerCase().indexOf(search)<0) return false;
     return true;
+  });
+
+  // Sort
+  var dir=sessBookSortDir==='asc'?1:-1;
+  bookings.sort(function(a,b){
+    var va,vb;
+    if(sessBookSortCol==='date'){va=a.date+' '+a.start_time;vb=b.date+' '+b.start_time}
+    else if(sessBookSortCol==='time'){va=a.start_time;vb=b.start_time}
+    else if(sessBookSortCol==='client'){va=(a.name||a.email).toLowerCase();vb=(b.name||b.email).toLowerCase()}
+    else if(sessBookSortCol==='type'){va=a.type;vb=b.type}
+    else if(sessBookSortCol==='status'){va=a.status;vb=b.status}
+    else{va=a.date;vb=b.date}
+    if(va<vb)return -1*dir;if(va>vb)return 1*dir;return 0;
   });
 
   // Render confirmation tracker stats
@@ -4443,7 +4464,17 @@ function renderBookingsGrid(){
   var statusBadges={proposed:'<span class="badge yellow">Proposed</span>',paid:'<span class="badge green">Paid</span>',confirmed:'<span class="badge green">Confirmed</span>',declined:'<span class="badge danger">Declined</span>',expired:'<span class="badge muted">Expired</span>',cancelled:'<span class="badge muted">Cancelled</span>',completed:'<span class="badge teal">Completed</span>',no_show:'<span class="badge danger">No Show</span>'};
   var typeBadges={recurring:'<span class="badge teal">Recurring</span>',public:'<span class="badge purple">Public</span>',manual:'<span class="badge muted">Manual</span>'};
 
-  c.innerHTML='<table class="tbl"><thead><tr><th>Date</th><th>Time</th><th>Client</th><th>Type</th><th>Status</th><th></th></tr></thead><tbody>'
+  var sortArrow=function(col){return sessBookSortCol===col?(sessBookSortDir==='asc'?' ↑':' ↓'):'';};
+  var thStyle='cursor:pointer;user-select:none;transition:color .15s';
+  var thActive=function(col){return sessBookSortCol===col?'color:var(--teal)':''};
+
+  c.innerHTML='<table class="tbl"><thead><tr>'
+    +'<th style="'+thStyle+';'+thActive('date')+'" onclick="sortBookingsGrid(\'date\')">Date'+sortArrow('date')+'</th>'
+    +'<th style="'+thStyle+';'+thActive('time')+'" onclick="sortBookingsGrid(\'time\')">Time'+sortArrow('time')+'</th>'
+    +'<th style="'+thStyle+';'+thActive('client')+'" onclick="sortBookingsGrid(\'client\')">Client'+sortArrow('client')+'</th>'
+    +'<th style="'+thStyle+';'+thActive('type')+'" onclick="sortBookingsGrid(\'type\')">Type'+sortArrow('type')+'</th>'
+    +'<th style="'+thStyle+';'+thActive('status')+'" onclick="sortBookingsGrid(\'status\')">Status'+sortArrow('status')+'</th>'
+    +'<th></th></tr></thead><tbody>'
     +page.map(function(b){
       var payLink=b.confirmation_token?'https://qp-homepage.netlify.app/pages/one-on-sessions.html?pay='+b.confirmation_token:'';
       var isRegular=sessClientsData.some(function(cl){return cl.id===b.client_id&&cl.client_type==='regular'});
@@ -4596,7 +4627,7 @@ async function bulkRequestPayments(){
     var date=new Date(b.date+'T12:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
     var already=b.payment_requested_at?'<span style="font-size:10px;color:var(--warning);margin-left:6px">previously sent '+new Date(b.payment_requested_at).toLocaleDateString()+'</span>':'';
     return '<label style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer">'
-      +'<input type="checkbox" checked class="bulk-pay-check" data-idx="'+i+'" class="qp-check">'
+      +'<input type="checkbox" checked class="bulk-pay-check qp-check" data-idx="'+i+'">'
       +'<div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text)">'+esc(name)+'</div>'
       +'<div style="font-size:11px;color:var(--text-dim)">'+esc(b.email)+' · '+date+already+'</div></div></label>';
   }).join('');
@@ -4662,7 +4693,7 @@ async function bulkSendReminders(){
     var time=b.start_time.slice(0,5)+'–'+b.end_time.slice(0,5);
     var statusLabel=b.status==='confirmed'?'<span class="badge teal" style="font-size:9px">Confirmed</span>':'<span class="badge green" style="font-size:9px">Paid</span>';
     return '<label style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer">'
-      +'<input type="checkbox" checked class="bulk-rem-check" data-idx="'+i+'" class="qp-check">'
+      +'<input type="checkbox" checked class="bulk-rem-check qp-check" data-idx="'+i+'">'
       +'<div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text)">'+esc(name)+' '+statusLabel+'</div>'
       +'<div style="font-size:11px;color:var(--text-dim)">'+esc(b.email)+' · '+time+'</div></div></label>';
   }).join('');
