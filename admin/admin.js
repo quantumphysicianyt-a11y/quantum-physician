@@ -4030,20 +4030,19 @@ function renderClientRoster(){
     var clientBookings=sessBookingsData.filter(function(b){return b.client_id===cl.id&&(!cycleId||b.cycle_id===cycleId)});
     var upcomingCount=clientBookings.filter(function(b){return b.date>=new Date().toISOString().slice(0,10)}).length;
     var statusBadge=cl.status==='active'?'<span class="badge green">Active</span>':(cl.status==='paused'?'<span class="badge yellow">Paused</span>':'<span class="badge muted">'+cl.status+'</span>');
-    return'<div style="padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:6px;background:rgba(0,0,0,.08)">'
+    return'<div style="padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:6px;background:rgba(0,0,0,.08);cursor:pointer;transition:border-color .15s" onclick="crmOpenClient(\''+esc(cl.email)+'\')" onmouseenter="this.style.borderColor=\'var(--teal)\'" onmouseleave="this.style.borderColor=\'var(--border)\'">'
       +'<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">'
       +'<div style="flex:1;min-width:200px">'
-      +'<div style="display:flex;align-items:center;gap:8px"><span style="font-weight:600;font-size:13px">'+esc(cl.name||cl.email)+'</span>'+statusBadge+'</div>'
-      +'<div style="font-size:11px;color:var(--teal);margin-top:2px">'+esc(cl.email)+'</div>'
+      +'<div style="display:flex;align-items:center;gap:8px"><span style="font-weight:600;font-size:13px;color:var(--teal)">'+esc(cl.name||cl.email)+'</span>'+statusBadge+'</div>'
+      +'<div style="font-size:11px;color:var(--text-dim);margin-top:2px">'+esc(cl.email)+'</div>'
       +'<div style="font-size:11px;color:var(--text-dim);margin-top:4px">'+freqLabels[cl.frequency]+' · '+(dayLabels[cl.preferred_day]||cl.preferred_day)+'s · '+cl.preferred_time.slice(0,5)+' · Priority '+cl.priority+'</div>'
       +'</div>'
       +'<div style="display:flex;align-items:center;gap:6px">'
       +'<div style="text-align:center;padding:4px 10px;background:rgba(91,168,178,.08);border-radius:var(--radius-sm);min-width:50px"><div style="font-size:16px;font-weight:700;color:var(--teal)">'+upcomingCount+'</div><div style="font-size:9px;color:var(--text-dim)">upcoming</div></div>'
       +'</div>'
-      +'<div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">'
+      +'<div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center" onclick="event.stopPropagation()">'
       +'<button class="btn btn-ghost btn-sm" onclick="openClientDates(\''+cl.id+'\')" title="Assign Dates"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;vertical-align:middle;margin-right:2px"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Dates</button>'
       +'<button class="btn btn-ghost btn-sm" onclick="openClientEmail(\''+cl.id+'\')" title="Send Email"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;vertical-align:middle;margin-right:2px"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Email</button>'
-      +'<button class="btn btn-ghost btn-sm" style="color:var(--teal);font-weight:600" onclick="crmOpenClient(\''+esc(cl.email)+'\')" title="View full client profile">Profile \u2192</button>'
       +'<button class="btn btn-ghost btn-sm" onclick="editClient(\''+cl.id+'\')">Edit</button>'
       +(cl.status==='active'?'<button class="btn btn-ghost btn-sm" onclick="pauseClient(\''+cl.id+'\')">Pause</button>':'<button class="btn btn-success btn-sm" onclick="activateClient(\''+cl.id+'\')">Activate</button>')
       +'<button class="btn btn-danger btn-sm" onclick="removeClient(\''+cl.id+'\',\''+esc(cl.email)+'\')">Remove</button>'
