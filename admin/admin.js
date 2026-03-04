@@ -4456,8 +4456,8 @@ function renderBookingsGrid(){
         +(b.status==='proposed'&&payLink?'<button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText(\''+payLink+'\');showToast(\'Pay link copied\',\'success\')" title="Copy payment link">🔗 Pay Link</button>':'')
         +(b.status==='proposed'&&isRegular?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'confirmed\')" title="Confirm without payment (Regular client)">✓ Confirm</button>':'')
         +(b.status==='proposed'?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'paid\')">Mark Paid</button><button class="btn btn-danger btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'declined\')">Decline</button>':'')
-        +(b.status==='confirmed'?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'completed\')">✓ Complete</button><button class="btn btn-ghost btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'no_show\')">No Show</button><button class="btn btn-danger btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'cancelled\')">Cancel</button>':'')
-        +(b.status==='paid'?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'completed\')">✓ Complete</button><button class="btn btn-ghost btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'no_show\')">No Show</button><button class="btn btn-danger btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'cancelled\')">Cancel</button>':'')
+        +(b.status==='confirmed'?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'completed\')">Complete</button><button class="btn btn-ghost btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'no_show\')">No Show</button><button class="btn btn-danger btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'cancelled\')">Cancel</button>':'')
+        +(b.status==='paid'?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'completed\')">Complete</button><button class="btn btn-ghost btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'no_show\')">No Show</button><button class="btn btn-danger btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'cancelled\')">Cancel</button>':'')
         +(b.status==='completed'&&isRegular&&!b.stripe_payment_id?'<button class="btn btn-primary btn-sm" onclick="requestRegularPayment(\''+b.id+'\')">💳 Request Payment</button>':'')
         +(b.status==='completed'||b.status==='paid'||b.status==='confirmed'?'<button class="btn btn-primary btn-sm" onclick="crmAddNote(\''+b.id+'\')">+ Note</button><button class="btn btn-ghost btn-sm" onclick="crmAddRecording(\''+b.id+'\')">+ Recording</button>':'<button class="btn btn-ghost btn-sm" onclick="crmAddNote(\''+b.id+'\')">+ Note</button>')
         +'<button class="btn btn-ghost btn-sm" onclick="deleteBooking(\''+b.id+'\')">🗑</button>'
@@ -4523,19 +4523,26 @@ async function deleteBooking(id){
 }
 
 async function sendSessionEmail(to, subject, html){
-  await fetch(APPS_SCRIPT_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: {'Content-Type':'text/plain'},
-    body: JSON.stringify({
-      to: to,
-      subject: subject,
-      body: html,
-      isHtml: true,
-      recipientName: to.split('@')[0],
-      from: 'tracey@quantumphysician.com'
-    })
-  });
+  console.log('[sendSessionEmail] Sending to:', to, 'Subject:', subject);
+  try{
+    await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {'Content-Type':'text/plain'},
+      body: JSON.stringify({
+        to: to,
+        subject: subject,
+        body: html,
+        isHtml: true,
+        recipientName: to.split('@')[0],
+        from: 'tracey@quantumphysician.com'
+      })
+    });
+    console.log('[sendSessionEmail] Fetch completed (no-cors, response opaque)');
+  }catch(e){
+    console.error('[sendSessionEmail] Fetch error:', e);
+    throw e;
+  }
 }
 
 async function requestRegularPayment(bookingId){
