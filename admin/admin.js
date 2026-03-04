@@ -4436,6 +4436,7 @@ function renderBookingsGrid(){
     // View-based filtering
     if(sessBookView==='active'&&(b.status==='completed'||b.status==='no_show'||b.status==='cancelled'||b.status==='declined'||b.status==='expired')) return false;
     if(sessBookView==='completed'&&b.status!=='completed'&&b.status!=='no_show') return false;
+    if(sessBookView==='cancelled'&&b.status!=='cancelled'&&b.status!=='declined'&&b.status!=='expired') return false;
     // Additional status filter on top of view
     if(statusFilter!=='all'&&b.status!==statusFilter) return false;
     if(typeFilter!=='all'&&b.type!==typeFilter) return false;
@@ -4480,7 +4481,7 @@ function renderBookingsGrid(){
   var bulkEl=document.getElementById('sess-bulk-actions');
   if(bulkEl) bulkEl.style.display=sessBookView==='completed'?'none':'flex';
 
-  if(!bookings.length){c.innerHTML='<div class="empty"><p>'+(sessBookView==='active'?'No active bookings. All sessions are completed or cancelled.':sessBookView==='completed'?'No completed sessions yet.':'No bookings match filters.')+'</p></div>';return}
+  if(!bookings.length){c.innerHTML='<div class="empty"><p>'+(sessBookView==='active'?'No active bookings. All sessions are completed or cancelled.':sessBookView==='completed'?'No completed sessions yet.':sessBookView==='cancelled'?'No cancelled or declined bookings.':'No bookings match filters.')+'</p></div>';return}
 
   var tp=Math.ceil(bookings.length/sessBookPS)||1;
   var start=(sessBookPage-1)*sessBookPS;
@@ -4533,6 +4534,7 @@ function renderBookingsGrid(){
         +(b.status==='proposed'?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'paid\')">Mark Paid</button><button class="btn btn-danger btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'declined\')">Decline</button>':'')
         +(b.status==='confirmed'||b.status==='paid'?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'completed\')">Complete</button><button class="btn btn-ghost btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'no_show\')">No Show</button><button class="btn btn-danger btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'cancelled\')">Cancel</button>':'')
         +(b.status==='completed'||b.status==='paid'||b.status==='confirmed'?'<button class="btn btn-primary btn-sm" onclick="crmAddNote(\''+b.id+'\')">+ Note</button><button class="btn btn-ghost btn-sm" onclick="crmAddRecording(\''+b.id+'\')">+ Recording</button>':'<button class="btn btn-ghost btn-sm" onclick="crmAddNote(\''+b.id+'\')">+ Note</button>')
+        +(b.status==='cancelled'||b.status==='declined'||b.status==='expired'?'<button class="btn btn-primary btn-sm" onclick="rescheduleBooking(\''+b.id+'\')">Reschedule</button>':'')
         +'<button class="btn btn-ghost btn-sm" onclick="deleteBooking(\''+b.id+'\')">🗑</button>'
         +'</div></td></tr>';
       // Render notes & recordings under this booking (collapsed by default)
@@ -4593,6 +4595,27 @@ async function deleteBooking(id){
   if(!await qpConfirm('Delete Booking','Delete this booking permanently?',{okText:'Delete',danger:true}))return;
   try{await ensureFreshToken();await proxyFrom('session_bookings').delete().eq('id',id);showToast('Booking deleted','success');
   await refreshBookingsView()}catch(e){showToast('Error: '+e.message,'error')}
+}
+
+async function rescheduleBooking(bookingId){
+  var b=sessBookingsData.find(function(x){return x.id===bookingId});
+  if(!b){showToast('Booking not found','error');return}
+  var cycleId=b.cycle_id||sessSelectedCycleId;
+  if(!cycleId){showToast('No cycle found for this booking','error');return}
+  // If we have a client_id, open their dates modal
+  if(b.client_id){
+    openClientDates(b.client_id);
+    showToast('Pick a new date for '+esc(b.name||b.email),'info');
+  }else{
+    // For public bookings without a client_id, just reset to proposed
+    if(!await qpConfirm('Reschedule','Reset this booking to Proposed status so it can be rescheduled?',{okText:'Reset'}))return;
+    try{
+      await ensureFreshToken();
+      await proxyFrom('session_bookings').update({status:'proposed',confirmed_at:null,payment_requested_at:null}).eq('id',bookingId);
+      showToast('Booking reset to Proposed','success');
+      await refreshBookingsView();
+    }catch(e){showToast('Error: '+e.message,'error')}
+  }
 }
 
 async function sendSessionEmail(to, subject, html){
