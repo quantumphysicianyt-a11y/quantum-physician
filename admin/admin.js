@@ -4625,7 +4625,48 @@ async function rescheduleBooking(bookingId){
     if(b.client_id){
       openClientDates(b.client_id);
       showToast('Now pick a new date for '+(b.name||b.email),'info');
+    }else{
+      // Public/manual booking — show a quick reschedule modal
+      var old2=document.getElementById('reschedule-modal');if(old2)old2.remove();
+      var ov=document.createElement('div');ov.id='reschedule-modal';ov.className='modal-overlay';
+      ov.onclick=function(e){if(e.target===ov)ov.remove()};
+      var box=document.createElement('div');
+      box.style.cssText='background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;max-width:400px;width:94%';
+      box.innerHTML='<div style="font-weight:600;font-size:16px;margin-bottom:14px">Reschedule for '+esc(b.name||b.email)+'</div>'
+        +'<div style="margin-bottom:10px"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px">New Date</label><input type="date" class="input" id="resched-date" style="width:100%"></div>'
+        +'<div style="margin-bottom:10px"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px">Time</label><input type="time" class="input" id="resched-time" value="'+b.start_time.slice(0,5)+'" style="width:100%"></div>'
+        +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">'
+        +'<button class="btn btn-ghost btn-sm" onclick="document.getElementById(\'reschedule-modal\').remove()">Cancel</button>'
+        +'<button class="btn btn-primary btn-sm" onclick="executeReschedule(\''+b.id+'\')">Create New Booking</button></div>';
+      ov.appendChild(box);document.body.appendChild(ov);
     }
+  }catch(e){showToast('Error: '+e.message,'error')}
+}
+
+async function executeReschedule(oldBookingId){
+  var dateStr=document.getElementById('resched-date').value;
+  var time=document.getElementById('resched-time').value;
+  if(!dateStr){showToast('Select a date','error');return}
+  var ob=sessBookingsData.find(function(x){return x.id===oldBookingId});
+  if(!ob){showToast('Original booking not found','error');return}
+  var duration=sessConfigData?sessConfigData.session_duration_minutes:60;
+  var endH=parseInt(time.split(':')[0]),endM=parseInt(time.split(':')[1])+duration;
+  endH+=Math.floor(endM/60);endM=endM%60;
+  var endTime=String(endH).padStart(2,'0')+':'+String(endM).padStart(2,'0');
+  try{
+    await ensureFreshToken();
+    var res=await proxyFrom('session_bookings').insert({
+      cycle_id:ob.cycle_id,client_id:ob.client_id||null,email:ob.email,name:ob.name,
+      date:dateStr,start_time:time,end_time:endTime,
+      status:'proposed',type:ob.type||'manual',
+      confirmation_token:generateBookingToken(),
+      proposed_at:new Date().toISOString()
+    });
+    if(res.error){showToast('Error: '+res.error.message,'error');return}
+    document.getElementById('reschedule-modal').remove();
+    showToast('New booking created for '+dateStr,'success');
+    var r=await proxyFrom('session_bookings').select('*').order('date',{ascending:true});sessBookingsData=r.data||[];
+    switchBookView('active',document.querySelector('.book-view-btn'));
   }catch(e){showToast('Error: '+e.message,'error')}
 }
 
