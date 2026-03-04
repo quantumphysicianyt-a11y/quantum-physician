@@ -10,7 +10,7 @@ sb.auth.onAuthStateChange(function(event,session){
   }
 });
 /* Restore Supabase session from stored token on page load */
-(async function(){try{
+var _sessionRestorePromise=(async function(){try{
   var tok=sessionStorage.getItem('qp_admin_token');
   var ref=sessionStorage.getItem('qp_admin_refresh');
   if(ref){await sb.auth.setSession({access_token:tok||'',refresh_token:ref})}
@@ -37,6 +37,7 @@ setInterval(async function(){
 },45*60*1000);
 // sbAdmin removed — using proxyFrom() instead
 function getAdminToken(){return sessionStorage.getItem('qp_admin_token')||''}
+async function ensureFreshToken(){try{var ref=sessionStorage.getItem('qp_admin_refresh');if(ref){var r=await sb.auth.refreshSession({refresh_token:ref});if(r.data&&r.data.session){sessionStorage.setItem('qp_admin_token',r.data.session.access_token);if(r.data.session.refresh_token)sessionStorage.setItem('qp_admin_refresh',r.data.session.refresh_token);return}}var s=await sb.auth.getSession();if(s.data&&s.data.session){sessionStorage.setItem('qp_admin_token',s.data.session.access_token);if(s.data.session.refresh_token)sessionStorage.setItem('qp_admin_refresh',s.data.session.refresh_token)}}catch(e){console.warn('ensureFreshToken:',e)}}
 async function adminProxy(payload){var res=await fetch('/.netlify/functions/admin-proxy',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+getAdminToken()},body:JSON.stringify(payload)});if(res.status===401){/* Token expired — try refresh and retry once */try{var ref=sessionStorage.getItem('qp_admin_refresh');var refreshed=false;if(ref){var r=await sb.auth.refreshSession({refresh_token:ref});if(r.data&&r.data.session){sessionStorage.setItem('qp_admin_token',r.data.session.access_token);if(r.data.session.refresh_token)sessionStorage.setItem('qp_admin_refresh',r.data.session.refresh_token);refreshed=true}}if(!refreshed){var s=await sb.auth.getSession();if(s.data&&s.data.session){sessionStorage.setItem('qp_admin_token',s.data.session.access_token);if(s.data.session.refresh_token)sessionStorage.setItem('qp_admin_refresh',s.data.session.refresh_token);refreshed=true}}if(refreshed){res=await fetch('/.netlify/functions/admin-proxy',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+getAdminToken()},body:JSON.stringify(payload)})}}catch(re){console.warn('Auto-refresh failed:',re)}}var json=await res.json();if(!res.ok)throw new Error(json.error||'Proxy request failed');return json}
 function proxyFrom(table){return{_table:table,_select:'*',_filters:[],_order:null,_limit:null,_single:false,select:function(s,opts){this._select=s;if(opts&&opts.count)this._count=opts.count;return this},range:function(from,to){this._range={from:from,to:to};return this},eq:function(c,v){this._filters.push({column:c,op:'eq',value:v});return this},neq:function(c,v){this._filters.push({column:c,op:'neq',value:v});return this},gt:function(c,v){this._filters.push({column:c,op:'gt',value:v});return this},gte:function(c,v){this._filters.push({column:c,op:'gte',value:v});return this},lt:function(c,v){this._filters.push({column:c,op:'lt',value:v});return this},lte:function(c,v){this._filters.push({column:c,op:'lte',value:v});return this},like:function(c,v){this._filters.push({column:c,op:'like',value:v});return this},ilike:function(c,v){this._filters.push({column:c,op:'ilike',value:v});return this},is:function(c,v){this._filters.push({column:c,op:'is',value:v});return this},in:function(c,v){this._filters.push({column:c,op:'in',value:v});return this},not:function(c,fo,v){this._filters.push({column:c,op:'not',filterOp:fo,value:v});return this},or:function(v){this._filters.push({op:'or',value:v});return this},order:function(c,opts){this._order={column:c,ascending:opts?opts.ascending!==false:true};return this},limit:function(n){this._limit=n;return this},single:function(){this._single=true;return this},maybeSingle:function(){this._filters.push({op:'maybeSingle'});return this},then:function(resolve,reject){return adminProxy({type:'query',table:this._table,select:this._select,filters:this._filters,order:this._order,limit:this._limit,single:this._single,range:this._range,count:this._count}).then(function(r){return{data:r.data,count:r.count!==undefined?r.count:null,error:null}}).then(resolve,function(e){return resolve?resolve({data:null,error:{message:e.message}}):reject?reject(e):null})},insert:function(rows){var t=this._table;var sel=this._select;return{select:function(s){sel=s;return this},then:function(resolve,reject){return adminProxy({type:'insert',table:t,data:rows,select:sel!=='*'?sel:undefined}).then(function(r){return{data:r.data,error:null}}).then(resolve,function(e){return resolve?resolve({data:null,error:{message:e.message,code:e.message&&e.message.indexOf('duplicate')!==-1?'23505':''}}):reject?reject(e):null})}}},update:function(d){var t=this._table;var f=this._filters;return{eq:function(c,v){f.push({column:c,op:'eq',value:v});return this},then:function(resolve,reject){return adminProxy({type:'update',table:t,data:d,filters:f}).then(function(r){return{data:r.data,error:null}}).then(resolve,function(e){return resolve?resolve({data:null,error:{message:e.message}}):reject?reject(e):null})}}},delete:function(){var t=this._table;var f=this._filters;return{eq:function(c,v){f.push({column:c,op:'eq',value:v});return this},then:function(resolve,reject){return adminProxy({type:'delete',table:t,filters:f}).then(function(r){return{data:r.data,error:null}}).then(resolve,function(e){return resolve?resolve({data:null,error:{message:e.message}}):reject?reject(e):null})}}},upsert:function(d,opts){var t=this._table;return{then:function(resolve,reject){return adminProxy({type:'insert',table:t,data:d}).then(function(r){return{data:r.data,error:null}}).then(resolve,function(e){return resolve?resolve({data:null,error:{message:e.message}}):reject?reject(e):null})}}}}}
 async function authAdminAPI(action,params){return adminProxy({type:'auth_admin',action:action,params:params})}
@@ -78,7 +79,7 @@ var currentPromoFilter='active',ordersPage=1,ordersPS=25,ordersFiltered=[],promo
 async function loadAllData(){try{var r=await Promise.all([sb.from('purchases').select('*').order('purchased_at',{ascending:false}),sb.from('referral_codes').select('*'),sb.from('profiles').select('*'),sb.from('credit_history').select('*').order('created_at',{ascending:false}).limit(200),sb.from('qa_enrollments').select('*, qa_courses(id,title,slug)'),sb.from('qa_courses').select('*').order('sort_order'),sb.from('qa_lesson_progress').select('*'),proxyFrom('admin_notes').select('*').order('created_at',{ascending:false}),sb.from('discussion_posts').select('id,user_email'),sb.from('qa_discussions').select('id,user_email'),sb.from('email_campaigns').select('*').order('sent_at',{ascending:false}).limit(50),sb.from('email_tracking').select('id,campaign_id,recipient_email,tracking_id,status,opened_at,clicked_at,sent_at,email_type').order('sent_at',{ascending:false}).limit(500),sb.from('promotions').select('*').order('created_at',{ascending:false}),sb.from('scheduled_emails').select('*').order('scheduled_for',{ascending:true}).limit(100),sb.from('email_log').select('*').order('sent_at',{ascending:false}).limit(200),sb.from('session_schedule').select('*').order('session_number',{ascending:true})]);purchasesData=r[0].data||[];referralData=r[1].data||[];profilesData=r[2].data||[];creditHistory=r[3].data||[];academyEnrollments=r[4].data||[];academyCourses=r[5].data||[];lessonProgress=r[6].data||[];adminNotesData=r[7].data||[];allFusionPosts=r[8].data||[];allAcadPosts=r[9].data||[];emailCampaignsData=r[10].data||[];emailTrackingData=r[11].data||[];promotionsData=r[12].data||[];scheduledEmailsData=r[13].data||[];emailLogData=r[14].data||[];sessionScheduleData=r[15].data||[];await loadAuthUsers();buildCustomerList();dataLoaded=true}catch(e){console.error('Load error:',e)}}
 async function loadAuthUsers(){try{var page=1,allUsers=[];while(true){var r=await authAdminAPI('list_users',{page:page,per_page:500});var data=r.data;var users=data.users||data||[];if(!Array.isArray(users)||!users.length)break;allUsers=allUsers.concat(users);if(users.length<500)break;page++}authUsersMap=new Map();allUsers.forEach(function(u){if(u.email)authUsersMap.set(u.email.toLowerCase(),u)})}catch(e){console.error('Auth users load error:',e)}}
 function buildCustomerList(){var map=new Map();profilesData.forEach(function(p){if(!p.email)return;var k=p.email.toLowerCase();map.set(k,{email:p.email,name:p.full_name||'',userId:p.id,hasAccount:true,isBlocked:p.is_blocked||false,createdAt:p.created_at,purchases:[],academyPurchases:[],fusionPurchases:[],hasBundle:false,hasAcademyBundle:false,creditBalance:0,referralCount:0,referralCode:'',totalEarned:0,totalSpent:0})});purchasesData.forEach(function(p){if(!p.email)return;var k=p.email.toLowerCase();if(!map.has(k))map.set(k,{email:p.email,name:'',userId:null,hasAccount:false,isBlocked:false,createdAt:p.purchased_at,purchases:[],academyPurchases:[],fusionPurchases:[],hasBundle:false,hasAcademyBundle:false,creditBalance:0,referralCount:0,referralCode:'',totalEarned:0,totalSpent:0});var c=map.get(k);if(!c.purchases.includes(p.product_id)){c.purchases.push(p.product_id);if(isFusion(p.product_id))c.fusionPurchases.push(p.product_id);if(isAcademy(p.product_id))c.academyPurchases.push(p.product_id)}if(p.product_id==='bundle-all')c.hasBundle=true;if(p.product_id==='transformational-mastery')c.hasAcademyBundle=true;c.totalSpent+=(Number(p.amount_paid)||0)});referralData.forEach(function(r){if(!r.email)return;var k=r.email.toLowerCase();if(!map.has(k))map.set(k,{email:r.email,name:'',userId:null,hasAccount:false,isBlocked:false,createdAt:null,purchases:[],academyPurchases:[],fusionPurchases:[],hasBundle:false,hasAcademyBundle:false,creditBalance:0,referralCount:0,referralCode:'',totalEarned:0,totalSpent:0});var c=map.get(k);c.creditBalance=Number(r.credit_balance)||0;c.referralCount=r.successful_referrals||0;c.referralCode=r.code||'';c.totalEarned=Number(r.total_earned)||0});allCustomers=Array.from(map.values())}
-async function initAdmin(){document.addEventListener('keydown',function(e){if(e.ctrlKey&&e.shiftKey&&e.key==='R'){e.preventDefault();webhookRecovery()}});await loadAllData();var savedPage=sessionStorage.getItem('qp_admin_page');if(savedPage&&document.getElementById('page-'+savedPage)){go(savedPage)}else{loadPageData('dashboard')}}
+async function initAdmin(){document.addEventListener('keydown',function(e){if(e.ctrlKey&&e.shiftKey&&e.key==='R'){e.preventDefault();webhookRecovery()}});await _sessionRestorePromise;await ensureFreshToken();await loadAllData();var savedPage=sessionStorage.getItem('qp_admin_page');if(savedPage&&document.getElementById('page-'+savedPage)){go(savedPage)}else{loadPageData('dashboard')}}
 function loadPageData(page){if(!dataLoaded&&page!=='dashboard')return;switch(page){case'dashboard':loadDashboard();break;case'customers':loadCustomerBrowser();break;case'academy':loadAcademyData();break;case'fusion':loadFusionData();break;case'referrals':loadReferralData();break;case'community':loadCommunityData();break;case'email':loadEmailPage();break;case'automation':loadAutomationPage();break;case'promotions':loadPromotionsPage();break;case'orders':loadOrdersPage();break;case'audit':loadAuditLog();break;case'analytics':loadAnalyticsPage();break;case'admin-users':loadAdminUsers();break;case'sessions':loadSessionsData();break}}
 function getAdminNotes(email){return adminNotesData.filter(function(n){return n.target_email&&n.target_email.toLowerCase()===email.toLowerCase()})}
 async function saveAdminNote(email,text){try{await proxyFrom('admin_notes').insert({target_email:email.toLowerCase(),note_text:text});await logAudit('add_note',email,'Added note: '+text.substring(0,80));var r=await proxyFrom('admin_notes').select('*').order('created_at',{ascending:false});adminNotesData=r.data||[]}catch(e){showToast('Error saving note: '+e.message,'error')}}
@@ -3490,6 +3491,7 @@ var sessBookPage=1, sessBookPS=20;
 /* Quick-refresh bookings + notes + recordings without full page reload */
 async function refreshBookingsView(){
   try{
+    await ensureFreshToken();
     var [bk, nt, rc] = await Promise.all([
       proxyFrom('session_bookings').select('*').order('date',{ascending:true}),
       proxyFrom('session_notes').select('*').order('created_at',{ascending:false}),
@@ -3666,6 +3668,7 @@ async function createCycle(){
   if(!name||!start||!end){showToast('Fill in all cycle fields','error');return}
   if(new Date(end)<=new Date(start)){showToast('End date must be after start date','error');return}
   try{
+    await ensureFreshToken();
     var r=await proxyFrom('session_cycles').insert({name:name,start_date:start,end_date:end,status:'planning'}).select('*');
     if(r.error) throw new Error(r.error.message);
     await logAudit('create_cycle',null,'Created booking cycle: '+name,{start:start,end:end});
@@ -3685,6 +3688,7 @@ async function advanceCycleStatus(id,current){
   var labels={client_confirmation:'Client Confirmation',public_open:'Public Booking Open',active:'Active',completed:'Completed'};
   if(!await qpConfirm('Advance Cycle','Move this cycle to "'+labels[next]+'"?',{okText:'Advance'}))return;
   try{
+    await ensureFreshToken();
     var updates={status:next};
     if(next==='client_confirmation') updates.client_confirmation_sent_at=new Date().toISOString();
     if(next==='public_open') updates.public_opens_at=new Date().toISOString();
@@ -3704,6 +3708,7 @@ async function regressCycleStatus(id,current){
   var labels={planning:'Planning',client_confirmation:'Client Confirmation',public_open:'Public Booking Open',active:'Active',completed:'Completed'};
   if(!await qpConfirm('Move Back','Move this cycle back to "'+labels[prev]+'"?',{okText:'Move Back'}))return;
   try{
+    await ensureFreshToken();
     var r=await proxyFrom('session_cycles').update({status:prev}).eq('id',id);
     if(r.error) throw new Error(r.error.message);
     await logAudit('regress_cycle',null,'Moved cycle back to '+prev,{cycle_id:id});
@@ -3715,6 +3720,7 @@ async function regressCycleStatus(id,current){
 async function deleteCycle(id,name){
   if(!await qpConfirm('Delete Cycle','Delete "'+name+'" and all its availability/bookings? This cannot be undone.',{okText:'Delete',danger:true}))return;
   try{
+    await ensureFreshToken();
     await proxyFrom('session_bookings').delete().eq('cycle_id',id);
     await proxyFrom('session_availability').delete().eq('cycle_id',id);
     await proxyFrom('session_cycles').delete().eq('id',id);
@@ -3730,6 +3736,7 @@ async function editCycle(id){
   var name=await qpPrompt('Edit Cycle','Cycle name:',cy.name);
   if(!name) return;
   try{
+    await ensureFreshToken();
     await proxyFrom('session_cycles').update({name:name}).eq('id',id);
     showToast('Cycle updated','success');
     await loadSessionsData();
@@ -4475,6 +4482,7 @@ function renderBookingsGrid(){
 
 async function updateBookingStatus(id,status){
   try{
+    await ensureFreshToken();
     var updates={status:status};
     if(status==='paid') updates.confirmed_at=new Date().toISOString();
     if(status==='confirmed') updates.confirmed_at=new Date().toISOString();
@@ -4489,7 +4497,7 @@ async function updateBookingStatus(id,status){
 
 async function deleteBooking(id){
   if(!await qpConfirm('Delete Booking','Delete this booking permanently?',{okText:'Delete',danger:true}))return;
-  try{await proxyFrom('session_bookings').delete().eq('id',id);showToast('Booking deleted','success');
+  try{await ensureFreshToken();await proxyFrom('session_bookings').delete().eq('id',id);showToast('Booking deleted','success');
   await refreshBookingsView()}catch(e){showToast('Error: '+e.message,'error')}
 }
 
@@ -5667,6 +5675,7 @@ async function loadSessionRemindersTab(){
 
 async function toggleAutomationConfig(key, checkbox){
   try{
+    await ensureFreshToken();
     // Try update first, then insert if not found
     var res = await proxyFrom('system_config').select('key').eq('key', key).maybeSingle();
     if(res.data){
