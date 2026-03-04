@@ -5031,21 +5031,28 @@ function renderCrmSessions(){
     var statusClass = b.status==='paid'?'success':b.status==='completed'?'success':b.status==='proposed'?'warning':b.status==='cancelled'?'danger':'muted';
     var notes = crmNotes.filter(function(n){ return n.booking_id===b.id; });
     var recs = crmRecordings.filter(function(r){ return r.booking_id===b.id; });
-    var noteCount = notes.length ? '<span class="badge badge-info">'+notes.length+' note'+(notes.length>1?'s':'')+'</span>' : '<span style="color:var(--text-dim)">\u2014</span>';
-    var recCount = recs.length ? '<span class="badge badge-success">'+recs.length+'</span>' : '<span style="color:var(--text-dim)">\u2014</span>';
-    html += '<tr><td>'+date+'</td><td>'+time+'</td><td><span class="badge badge-'+statusClass+'">'+esc(b.status)+'</span></td><td>'+noteCount+'</td><td>'+recCount+'</td><td><button class="btn btn-ghost btn-sm" onclick="crmAddNote(\''+b.id+'\')">+ Note</button> <button class="btn btn-ghost btn-sm" onclick="crmAddRecording(\''+b.id+'\')">+ Recording</button></td></tr>';
-    notes.forEach(function(n){
-      var regionBadges = '';
-      if (n.body_regions && n.body_regions.length) {
-        regionBadges = '<div style="margin-top:5px;display:flex;flex-wrap:wrap;gap:3px">';
-        n.body_regions.forEach(function(rid) { regionBadges += '<span style="display:inline-block;padding:2px 7px;font-size:10px;border-radius:10px;background:rgba(91,168,178,.15);color:var(--teal);border:1px solid rgba(91,168,178,.25)">' + esc(rid.replace(/-/g,' ')) + '</span>'; });
-        regionBadges += '</div>';
-      }
-      html += '<tr style="background:rgba(91,168,178,0.05)" data-noteid="'+n.id+'"><td colspan="6" style="padding:8px 16px;font-size:13px"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div style="flex:1"><span style="color:var(--teal);font-weight:600;font-size:11px;text-transform:uppercase">'+esc(n.note_type)+' note</span>'+(n.visible_to_patient ? ' <span class="badge badge-info" style="font-size:10px">Patient visible</span>' : ' <span class="badge badge-muted" style="font-size:10px">Private</span>')+'<div style="margin-top:4px;color:var(--text);white-space:pre-wrap">'+esc(n.content)+'</div>'+regionBadges+'<div style="margin-top:4px;font-size:11px;color:var(--text-dim)">'+timeAgo(n.created_at)+'</div></div><div style="display:flex;gap:4px;flex-shrink:0;margin-left:8px"><button class="btn btn-ghost btn-sm note-edit-btn" data-nid="'+n.id+'" title="Edit note" style="font-size:11px">✏️</button><button class="btn btn-ghost btn-sm" onclick="crmToggleNoteVisibility(\''+n.id+'\','+ !n.visible_to_patient+')" title="'+(n.visible_to_patient?'Make private':'Share with patient')+'" style="font-size:11px">'+(n.visible_to_patient?'🔓':'🔒')+'</button><button class="btn btn-ghost btn-sm" onclick="crmDeleteNote(\''+n.id+'\')" title="Delete note" style="font-size:11px;color:var(--error)">🗑</button></div></div></td></tr>';
-    });
-    recs.forEach(function(r){
-      html += '<tr style="background:rgba(91,184,140,0.05)"><td colspan="6" style="padding:8px 16px;font-size:13px"><span style="color:var(--success);font-weight:600;font-size:11px">\uD83C\uDFA5 RECORDING</span> '+esc(r.title||'Session Recording')+(r.duration_minutes ? ' ('+r.duration_minutes+' min)' : '')+' <a href="'+esc(r.recording_url)+'" target="_blank" class="btn btn-ghost btn-sm" style="margin-left:8px">Open \u2197</a></td></tr>';
-    });
+    var hasDetails = notes.length || recs.length;
+    var noteCount = notes.length ? '<span class="badge badge-info" style="cursor:pointer" onclick="event.stopPropagation();toggleCrmBookingDetails(\''+b.id+'\')">'+notes.length+' note'+(notes.length>1?'s':'')+'</span>' : '<span style="color:var(--text-dim)">\u2014</span>';
+    var recCount = recs.length ? '<span class="badge badge-success" style="cursor:pointer" onclick="event.stopPropagation();toggleCrmBookingDetails(\''+b.id+'\')">'+recs.length+'</span>' : '<span style="color:var(--text-dim)">\u2014</span>';
+    // Main row — clickable to expand if has details
+    html += '<tr style="'+(hasDetails?'cursor:pointer':'') +'" '+(hasDetails?'onclick="toggleCrmBookingDetails(\''+b.id+'\')"':'')+'><td>'+date+'</td><td>'+time+'</td><td><span class="badge badge-'+statusClass+'">'+esc(b.status)+'</span></td><td>'+noteCount+'</td><td>'+recCount+'</td><td onclick="event.stopPropagation()"><button class="btn btn-ghost btn-sm" onclick="crmAddNote(\''+b.id+'\')">+ Note</button> <button class="btn btn-ghost btn-sm" onclick="crmAddRecording(\''+b.id+'\')">+ Recording</button>'+(hasDetails?' <span style="font-size:10px;color:var(--text-dim);margin-left:4px" id="crm-expand-icon-'+b.id+'">\u25BC</span>':'')+'</td></tr>';
+    // Detail rows — hidden by default
+    if(hasDetails){
+      html += '<tr class="crm-booking-detail" data-bid="'+b.id+'" style="display:none"><td colspan="6" style="padding:0">';
+      notes.forEach(function(n){
+        var regionBadges = '';
+        if (n.body_regions && n.body_regions.length) {
+          regionBadges = '<div style="margin-top:5px;display:flex;flex-wrap:wrap;gap:3px">';
+          n.body_regions.forEach(function(rid) { regionBadges += '<span style="display:inline-block;padding:2px 7px;font-size:10px;border-radius:10px;background:rgba(91,168,178,.15);color:var(--teal);border:1px solid rgba(91,168,178,.25)">' + esc(rid.replace(/-/g,' ')) + '</span>'; });
+          regionBadges += '</div>';
+        }
+        html += '<div style="background:rgba(91,168,178,0.05);padding:10px 16px;border-top:1px solid rgba(91,168,178,.1);font-size:13px"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div style="flex:1"><span style="color:var(--teal);font-weight:600;font-size:11px;text-transform:uppercase">'+esc(n.note_type)+' note</span>'+(n.visible_to_patient ? ' <span class="badge badge-info" style="font-size:10px">Patient visible</span>' : ' <span class="badge badge-muted" style="font-size:10px">Private</span>')+'<div style="margin-top:4px;color:var(--text);white-space:pre-wrap">'+esc(n.content)+'</div>'+regionBadges+'<div style="margin-top:4px;font-size:11px;color:var(--text-dim)">'+timeAgo(n.created_at)+'</div></div><div style="display:flex;gap:4px;flex-shrink:0;margin-left:8px"><button class="btn btn-ghost btn-sm note-edit-btn" data-nid="'+n.id+'" title="Edit note" style="font-size:11px">\u270F\uFE0F</button><button class="btn btn-ghost btn-sm" onclick="crmToggleNoteVisibility(\''+n.id+'\','+ !n.visible_to_patient+')" title="'+(n.visible_to_patient?'Make private':'Share with patient')+'" style="font-size:11px">'+(n.visible_to_patient?'\uD83D\uDD13':'\uD83D\uDD12')+'</button><button class="btn btn-ghost btn-sm" onclick="crmDeleteNote(\''+n.id+'\')" title="Delete note" style="font-size:11px;color:var(--error)">\uD83D\uDDD1</button></div></div></div>';
+      });
+      recs.forEach(function(r){
+        html += '<div style="background:rgba(91,184,140,0.05);padding:10px 16px;border-top:1px solid rgba(91,184,140,.1);font-size:13px"><span style="color:var(--success);font-weight:600;font-size:11px">\uD83C\uDFA5 RECORDING</span> '+esc(r.title||'Session Recording')+(r.duration_minutes ? ' ('+r.duration_minutes+' min)' : '')+' <a href="'+esc(r.recording_url)+'" target="_blank" class="btn btn-ghost btn-sm" style="margin-left:8px">Open \u2197</a></div>';
+      });
+      html += '</td></tr>';
+    }
   });
   html += '</tbody></table>';
   el.innerHTML = html;
@@ -5058,6 +5065,16 @@ function renderCrmSessions(){
       if(note) crmEditNote(nid, note.content, note.body_regions || [], !!note.visible_to_patient);
     };
   });
+}
+
+function toggleCrmBookingDetails(bookingId){
+  var rows = document.querySelectorAll('.crm-booking-detail[data-bid="'+bookingId+'"]');
+  var icon = document.getElementById('crm-expand-icon-'+bookingId);
+  rows.forEach(function(r){
+    var visible = r.style.display !== 'none';
+    r.style.display = visible ? 'none' : 'table-row';
+  });
+  if(icon) icon.textContent = rows[0] && rows[0].style.display !== 'none' ? '\u25B2' : '\u25BC';
 }
 
 const BODY_REGION_OPTIONS = [
