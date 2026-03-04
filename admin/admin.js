@@ -4145,8 +4145,14 @@ async function openClientDates(clientId){
     return'<option value="'+a.date+'"'+(taken?' disabled':'')+'>'+dayName+' ('+a.start_time.slice(0,5)+'–'+a.end_time.slice(0,5)+')'+(taken?' — taken':'')+'</option>';
   }).join('');
 
-  box.innerHTML='<div style="font-weight:600;font-size:15px;margin-bottom:4px">Dates for '+esc(cl.name||cl.email)+'</div>'
-    +'<div style="font-size:11px;color:var(--text-dim);margin-bottom:14px">Cycle: '+esc(cycle.name)+' ('+fmtDate(cycle.start_date)+' → '+fmtDate(cycle.end_date)+')</div>'
+  box.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">'
+    +'<div><div style="font-weight:600;font-size:15px">'+esc(cl.name||cl.email)+'</div>'
+    +'<div style="font-size:11px;color:var(--text-dim)">Cycle: '+esc(cycle.name)+' ('+fmtDate(cycle.start_date)+' → '+fmtDate(cycle.end_date)+')</div></div>'
+    +'<div style="display:flex;gap:4px;flex-shrink:0">'
+    +'<button class="btn btn-ghost btn-sm" onclick="document.getElementById(\'sess-client-dates-modal\').remove();sessEmailClient(\''+esc(cl.email.replace(/'/g,"\\'"))+'\',\''+esc((cl.name||'').replace(/'/g,"\\'"))+'\')" style="font-size:10px">✉ Email</button>'
+    +'<button class="btn btn-ghost btn-sm" onclick="document.getElementById(\'sess-client-dates-modal\').remove();editClient(\''+clientId+'\')" style="font-size:10px">Edit</button>'
+    +'<button class="btn btn-ghost btn-sm" onclick="document.getElementById(\'sess-client-dates-modal\').remove();toggleClientPause(\''+clientId+'\')" style="font-size:10px">'+(cl.status==='paused'?'Unpause':'Pause')+'</button>'
+    +'</div></div>'
     +'<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:600;color:var(--text-dim);margin-bottom:6px;letter-spacing:.5px">ASSIGNED DATES</div>'+existingHtml+'</div>'
     +'<div style="border-top:1px solid var(--border);padding-top:12px">'
     +'<div style="font-size:11px;font-weight:600;color:var(--text-dim);margin-bottom:6px;letter-spacing:.5px">ADD DATE</div>'
