@@ -6394,6 +6394,21 @@ async function loadAutomationLog(){
     html += '<button class="btn btn-ghost btn-sm auto-log-filter" onclick="filterAutoLog(\'follow_up\',this)" style="font-size:11px">Follow-Up</button>';
     html += '<button class="btn btn-ghost btn-sm auto-log-filter" onclick="filterAutoLog(\'intake_nudge\',this)" style="font-size:11px">Intake</button>';
     html += '<button class="btn btn-ghost btn-sm auto-log-filter" onclick="filterAutoLog(\'expiry\',this)" style="font-size:11px">Expiry (all)</button>';
+
+    // Date dropdown
+    var months = {};
+    rows.forEach(function(r){
+      if(!r.sent_at) return;
+      var d = new Date(r.sent_at);
+      var key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+      var label = d.toLocaleString('en-US',{month:'long',year:'numeric'});
+      months[key] = label;
+    });
+    var sortedMonths = Object.keys(months).sort().reverse();
+    html += '<select id="auto-log-date-filter" onchange="filterAutoLog(null,null)" class="input" style="font-size:11px;padding:4px 8px;margin-left:auto;min-width:140px">';
+    html += '<option value="all">All Dates</option>';
+    sortedMonths.forEach(function(k){ html += '<option value="'+k+'">'+months[k]+'</option>'; });
+    html += '</select>';
     html += '</div>';
 
     html += '<div id="auto-log-table-wrap">';
@@ -6401,6 +6416,9 @@ async function loadAutomationLog(){
     html += '</div>';
 
     el.innerHTML = html;
+    window._autoLogSortCol = 'sent';
+    window._autoLogSortAsc = false;
+    window._autoLogActiveFilter = 'all';
     renderNextRunPreview();
   }catch(e){
     el.innerHTML = '<div class="empty"><p>Error loading log: ' + esc(e.message) + '</p></div>';
@@ -6408,22 +6426,75 @@ async function loadAutomationLog(){
 }
 
 function filterAutoLog(filter, btn){
-  document.querySelectorAll('.auto-log-filter').forEach(function(b){ b.classList.remove('active'); b.classList.add('btn-ghost'); });
-  btn.classList.add('active'); btn.classList.remove('btn-ghost');
-  var rows = window._autoLogAll || [];
-  if(filter === 'sent' || filter === 'failed' || filter === 'skipped'){
-    rows = rows.filter(function(r){ return r.status === filter; });
-  } else if(filter === 'expiry'){
-    rows = rows.filter(function(r){ return r.automation_type && r.automation_type.indexOf('expiry') !== -1; });
-  } else if(filter !== 'all'){
-    rows = rows.filter(function(r){ return r.automation_type === filter; });
+  if(btn){
+    document.querySelectorAll('.auto-log-filter').forEach(function(b){ b.classList.remove('active'); b.classList.add('btn-ghost'); });
+    btn.classList.add('active'); btn.classList.remove('btn-ghost');
+    window._autoLogActiveFilter = filter;
   }
+  var activeFilter = filter || window._autoLogActiveFilter || 'all';
+  var rows = window._autoLogAll || [];
+
+  // Type/status filter
+  if(activeFilter === 'sent' || activeFilter === 'failed' || activeFilter === 'skipped'){
+    rows = rows.filter(function(r){ return r.status === activeFilter; });
+  } else if(activeFilter === 'expiry'){
+    rows = rows.filter(function(r){ return r.automation_type && r.automation_type.indexOf('expiry') !== -1; });
+  } else if(activeFilter !== 'all'){
+    rows = rows.filter(function(r){ return r.automation_type === activeFilter; });
+  }
+
+  // Date filter
+  var dateVal = document.getElementById('auto-log-date-filter');
+  if(dateVal && dateVal.value !== 'all'){
+    var ym = dateVal.value;
+    rows = rows.filter(function(r){
+      if(!r.sent_at) return false;
+      var d = new Date(r.sent_at);
+      var key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+      return key === ym;
+    });
+  }
+
   document.getElementById('auto-log-table-wrap').innerHTML = buildAutoLogTable(rows);
+}
+
+function sortAutoLog(col){
+  if(window._autoLogSortCol === col){
+    window._autoLogSortAsc = !window._autoLogSortAsc;
+  } else {
+    window._autoLogSortCol = col;
+    window._autoLogSortAsc = col === 'sent' ? false : true;
+  }
+  filterAutoLog(null, null);
 }
 
 function buildAutoLogTable(rows){
   if(!rows.length) return '<div class="empty"><p>No emails match this filter.</p></div>';
-  var html = '<table class="tbl"><thead><tr><th>Sent</th><th>Recipient</th><th>Type</th><th>Status</th><th>Error</th></tr></thead><tbody>';
+  var col = window._autoLogSortCol || 'sent';
+  var asc = window._autoLogSortAsc;
+
+  rows = rows.slice().sort(function(a,b){
+    var va, vb;
+    if(col === 'sent'){ va = a.sent_at||''; vb = b.sent_at||''; }
+    else if(col === 'recipient'){ va = (a.email||'').toLowerCase(); vb = (b.email||'').toLowerCase(); }
+    else if(col === 'type'){ va = a.automation_type||''; vb = b.automation_type||''; }
+    else if(col === 'status'){ va = a.status||''; vb = b.status||''; }
+    else { va = ''; vb = ''; }
+    if(va < vb) return asc ? -1 : 1;
+    if(va > vb) return asc ? 1 : -1;
+    return 0;
+  });
+
+  function arrow(c){ return col===c ? (asc?' \u25B2':' \u25BC') : ''; }
+  var thStyle = 'cursor:pointer;user-select:none;white-space:nowrap';
+
+  var html = '<table class="tbl"><thead><tr>';
+  html += '<th style="'+thStyle+'" onclick="sortAutoLog(\'sent\')">Sent'+arrow('sent')+'</th>';
+  html += '<th style="'+thStyle+'" onclick="sortAutoLog(\'recipient\')">Recipient'+arrow('recipient')+'</th>';
+  html += '<th style="'+thStyle+'" onclick="sortAutoLog(\'type\')">Type'+arrow('type')+'</th>';
+  html += '<th style="'+thStyle+'" onclick="sortAutoLog(\'status\')">Status'+arrow('status')+'</th>';
+  html += '<th>Error</th>';
+  html += '</tr></thead><tbody>';
   rows.slice(0, 100).forEach(function(r){
     var sentDate = r.sent_at ? new Date(r.sent_at).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : '\u2014';
     var typeBadge = '<span class="badge badge-' + getAutomationBadgeClass(r.automation_type) + '" style="font-size:10px">' + formatAutomationType(r.automation_type) + '</span>';
