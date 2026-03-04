@@ -4177,10 +4177,12 @@ async function addClientDate(clientId,cycleId){
     var initialStatus=isRegular?'confirmed':'proposed';
     var insertData={cycle_id:cycleId,client_id:clientId,email:cl?cl.email:'',name:cl?cl.name:'',date:dateStr,start_time:time,end_time:endTime,status:initialStatus,type:'recurring',confirmation_token:generateBookingToken(),proposed_at:new Date().toISOString()};
     if(isRegular) insertData.confirmed_at=new Date().toISOString();
+    if(window._rescheduleFromId){insertData.rescheduled_from=window._rescheduleFromId}
     console.log('[addClientDate] payload:', JSON.stringify(insertData));
     var res=await proxyFrom('session_bookings').insert(insertData);
     if(res.error){showToast('Error: '+res.error.message,'error');return}
-    showToast('Date added'+(isRegular?' (auto-confirmed)':''),'success');
+    showToast('Date added'+(isRegular?' (auto-confirmed)':'')+(window._rescheduleFromId?' (rescheduled)':''),'success');
+    window._rescheduleFromId=null;window._rescheduleFromDate=null;
     var r=await proxyFrom('session_bookings').select('*').order('date',{ascending:true});sessBookingsData=r.data||[];
     openClientDates(clientId);renderClientRoster();
   }catch(e){console.error('addClientDate error:',e);showToast('Error: '+e.message,'error')}
@@ -4201,9 +4203,11 @@ async function addClientDateCustom(clientId,cycleId){
     var initialStatus=isRegular?'confirmed':'proposed';
     var insertData={cycle_id:cycleId,client_id:clientId,email:cl?cl.email:'',name:cl?cl.name:'',date:dateStr,start_time:time,end_time:endTime,status:initialStatus,type:'recurring',confirmation_token:generateBookingToken(),proposed_at:new Date().toISOString()};
     if(isRegular) insertData.confirmed_at=new Date().toISOString();
+    if(window._rescheduleFromId){insertData.rescheduled_from=window._rescheduleFromId}
     var res=await proxyFrom('session_bookings').insert(insertData);
     if(res.error){showToast('Error: '+res.error.message,'error');return}
-    showToast('Custom date added'+(isRegular?' (auto-confirmed)':''),'success');
+    showToast('Custom date added'+(isRegular?' (auto-confirmed)':'')+(window._rescheduleFromId?' (rescheduled)':''),'success');
+    window._rescheduleFromId=null;window._rescheduleFromDate=null;
     var r=await proxyFrom('session_bookings').select('*').order('date',{ascending:true});sessBookingsData=r.data||[];
     openClientDates(clientId);renderClientRoster();
   }catch(e){showToast('Error: '+e.message,'error')}
@@ -4522,9 +4526,16 @@ function renderBookingsGrid(){
         payCol='<span style="font-size:11px;color:var(--text-dim)">—</span>';
       }
 
+      var reschedLabel='';
+      if(b.rescheduled_from){
+        var origBooking=sessBookingsData.find(function(x){return x.id===b.rescheduled_from});
+        var origDate=origBooking?fmtDate(origBooking.date):'a previous date';
+        reschedLabel='<div style="font-size:10px;color:var(--purple);margin-top:2px">↩ Rescheduled from '+origDate+'</div>';
+      }
+
       var row='<tr><td style="white-space:nowrap">'+fmtDate(b.date)+'</td>'
         +'<td>'+b.start_time.slice(0,5)+'–'+b.end_time.slice(0,5)+'</td>'
-        +'<td class="email">'+esc(b.email)+(b.name?'<br><span class="name" style="font-size:11px">'+esc(b.name)+'</span>':'')+(isRegular?' <span class="badge teal" style="font-size:9px;vertical-align:middle">Regular</span>':'')+'</td>'
+        +'<td class="email">'+esc(b.email)+(b.name?'<br><span class="name" style="font-size:11px">'+esc(b.name)+'</span>':'')+(isRegular?' <span class="badge teal" style="font-size:9px;vertical-align:middle">Regular</span>':'')+reschedLabel+'</td>'
         +'<td>'+typeBadges[b.type]+'</td>'
         +'<td>'+(statusBadges[b.status]||'<span class="badge muted">'+b.status+'</span>')+'</td>'
         +'<td>'+payCol+'</td>'
@@ -4633,6 +4644,8 @@ async function rescheduleBooking(bookingId){
     renderBookingsGrid();
     // Open date picker for the client
     if(b.client_id){
+      window._rescheduleFromId=bookingId;
+      window._rescheduleFromDate=b.date;
       openClientDates(b.client_id);
       showToast('Now pick a new date for '+(b.name||b.email),'info');
     }else{
@@ -4670,7 +4683,8 @@ async function executeReschedule(oldBookingId){
       date:dateStr,start_time:time,end_time:endTime,
       status:'proposed',type:ob.type||'manual',
       confirmation_token:generateBookingToken(),
-      proposed_at:new Date().toISOString()
+      proposed_at:new Date().toISOString(),
+      rescheduled_from:oldBookingId
     });
     if(res.error){showToast('Error: '+res.error.message,'error');return}
     document.getElementById('reschedule-modal').remove();
