@@ -5914,13 +5914,14 @@ async function sendSessionReminder(type, bookingId, email){
     await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       mode: 'no-cors',
-      headers: {'Content-Type':'application/json'},
+      headers: {'Content-Type':'text/plain'},
       body: JSON.stringify({
-        action: 'sendEmail',
         to: email,
         subject: subject,
-        htmlBody: html,
-        fromAlias: 'tracey@quantumphysician.com'
+        body: html,
+        isHtml: true,
+        recipientName: name,
+        from: 'tracey@quantumphysician.com'
       })
     });
     // Log to email_automation_log for dedup with cron
