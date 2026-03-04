@@ -4434,9 +4434,9 @@ function renderBookingsGrid(){
   var bookings=sessBookingsData.filter(function(b){
     if(cycleId&&b.cycle_id!==cycleId) return false;
     // View-based filtering
-    if(sessBookView==='active'&&(b.status==='completed'||b.status==='no_show'||b.status==='cancelled'||b.status==='declined'||b.status==='expired')) return false;
+    if(sessBookView==='active'&&(b.status==='completed'||b.status==='no_show'||b.status==='cancelled'||b.status==='declined'||b.status==='expired'||b.status==='rescheduled')) return false;
     if(sessBookView==='completed'&&b.status!=='completed'&&b.status!=='no_show') return false;
-    if(sessBookView==='cancelled'&&b.status!=='cancelled'&&b.status!=='declined'&&b.status!=='expired') return false;
+    if(sessBookView==='cancelled'&&b.status!=='cancelled'&&b.status!=='declined'&&b.status!=='expired'&&b.status!=='rescheduled') return false;
     // Additional status filter on top of view
     if(statusFilter!=='all'&&b.status!==statusFilter) return false;
     if(typeFilter!=='all'&&b.type!==typeFilter) return false;
@@ -4487,7 +4487,7 @@ function renderBookingsGrid(){
   var start=(sessBookPage-1)*sessBookPS;
   var page=bookings.slice(start,start+sessBookPS);
 
-  var statusBadges={proposed:'<span class="badge yellow">Proposed</span>',paid:'<span class="badge green">Paid</span>',confirmed:'<span class="badge green">Confirmed</span>',declined:'<span class="badge danger">Declined</span>',expired:'<span class="badge muted">Expired</span>',cancelled:'<span class="badge muted">Cancelled</span>',completed:'<span class="badge teal">Completed</span>',no_show:'<span class="badge danger">No Show</span>'};
+  var statusBadges={proposed:'<span class="badge yellow">Proposed</span>',paid:'<span class="badge green">Paid</span>',confirmed:'<span class="badge green">Confirmed</span>',declined:'<span class="badge danger">Declined</span>',expired:'<span class="badge muted">Expired</span>',cancelled:'<span class="badge muted">Cancelled</span>',completed:'<span class="badge teal">Completed</span>',no_show:'<span class="badge danger">No Show</span>',rescheduled:'<span class="badge purple">Rescheduled</span>'};
   var typeBadges={recurring:'<span class="badge teal">Recurring</span>',public:'<span class="badge purple">Public</span>',manual:'<span class="badge muted">Manual</span>'};
 
   var sortArrow=function(col){return sessBookSortCol===col?(sessBookSortDir==='asc'?' ↑':' ↓'):'';};
@@ -4602,20 +4602,31 @@ async function rescheduleBooking(bookingId){
   if(!b){showToast('Booking not found','error');return}
   var cycleId=b.cycle_id||sessSelectedCycleId;
   if(!cycleId){showToast('No cycle found for this booking','error');return}
-  // If we have a client_id, open their dates modal
-  if(b.client_id){
-    openClientDates(b.client_id);
-    showToast('Pick a new date for '+esc(b.name||b.email),'info');
-  }else{
-    // For public bookings without a client_id, just reset to proposed
-    if(!await qpConfirm('Reschedule','Reset this booking to Proposed status so it can be rescheduled?',{okText:'Reset'}))return;
-    try{
-      await ensureFreshToken();
-      await proxyFrom('session_bookings').update({status:'proposed',confirmed_at:null,payment_requested_at:null}).eq('id',bookingId);
-      showToast('Booking reset to Proposed','success');
-      await refreshBookingsView();
-    }catch(e){showToast('Error: '+e.message,'error')}
-  }
+  if(!await qpConfirm('Reschedule','Mark this booking as rescheduled and pick a new date for '+(b.name||b.email)+'?',{okText:'Reschedule'}))return;
+  try{
+    await ensureFreshToken();
+    // Mark old booking as rescheduled
+    await proxyFrom('session_bookings').update({status:'rescheduled'}).eq('id',bookingId);
+    // Auto-add a note to the old booking
+    await proxyFrom('session_notes').insert({
+      booking_id:bookingId,
+      note_type:'admin',
+      content:'Rescheduled on '+new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})+'. Original date: '+new Date(b.date+'T12:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})+'.',
+      visible_to_patient:false,
+      created_by:currentAdmin?currentAdmin.email:'admin'
+    });
+    await logAudit('reschedule_booking',b.email,'Rescheduled session from '+b.date,{booking_id:bookingId});
+    showToast('Marked as rescheduled','success');
+    // Refresh data
+    var r=await proxyFrom('session_bookings').select('*').order('date',{ascending:true});sessBookingsData=r.data||[];
+    var nr=await proxyFrom('session_notes').select('*');sessNotesData=nr.data||[];
+    renderBookingsGrid();
+    // Open date picker for the client
+    if(b.client_id){
+      openClientDates(b.client_id);
+      showToast('Now pick a new date for '+(b.name||b.email),'info');
+    }
+  }catch(e){showToast('Error: '+e.message,'error')}
 }
 
 async function sendSessionEmail(to, subject, html){
