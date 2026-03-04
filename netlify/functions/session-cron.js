@@ -23,7 +23,7 @@ exports.handler = async (event) => {
   }
 
   const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-  const results = { day_before: 0, follow_up: 0, intake_nudge: 0, payment_expiry_48h: 0, payment_expiry_72h: 0, errors: 0 };
+  const results = { day_before: 0, follow_up: 0, intake_nudge: 0, payment_expiry_48h: 0, payment_expiry_72h: 0, regular_expiry_5d: 0, regular_expiry_7d: 0, errors: 0 };
 
   try {
     // 1. Load automation config
@@ -43,6 +43,8 @@ exports.handler = async (event) => {
     const yesterdayStr = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
     const h48ago = new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString();
     const h72ago = new Date(now.getTime() - 72 * 60 * 60 * 1000).toISOString();
+    const d5ago = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString();
+    const d7ago = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
     // =============================================
     // DAY-BEFORE REMINDERS
@@ -53,7 +55,7 @@ exports.handler = async (event) => {
         .from("session_bookings")
         .select("*")
         .eq("date", tomorrowStr)
-        .eq("status", "paid");
+        .in("status", ["paid", "confirmed"]);
 
       for (const b of (tomorrowBookings || [])) {
         if (await alreadySent(sb, b.id, "day_before")) continue;
@@ -225,6 +227,85 @@ exports.handler = async (event) => {
           console.log("[session-cron] 72h expired + notified:", b.email);
         } catch (e) {
           await logSend(sb, b.id, b.email, "payment_expiry_72h", "failed", e.message);
+          results.errors++;
+        }
+      }
+
+      // =============================================
+      // 7-DAY EXPIRY FOR CONFIRMED REGULARS
+      // Regulars auto-confirm without payment.
+      // 5-day warning, 7-day auto-expire if session date has passed and still unpaid.
+      // =============================================
+
+      // 5-day warning: confirmed bookings created 5-7 days ago with no payment
+      const { data: warn5d } = await sb
+        .from("session_bookings")
+        .select("*")
+        .eq("status", "confirmed")
+        .lt("created_at", d5ago)
+        .gte("created_at", d7ago);
+
+      for (const b of (warn5d || [])) {
+        if (await alreadySent(sb, b.id, "regular_expiry_5d")) continue;
+        // Only warn if the session date has passed (post-session payment window)
+        if (b.date >= todayStr) {
+          await logSend(sb, b.id, b.email, "regular_expiry_5d", "skipped", "Session date not yet passed");
+          continue;
+        }
+        try {
+          const html = buildRegularExpiryWarningEmail(b);
+          await sendEmail(SESSION_EMAIL_SCRIPT_URL, {
+            to: b.email,
+            subject: "Payment Reminder — Your Session with Dr. Tracey Clark",
+            html: html
+          });
+          await logSend(sb, b.id, b.email, "regular_expiry_5d", "sent");
+          results.regular_expiry_5d++;
+          console.log("[session-cron] 5-day regular warning sent to:", b.email);
+        } catch (e) {
+          await logSend(sb, b.id, b.email, "regular_expiry_5d", "failed", e.message);
+          results.errors++;
+        }
+      }
+
+      // 7-day expired: confirmed bookings older than 7 days → auto-expire + notify
+      const { data: expired7d } = await sb
+        .from("session_bookings")
+        .select("*")
+        .eq("status", "confirmed")
+        .lt("created_at", d7ago);
+
+      for (const b of (expired7d || [])) {
+        if (await alreadySent(sb, b.id, "regular_expiry_7d")) continue;
+        // Only expire if the session date has passed
+        if (b.date >= todayStr) {
+          await logSend(sb, b.id, b.email, "regular_expiry_7d", "skipped", "Session date not yet passed");
+          continue;
+        }
+        try {
+          // Update booking status to expired
+          await sb.from("session_bookings").update({ status: "expired" }).eq("id", b.id);
+
+          // Free up the availability slot
+          if (b.date) {
+            await sb.from("session_availability")
+              .update({ status: "available" })
+              .eq("date", b.date)
+              .eq("start_time", b.start_time)
+              .eq("status", "booked");
+          }
+
+          const html = buildRegularExpiryNoticeEmail(b);
+          await sendEmail(SESSION_EMAIL_SCRIPT_URL, {
+            to: b.email,
+            subject: "Session Booking Expired — Payment Not Received",
+            html: html
+          });
+          await logSend(sb, b.id, b.email, "regular_expiry_7d", "sent");
+          results.regular_expiry_7d++;
+          console.log("[session-cron] 7-day regular expired + notified:", b.email);
+        } catch (e) {
+          await logSend(sb, b.id, b.email, "regular_expiry_7d", "failed", e.message);
           results.errors++;
         }
       }
@@ -453,4 +534,41 @@ function buildExpiryNoticeEmail(booking) {
     + '<a href="' + bookingUrl + '" style="display:inline-block;background:linear-gradient(135deg,#5ba8b2,#4a97a1);color:#fff;padding:16px 40px;text-decoration:none;border-radius:50px;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:2px;font-family:Arial,sans-serif">View Available Sessions</a></div>';
 
   return wrapTemplate('Booking Expired', 'Your reserved session time has been released', inner);
+}
+
+function buildRegularExpiryWarningEmail(booking) {
+  var name = esc(booking.name || booking.email.split("@")[0]);
+  var date = esc(fmtDate(booking.date));
+  var time = esc(fmtTime(booking.start_time));
+  var portalUrl = "https://qp-homepage.netlify.app/members/billing.html";
+
+  var inner = '<p style="font-size:20px;color:#5ba8b2;margin-bottom:20px;text-align:center;font-family:Georgia,serif">Hi ' + name + ',</p>'
+    + '<p style="font-size:15px;line-height:1.8;color:rgba(255,255,255,.85);margin-bottom:24px;text-align:center">This is a gentle reminder that payment for your session on <strong style="color:#fff">' + date + '</strong> at <strong style="color:#fff">' + time + '</strong> is still outstanding.</p>'
+    // Warning box
+    + '<div style="background:rgba(255,193,7,.08);border:1px solid rgba(255,193,7,.4);border-radius:12px;padding:20px;margin:28px 0;text-align:center">'
+    + '<p style="font-size:16px;font-weight:700;color:#ffc107;margin:0 0 6px">\u26a0\ufe0f Payment Due Within 2 Days</p>'
+    + '<p style="font-size:13px;color:rgba(255,255,255,.6);margin:0">Please complete your payment to keep your account in good standing. If payment is not received, your booking will be marked as expired.</p></div>'
+    // CTA Button
+    + '<div style="text-align:center;margin:28px 0">'
+    + '<a href="' + portalUrl + '" style="display:inline-block;background:linear-gradient(135deg,#5ba8b2,#4a97a1);color:#fff;padding:16px 40px;text-decoration:none;border-radius:50px;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:2px;font-family:Arial,sans-serif">View Billing</a></div>'
+    + '<p style="font-size:14px;line-height:1.7;color:rgba(255,255,255,.6);text-align:center;margin:20px 0 0">If you\u2019ve already paid or have questions, just reply to this email.</p>';
+
+  return wrapTemplate('Payment Reminder', 'A friendly reminder from Dr. Tracey Clark', inner, portalUrl, 'View Billing History');
+}
+
+function buildRegularExpiryNoticeEmail(booking) {
+  var name = esc(booking.name || booking.email.split("@")[0]);
+  var date = esc(fmtDate(booking.date));
+  var bookingUrl = "https://qp-homepage.netlify.app/pages/one-on-sessions.html";
+
+  var inner = '<p style="font-size:20px;color:#5ba8b2;margin-bottom:20px;text-align:center;font-family:Georgia,serif">Hi ' + name + ',</p>'
+    + '<p style="font-size:15px;line-height:1.8;color:rgba(255,255,255,.85);margin-bottom:24px;text-align:center">Your session on <strong style="color:#fff">' + date + '</strong> has been marked as expired because payment was not received within 7 days of the booking.</p>'
+    // Info box
+    + '<div style="background:linear-gradient(135deg,rgba(91,168,178,.08),rgba(173,155,132,.08));border:1px solid rgba(91,168,178,.25);border-radius:12px;padding:20px;margin:28px 0;text-align:center">'
+    + '<p style="font-size:14px;color:rgba(255,255,255,.7);margin:0;line-height:1.7">If this was an oversight, please reach out and we\u2019ll get everything sorted. You\u2019re always welcome to book future sessions.</p></div>'
+    // CTA Button
+    + '<div style="text-align:center;margin:28px 0">'
+    + '<a href="' + bookingUrl + '" style="display:inline-block;background:linear-gradient(135deg,#5ba8b2,#4a97a1);color:#fff;padding:16px 40px;text-decoration:none;border-radius:50px;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:2px;font-family:Arial,sans-serif">Book a Session</a></div>';
+
+  return wrapTemplate('Session Booking Expired', 'Payment was not received within 7 days', inner);
 }
