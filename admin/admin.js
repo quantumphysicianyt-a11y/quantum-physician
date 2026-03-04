@@ -6134,83 +6134,46 @@ async function renderCrmEmails(){
   var email = crmCurrentClient;
   var allEmails = [];
 
-  // 1. Session automation emails (email_automation_log)
+  // Session automation emails ONLY (email_automation_log)
   try {
     var autoRes = await proxyFrom('email_automation_log').select('*').eq('email', email).order('sent_at',{ascending:false}).limit(100);
     (autoRes.data||[]).forEach(function(r){
       allEmails.push({
         date: r.sent_at || r.created_at,
         type: formatAutomationType(r.automation_type),
-        pipeline: 'Session Automation',
         status: r.status,
         subject: getAutoSubject(r.automation_type),
         error: r.error_message || null,
-        badgeClass: getAutomationBadgeClass(r.automation_type)
+        badgeClass: getAutomationBadgeClass(r.automation_type),
+        bookingId: r.booking_id
       });
     });
   } catch(e){ console.error('CRM emails: automation log error', e); }
 
-  // 2. Marketing campaigns (email_tracking)
-  try {
-    var trackRes = emailTrackingData.filter(function(t){ return t.recipient_email && t.recipient_email.toLowerCase() === email; });
-    trackRes.forEach(function(t){
-      var campaign = emailCampaignsData.find(function(c){ return c.id === t.campaign_id; });
-      allEmails.push({
-        date: t.sent_at,
-        type: t.email_type === 'promotional' ? 'Promotional' : (t.email_type || 'Campaign'),
-        pipeline: 'Marketing',
-        status: t.clicked_at ? 'clicked' : (t.opened_at ? 'opened' : 'sent'),
-        subject: campaign ? campaign.subject : (t.email_type || 'Campaign Email'),
-        error: null,
-        badgeClass: 'purple'
-      });
-    });
-  } catch(e){ console.error('CRM emails: tracking error', e); }
-
-  // 3. Fusion scheduled emails (email_log)
-  try {
-    var logRes = emailLogData.filter(function(l){ return l.recipient_email && l.recipient_email.toLowerCase() === email; });
-    logRes.forEach(function(l){
-      allEmails.push({
-        date: l.sent_at,
-        type: 'Fusion Drip',
-        pipeline: 'Fusion',
-        status: l.status || 'sent',
-        subject: l.subject || 'Fusion Session Email',
-        error: l.error_message || null,
-        badgeClass: 'ghost'
-      });
-    });
-  } catch(e){ console.error('CRM emails: log error', e); }
-
-  // Sort all emails by date descending
-  allEmails.sort(function(a,b){ return (b.date||'') > (a.date||'') ? 1 : -1; });
-
   if(!allEmails.length){
-    el.innerHTML = '<div class="empty"><p>No emails found for this client across any pipeline.</p></div>';
+    el.innerHTML = '<div class="empty"><p>No session emails found for this client. Emails will appear here once the daily cron sends reminders, follow-ups, or expiry notices.</p></div>';
     return;
   }
 
   // Summary stats
-  var totalSent = allEmails.filter(function(e){ return e.status==='sent'||e.status==='opened'||e.status==='clicked'; }).length;
-  var totalOpened = allEmails.filter(function(e){ return e.status==='opened'||e.status==='clicked'; }).length;
+  var totalSent = allEmails.filter(function(e){ return e.status==='sent'; }).length;
   var totalFailed = allEmails.filter(function(e){ return e.status==='failed'; }).length;
   var totalSkipped = allEmails.filter(function(e){ return e.status==='skipped'; }).length;
 
   var html = '<div style="display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap">';
   html += '<div style="text-align:center;padding:12px 20px;background:rgba(91,168,178,.08);border:1px solid rgba(91,168,178,.2);border-radius:10px"><div style="font-size:22px;font-weight:700;color:var(--teal)">'+totalSent+'</div><div style="font-size:11px;color:var(--text-dim)">Sent</div></div>';
-  html += '<div style="text-align:center;padding:12px 20px;background:rgba(131,56,236,.08);border:1px solid rgba(131,56,236,.2);border-radius:10px"><div style="font-size:22px;font-weight:700;color:var(--purple)">'+totalOpened+'</div><div style="font-size:11px;color:var(--text-dim)">Opened</div></div>';
   if(totalFailed) html += '<div style="text-align:center;padding:12px 20px;background:rgba(239,83,80,.08);border:1px solid rgba(239,83,80,.2);border-radius:10px"><div style="font-size:22px;font-weight:700;color:var(--danger)">'+totalFailed+'</div><div style="font-size:11px;color:var(--text-dim)">Failed</div></div>';
   if(totalSkipped) html += '<div style="text-align:center;padding:12px 20px;background:rgba(255,193,7,.08);border:1px solid rgba(255,193,7,.2);border-radius:10px"><div style="font-size:22px;font-weight:700;color:var(--warning)">'+totalSkipped+'</div><div style="font-size:11px;color:var(--text-dim)">Skipped</div></div>';
   html += '<div style="text-align:center;padding:12px 20px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px"><div style="font-size:22px;font-weight:700;color:var(--text)">'+allEmails.length+'</div><div style="font-size:11px;color:var(--text-dim)">Total</div></div>';
   html += '</div>';
 
-  // Filter controls
-  html += '<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">';
+  // Filter by type
+  html += '<div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">';
   html += '<button class="btn btn-sm crm-email-filter active" onclick="filterCrmEmails(\'all\',this)" style="font-size:11px">All</button>';
-  html += '<button class="btn btn-ghost btn-sm crm-email-filter" onclick="filterCrmEmails(\'Session Automation\',this)" style="font-size:11px">Session Automation</button>';
-  html += '<button class="btn btn-ghost btn-sm crm-email-filter" onclick="filterCrmEmails(\'Marketing\',this)" style="font-size:11px">Marketing</button>';
-  html += '<button class="btn btn-ghost btn-sm crm-email-filter" onclick="filterCrmEmails(\'Fusion\',this)" style="font-size:11px">Fusion</button>';
+  html += '<button class="btn btn-ghost btn-sm crm-email-filter" onclick="filterCrmEmails(\'day_before\',this)" style="font-size:11px">Day-Before</button>';
+  html += '<button class="btn btn-ghost btn-sm crm-email-filter" onclick="filterCrmEmails(\'follow_up\',this)" style="font-size:11px">Follow-Up</button>';
+  html += '<button class="btn btn-ghost btn-sm crm-email-filter" onclick="filterCrmEmails(\'intake_nudge\',this)" style="font-size:11px">Intake</button>';
+  html += '<button class="btn btn-ghost btn-sm crm-email-filter" onclick="filterCrmEmails(\'expiry\',this)" style="font-size:11px">Expiry</button>';
   html += '</div>';
 
   // Email table
@@ -6222,24 +6185,27 @@ async function renderCrmEmails(){
   window._crmEmailsAll = allEmails;
 }
 
-function filterCrmEmails(pipeline, btn){
+function filterCrmEmails(filter, btn){
   document.querySelectorAll('.crm-email-filter').forEach(function(b){ b.classList.remove('active'); b.classList.add('btn-ghost'); });
   btn.classList.add('active'); btn.classList.remove('btn-ghost');
-  var filtered = pipeline === 'all' ? window._crmEmailsAll : window._crmEmailsAll.filter(function(e){ return e.pipeline === pipeline; });
+  var filtered = window._crmEmailsAll || [];
+  if(filter === 'expiry'){
+    filtered = filtered.filter(function(e){ return e.type.indexOf('Expir')!==-1 || e.type.indexOf('Warning')!==-1; });
+  } else if(filter !== 'all'){
+    filtered = filtered.filter(function(e){ return e.subject === getAutoSubject(filter); });
+  }
   document.getElementById('crm-emails-table-wrap').innerHTML = buildCrmEmailsTable(filtered);
 }
 
 function buildCrmEmailsTable(emails){
   if(!emails.length) return '<div class="empty"><p>No emails match this filter.</p></div>';
-  var html = '<table class="tbl"><thead><tr><th>Date</th><th>Subject</th><th>Type</th><th>Pipeline</th><th>Status</th></tr></thead><tbody>';
+  var html = '<table class="tbl"><thead><tr><th>Date</th><th>Subject</th><th>Type</th><th>Status</th></tr></thead><tbody>';
   emails.forEach(function(e){
     var date = e.date ? new Date(e.date).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}) : '\u2014';
-    var statusColor = e.status==='clicked'?'var(--success)':e.status==='opened'?'var(--purple)':e.status==='sent'?'var(--teal)':e.status==='skipped'?'var(--warning)':'var(--danger)';
-    var pipelineColor = e.pipeline==='Session Automation'?'var(--teal)':e.pipeline==='Marketing'?'var(--purple)':'var(--text-dim)';
+    var statusColor = e.status==='sent'?'var(--success)':e.status==='skipped'?'var(--warning)':'var(--danger)';
     html += '<tr><td style="font-size:12px;white-space:nowrap">'+date+'</td>';
-    html += '<td style="font-size:12px;max-width:250px;overflow:hidden;text-overflow:ellipsis">'+esc(e.subject||'\u2014')+'</td>';
+    html += '<td style="font-size:12px;max-width:300px;overflow:hidden;text-overflow:ellipsis">'+esc(e.subject||'\u2014')+'</td>';
     html += '<td><span class="badge badge-'+e.badgeClass+'" style="font-size:10px">'+esc(e.type)+'</span></td>';
-    html += '<td style="font-size:11px;color:'+pipelineColor+'">'+esc(e.pipeline)+'</td>';
     html += '<td><span style="color:'+statusColor+';font-weight:600;font-size:10px;text-transform:uppercase">'+esc(e.status||'unknown')+'</span>'+(e.error ? ' <span title="'+esc(e.error)+'" style="cursor:help;font-size:10px;color:var(--danger)">\u26a0</span>' : '')+'</td></tr>';
   });
   html += '</tbody></table>';
