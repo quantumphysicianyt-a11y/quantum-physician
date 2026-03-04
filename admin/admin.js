@@ -4412,7 +4412,7 @@ function renderBookingsGrid(){
         +'<td>'+b.start_time.slice(0,5)+'–'+b.end_time.slice(0,5)+'</td>'
         +'<td class="email">'+esc(b.email)+(b.name?'<br><span class="name" style="font-size:11px">'+esc(b.name)+'</span>':'')+'</td>'
         +'<td>'+typeBadges[b.type]+'</td>'
-        +'<td>'+(statusBadges[b.status]||'<span class="badge muted">'+b.status+'</span>')+(sessRecsData.some(function(r){return r.booking_id===b.id})?'<br><span style="font-size:10px;color:var(--success)">🎥 has recording</span>':'')+(b.stripe_payment_id?'<br><span style="font-size:9px;color:var(--text-dim);font-family:monospace">'+b.stripe_payment_id.slice(0,18)+'…</span>':'')+'</td>'
+        +'<td>'+(statusBadges[b.status]||'<span class="badge muted">'+b.status+'</span>')+(b.stripe_payment_id?'<br><span style="font-size:9px;color:var(--text-dim);font-family:monospace">'+b.stripe_payment_id.slice(0,18)+'…</span>':'')+'</td>'
         +'<td><div style="display:flex;gap:4px;flex-wrap:wrap">'
         +(b.status==='proposed'&&payLink?'<button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText(\''+payLink+'\');showToast(\'Pay link copied\',\'success\')" title="Copy payment link">🔗 Pay Link</button>':'')
         +(b.status==='proposed'?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'paid\')">Mark Paid</button><button class="btn btn-danger btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'declined\')">Decline</button>':'')
@@ -4425,10 +4425,10 @@ function renderBookingsGrid(){
       var bRecs = sessRecsData.filter(function(r){ return r.booking_id === b.id; });
       var totalItems = bNotes.length + bRecs.length;
       if (totalItems) {
-        var badgeText = [];
-        if (bNotes.length) badgeText.push(bNotes.length + ' note' + (bNotes.length > 1 ? 's' : ''));
-        if (bRecs.length) badgeText.push(bRecs.length + ' recording' + (bRecs.length > 1 ? 's' : ''));
-        row += '<tr class="note-toggle-row" data-bid="'+b.id+'" style="cursor:pointer;background:rgba(91,168,178,0.03)" onclick="var rows=document.querySelectorAll(\'.note-row-'+b.id.replace(/-/g,'')+'\');var show=rows[0]&&rows[0].style.display===\'none\';rows.forEach(function(r){r.style.display=show?\'table-row\':\'none\'});this.querySelector(\'.note-arrow\').textContent=show?\'▾\':\'▸\'"><td colspan="6" style="padding:5px 16px;font-size:12px"><span class="note-arrow" style="margin-right:6px;color:var(--teal)">▸</span><span class="badge badge-info" style="font-size:10px">'+badgeText.join(' · ')+'</span> <span style="color:var(--text-dim);font-size:11px;margin-left:4px">click to expand</span></td></tr>';
+        var badgeHtml = [];
+        if (bNotes.length) badgeHtml.push('<span style="color:var(--teal)">📝 ' + bNotes.length + ' note' + (bNotes.length > 1 ? 's' : '') + '</span>');
+        if (bRecs.length) badgeHtml.push('<span style="color:var(--success)">🎥 ' + bRecs.length + ' recording' + (bRecs.length > 1 ? 's' : '') + '</span>');
+        row += '<tr class="note-toggle-row" data-bid="'+b.id+'" style="cursor:pointer;background:rgba(91,168,178,0.03)" onclick="var rows=document.querySelectorAll(\'.note-row-'+b.id.replace(/-/g,'')+'\');var show=rows[0]&&rows[0].style.display===\'none\';rows.forEach(function(r){r.style.display=show?\'table-row\':\'none\'});this.querySelector(\'.note-arrow\').textContent=show?\'▾\':\'▸\'"><td colspan="6" style="padding:5px 16px;font-size:12px"><span class="note-arrow" style="margin-right:6px;color:var(--teal)">▸</span>' + badgeHtml.join(' <span style="color:var(--border)">·</span> ') + ' <span style="color:var(--text-dim);font-size:11px;margin-left:4px">click to expand</span></td></tr>';
         bNotes.forEach(function(n){
           var regionBadges = '';
           if (n.body_regions && n.body_regions.length) {
