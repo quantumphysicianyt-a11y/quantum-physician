@@ -4536,7 +4536,8 @@ function renderBookingsGrid(){
       if(b.rescheduled_from){
         var origBooking=sessBookingsData.find(function(x){return x.id===b.rescheduled_from});
         var origDate=origBooking?fmtDate(origBooking.date):'a previous date';
-        reschedLabel='<div style="font-size:10px;color:var(--purple);margin-top:2px">↩ Rescheduled from '+origDate+'</div>';
+        var origReason=origBooking&&origBooking.reschedule_reason?origBooking.reschedule_reason:'';
+        reschedLabel='<div style="font-size:10px;color:var(--purple);margin-top:2px;cursor:pointer" onclick="event.stopPropagation();showRescheduleDetail(\''+b.rescheduled_from+'\')">↩ Rescheduled from '+origDate+'</div>';
       }
 
       var row='<tr><td style="white-space:nowrap">'+fmtDate(b.date)+'</td>'
@@ -4629,26 +4630,61 @@ async function rescheduleBooking(bookingId){
   if(!b){showToast('Booking not found','error');return}
   var cycleId=b.cycle_id||sessSelectedCycleId;
   if(!cycleId){showToast('No cycle found for this booking','error');return}
-  if(!await qpConfirm('Reschedule','Mark this booking as rescheduled and pick a new date for '+(b.name||b.email)+'?',{okText:'Reschedule'}))return;
+
+  // Show reschedule reason modal
+  var old=document.getElementById('resched-reason-modal');if(old)old.remove();
+  var ov=document.createElement('div');ov.id='resched-reason-modal';ov.className='modal-overlay';
+  ov.onclick=function(e){if(e.target===ov)ov.remove()};
+  var box=document.createElement('div');
+  box.style.cssText='background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;max-width:440px;width:94%';
+  box.innerHTML='<div style="font-weight:600;font-size:16px;margin-bottom:4px">Reschedule Session</div>'
+    +'<div style="font-size:12px;color:var(--text-dim);margin-bottom:16px">'+esc(b.name||b.email)+' · '+fmtDate(b.date)+' · '+b.start_time.slice(0,5)+'</div>'
+    +'<div style="margin-bottom:12px"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px">Reason</label>'
+    +'<select class="input" id="resched-reason" style="width:100%">'
+    +'<option value="client_request">Client requested</option>'
+    +'<option value="practitioner_unavailable">Practitioner unavailable</option>'
+    +'<option value="illness">Illness</option>'
+    +'<option value="scheduling_conflict">Scheduling conflict</option>'
+    +'<option value="no_show_rebooking">No-show rebooking</option>'
+    +'<option value="other">Other</option>'
+    +'</select></div>'
+    +'<div style="margin-bottom:14px"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px">Note (optional)</label>'
+    +'<textarea class="input" id="resched-note" rows="2" style="width:100%;resize:vertical" placeholder="Add context…"></textarea></div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end">'
+    +'<button class="btn btn-ghost btn-sm" onclick="document.getElementById(\'resched-reason-modal\').remove()">Cancel</button>'
+    +'<button class="btn btn-primary btn-sm" onclick="executeRescheduleWithReason(\''+bookingId+'\')">Reschedule</button></div>';
+  ov.appendChild(box);document.body.appendChild(ov);
+}
+
+async function executeRescheduleWithReason(bookingId){
+  var reason=document.getElementById('resched-reason').value;
+  var note=document.getElementById('resched-note').value.trim();
+  var reasonLabels={client_request:'Client requested',practitioner_unavailable:'Practitioner unavailable',illness:'Illness',scheduling_conflict:'Scheduling conflict',no_show_rebooking:'No-show rebooking',other:'Other'};
+  var reasonText=reasonLabels[reason]||reason;
+  document.getElementById('resched-reason-modal').remove();
+
+  var b=sessBookingsData.find(function(x){return x.id===bookingId});
+  if(!b){showToast('Booking not found','error');return}
+
   try{
     await ensureFreshToken();
-    // Mark old booking as rescheduled
-    await proxyFrom('session_bookings').update({status:'rescheduled'}).eq('id',bookingId);
-    // Auto-add a note to the old booking
+    await proxyFrom('session_bookings').update({status:'rescheduled',reschedule_reason:reason}).eq('id',bookingId);
+    // Auto-add note with reason
+    var noteContent='Rescheduled on '+new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})
+      +'. Original date: '+new Date(b.date+'T12:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})
+      +'. Reason: '+reasonText+'.'+(note?' Note: '+note:'');
     await proxyFrom('session_notes').insert({
       booking_id:bookingId,
       note_type:'admin',
-      content:'Rescheduled on '+new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})+'. Original date: '+new Date(b.date+'T12:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})+'.',
+      content:noteContent,
       visible_to_patient:false,
       created_by:currentAdmin?currentAdmin.email:'admin'
     });
-    await logAudit('reschedule_booking',b.email,'Rescheduled session from '+b.date,{booking_id:bookingId});
+    await logAudit('reschedule_booking',b.email,'Rescheduled session from '+b.date+' — '+reasonText,{booking_id:bookingId});
     showToast('Marked as rescheduled','success');
-    // Refresh data
     var r=await proxyFrom('session_bookings').select('*').order('date',{ascending:true});sessBookingsData=r.data||[];
     var nr=await proxyFrom('session_notes').select('*');sessNotesData=nr.data||[];
     renderBookingsGrid();
-    // Open date picker for the client
     if(b.client_id){
       window._rescheduleFromId=bookingId;
       window._rescheduleFromDate=b.date;
@@ -4670,6 +4706,36 @@ async function rescheduleBooking(bookingId){
       ov.appendChild(box);document.body.appendChild(ov);
     }
   }catch(e){showToast('Error: '+e.message,'error')}
+}
+
+function showRescheduleDetail(origBookingId){
+  var ob=sessBookingsData.find(function(x){return x.id===origBookingId});
+  var notes=sessNotesData.filter(function(n){return n.booking_id===origBookingId});
+  var reasonLabels={client_request:'Client requested',practitioner_unavailable:'Practitioner unavailable',illness:'Illness',scheduling_conflict:'Scheduling conflict',no_show_rebooking:'No-show rebooking',other:'Other'};
+
+  var old=document.getElementById('resched-detail-popup');if(old)old.remove();
+  var ov=document.createElement('div');ov.id='resched-detail-popup';ov.className='modal-overlay';
+  ov.onclick=function(e){if(e.target===ov)ov.remove()};
+  var box=document.createElement('div');
+  box.style.cssText='background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;max-width:440px;width:94%;max-height:70vh;overflow-y:auto';
+
+  var reasonHtml=ob&&ob.reschedule_reason?'<div style="margin-bottom:12px"><span style="font-size:10px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px">Reason</span><div style="font-size:13px;color:var(--text);margin-top:4px">'+(reasonLabels[ob.reschedule_reason]||ob.reschedule_reason)+'</div></div>':'';
+  var origDateHtml=ob?'<div style="margin-bottom:12px"><span style="font-size:10px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px">Original Date</span><div style="font-size:13px;color:var(--text);margin-top:4px">'+fmtDate(ob.date)+' · '+ob.start_time.slice(0,5)+'–'+ob.end_time.slice(0,5)+'</div></div>':'';
+  var statusHtml=ob?'<div style="margin-bottom:12px"><span style="font-size:10px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px">Original Status</span><div style="margin-top:4px"><span class="badge purple" style="font-size:10px">Rescheduled</span></div></div>':'';
+
+  var notesHtml='';
+  if(notes.length){
+    notesHtml='<div style="border-top:1px solid var(--border);padding-top:12px;margin-top:12px"><span style="font-size:10px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px">Notes</span>';
+    notes.forEach(function(n){
+      notesHtml+='<div style="margin-top:8px;font-size:12px;color:var(--text);background:rgba(91,168,178,.04);border:1px solid var(--border);border-radius:8px;padding:10px;white-space:pre-wrap">'+esc(n.content)+'<div style="font-size:10px;color:var(--text-dim);margin-top:6px">'+timeAgo(n.created_at)+'</div></div>';
+    });
+    notesHtml+='</div>';
+  }
+
+  box.innerHTML='<div style="font-weight:600;font-size:16px;margin-bottom:14px;color:var(--purple)">Reschedule Details</div>'
+    +origDateHtml+reasonHtml+statusHtml+notesHtml
+    +'<div style="display:flex;justify-content:flex-end;margin-top:16px"><button class="btn btn-ghost btn-sm" onclick="document.getElementById(\'resched-detail-popup\').remove()">Close</button></div>';
+  ov.appendChild(box);document.body.appendChild(ov);
 }
 
 async function executeReschedule(oldBookingId){
@@ -5405,8 +5471,18 @@ async function crmOpenClient(email){
     var paidSess = crmBookings.filter(function(b){ return b.status==='paid'||b.status==='completed'; }).length;
     var firstSess = crmBookings.length ? crmBookings[crmBookings.length-1].date : null;
     var regularBadge = sessClient && sessClient.client_type==='regular' ? ' <span class="badge teal" style="font-size:10px;vertical-align:middle">Regular</span>' : '';
-    var editBtn = sessClient ? '<button class="btn btn-ghost btn-sm" onclick="editClient(\''+sessClient.id+'\')" style="margin-left:8px">Edit</button>' : '';
-    document.getElementById('crm-detail-header').innerHTML = '<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">'+avatar+'<div><div style="font-size:20px;font-weight:700;color:var(--text)">'+esc(name)+regularBadge+editBtn+'</div><div style="font-size:13px;color:var(--text-dim)">'+esc(emailLower)+'</div></div><div style="margin-left:auto;display:flex;gap:20px;flex-wrap:wrap"><div style="text-align:center"><div style="font-size:22px;font-weight:700;color:var(--teal)">'+totalSess+'</div><div style="font-size:11px;color:var(--text-dim)">Total</div></div><div style="text-align:center"><div style="font-size:22px;font-weight:700;color:var(--success)">'+paidSess+'</div><div style="font-size:11px;color:var(--text-dim)">Paid</div></div>'+(firstSess ? '<div style="text-align:center"><div style="font-size:13px;font-weight:600;color:var(--text)">'+new Date(firstSess).toLocaleDateString('en-US',{month:'short',year:'numeric'})+'</div><div style="font-size:11px;color:var(--text-dim)">Client Since</div></div>' : '')+'</div></div>';
+    var actionBtns = '';
+    if(sessClient){
+      var cid=sessClient.id;
+      actionBtns='<div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap">'
+        +'<button class="btn btn-ghost btn-sm" onclick="openClientDates(\''+cid+'\')" style="font-size:11px">📅 Dates</button>'
+        +'<button class="btn btn-ghost btn-sm" onclick="sessEmailClient(\''+esc(sessClient.email.replace(/'/g,"\\'"))+'\',\''+esc((sessClient.name||'').replace(/'/g,"\\'"))+'\')" style="font-size:11px">✉ Email</button>'
+        +'<button class="btn btn-ghost btn-sm" onclick="editClient(\''+cid+'\')" style="font-size:11px">Edit</button>'
+        +'<button class="btn btn-ghost btn-sm" onclick="toggleClientPause(\''+cid+'\')" style="font-size:11px">'+(sessClient.status==='paused'?'Unpause':'Pause')+'</button>'
+        +'<button class="btn btn-danger btn-sm" onclick="removeClient(\''+cid+'\')" style="font-size:11px">Remove</button>'
+        +'</div>';
+    }
+    document.getElementById('crm-detail-header').innerHTML = '<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">'+avatar+'<div><div style="font-size:20px;font-weight:700;color:var(--text)">'+esc(name)+regularBadge+'</div><div style="font-size:13px;color:var(--text-dim)">'+esc(emailLower)+'</div>'+actionBtns+'</div><div style="margin-left:auto;display:flex;gap:20px;flex-wrap:wrap"><div style="text-align:center"><div style="font-size:22px;font-weight:700;color:var(--teal)">'+totalSess+'</div><div style="font-size:11px;color:var(--text-dim)">Total</div></div><div style="text-align:center"><div style="font-size:22px;font-weight:700;color:var(--success)">'+paidSess+'</div><div style="font-size:11px;color:var(--text-dim)">Paid</div></div>'+(firstSess ? '<div style="text-align:center"><div style="font-size:13px;font-weight:600;color:var(--text)">'+new Date(firstSess).toLocaleDateString('en-US',{month:'short',year:'numeric'})+'</div><div style="font-size:11px;color:var(--text-dim)">Client Since</div></div>' : '')+'</div></div>';
     switchCrmTab('sessions', document.querySelector('#crm-detail-tabs .tab-btn'));
   } catch(e){ console.error('CRM client load error:', e); showToast('Error loading client data', 'error'); }
 }
