@@ -171,3 +171,11 @@ input[type="date"].input::-webkit-calendar-picker-indicator,input[type="time"].i
 input[type="date"].input::-webkit-calendar-picker-indicator:hover,input[type="time"].input::-webkit-calendar-picker-indicator:hover{opacity:1}
 [data-theme="light"] input[type="date"].input,[data-theme="light"] input[type="time"].input{color-scheme:light}
 [data-theme="light"] input[type="date"].input::-webkit-calendar-picker-indicator,[data-theme="light"] input[type="time"].input::-webkit-calendar-picker-indicator{filter:none}
+
+/* Themed Checkboxes */
+.qp-check{-webkit-appearance:none;appearance:none;width:18px;height:18px;border:2px solid rgba(91,168,178,.4);border-radius:4px;background:rgba(0,0,0,.2);cursor:pointer;position:relative;flex-shrink:0;transition:all .2s}
+.qp-check:checked{background:linear-gradient(135deg,var(--teal),var(--teal-light));border-color:var(--teal)}
+.qp-check:checked::after{content:'✓';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;font-size:12px;font-weight:700;line-height:1}
+.qp-check:hover{border-color:var(--teal);box-shadow:0 0 0 3px rgba(91,168,178,.1)}
+[data-theme="light"] .qp-check{background:rgba(0,0,0,.04);border-color:rgba(173,155,132,.3)}
+[data-theme="light"] .qp-check:checked{background:linear-gradient(135deg,var(--teal),var(--teal-light));border-color:var(--teal)}

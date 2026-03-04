@@ -4596,13 +4596,13 @@ async function bulkRequestPayments(){
     var date=new Date(b.date+'T12:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
     var already=b.payment_requested_at?'<span style="font-size:10px;color:var(--warning);margin-left:6px">previously sent '+new Date(b.payment_requested_at).toLocaleDateString()+'</span>':'';
     return '<label style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer">'
-      +'<input type="checkbox" checked class="bulk-pay-check" data-idx="'+i+'" style="width:16px;height:16px;accent-color:var(--teal)">'
+      +'<input type="checkbox" checked class="bulk-pay-check" data-idx="'+i+'" class="qp-check">'
       +'<div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text)">'+esc(name)+'</div>'
       +'<div style="font-size:11px;color:var(--text-dim)">'+esc(b.email)+' · '+date+already+'</div></div></label>';
   }).join('');
   box.innerHTML='<div style="font-weight:600;font-size:16px;margin-bottom:4px">Bulk Request Payments</div>'
     +'<div style="font-size:12px;color:var(--text-dim);margin-bottom:14px">Uncheck anyone you don\'t want to send to.</div>'
-    +'<div style="margin-bottom:10px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--teal)"><input type="checkbox" checked id="bulk-pay-all" onchange="document.querySelectorAll(\'.bulk-pay-check\').forEach(function(c){c.checked=document.getElementById(\'bulk-pay-all\').checked})" style="width:16px;height:16px;accent-color:var(--teal)"> Select All ('+targets.length+')</label></div>'
+    +'<div style="margin-bottom:10px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--teal)"><input type="checkbox" checked id="bulk-pay-all" onchange="document.querySelectorAll(\'.bulk-pay-check\').forEach(function(c){c.checked=document.getElementById(\'bulk-pay-all\').checked})" class="qp-check"> Select All ('+targets.length+')</label></div>'
     +'<div style="max-height:300px;overflow-y:auto">'+rows+'</div>'
     +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">'
     +'<button class="btn btn-ghost btn-sm" onclick="document.getElementById(\'bulk-send-modal\').remove()">Cancel</button>'
@@ -4662,13 +4662,13 @@ async function bulkSendReminders(){
     var time=b.start_time.slice(0,5)+'–'+b.end_time.slice(0,5);
     var statusLabel=b.status==='confirmed'?'<span class="badge teal" style="font-size:9px">Confirmed</span>':'<span class="badge green" style="font-size:9px">Paid</span>';
     return '<label style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer">'
-      +'<input type="checkbox" checked class="bulk-rem-check" data-idx="'+i+'" style="width:16px;height:16px;accent-color:var(--teal)">'
+      +'<input type="checkbox" checked class="bulk-rem-check" data-idx="'+i+'" class="qp-check">'
       +'<div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text)">'+esc(name)+' '+statusLabel+'</div>'
       +'<div style="font-size:11px;color:var(--text-dim)">'+esc(b.email)+' · '+time+'</div></div></label>';
   }).join('');
   box.innerHTML='<div style="font-weight:600;font-size:16px;margin-bottom:4px">Bulk Send Day-Before Reminders</div>'
     +'<div style="font-size:12px;color:var(--text-dim);margin-bottom:14px">Sessions scheduled for tomorrow ('+new Date(Date.now()+24*60*60*1000).toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'})+').</div>'
-    +'<div style="margin-bottom:10px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--teal)"><input type="checkbox" checked id="bulk-rem-all" onchange="document.querySelectorAll(\'.bulk-rem-check\').forEach(function(c){c.checked=document.getElementById(\'bulk-rem-all\').checked})" style="width:16px;height:16px;accent-color:var(--teal)"> Select All ('+targets.length+')</label></div>'
+    +'<div style="margin-bottom:10px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--teal)"><input type="checkbox" checked id="bulk-rem-all" onchange="document.querySelectorAll(\'.bulk-rem-check\').forEach(function(c){c.checked=document.getElementById(\'bulk-rem-all\').checked})" class="qp-check"> Select All ('+targets.length+')</label></div>'
     +'<div style="max-height:300px;overflow-y:auto">'+rows+'</div>'
     +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">'
     +'<button class="btn btn-ghost btn-sm" onclick="document.getElementById(\'bulk-send-modal\').remove()">Cancel</button>'
