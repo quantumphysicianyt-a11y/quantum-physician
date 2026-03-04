@@ -527,6 +527,14 @@
 
 <!-- Email Logs Tab -->
 <div class="card auto-tab-panel" id="autotab-logs" style="display:none;margin-bottom:20px">
+<div class="card-header"><div class="card-title">Email Logs</div><button class="btn btn-ghost btn-sm" onclick="loadEmailLogs()">Refresh</button></div>
+<div class="card-body">
+<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+<input type="text" class="input" id="filter-log-email" placeholder="Filter by email..." style="width:200px;font-size:12px" onkeyup="loadEmailLogs()">
+<select class="input" id="filter-log-status" onchange="loadEmailLogs()" style="width:auto;font-size:12px"><option value="all">All Status</option><option value="sent">Sent</option><option value="failed">Failed</option></select>
+</div>
+<div id="email-logs-list"><div class="empty"><p>Loading...</p></div></div>
+</div></div>
 
 <!-- 1-on-1 Session Reminders Tab -->
 <div class="card auto-tab-panel" id="autotab-reminders" style="display:none;margin-bottom:20px">
@@ -581,14 +589,6 @@
 <!-- Pending reminders list -->
 <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:10px">Pending Session Reminders</div>
 <div id="session-reminders-list"><div class="empty"><p>Click "Generate Reminders Now" to scan upcoming bookings and create reminders.</p></div></div>
-</div></div>
-<div class="card-header"><div class="card-title">Email Logs</div><button class="btn btn-ghost btn-sm" onclick="loadEmailLogs()">Refresh</button></div>
-<div class="card-body">
-<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
-<input type="text" class="input" id="filter-log-email" placeholder="Filter by email..." style="width:200px;font-size:12px" onkeyup="loadEmailLogs()">
-<select class="input" id="filter-log-status" onchange="loadEmailLogs()" style="width:auto;font-size:12px"><option value="all">All Status</option><option value="sent">Sent</option><option value="failed">Failed</option></select>
-</div>
-<div id="email-logs-list"><div class="empty"><p>Loading...</p></div></div>
 </div></div>
 
 <!-- Session Schedule Tab -->
