@@ -4166,7 +4166,6 @@ async function addClientDate(clientId,cycleId){
     if(isRegular) insertData.confirmed_at=new Date().toISOString();
     console.log('[addClientDate] payload:', JSON.stringify(insertData));
     var res=await proxyFrom('session_bookings').insert(insertData);
-    console.log('[addClientDate] result:', JSON.stringify(res));
     if(res.error){showToast('Error: '+res.error.message,'error');return}
     showToast('Date added'+(isRegular?' (auto-confirmed)':''),'success');
     var r=await proxyFrom('session_bookings').select('*').order('date',{ascending:true});sessBookingsData=r.data||[];
@@ -4949,7 +4948,14 @@ async function removeFromWaitlist(id){
 
 /* ---------- Helpers ---------- */
 function generateBookingToken(){
-  var chars='abcdef0123456789';var t='';for(var i=0;i<64;i++)t+=chars.charAt(Math.floor(Math.random()*chars.length));return t;
+  // Generate a valid UUID v4 format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+  var chars='0123456789abcdef';
+  var s='';for(var i=0;i<36;i++){
+    if(i===8||i===13||i===18||i===23){s+='-'}
+    else if(i===14){s+='4'}
+    else if(i===19){s+=chars.charAt(Math.floor(Math.random()*4)+8)}
+    else{s+=chars.charAt(Math.floor(Math.random()*16))}
+  }return s;
 }
 
 function fmtDate(d){
