@@ -6141,6 +6141,7 @@ async function renderCrmEmails(){
       allEmails.push({
         date: r.sent_at || r.created_at,
         type: formatAutomationType(r.automation_type),
+        typeKey: r.automation_type,
         status: r.status,
         subject: getAutoSubject(r.automation_type),
         error: r.error_message || null,
@@ -6167,13 +6168,29 @@ async function renderCrmEmails(){
   html += '<div style="text-align:center;padding:12px 20px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px"><div style="font-size:22px;font-weight:700;color:var(--text)">'+allEmails.length+'</div><div style="font-size:11px;color:var(--text-dim)">Total</div></div>';
   html += '</div>';
 
-  // Filter by type
-  html += '<div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">';
+  // Filter row: type buttons + date dropdown
+  html += '<div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;align-items:center">';
   html += '<button class="btn btn-sm crm-email-filter active" onclick="filterCrmEmails(\'all\',this)" style="font-size:11px">All</button>';
   html += '<button class="btn btn-ghost btn-sm crm-email-filter" onclick="filterCrmEmails(\'day_before\',this)" style="font-size:11px">Day-Before</button>';
   html += '<button class="btn btn-ghost btn-sm crm-email-filter" onclick="filterCrmEmails(\'follow_up\',this)" style="font-size:11px">Follow-Up</button>';
   html += '<button class="btn btn-ghost btn-sm crm-email-filter" onclick="filterCrmEmails(\'intake_nudge\',this)" style="font-size:11px">Intake</button>';
   html += '<button class="btn btn-ghost btn-sm crm-email-filter" onclick="filterCrmEmails(\'expiry\',this)" style="font-size:11px">Expiry</button>';
+  html += '<button class="btn btn-ghost btn-sm crm-email-filter" onclick="filterCrmEmails(\'failed\',this)" style="font-size:11px;color:var(--danger)">Failed</button>';
+
+  // Date range dropdown
+  var months = {};
+  allEmails.forEach(function(e){
+    if(!e.date) return;
+    var d = new Date(e.date);
+    var key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    var label = d.toLocaleString('en-US',{month:'long',year:'numeric'});
+    months[key] = label;
+  });
+  var sortedMonths = Object.keys(months).sort().reverse();
+  html += '<select id="crm-email-date-filter" onchange="filterCrmEmails(null,null)" class="input" style="font-size:11px;padding:4px 8px;margin-left:auto;min-width:140px">';
+  html += '<option value="all">All Dates</option>';
+  sortedMonths.forEach(function(k){ html += '<option value="'+k+'">'+months[k]+'</option>'; });
+  html += '</select>';
   html += '</div>';
 
   // Email table
@@ -6183,23 +6200,82 @@ async function renderCrmEmails(){
 
   el.innerHTML = html;
   window._crmEmailsAll = allEmails;
+  window._crmEmailSortCol = 'date';
+  window._crmEmailSortAsc = false;
 }
 
 function filterCrmEmails(filter, btn){
-  document.querySelectorAll('.crm-email-filter').forEach(function(b){ b.classList.remove('active'); b.classList.add('btn-ghost'); });
-  btn.classList.add('active'); btn.classList.remove('btn-ghost');
-  var filtered = window._crmEmailsAll || [];
-  if(filter === 'expiry'){
-    filtered = filtered.filter(function(e){ return e.type.indexOf('Expir')!==-1 || e.type.indexOf('Warning')!==-1; });
-  } else if(filter !== 'all'){
-    filtered = filtered.filter(function(e){ return e.subject === getAutoSubject(filter); });
+  // Update active button if a button was clicked
+  if(btn){
+    document.querySelectorAll('.crm-email-filter').forEach(function(b){ b.classList.remove('active'); b.classList.add('btn-ghost'); });
+    btn.classList.add('active'); btn.classList.remove('btn-ghost');
+    window._crmEmailActiveFilter = filter;
   }
+  var activeFilter = filter || window._crmEmailActiveFilter || 'all';
+  var filtered = window._crmEmailsAll || [];
+
+  // Type filter
+  if(activeFilter === 'failed'){
+    filtered = filtered.filter(function(e){ return e.status === 'failed'; });
+  } else if(activeFilter === 'expiry'){
+    filtered = filtered.filter(function(e){ return e.typeKey && e.typeKey.indexOf('expiry') !== -1; });
+  } else if(activeFilter !== 'all'){
+    filtered = filtered.filter(function(e){ return e.typeKey === activeFilter; });
+  }
+
+  // Date filter
+  var dateVal = document.getElementById('crm-email-date-filter');
+  if(dateVal && dateVal.value !== 'all'){
+    var ym = dateVal.value;
+    filtered = filtered.filter(function(e){
+      if(!e.date) return false;
+      var d = new Date(e.date);
+      var key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+      return key === ym;
+    });
+  }
+
   document.getElementById('crm-emails-table-wrap').innerHTML = buildCrmEmailsTable(filtered);
+}
+
+function sortCrmEmails(col){
+  if(window._crmEmailSortCol === col){
+    window._crmEmailSortAsc = !window._crmEmailSortAsc;
+  } else {
+    window._crmEmailSortCol = col;
+    window._crmEmailSortAsc = col === 'date' ? false : true;
+  }
+  // Re-filter which also re-renders
+  filterCrmEmails(null, null);
 }
 
 function buildCrmEmailsTable(emails){
   if(!emails.length) return '<div class="empty"><p>No emails match this filter.</p></div>';
-  var html = '<table class="tbl"><thead><tr><th>Date</th><th>Subject</th><th>Type</th><th>Status</th></tr></thead><tbody>';
+  var col = window._crmEmailSortCol || 'date';
+  var asc = window._crmEmailSortAsc;
+
+  // Sort
+  emails = emails.slice().sort(function(a,b){
+    var va, vb;
+    if(col === 'date'){ va = a.date||''; vb = b.date||''; }
+    else if(col === 'subject'){ va = (a.subject||'').toLowerCase(); vb = (b.subject||'').toLowerCase(); }
+    else if(col === 'type'){ va = a.type||''; vb = b.type||''; }
+    else if(col === 'status'){ va = a.status||''; vb = b.status||''; }
+    else { va = ''; vb = ''; }
+    if(va < vb) return asc ? -1 : 1;
+    if(va > vb) return asc ? 1 : -1;
+    return 0;
+  });
+
+  function arrow(c){ return col===c ? (asc?' \u25B2':' \u25BC') : ''; }
+  var thStyle = 'cursor:pointer;user-select:none;white-space:nowrap';
+
+  var html = '<table class="tbl"><thead><tr>';
+  html += '<th style="'+thStyle+'" onclick="sortCrmEmails(\'date\')">Date'+arrow('date')+'</th>';
+  html += '<th style="'+thStyle+'" onclick="sortCrmEmails(\'subject\')">Subject'+arrow('subject')+'</th>';
+  html += '<th style="'+thStyle+'" onclick="sortCrmEmails(\'type\')">Type'+arrow('type')+'</th>';
+  html += '<th style="'+thStyle+'" onclick="sortCrmEmails(\'status\')">Status'+arrow('status')+'</th>';
+  html += '</tr></thead><tbody>';
   emails.forEach(function(e){
     var date = e.date ? new Date(e.date).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}) : '\u2014';
     var statusColor = e.status==='sent'?'var(--success)':e.status==='skipped'?'var(--warning)':'var(--danger)';
