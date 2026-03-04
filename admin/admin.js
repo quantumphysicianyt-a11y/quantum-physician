@@ -1307,13 +1307,14 @@ return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" c
 }
 
 /* ==================== EMAIL AUTOMATION PAGE ==================== */
-function loadAutomationPage(){loadAutomationStats();loadScheduledEmails()}
+function loadAutomationPage(){loadAutomationStats();var savedTab=sessionStorage.getItem('qp_admin_auto_tab');if(savedTab){var tabBtn=document.querySelector('.auto-tab-btn[onclick*="\''+savedTab+'\'"]');if(tabBtn){switchAutoTab(savedTab,tabBtn);return}}loadScheduledEmails()}
 
 function switchAutoTab(tab,btn){
 document.querySelectorAll('.auto-tab-panel').forEach(function(p){p.style.display='none'});
 document.getElementById('autotab-'+tab).style.display='block';
 document.querySelectorAll('.auto-tab-btn').forEach(function(b){b.classList.remove('active')});
 btn.classList.add('active');
+sessionStorage.setItem('qp_admin_auto_tab',tab);
 if(tab==='scheduled') loadScheduledEmails();
 if(tab==='logs') loadEmailLogs();
 if(tab==='sessions') loadSessionSchedule();
@@ -5755,7 +5756,7 @@ function renderSessionReminders(){
       if(needsReminder) html += ' <span class="badge badge-warning" style="font-size:10px">Tomorrow!</span>';
       html += '</div>';
       html += '<div style="display:flex;gap:4px">';
-      if(needsReminder && document.getElementById('auto-reminder-day').checked){
+      if(needsReminder){
         html += '<button class="btn btn-primary btn-sm" onclick="sendSessionReminder(\'day-before\',\''+b.id+'\',\''+esc(b.email)+'\')">Send Reminder</button>';
       }
       html += '<button class="btn btn-ghost btn-sm" onclick="previewSessionReminderFor(\''+b.id+'\',\'day-before\')">Preview</button>';
@@ -5770,9 +5771,7 @@ function renderSessionReminders(){
       html += '<div style="padding:10px 14px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;background:rgba(0,0,0,.06)"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">';
       html += '<div><span style="font-weight:600;font-size:13px">'+esc(b.name||b.email)+'</span> <span style="font-size:12px;color:var(--text-dim)">' + date + '</span> <span class="badge badge-success" style="font-size:10px">Completed</span></div>';
       html += '<div style="display:flex;gap:4px">';
-      if(document.getElementById('auto-reminder-followup').checked){
-        html += '<button class="btn btn-success btn-sm" onclick="sendSessionReminder(\'follow-up\',\''+b.id+'\',\''+esc(b.email)+'\')">Send Follow-Up</button>';
-      }
+      html += '<button class="btn btn-success btn-sm" onclick="sendSessionReminder(\'follow-up\',\''+b.id+'\',\''+esc(b.email)+'\')">Send Follow-Up</button>';
       html += '<button class="btn btn-ghost btn-sm" onclick="previewSessionReminderFor(\''+b.id+'\',\'follow-up\')">Preview</button>';
       html += '</div></div></div>';
     });
