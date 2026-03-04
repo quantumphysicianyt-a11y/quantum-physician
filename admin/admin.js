@@ -4934,7 +4934,7 @@ function renderCrmList(){
     document.getElementById('crm-pagination').innerHTML = '';
     return;
   }
-  var html = '<table class="data-table"><thead><tr><th>Client</th><th>Sessions</th><th>Last Session</th><th>Intake</th><th>Status</th><th></th></tr></thead><tbody>';
+  var html = '<table class="tbl"><thead><tr><th>Client</th><th>Sessions</th><th>Last Session</th><th>Intake</th><th>Status</th><th></th></tr></thead><tbody>';
   page.forEach(function(c){
     var intakeBadge = c.intakeStatus==='completed' ? '<span class="badge badge-success">Complete</span>' : c.intakeStatus==='in_progress' ? '<span class="badge badge-warning">In Progress</span>' : '<span class="badge badge-muted">Not Started</span>';
     var statusBadge = c.status==='active' ? '<span class="badge badge-success">Active</span>' : c.status==='paused' ? '<span class="badge badge-warning">Paused</span>' : '<span class="badge badge-muted">'+esc(c.status)+'</span>';
@@ -4957,15 +4957,17 @@ async function crmOpenClient(email){
   document.querySelectorAll('.client-sub-btn').forEach(function(b){ b.style.opacity = '0.4'; });
   var emailLower = crmCurrentClient;
   try {
-    var [bookRes, notesRes, recRes, intakeRes, checkinRes, progRes, profileRes] = await Promise.all([
+    var [bookRes, notesRes, recRes, intakeRes, checkinRes, progRes] = await Promise.all([
       proxyFrom('session_bookings').select('*').eq('email', emailLower).order('date',{ascending:false}),
       proxyFrom('session_notes').select('*'),
       proxyFrom('session_recordings').select('*'),
       proxyFrom('patient_intake').select('*').eq('email', emailLower).maybeSingle(),
       proxyFrom('patient_checkins').select('*').eq('email', emailLower).order('checkin_date',{ascending:false}),
-      proxyFrom('patient_progress_notes').select('*').eq('email', emailLower).order('created_at',{ascending:false}),
-      sb.from('profiles').select('*').eq('email', emailLower).maybeSingle()
+      proxyFrom('patient_progress_notes').select('*').eq('email', emailLower).order('created_at',{ascending:false})
     ]);
+    // Profile fetch separate — non-proxy, can fail silently
+    var profile = null;
+    try { var profileRes = await sb.from('profiles').select('*').eq('email', emailLower).maybeSingle(); profile = profileRes.data; } catch(pe){ console.warn('Profile fetch skipped:', pe); }
     crmBookings = bookRes.data || [];
     var allNotes = notesRes.data || [];
     var allRecs = recRes.data || [];
@@ -4975,7 +4977,6 @@ async function crmOpenClient(email){
     var bookingIds = crmBookings.map(function(b){ return b.id; });
     crmNotes = allNotes.filter(function(n){ return bookingIds.indexOf(n.booking_id) > -1; });
     crmRecordings = allRecs.filter(function(r){ return bookingIds.indexOf(r.booking_id) > -1; });
-    var profile = profileRes.data;
     var clientInfo = crmClients.find(function(c){ return c.email.toLowerCase() === emailLower; }) || {};
     var name = (profile && profile.full_name) || clientInfo.name || emailLower.split('@')[0];
     var avatar = profile && profile.avatar_url ? '<img src="'+esc(profile.avatar_url)+'" style="width:48px;height:48px;border-radius:50%;object-fit:cover">' : '<div style="width:48px;height:48px;border-radius:50%;background:var(--teal);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px">'+name[0].toUpperCase()+'</div>';
@@ -5014,7 +5015,7 @@ function switchCrmTab(tab, btn){
 function renderCrmSessions(){
   var el = document.getElementById('crm-sessions-content');
   if(!crmBookings.length){ el.innerHTML = '<div class="empty"><p>No sessions found for this client.</p></div>'; return; }
-  var html = '<table class="data-table"><thead><tr><th>Date</th><th>Time</th><th>Status</th><th>Notes</th><th>Recording</th><th>Actions</th></tr></thead><tbody>';
+  var html = '<table class="tbl"><thead><tr><th>Date</th><th>Time</th><th>Status</th><th>Notes</th><th>Recording</th><th>Actions</th></tr></thead><tbody>';
   crmBookings.forEach(function(b){
     var date = new Date(b.date).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
     var time = b.start_time ? fmtTime(b.start_time) : '\u2014';
@@ -5470,26 +5471,113 @@ async function crmSendIntakeReminder(){
 
 function renderCrmProgress(){
   var el = document.getElementById('crm-progress-content');
-  var html = '<div style="margin-bottom:16px;display:flex;gap:10px"><button class="btn btn-primary btn-sm" onclick="crmAddProgressNote(\'alignment\')">+ Alignment Note</button><button class="btn btn-success btn-sm" onclick="crmAddProgressNote(\'milestone\')">+ Milestone</button><button class="btn btn-ghost btn-sm" onclick="crmAddProgressNote(\'observation\')">+ Observation</button></div>';
-  if(crmCheckins.length){
-    html += '<div style="font-size:14px;font-weight:700;color:var(--teal);margin-bottom:10px">PATIENT CHECK-INS</div>';
-    crmCheckins.forEach(function(c){
-      var date = new Date(c.checkin_date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-      var symptoms = c.symptoms || [];
-      var symptomStr = symptoms.length ? symptoms.map(function(s){ return s.name+' ('+s.severity+'/10)'; }).join(', ') : 'None reported';
-      html += '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-weight:600;color:var(--text)">'+date+'</span><div>'+(c.energy_level ? '<span class="badge badge-info">Energy: '+c.energy_level+'/10</span> ' : '')+(c.sleep_quality ? '<span class="badge badge-info">Sleep: '+c.sleep_quality+'/10</span>' : '')+'</div></div><div style="font-size:13px;color:var(--text-dim);margin-bottom:4px">Symptoms: '+esc(symptomStr)+'</div>'+(c.notes ? '<div style="font-size:13px;color:var(--text)">'+esc(c.notes)+'</div>' : '')+'</div>';
-    });
-  }
-  if(crmProgressNotes.length){
-    html += '<div style="font-size:14px;font-weight:700;color:var(--teal);margin:20px 0 10px">PRACTITIONER NOTES</div>';
-    crmProgressNotes.forEach(function(n){
-      var typeColor = n.note_type==='milestone' ? 'var(--success)' : n.note_type==='alignment' ? 'var(--teal)' : 'var(--text-dim)';
-      var typeIcon = n.note_type==='milestone' ? '\uD83C\uDFC6' : n.note_type==='alignment' ? '\uD83D\uDD04' : '\uD83D\uDCDD';
-      html += '<div style="background:rgba(255,255,255,0.03);border-left:3px solid '+typeColor+';border-radius:0 10px 10px 0;padding:14px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:12px;font-weight:700;color:'+typeColor+';text-transform:uppercase">'+typeIcon+' '+esc(n.note_type)+'</span><span style="font-size:11px;color:var(--text-dim)">'+timeAgo(n.created_at)+'</span></div><div style="font-size:13px;color:var(--text)">'+esc(n.content)+'</div></div>';
-    });
-  }
-  if(!crmCheckins.length && !crmProgressNotes.length){ html += '<div class="empty" style="margin-top:16px"><p>No progress data yet. Add notes after sessions to track the healing journey.</p></div>'; }
+
+  // Action buttons
+  var html = '<div style="margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-primary btn-sm" onclick="crmAddProgressNote(\'alignment\')">+ Alignment Note</button><button class="btn btn-success btn-sm" onclick="crmAddProgressNote(\'milestone\')">+ Milestone</button><button class="btn btn-ghost btn-sm" onclick="crmAddProgressNote(\'observation\')">+ Observation</button></div>';
+
+  // Filter bar
+  html += '<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center">';
+  html += '<input type="text" class="input" id="crm-prog-search" placeholder="Search keywords..." style="width:200px;font-size:12px" oninput="filterCrmProgress()" value="' + esc((document.getElementById('crm-prog-search')||{}).value||'') + '">';
+  html += '<select class="input" id="crm-prog-range" style="width:auto;font-size:12px" onchange="filterCrmProgress()">';
+  var rangeVal = (document.getElementById('crm-prog-range')||{}).value || 'all';
+  html += '<option value="all"' + (rangeVal==='all'?' selected':'') + '>All Time</option>';
+  html += '<option value="3m"' + (rangeVal==='3m'?' selected':'') + '>Last 3 Months</option>';
+  html += '<option value="6m"' + (rangeVal==='6m'?' selected':'') + '>Last 6 Months</option>';
+  html += '<option value="1y"' + (rangeVal==='1y'?' selected':'') + '>Last Year</option>';
+  html += '</select>';
+  html += '<select class="input" id="crm-prog-type" style="width:auto;font-size:12px" onchange="filterCrmProgress()">';
+  var typeVal = (document.getElementById('crm-prog-type')||{}).value || 'all';
+  html += '<option value="all"' + (typeVal==='all'?' selected':'') + '>All Types</option>';
+  html += '<option value="checkins"' + (typeVal==='checkins'?' selected':'') + '>Check-Ins Only</option>';
+  html += '<option value="alignment"' + (typeVal==='alignment'?' selected':'') + '>Alignments</option>';
+  html += '<option value="milestone"' + (typeVal==='milestone'?' selected':'') + '>Milestones</option>';
+  html += '<option value="observation"' + (typeVal==='observation'?' selected':'') + '>Observations</option>';
+  html += '</select>';
+  html += '<span id="crm-prog-count" style="font-size:11px;color:var(--text-dim)"></span>';
+  html += '</div>';
+
+  // Placeholder for filtered results
+  html += '<div id="crm-prog-results"></div>';
+
   el.innerHTML = html;
+  filterCrmProgress();
+}
+
+function filterCrmProgress(){
+  var search = (document.getElementById('crm-prog-search').value || '').toLowerCase().trim();
+  var range = document.getElementById('crm-prog-range').value;
+  var typeFilter = document.getElementById('crm-prog-type').value;
+  var resultsEl = document.getElementById('crm-prog-results');
+  var countEl = document.getElementById('crm-prog-count');
+
+  // Date cutoff
+  var cutoff = null;
+  if(range !== 'all'){
+    var now = new Date();
+    var months = range === '3m' ? 3 : range === '6m' ? 6 : 12;
+    cutoff = new Date(now.getFullYear(), now.getMonth() - months, now.getDate()).toISOString().slice(0,10);
+  }
+
+  var html = '';
+  var totalShown = 0;
+
+  // Check-ins
+  if(typeFilter === 'all' || typeFilter === 'checkins'){
+    var filteredCheckins = crmCheckins.filter(function(c){
+      if(cutoff && c.checkin_date < cutoff) return false;
+      if(search){
+        var symptoms = (c.symptoms||[]).map(function(s){ return s.name; }).join(' ').toLowerCase();
+        var notes = (c.notes||'').toLowerCase();
+        if(symptoms.indexOf(search) === -1 && notes.indexOf(search) === -1) return false;
+      }
+      return true;
+    });
+
+    if(filteredCheckins.length){
+      html += '<div style="font-size:14px;font-weight:700;color:var(--teal);margin-bottom:10px">PATIENT CHECK-INS <span style="font-size:12px;font-weight:400;color:var(--text-dim)">(' + filteredCheckins.length + ')</span></div>';
+      filteredCheckins.forEach(function(c){
+        var date = new Date(c.checkin_date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+        var symptoms = c.symptoms || [];
+        var symptomStr = symptoms.length ? symptoms.map(function(s){ return s.name+' ('+s.severity+'/10)'; }).join(', ') : 'None reported';
+        html += '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-weight:600;color:var(--text)">'+date+'</span><div>'+(c.energy_level ? '<span class="badge badge-info">Energy: '+c.energy_level+'/10</span> ' : '')+(c.sleep_quality ? '<span class="badge badge-info">Sleep: '+c.sleep_quality+'/10</span>' : '')+'</div></div><div style="font-size:13px;color:var(--text-dim);margin-bottom:4px">Symptoms: '+esc(symptomStr)+'</div>'+(c.notes ? '<div style="font-size:13px;color:var(--text)">'+esc(c.notes)+'</div>' : '')+'</div>';
+      });
+      totalShown += filteredCheckins.length;
+    }
+  }
+
+  // Practitioner notes
+  if(typeFilter === 'all' || typeFilter === 'alignment' || typeFilter === 'milestone' || typeFilter === 'observation'){
+    var filteredNotes = crmProgressNotes.filter(function(n){
+      if(typeFilter !== 'all' && n.note_type !== typeFilter) return false;
+      if(cutoff){
+        var noteDate = (n.created_at||'').slice(0,10);
+        if(noteDate < cutoff) return false;
+      }
+      if(search && (n.content||'').toLowerCase().indexOf(search) === -1) return false;
+      return true;
+    });
+
+    if(filteredNotes.length){
+      html += '<div style="font-size:14px;font-weight:700;color:var(--teal);margin:'+(totalShown?'20':'0')+'px 0 10px">PRACTITIONER NOTES <span style="font-size:12px;font-weight:400;color:var(--text-dim)">(' + filteredNotes.length + ')</span></div>';
+      filteredNotes.forEach(function(n){
+        var typeColor = n.note_type==='milestone' ? 'var(--success)' : n.note_type==='alignment' ? 'var(--teal)' : 'var(--text-dim)';
+        var typeIcon = n.note_type==='milestone' ? '\uD83C\uDFC6' : n.note_type==='alignment' ? '\uD83D\uDD04' : '\uD83D\uDCDD';
+        html += '<div style="background:rgba(255,255,255,0.03);border-left:3px solid '+typeColor+';border-radius:0 10px 10px 0;padding:14px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:12px;font-weight:700;color:'+typeColor+';text-transform:uppercase">'+typeIcon+' '+esc(n.note_type)+'</span><span style="font-size:11px;color:var(--text-dim)">'+timeAgo(n.created_at)+'</span></div><div style="font-size:13px;color:var(--text)">'+esc(n.content)+'</div></div>';
+      });
+      totalShown += filteredNotes.length;
+    }
+  }
+
+  if(!totalShown){
+    if(search || range !== 'all' || typeFilter !== 'all'){
+      html = '<div class="empty" style="margin-top:16px"><p>No results match your filters.</p></div>';
+    } else {
+      html = '<div class="empty" style="margin-top:16px"><p>No progress data yet. Add notes after sessions to track the healing journey.</p></div>';
+    }
+  }
+
+  resultsEl.innerHTML = html;
+  countEl.textContent = totalShown ? totalShown + ' item' + (totalShown > 1 ? 's' : '') : '';
 }
 
 async function crmAddProgressNote(type){
@@ -5505,7 +5593,7 @@ function renderCrmBilling(){
   if(!purchases.length){ el.innerHTML = '<div class="empty"><p>No purchases found for this client.</p></div>'; return; }
   var total = purchases.reduce(function(s,p){ return s + (Number(p.amount_paid)||0); }, 0);
   var html = '<div style="margin-bottom:16px;font-size:15px;font-weight:600;color:var(--text)">Total Spent: <span style="color:var(--success)">'+fmtMoney(total)+'</span></div>';
-  html += '<table class="data-table"><thead><tr><th>Date</th><th>Product</th><th>Amount</th><th>Status</th></tr></thead><tbody>';
+  html += '<table class="tbl"><thead><tr><th>Date</th><th>Product</th><th>Amount</th><th>Status</th></tr></thead><tbody>';
   purchases.forEach(function(p){ var date = p.purchased_at ? new Date(p.purchased_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '\u2014'; html += '<tr><td>'+date+'</td><td>'+productName(p.product_id)+'</td><td>'+fmtMoney(p.amount_paid)+'</td><td><span class="badge badge-success">Paid</span></td></tr>'; });
   html += '</tbody></table>';
   el.innerHTML = html;
