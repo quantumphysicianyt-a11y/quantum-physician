@@ -3491,7 +3491,7 @@ async function refreshBookingsView(){
     var [bk, nt, rc] = await Promise.all([
       proxyFrom('session_bookings').select('*').order('date',{ascending:true}),
       proxyFrom('session_notes').select('*').order('created_at',{ascending:false}),
-      proxyFrom('session_recordings').select('*').order('created_at',{ascending:false})
+      proxyFrom('session_recordings').select('*').order('uploaded_at',{ascending:false})
     ]);
     sessBookingsData = bk.data || [];
     sessNotesData = nt.data || [];
@@ -3530,7 +3530,7 @@ async function loadSessionsData(){
       proxyFrom('session_bookings').select('*').order('date',{ascending:true}),
       proxyFrom('session_waitlist').select('*').order('created_at',{ascending:true}),
       proxyFrom('session_notes').select('*').order('created_at',{ascending:false}),
-      proxyFrom('session_recordings').select('*').order('created_at',{ascending:false})
+      proxyFrom('session_recordings').select('*').order('uploaded_at',{ascending:false})
     ]);
     sessConfigData=(r[0].data&&r[0].data[0])||null;
     sessCyclesData=r[1].data||[];
@@ -4443,7 +4443,7 @@ function renderBookingsGrid(){
         bRecs.forEach(function(r){
           var sizeTxt = r.file_size_mb ? ' · ' + r.file_size_mb + ' MB' : '';
           var srcBadge = r.source_type === 'supabase' ? '<span class="badge badge-success" style="font-size:10px">Hosted</span>' : '<span class="badge badge-muted" style="font-size:10px">External</span>';
-          row += '<tr class="note-row-'+b.id.replace(/-/g,'')+'" style="display:none;background:rgba(91,184,140,0.05)"><td colspan="6" style="padding:8px 16px 8px 32px;font-size:13px"><div style="display:flex;justify-content:space-between;align-items:center"><div><span style="color:var(--success);font-weight:600;font-size:11px">🎥 RECORDING</span> '+srcBadge+' <span style="margin-left:6px">'+esc(r.title||'Session Recording')+sizeTxt+'</span><div style="font-size:11px;color:var(--text-dim);margin-top:2px">'+timeAgo(r.created_at)+'</div></div><div style="display:flex;gap:4px"><a href="'+esc(r.recording_url)+'" target="_blank" class="btn btn-ghost btn-sm" style="font-size:11px">▶ Play</a><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();crmDeleteRecording(\''+r.id+'\')" title="Delete" style="font-size:11px;color:var(--error)">🗑</button></div></div></td></tr>';
+          row += '<tr class="note-row-'+b.id.replace(/-/g,'')+'" style="display:none;background:rgba(91,184,140,0.05)"><td colspan="6" style="padding:8px 16px 8px 32px;font-size:13px"><div style="display:flex;justify-content:space-between;align-items:center"><div><span style="color:var(--success);font-weight:600;font-size:11px">🎥 RECORDING</span> '+srcBadge+' <span style="margin-left:6px">'+esc(r.title||'Session Recording')+sizeTxt+'</span><div style="font-size:11px;color:var(--text-dim);margin-top:2px">'+timeAgo(r.uploaded_at)+'</div></div><div style="display:flex;gap:4px"><a href="'+esc(r.recording_url)+'" target="_blank" class="btn btn-ghost btn-sm" style="font-size:11px">▶ Play</a><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();crmDeleteRecording(\''+r.id+'\')" title="Delete" style="font-size:11px;color:var(--error)">🗑</button></div></div></td></tr>';
         });
       }
       return row;
