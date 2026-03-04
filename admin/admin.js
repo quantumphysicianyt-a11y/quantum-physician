@@ -4534,7 +4534,7 @@ function renderBookingsGrid(){
         +(b.status==='proposed'?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'paid\')">Mark Paid</button><button class="btn btn-danger btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'declined\')">Decline</button>':'')
         +(b.status==='confirmed'||b.status==='paid'?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'completed\')">Complete</button><button class="btn btn-ghost btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'no_show\')">No Show</button><button class="btn btn-danger btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'cancelled\')">Cancel</button>':'')
         +(b.status==='completed'||b.status==='paid'||b.status==='confirmed'?'<button class="btn btn-primary btn-sm" onclick="crmAddNote(\''+b.id+'\')">+ Note</button><button class="btn btn-ghost btn-sm" onclick="crmAddRecording(\''+b.id+'\')">+ Recording</button>':'<button class="btn btn-ghost btn-sm" onclick="crmAddNote(\''+b.id+'\')">+ Note</button>')
-        +(b.status==='cancelled'||b.status==='declined'||b.status==='expired'?'<button class="btn btn-primary btn-sm" onclick="rescheduleBooking(\''+b.id+'\')">Reschedule</button>':'')
+        +(b.status==='cancelled'||b.status==='declined'||b.status==='expired'?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'proposed\')">Reactivate</button><button class="btn btn-primary btn-sm" onclick="rescheduleBooking(\''+b.id+'\')">Reschedule</button>':'')
         +'<button class="btn btn-ghost btn-sm" onclick="deleteBooking(\''+b.id+'\')">🗑</button>'
         +'</div></td></tr>';
       // Render notes & recordings under this booking (collapsed by default)
@@ -4577,14 +4577,24 @@ function renderBookingsGrid(){
 }
 
 async function updateBookingStatus(id,status){
+  // Confirm destructive actions
+  var b=sessBookingsData.find(function(x){return x.id===id});
+  var name=b?(b.name||b.email):'this booking';
+  if(status==='cancelled'){
+    if(!await qpConfirm('Cancel Booking','Cancel the session for '+name+' on '+fmtDate(b.date)+'?',{okText:'Cancel Booking',danger:true}))return;
+  }else if(status==='declined'){
+    if(!await qpConfirm('Decline Booking','Decline the booking for '+name+'?',{okText:'Decline',danger:true}))return;
+  }else if(status==='no_show'){
+    if(!await qpConfirm('Mark No Show','Mark '+name+' as a no-show for '+fmtDate(b.date)+'?',{okText:'Mark No Show',danger:true}))return;
+  }
   try{
     await ensureFreshToken();
     var updates={status:status};
     if(status==='paid') updates.confirmed_at=new Date().toISOString();
     if(status==='confirmed') updates.confirmed_at=new Date().toISOString();
     if(status==='cancelled') updates.cancelled_at=new Date().toISOString();
+    if(status==='proposed'){updates.cancelled_at=null;updates.confirmed_at=null;updates.payment_requested_at=null}
     await proxyFrom('session_bookings').update(updates).eq('id',id);
-    var b=sessBookingsData.find(function(x){return x.id===id});
     if(b) await logAudit('update_booking',b.email,'Booking '+status+' for '+b.date,{});
     showToast('Booking '+status,'success');
     await refreshBookingsView();
