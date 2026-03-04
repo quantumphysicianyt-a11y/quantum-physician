@@ -273,6 +273,10 @@
 <input type="text" class="input" style="width:200px" id="sess-book-search" placeholder="Search by email..." oninput="renderBookingsGrid()">
 </div>
 <div id="sess-confirm-tracker" style="margin-bottom:12px"></div>
+<div id="sess-bulk-actions" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+<button class="btn btn-ghost btn-sm" onclick="bulkRequestPayments()" title="Send payment requests to all completed regulars who haven't paid">💳 Bulk Request Payments</button>
+<button class="btn btn-ghost btn-sm" onclick="bulkSendReminders()" title="Send day-before reminders to all tomorrow's paid/confirmed bookings">📧 Bulk Send Reminders</button>
+</div>
 <div id="sess-bookings-grid"><div class="loading-center"><div class="spinner"></div>Loading...</div></div>
 <div class="pagination" id="sess-book-pagination"></div>
 </div></div>

@@ -4458,7 +4458,8 @@ function renderBookingsGrid(){
         +(b.status==='proposed'?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'paid\')">Mark Paid</button><button class="btn btn-danger btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'declined\')">Decline</button>':'')
         +(b.status==='confirmed'?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'completed\')">Complete</button><button class="btn btn-ghost btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'no_show\')">No Show</button><button class="btn btn-danger btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'cancelled\')">Cancel</button>':'')
         +(b.status==='paid'?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'completed\')">Complete</button><button class="btn btn-ghost btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'no_show\')">No Show</button><button class="btn btn-danger btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'cancelled\')">Cancel</button>':'')
-        +(b.status==='completed'&&isRegular&&!b.stripe_payment_id?'<button class="btn btn-primary btn-sm" onclick="requestRegularPayment(\''+b.id+'\')">💳 Request Payment</button>':'')
+        +(b.status==='completed'&&isRegular&&!b.stripe_payment_id&&!b.payment_requested_at?'<button class="btn btn-primary btn-sm" onclick="requestRegularPayment(\''+b.id+'\')">💳 Request Payment</button>':'')
+        +(b.status==='completed'&&isRegular&&!b.stripe_payment_id&&b.payment_requested_at?'<span class="badge yellow" style="font-size:10px" title="Sent '+new Date(b.payment_requested_at).toLocaleString()+'">Payment Requested</span> <button class="btn btn-ghost btn-sm" onclick="requestRegularPayment(\''+b.id+'\')" style="font-size:10px">Resend</button>':'')
         +(b.status==='completed'||b.status==='paid'||b.status==='confirmed'?'<button class="btn btn-primary btn-sm" onclick="crmAddNote(\''+b.id+'\')">+ Note</button><button class="btn btn-ghost btn-sm" onclick="crmAddRecording(\''+b.id+'\')">+ Recording</button>':'<button class="btn btn-ghost btn-sm" onclick="crmAddNote(\''+b.id+'\')">+ Note</button>')
         +'<button class="btn btn-ghost btn-sm" onclick="deleteBooking(\''+b.id+'\')">🗑</button>'
         +'</div></td></tr>';
@@ -4568,9 +4569,62 @@ async function requestRegularPayment(bookingId){
   try{
     await ensureFreshToken();
     await sendSessionEmail(b.email,'Payment Request — Your Session on '+date.split(',')[0],html);
+    // Track that payment was requested
+    await proxyFrom('session_bookings').update({payment_requested_at:new Date().toISOString()}).eq('id',bookingId);
+    b.payment_requested_at=new Date().toISOString();
     await logAudit('request_payment',b.email,'Payment request sent for session '+b.date,{booking_id:bookingId});
     showToast('Payment request sent to '+b.email,'success');
+    renderBookingsGrid();
   }catch(e){showToast('Error: '+e.message,'error')}
+}
+
+async function bulkRequestPayments(){
+  var targets=sessBookingsData.filter(function(b){
+    if(b.status!=='completed'||b.stripe_payment_id) return false;
+    var isRegular=sessClientsData.some(function(cl){return cl.id===b.client_id&&cl.client_type==='regular'});
+    return isRegular;
+  });
+  if(!targets.length){showToast('No unpaid completed regular sessions found','info');return}
+  var ok=await qpConfirm('Bulk Request Payments','Send payment requests to '+targets.length+' completed session(s) from regular clients?',{okText:'Send All Requests'});
+  if(!ok) return;
+  var sent=0,failed=0;
+  for(var i=0;i<targets.length;i++){
+    var b=targets[i];
+    try{
+      var payLink=b.confirmation_token?'https://qp-homepage.netlify.app/pages/one-on-sessions.html?pay='+b.confirmation_token:'';
+      if(!payLink){
+        var token=generateBookingToken();
+        await ensureFreshToken();
+        await proxyFrom('session_bookings').update({confirmation_token:token}).eq('id',b.id);
+        b.confirmation_token=token;
+        payLink='https://qp-homepage.netlify.app/pages/one-on-sessions.html?pay='+token;
+      }
+      var name=b.name||b.email.split('@')[0];
+      var date=new Date(b.date+'T12:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+      var price=sessConfigData?'$'+sessConfigData.session_price:'$150';
+      var html=buildPaymentRequestHtml(name,date,price,payLink);
+      await sendSessionEmail(b.email,'Payment Request — Your Session on '+date.split(',')[0],html);
+      await proxyFrom('session_bookings').update({payment_requested_at:new Date().toISOString()}).eq('id',b.id);
+      b.payment_requested_at=new Date().toISOString();
+      await logAudit('request_payment',b.email,'Bulk payment request for session '+b.date,{booking_id:b.id});
+      sent++;
+    }catch(e){failed++;console.error('Bulk payment request failed for '+b.email+':',e)}
+  }
+  showToast('Sent '+sent+' payment request(s)'+(failed?' ('+failed+' failed)':''),'success');
+  renderBookingsGrid();
+}
+
+async function bulkSendReminders(){
+  var tomorrow=new Date(Date.now()+24*60*60*1000).toISOString().slice(0,10);
+  var targets=sessBookingsData.filter(function(b){
+    return (b.status==='paid'||b.status==='confirmed')&&b.date===tomorrow;
+  });
+  if(!targets.length){showToast('No sessions scheduled for tomorrow','info');return}
+  var ok=await qpConfirm('Bulk Send Reminders','Send day-before reminders to '+targets.length+' client(s) with sessions tomorrow?',{okText:'Send All Reminders'});
+  if(!ok) return;
+  for(var i=0;i<targets.length;i++){
+    await sendSessionReminder('day-before',targets[i].id,targets[i].email);
+  }
 }
 
 function buildPaymentRequestHtml(name,date,price,payLink){
