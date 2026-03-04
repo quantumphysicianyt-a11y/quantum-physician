@@ -197,6 +197,8 @@
 <select class="input" id="sess-client-day"><option value="monday">Monday</option><option value="tuesday" selected>Tuesday</option><option value="wednesday">Wednesday</option><option value="thursday">Thursday</option><option value="friday">Friday</option></select></div>
 <div class="form-group" style="min-width:100px"><label>Preferred Time</label>
 <input type="time" class="input" id="sess-client-time" value="10:00"></div>
+<div class="form-group" style="min-width:110px"><label>Client Type</label>
+<select class="input" id="sess-client-type"><option value="standard">Standard</option><option value="regular">Regular (Trusted)</option></select></div>
 <button class="btn btn-primary" onclick="addSessionClient()">Add Client</button>
 </div></div></div>
 <div class="card">
@@ -266,7 +268,7 @@
 </div></div>
 <div class="card-body">
 <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
-<select class="input" style="width:140px" id="sess-book-status" onchange="renderBookingsGrid()"><option value="all">All Status</option><option value="proposed">Proposed</option><option value="confirmed">Confirmed</option><option value="declined">Declined</option><option value="cancelled">Cancelled</option><option value="completed">Completed</option></select>
+<select class="input" style="width:140px" id="sess-book-status" onchange="renderBookingsGrid()"><option value="all">All Status</option><option value="proposed">Proposed</option><option value="confirmed">Confirmed</option><option value="paid">Paid</option><option value="completed">Completed</option><option value="declined">Declined</option><option value="cancelled">Cancelled</option></select>
 <select class="input" style="width:120px" id="sess-book-type" onchange="renderBookingsGrid()"><option value="all">All Types</option><option value="recurring">Recurring</option><option value="public">Public</option><option value="manual">Manual</option></select>
 <input type="text" class="input" style="width:200px" id="sess-book-search" placeholder="Search by email..." oninput="renderBookingsGrid()">
 </div>

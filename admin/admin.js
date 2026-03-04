@@ -3565,7 +3565,7 @@ async function loadSessionsData(){
 function renderSessionsStats(){
   var active=sessCyclesData.find(function(c){return c.status==='active'||c.status==='client_confirmation'||c.status==='public_open'});
   var totalClients=sessClientsData.filter(function(c){return c.status==='active'}).length;
-  var totalBookings=sessBookingsData.filter(function(b){return b.status==='confirmed'||b.status==='proposed'}).length;
+  var totalBookings=sessBookingsData.filter(function(b){return b.status==='confirmed'||b.status==='proposed'||b.status==='paid'}).length;
   var waitlist=sessWaitlistData.filter(function(w){return w.status==='waiting'}).length;
   var el=document.getElementById('sess-stats');
   el.innerHTML='<div class="stat-card"><div class="stat-ico teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div><div class="stat-val">'+(active?active.name:'None')+'</div><div class="stat-lbl">Active Cycle</div></div></div>'
@@ -3643,7 +3643,7 @@ function renderCyclesList(){
   c.innerHTML=sessCyclesData.map(function(cy){
     var isSelected=cy.id===sessSelectedCycleId;
     var bookCount=sessBookingsData.filter(function(b){return b.cycle_id===cy.id}).length;
-    var confirmedCount=sessBookingsData.filter(function(b){return b.cycle_id===cy.id&&b.status==='confirmed'}).length;
+    var confirmedCount=sessBookingsData.filter(function(b){return b.cycle_id===cy.id&&(b.status==='confirmed'||b.status==='paid')}).length;
     var availCount=sessAvailData.filter(function(a){return a.cycle_id===cy.id&&a.status==='available'}).length;
     return'<div onclick="selectCycle(\''+cy.id+'\')" style="padding:14px 16px;border:2px solid '+(isSelected?borderColors[cy.status]:'var(--border)')+';border-radius:var(--radius-sm);margin-bottom:8px;background:'+(isSelected?'rgba(91,168,178,.06)':'rgba(0,0,0,.1)')+';cursor:pointer;transition:all .15s">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">'
@@ -4001,12 +4001,14 @@ async function addSessionClient(){
   var freq=document.getElementById('sess-client-freq').value;
   var day=document.getElementById('sess-client-day').value;
   var time=document.getElementById('sess-client-time').value;
+  var clientType=document.getElementById('sess-client-type').value||'standard';
   if(!email){showToast('Email is required','error');return}
   try{
     var prof=profilesData.find(function(p){return p.email&&p.email.toLowerCase()===email});
     var r=await proxyFrom('session_clients').insert({
       email:email,name:name||'',profile_id:prof?prof.id:null,
       frequency:freq,preferred_day:day,preferred_time:time,
+      client_type:clientType,
       status:'active',priority:100,started_at:new Date().toISOString()
     }).select('*');
     if(r.error){
@@ -4038,10 +4040,11 @@ function renderClientRoster(){
     var clientBookings=sessBookingsData.filter(function(b){return b.client_id===cl.id&&(!cycleId||b.cycle_id===cycleId)});
     var upcomingCount=clientBookings.filter(function(b){return b.date>=new Date().toISOString().slice(0,10)}).length;
     var statusBadge=cl.status==='active'?'<span class="badge green">Active</span>':(cl.status==='paused'?'<span class="badge yellow">Paused</span>':'<span class="badge muted">'+cl.status+'</span>');
+    var typeBadge=cl.client_type==='regular'?'<span class="badge teal" style="font-size:10px" title="Pay after session, 7-day expiry">Regular</span>':'';
     return'<div style="padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:6px;background:rgba(0,0,0,.08);cursor:pointer;transition:border-color .15s" onclick="crmOpenClient(\''+esc(cl.email)+'\')" onmouseenter="this.style.borderColor=\'var(--teal)\'" onmouseleave="this.style.borderColor=\'var(--border)\'">'
       +'<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">'
       +'<div style="flex:1;min-width:200px">'
-      +'<div style="display:flex;align-items:center;gap:8px"><span style="font-weight:600;font-size:13px;color:var(--teal)">'+esc(cl.name||cl.email)+'</span>'+statusBadge+'</div>'
+      +'<div style="display:flex;align-items:center;gap:8px"><span style="font-weight:600;font-size:13px;color:var(--teal)">'+esc(cl.name||cl.email)+'</span>'+statusBadge+typeBadge+'</div>'
       +'<div style="font-size:11px;color:var(--text-dim);margin-top:2px">'+esc(cl.email)+'</div>'
       +'<div style="font-size:11px;color:var(--text-dim);margin-top:4px">'+freqLabels[cl.frequency]+' · '+(dayLabels[cl.preferred_day]||cl.preferred_day)+'s · '+cl.preferred_time.slice(0,5)+' · Priority '+cl.priority+'</div>'
       +'</div>'
@@ -4083,6 +4086,7 @@ async function editClient(id){
     +'<div style="margin-bottom:10px"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px">Frequency</label><select class="input" id="ec-freq" style="width:100%"><option value="weekly"'+(cl.frequency==='weekly'?' selected':'')+'>Weekly</option><option value="biweekly"'+(cl.frequency==='biweekly'?' selected':'')+'>Biweekly</option><option value="monthly"'+(cl.frequency==='monthly'?' selected':'')+'>Monthly</option><option value="every_2_months"'+(cl.frequency==='every_2_months'?' selected':'')+'>Every 2 Months</option></select></div>'
     +'<div style="margin-bottom:10px"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px">Preferred Day</label><select class="input" id="ec-day" style="width:100%"><option value="monday"'+(cl.preferred_day==='monday'?' selected':'')+'>Monday</option><option value="tuesday"'+(cl.preferred_day==='tuesday'?' selected':'')+'>Tuesday</option><option value="wednesday"'+(cl.preferred_day==='wednesday'?' selected':'')+'>Wednesday</option><option value="thursday"'+(cl.preferred_day==='thursday'?' selected':'')+'>Thursday</option><option value="friday"'+(cl.preferred_day==='friday'?' selected':'')+'>Friday</option></select></div>'
     +'<div style="margin-bottom:10px"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px">Preferred Time</label><input type="time" class="input" id="ec-time" value="'+(cl.preferred_time?cl.preferred_time.slice(0,5):'10:00')+'" style="width:100%"></div>'
+    +'<div style="margin-bottom:10px"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px">Client Type</label><select class="input" id="ec-client-type" style="width:100%"><option value="standard"'+(cl.client_type!=='regular'?' selected':'')+'>Standard</option><option value="regular"'+(cl.client_type==='regular'?' selected':'')+'>Regular (Trusted — pay after session)</option></select></div>'
     +'<div style="margin-bottom:14px"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px">Priority (lower = higher priority)</label><input type="number" class="input" id="ec-priority" value="'+(cl.priority||100)+'" min="1" style="width:100%"></div>'
     +'<div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-ghost btn-sm" onclick="document.getElementById(\'sess-edit-client-modal\').remove()">Cancel</button><button class="btn btn-primary btn-sm" onclick="saveEditClient(\''+id+'\')">Save</button></div>';
   ov.appendChild(box);document.body.appendChild(ov);
@@ -4091,9 +4095,10 @@ async function saveEditClient(id){
   var freq=document.getElementById('ec-freq').value;
   var day=document.getElementById('ec-day').value;
   var time=document.getElementById('ec-time').value;
+  var clientType=document.getElementById('ec-client-type').value||'standard';
   var priority=parseInt(document.getElementById('ec-priority').value)||100;
   document.getElementById('sess-edit-client-modal').remove();
-  try{await proxyFrom('session_clients').update({frequency:freq,preferred_day:day,preferred_time:time,priority:priority}).eq('id',id);showToast('Client updated','success');
+  try{await proxyFrom('session_clients').update({frequency:freq,preferred_day:day,preferred_time:time,client_type:clientType,priority:priority}).eq('id',id);showToast('Client updated','success');
   var r=await proxyFrom('session_clients').select('*').order('priority',{ascending:true});sessClientsData=r.data||[];renderClientRoster()}catch(e){showToast('Error: '+e.message,'error')}
 }
 
@@ -4116,7 +4121,7 @@ async function openClientDates(clientId){
 
   var existingHtml=clientBookings.length?clientBookings.map(function(b){
     var dayName=new Date(b.date+'T12:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
-    var statusBadge=b.status==='confirmed'?'<span class="badge green" style="font-size:10px">Confirmed</span>':'<span class="badge yellow" style="font-size:10px">Proposed</span>';
+    var statusBadge=b.status==='paid'?'<span class="badge green" style="font-size:10px">Paid</span>':(b.status==='confirmed'?'<span class="badge teal" style="font-size:10px">Confirmed</span>':'<span class="badge yellow" style="font-size:10px">Proposed</span>');
     return'<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">'
       +'<div style="flex:1;font-size:12px">'+dayName+' · '+b.start_time.slice(0,5)+'–'+b.end_time.slice(0,5)+'</div>'+statusBadge
       +'<button class="btn btn-danger btn-sm" style="font-size:10px;padding:2px 6px" onclick="removeClientDate(\''+b.id+'\',\''+clientId+'\')">×</button></div>';
@@ -4155,9 +4160,11 @@ async function addClientDate(clientId,cycleId){
   endH+=Math.floor(endM/60);endM=endM%60;
   var endTime=String(endH).padStart(2,'0')+':'+String(endM).padStart(2,'0');
   try{
-    var res=await proxyFrom('session_bookings').insert({cycle_id:cycleId,client_id:clientId,email:cl?cl.email:'',name:cl?cl.name:'',date:dateStr,start_time:time,end_time:endTime,status:'proposed',type:'recurring',confirmation_token:generateBookingToken(),proposed_at:new Date().toISOString()});
+    var isRegular=cl&&cl.client_type==='regular';
+    var initialStatus=isRegular?'confirmed':'proposed';
+    var res=await proxyFrom('session_bookings').insert({cycle_id:cycleId,client_id:clientId,email:cl?cl.email:'',name:cl?cl.name:'',date:dateStr,start_time:time,end_time:endTime,status:initialStatus,type:'recurring',confirmation_token:generateBookingToken(),proposed_at:new Date().toISOString(),confirmed_at:isRegular?new Date().toISOString():null});
     if(res.error){showToast('Error: '+res.error.message,'error');return}
-    showToast('Date added','success');
+    showToast('Date added'+(isRegular?' (auto-confirmed)':''),'success');
     var r=await proxyFrom('session_bookings').select('*').order('date',{ascending:true});sessBookingsData=r.data||[];
     openClientDates(clientId);renderClientRoster();
   }catch(e){showToast('Error: '+e.message,'error')}
@@ -4173,9 +4180,11 @@ async function addClientDateCustom(clientId,cycleId){
   endH+=Math.floor(endM/60);endM=endM%60;
   var endTime=String(endH).padStart(2,'0')+':'+String(endM).padStart(2,'0');
   try{
-    var res=await proxyFrom('session_bookings').insert({cycle_id:cycleId,client_id:clientId,email:cl?cl.email:'',name:cl?cl.name:'',date:dateStr,start_time:time,end_time:endTime,status:'proposed',type:'recurring',confirmation_token:generateBookingToken(),proposed_at:new Date().toISOString()});
+    var isRegular=cl&&cl.client_type==='regular';
+    var initialStatus=isRegular?'confirmed':'proposed';
+    var res=await proxyFrom('session_bookings').insert({cycle_id:cycleId,client_id:clientId,email:cl?cl.email:'',name:cl?cl.name:'',date:dateStr,start_time:time,end_time:endTime,status:initialStatus,type:'recurring',confirmation_token:generateBookingToken(),proposed_at:new Date().toISOString(),confirmed_at:isRegular?new Date().toISOString():null});
     if(res.error){showToast('Error: '+res.error.message,'error');return}
-    showToast('Custom date added','success');
+    showToast('Custom date added'+(isRegular?' (auto-confirmed)':''),'success');
     var r=await proxyFrom('session_bookings').select('*').order('date',{ascending:true});sessBookingsData=r.data||[];
     openClientDates(clientId);renderClientRoster();
   }catch(e){showToast('Error: '+e.message,'error')}
@@ -4408,10 +4417,12 @@ function renderBookingsGrid(){
   var confirmTracker=document.getElementById('sess-confirm-tracker');
   if(confirmTracker){
     var proposed=bookings.filter(function(b){return b.status==='proposed'}).length;
+    var confirmed=bookings.filter(function(b){return b.status==='confirmed'}).length;
     var paid=bookings.filter(function(b){return b.status==='paid'}).length;
     var declined=bookings.filter(function(b){return b.status==='declined'}).length;
     confirmTracker.innerHTML='<div style="display:flex;gap:12px;flex-wrap:wrap;font-size:13px">'
       +'<span style="color:var(--warning)">⏳ '+proposed+' proposed</span>'
+      +(confirmed?'<span style="color:var(--teal)">✓ '+confirmed+' confirmed</span>':'')
       +'<span style="color:var(--success)">✅ '+paid+' paid</span>'
       +'<span style="color:var(--danger)">❌ '+declined+' declined</span>'
       +'</div>';
@@ -4429,16 +4440,20 @@ function renderBookingsGrid(){
   c.innerHTML='<table class="tbl"><thead><tr><th>Date</th><th>Time</th><th>Client</th><th>Type</th><th>Status</th><th></th></tr></thead><tbody>'
     +page.map(function(b){
       var payLink=b.confirmation_token?'https://qp-homepage.netlify.app/pages/one-on-sessions.html?pay='+b.confirmation_token:'';
+      var isRegular=sessClientsData.some(function(cl){return cl.id===b.client_id&&cl.client_type==='regular'});
       var row='<tr><td style="white-space:nowrap">'+fmtDate(b.date)+'</td>'
         +'<td>'+b.start_time.slice(0,5)+'–'+b.end_time.slice(0,5)+'</td>'
-        +'<td class="email">'+esc(b.email)+(b.name?'<br><span class="name" style="font-size:11px">'+esc(b.name)+'</span>':'')+'</td>'
+        +'<td class="email">'+esc(b.email)+(b.name?'<br><span class="name" style="font-size:11px">'+esc(b.name)+'</span>':'')+(isRegular?' <span class="badge teal" style="font-size:9px;vertical-align:middle">Regular</span>':'')+'</td>'
         +'<td>'+typeBadges[b.type]+'</td>'
         +'<td>'+(statusBadges[b.status]||'<span class="badge muted">'+b.status+'</span>')+(b.stripe_payment_id?'<br><span style="font-size:9px;color:var(--text-dim);font-family:monospace">'+b.stripe_payment_id.slice(0,18)+'…</span>':'')+'</td>'
         +'<td><div style="display:flex;gap:4px;flex-wrap:wrap">'
         +(b.status==='proposed'&&payLink?'<button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText(\''+payLink+'\');showToast(\'Pay link copied\',\'success\')" title="Copy payment link">🔗 Pay Link</button>':'')
+        +(b.status==='proposed'&&isRegular?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'confirmed\')" title="Confirm without payment (Regular client)">✓ Confirm</button>':'')
         +(b.status==='proposed'?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'paid\')">Mark Paid</button><button class="btn btn-danger btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'declined\')">Decline</button>':'')
+        +(b.status==='confirmed'?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'completed\')">✓ Complete</button><button class="btn btn-ghost btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'no_show\')">No Show</button><button class="btn btn-danger btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'cancelled\')">Cancel</button>':'')
         +(b.status==='paid'?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'completed\')">✓ Complete</button><button class="btn btn-ghost btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'no_show\')">No Show</button><button class="btn btn-danger btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'cancelled\')">Cancel</button>':'')
-        +(b.status==='completed'||b.status==='paid'?'<button class="btn btn-primary btn-sm" onclick="crmAddNote(\''+b.id+'\')">+ Note</button><button class="btn btn-ghost btn-sm" onclick="crmAddRecording(\''+b.id+'\')">+ Recording</button>':'<button class="btn btn-ghost btn-sm" onclick="crmAddNote(\''+b.id+'\')">+ Note</button>')
+        +(b.status==='completed'&&isRegular&&!b.stripe_payment_id?'<button class="btn btn-primary btn-sm" onclick="requestRegularPayment(\''+b.id+'\')">💳 Request Payment</button>':'')
+        +(b.status==='completed'||b.status==='paid'||b.status==='confirmed'?'<button class="btn btn-primary btn-sm" onclick="crmAddNote(\''+b.id+'\')">+ Note</button><button class="btn btn-ghost btn-sm" onclick="crmAddRecording(\''+b.id+'\')">+ Recording</button>':'<button class="btn btn-ghost btn-sm" onclick="crmAddNote(\''+b.id+'\')">+ Note</button>')
         +'<button class="btn btn-ghost btn-sm" onclick="deleteBooking(\''+b.id+'\')">🗑</button>'
         +'</div></td></tr>';
       // Render notes & recordings under this booking (collapsed by default)
@@ -4499,6 +4514,80 @@ async function deleteBooking(id){
   if(!await qpConfirm('Delete Booking','Delete this booking permanently?',{okText:'Delete',danger:true}))return;
   try{await ensureFreshToken();await proxyFrom('session_bookings').delete().eq('id',id);showToast('Booking deleted','success');
   await refreshBookingsView()}catch(e){showToast('Error: '+e.message,'error')}
+}
+
+async function sendSessionEmail(to, subject, html){
+  await fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: {'Content-Type':'text/plain'},
+    body: JSON.stringify({
+      to: to,
+      subject: subject,
+      body: html,
+      isHtml: true,
+      recipientName: to.split('@')[0],
+      from: 'tracey@quantumphysician.com'
+    })
+  });
+}
+
+async function requestRegularPayment(bookingId){
+  var b=sessBookingsData.find(function(x){return x.id===bookingId});
+  if(!b){showToast('Booking not found','error');return}
+  var payLink=b.confirmation_token?'https://qp-homepage.netlify.app/pages/one-on-sessions.html?pay='+b.confirmation_token:'';
+  if(!payLink){
+    // Generate a confirmation token if none exists
+    var token=generateBookingToken();
+    try{
+      await ensureFreshToken();
+      await proxyFrom('session_bookings').update({confirmation_token:token}).eq('id',bookingId);
+      b.confirmation_token=token;
+      payLink='https://qp-homepage.netlify.app/pages/one-on-sessions.html?pay='+token;
+    }catch(e){showToast('Error generating pay link: '+e.message,'error');return}
+  }
+  // Build and send payment request email
+  var name=b.name||b.email.split('@')[0];
+  var date=new Date(b.date+'T12:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  var price=sessConfigData?'$'+sessConfigData.session_price:'$150';
+  var html=buildPaymentRequestHtml(name,date,price,payLink);
+  if(!await qpConfirm('Request Payment','Send payment request ('+price+') to '+b.email+' for their session on '+date+'?',{okText:'Send Request'}))return;
+  try{
+    await ensureFreshToken();
+    await sendSessionEmail(b.email,'Payment Request — Your Session on '+date.split(',')[0],html);
+    await logAudit('request_payment',b.email,'Payment request sent for session '+b.date,{booking_id:bookingId});
+    showToast('Payment request sent to '+b.email,'success');
+  }catch(e){showToast('Error: '+e.message,'error')}
+}
+
+function buildPaymentRequestHtml(name,date,price,payLink){
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>'
+    +'<body style="margin:0;padding:20px;font-family:Georgia,\'Times New Roman\',serif;background-color:#f4f1ec">'
+    +'<div style="max-width:600px;margin:0 auto;background-color:#0e1a30;border-radius:16px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.3)">'
+    +'<div style="background:linear-gradient(135deg,#0e1a30,#12283e 50%,#1a3a4a);padding:40px 30px;text-align:center;border-bottom:2px solid rgba(91,168,178,.3)">'
+    +'<img src="https://qp-homepage.netlify.app/assets/images/qp-logo.png" alt="Quantum Physician" style="max-width:180px;height:auto;margin:0 auto 24px;display:block" onerror="this.style.display=\'none\'">'
+    +'<h1 style="font-family:Georgia,serif;font-size:28px;font-weight:700;color:#5ba8b2;margin:0 0 8px;letter-spacing:1px">Payment Request</h1>'
+    +'<p style="color:rgba(255,255,255,.7);font-size:15px;margin:0;font-style:italic">From Dr. Tracey Clark</p></div>'
+    +'<div style="padding:40px 30px;color:rgba(255,255,255,.85)">'
+    +'<p style="font-size:20px;color:#5ba8b2;margin-bottom:20px;text-align:center;font-family:Georgia,serif">Hi '+esc(name)+',</p>'
+    +'<p style="font-size:15px;line-height:1.8;color:rgba(255,255,255,.85);margin-bottom:24px;text-align:center">Thank you for your session! When you\'re ready, please complete your payment at the link below.</p>'
+    +'<div style="background:linear-gradient(135deg,rgba(91,168,178,.08),rgba(173,155,132,.08));border:1px solid rgba(91,168,178,.25);border-radius:12px;padding:28px;margin:28px 0;text-align:center">'
+    +'<p style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:2px;margin:0 0 16px">Session Details</p>'
+    +'<div style="font-family:Georgia,serif;font-size:22px;color:#5ba8b2;font-weight:700;margin-bottom:8px">'+esc(date)+'</div>'
+    +'<div style="width:50px;height:2px;background:linear-gradient(90deg,#ad9b84,#5ba8b2);margin:0 auto 12px"></div>'
+    +'<div style="font-size:28px;font-weight:700;color:#fff;margin-bottom:4px">'+esc(price)+'</div>'
+    +'<p style="font-size:14px;color:rgba(255,255,255,.6);margin:0">60-Minute 1-on-1 Session</p></div>'
+    +'<div style="text-align:center;margin:28px 0">'
+    +'<a href="'+esc(payLink)+'" style="display:inline-block;background:linear-gradient(135deg,#5ba8b2,#4a97a1);color:#fff;padding:16px 40px;text-decoration:none;border-radius:50px;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:2px;font-family:Arial,sans-serif">Complete Payment</a></div>'
+    +'<p style="font-size:13px;color:rgba(255,255,255,.5);text-align:center;margin-top:12px">This link expires in 7 days.</p>'
+    +'<div style="margin-top:32px;padding:28px;border-top:1px solid rgba(91,168,178,.15);text-align:center">'
+    +'<img src="https://qp-homepage.netlify.app/assets/images/tracey-about-me.png" alt="Dr. Tracey Clark" style="width:90px;height:90px;border-radius:50%;border:2px solid rgba(91,168,178,.3);object-fit:cover;display:block;margin:0 auto 16px">'
+    +'<p style="margin:0;color:rgba(255,255,255,.7);font-size:14px">With care,</p>'
+    +'<p style="margin:6px 0 0;font-weight:700;font-size:18px;color:#5ba8b2;font-family:Georgia,serif">Dr. Tracey Clark</p>'
+    +'<p style="margin:4px 0 0;font-size:12px;color:rgba(255,255,255,.4)">Quantum Physician | BodyTalk Practitioner</p></div></div>'
+    +'<div style="background-color:#081420;padding:24px 20px;text-align:center;color:rgba(255,255,255,.35);font-size:12px;border-top:1px solid rgba(91,168,178,.1)">'
+    +'<p style="margin:6px 0"><strong>Quantum Physician</strong></p>'
+    +'<p style="margin:6px 0">&copy; 2026 Quantum Physician. All rights reserved.</p></div></div></body></html>';
 }
 
 /* ---------- Send Confirmations ---------- */
@@ -5737,7 +5826,7 @@ function renderSessionReminders(){
   var todayStr = now.toISOString().slice(0,10);
   
   var upcoming = sessBookingsData.filter(function(b){
-    return b.status === 'paid' && b.date >= todayStr;
+    return (b.status === 'paid' || b.status === 'confirmed') && b.date >= todayStr;
   }).sort(function(a,b){ return a.date < b.date ? -1 : 1; });
 
   // Find recently completed sessions (last 7 days) for follow-up
@@ -5962,7 +6051,7 @@ async function sendBatchReminders(type){
     targetDate = new Date(now.getTime() + 24*60*60*1000).toISOString().slice(0,10);
   }
   var targets = sessBookingsData.filter(function(b){
-    if(type === 'day-before') return b.status === 'paid' && b.date === targetDate;
+    if(type === 'day-before') return (b.status === 'paid' || b.status === 'confirmed') && b.date === targetDate;
     return false;
   });
   if(!targets.length){ showToast('No sessions to remind for', 'info'); return; }
