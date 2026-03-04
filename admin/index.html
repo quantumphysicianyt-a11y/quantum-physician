@@ -259,6 +259,14 @@
 
 <!-- TAB: Bookings -->
 <div class="tab-content" id="sess-tab-bookings">
+
+<!-- Sub-nav: Active / Completed / All -->
+<div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+<button class="btn btn-ghost btn-sm book-view-btn active" onclick="switchBookView('active',this)">Active</button>
+<button class="btn btn-ghost btn-sm book-view-btn" onclick="switchBookView('completed',this)">Completed</button>
+<button class="btn btn-ghost btn-sm book-view-btn" onclick="switchBookView('all',this)">All</button>
+</div>
+
 <div class="card" style="margin-bottom:16px">
 <div class="card-header"><div class="card-title">Auto-Populate &amp; Manage</div>
 <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">

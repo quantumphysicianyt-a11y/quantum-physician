@@ -3487,6 +3487,18 @@ var sessConfigData=null, sessCyclesData=[], sessAvailData=[], sessClientsData=[]
 var sessAvailMonth=new Date().getMonth(), sessAvailYear=new Date().getFullYear();
 var sessBookPage=1, sessBookPS=20;
 var sessBookSortCol='date', sessBookSortDir='asc';
+var sessBookView='active'; // 'active', 'completed', 'all'
+
+function switchBookView(view,btn){
+  sessBookView=view;
+  sessBookPage=1;
+  document.querySelectorAll('.book-view-btn').forEach(function(b){b.classList.remove('active')});
+  if(btn)btn.classList.add('active');
+  // Reset status filter to match view
+  var statusEl=document.getElementById('sess-book-status');
+  if(statusEl)statusEl.value='all';
+  renderBookingsGrid();
+}
 
 /* Quick-refresh bookings + notes + recordings without full page reload */
 async function refreshBookingsView(){
@@ -4421,6 +4433,10 @@ function renderBookingsGrid(){
 
   var bookings=sessBookingsData.filter(function(b){
     if(cycleId&&b.cycle_id!==cycleId) return false;
+    // View-based filtering
+    if(sessBookView==='active'&&(b.status==='completed'||b.status==='no_show'||b.status==='cancelled'||b.status==='declined'||b.status==='expired')) return false;
+    if(sessBookView==='completed'&&b.status!=='completed'&&b.status!=='no_show') return false;
+    // Additional status filter on top of view
     if(statusFilter!=='all'&&b.status!==statusFilter) return false;
     if(typeFilter!=='all'&&b.type!==typeFilter) return false;
     if(search&&b.email.toLowerCase().indexOf(search)<0&&(b.name||'').toLowerCase().indexOf(search)<0) return false;
@@ -4460,7 +4476,11 @@ function renderBookingsGrid(){
       +'</div>';
   }
 
-  if(!bookings.length){c.innerHTML='<div class="empty"><p>No bookings match filters.</p></div>';return}
+  // Toggle bulk actions visibility based on view
+  var bulkEl=document.getElementById('sess-bulk-actions');
+  if(bulkEl) bulkEl.style.display=sessBookView==='completed'?'none':'flex';
+
+  if(!bookings.length){c.innerHTML='<div class="empty"><p>'+(sessBookView==='active'?'No active bookings. All sessions are completed or cancelled.':sessBookView==='completed'?'No completed sessions yet.':'No bookings match filters.')+'</p></div>';return}
 
   var tp=Math.ceil(bookings.length/sessBookPS)||1;
   var start=(sessBookPage-1)*sessBookPS;
@@ -4488,14 +4508,14 @@ function renderBookingsGrid(){
       // Payment column content
       var payCol='';
       if(b.stripe_payment_id){
-        payCol='<span class="badge green" style="font-size:10px">Paid</span><br><span style="font-size:9px;color:var(--text-dim);font-family:monospace">'+b.stripe_payment_id.slice(0,14)+'…</span>';
+        payCol='<span class="badge green" style="font-size:10px">Paid</span>';
       }else if(b.status==='paid'){
         payCol='<span class="badge green" style="font-size:10px">Paid</span>';
       }else if(b.status==='completed'&&isRegular&&b.payment_requested_at){
-        payCol='<span class="badge yellow" style="font-size:10px" title="Sent '+new Date(b.payment_requested_at).toLocaleString()+'">Requested</span><br><button class="btn btn-ghost btn-sm" onclick="requestRegularPayment(\''+b.id+'\')" style="font-size:9px;padding:1px 6px">Resend</button>';
+        payCol='<span class="badge yellow" style="font-size:10px" title="Sent '+new Date(b.payment_requested_at).toLocaleString()+'">Requested</span> <button class="btn btn-ghost btn-sm" onclick="requestRegularPayment(\''+b.id+'\')" style="font-size:9px;padding:2px 6px">Resend</button>';
       }else if(b.status==='completed'&&isRegular&&!b.stripe_payment_id){
-        payCol='<span class="badge danger" style="font-size:10px">Unpaid</span><br><button class="btn btn-primary btn-sm" onclick="requestRegularPayment(\''+b.id+'\')" style="font-size:10px;padding:2px 8px">Request</button>';
-      }else if(b.status==='proposed'||b.status==='confirmed'){
+        payCol='<button class="btn btn-sm" onclick="requestRegularPayment(\''+b.id+'\')" style="font-size:10px;padding:4px 10px;background:rgba(239,83,80,.12);color:var(--danger);border:1px solid rgba(239,83,80,.25)">Unpaid · Request</button>';
+      }else if(b.status==='completed'){
         payCol='<span style="font-size:11px;color:var(--text-dim)">—</span>';
       }else{
         payCol='<span style="font-size:11px;color:var(--text-dim)">—</span>';
