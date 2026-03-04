@@ -5641,13 +5641,80 @@ async function crmDeleteInternalNote(id){ var ok = await qpConfirm('Delete Note'
 // 1-ON-1 SESSION EMAIL AUTOMATION (Session 29)
 // ═══════════════════════════════════════
 
-function loadSessionRemindersTab(){
+async function loadSessionRemindersTab(){
+  // Load automation config from system_config
+  try{
+    var cfgRes = await proxyFrom('system_config').select('*');
+    var cfg = {};
+    (cfgRes.data||[]).forEach(function(r){ cfg[r.key] = r.value; });
+    var dayEl = document.getElementById('auto-reminder-day');
+    var fuEl = document.getElementById('auto-reminder-followup');
+    var intEl = document.getElementById('auto-reminder-intake');
+    var expEl = document.getElementById('auto-reminder-expiry');
+    if(dayEl) dayEl.checked = cfg.auto_day_before ? cfg.auto_day_before.enabled !== false : true;
+    if(fuEl) fuEl.checked = cfg.auto_follow_up ? cfg.auto_follow_up.enabled !== false : true;
+    if(intEl) intEl.checked = cfg.auto_intake_nudge ? !!cfg.auto_intake_nudge.enabled : false;
+    if(expEl) expEl.checked = cfg.auto_payment_expiry ? !!cfg.auto_payment_expiry.enabled : false;
+  }catch(e){ console.error('Failed to load automation config:', e); }
   // Refresh bookings data if stale
   if(!sessBookingsData.length && !sessConfigData){
-    loadSessionsData().then(function(){ renderSessionReminders(); });
-  } else {
-    renderSessionReminders();
+    await loadSessionsData();
   }
+  renderSessionReminders();
+  loadAutomationLog();
+}
+
+async function toggleAutomationConfig(key, checkbox){
+  try{
+    // Try update first, then insert if not found
+    var res = await proxyFrom('system_config').select('key').eq('key', key).maybeSingle();
+    if(res.data){
+      await adminProxy({type:'update', table:'system_config', data:{value:{enabled:checkbox.checked}, updated_at:new Date().toISOString(), updated_by:currentAdmin?currentAdmin.email:null}, filters:[{column:'key',op:'eq',value:key}]});
+    } else {
+      await proxyFrom('system_config').insert({key:key, value:{enabled:checkbox.checked}, updated_at:new Date().toISOString(), updated_by:currentAdmin?currentAdmin.email:null});
+    }
+    showToast('Automation ' + (checkbox.checked ? 'enabled' : 'disabled'), 'success');
+    await logAudit('toggle_automation', null, key + ' → ' + (checkbox.checked ? 'enabled' : 'disabled'));
+    renderSessionReminders();
+  }catch(e){
+    showToast('Error saving toggle: ' + e.message, 'error');
+    checkbox.checked = !checkbox.checked; // revert
+  }
+}
+
+async function loadAutomationLog(){
+  var el = document.getElementById('automation-log-list');
+  if(!el) return;
+  el.innerHTML = '<div class="empty"><p>Loading automation log...</p></div>';
+  try{
+    var res = await proxyFrom('email_automation_log').select('*').order('sent_at', {ascending:false}).limit(50);
+    var rows = res.data || [];
+    if(!rows.length){
+      el.innerHTML = '<div class="empty"><p>No automated emails sent yet. Once the daily cron runs, sends will appear here.</p></div>';
+      return;
+    }
+    var html = '<table class="tbl"><thead><tr><th>Sent</th><th>Recipient</th><th>Type</th><th>Status</th><th>Error</th></tr></thead><tbody>';
+    rows.forEach(function(r){
+      var sentDate = r.sent_at ? new Date(r.sent_at).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : '—';
+      var typeBadge = '<span class="badge badge-' + getAutomationBadgeClass(r.automation_type) + '" style="font-size:10px">' + formatAutomationType(r.automation_type) + '</span>';
+      var statusBadge = '<span class="badge badge-' + (r.status==='sent'?'success':r.status==='skipped'?'info':'danger') + '" style="font-size:10px">' + (r.status||'unknown') + '</span>';
+      html += '<tr><td style="font-size:12px;white-space:nowrap">' + sentDate + '</td><td style="font-size:12px">' + esc(r.email) + '</td><td>' + typeBadge + '</td><td>' + statusBadge + '</td><td style="font-size:11px;color:var(--text-dim);max-width:200px;overflow:hidden;text-overflow:ellipsis">' + esc(r.error_message||'') + '</td></tr>';
+    });
+    html += '</tbody></table>';
+    el.innerHTML = html;
+  }catch(e){
+    el.innerHTML = '<div class="empty"><p>Error loading log: ' + esc(e.message) + '</p></div>';
+  }
+}
+
+function formatAutomationType(t){
+  var map = {day_before:'Day Before', follow_up:'Follow-Up', intake_nudge:'Intake Nudge', payment_expiry_48h:'48h Warning', payment_expiry_72h:'72h Expired'};
+  return map[t] || t;
+}
+
+function getAutomationBadgeClass(t){
+  var map = {day_before:'primary', follow_up:'success', intake_nudge:'info', payment_expiry_48h:'warning', payment_expiry_72h:'danger'};
+  return map[t] || 'ghost';
 }
 
 function renderSessionReminders(){
@@ -5728,50 +5795,80 @@ function buildSessionReminderHtml(type, booking){
   var date = new Date(booking.date+'T12:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
   var time = booking.start_time ? fmtTime(booking.start_time) : 'TBD';
   var portalUrl = 'https://qp-homepage.netlify.app/members/sessions.html?highlight=' + booking.id;
+  var progressUrl = 'https://qp-homepage.netlify.app/members/progress.html';
+
+  // QP brand: dark navy (#0e1a30), teal (#5ba8b2), taupe (#ad9b84), Georgia serif
+  // Matches quality level of Academy/Fusion emails with Tracey's headshot, gradient accents, structured boxes
+  var header = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>'
+    + '<body style="margin:0;padding:20px;font-family:Georgia,\'Times New Roman\',serif;background-color:#f4f1ec">'
+    + '<div style="max-width:600px;margin:0 auto;background-color:#0e1a30;border-radius:16px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.3)">';
+
+  var headerBanner = '<div style="background:linear-gradient(135deg,#0e1a30,#12283e 50%,#1a3a4a);padding:40px 30px;text-align:center;border-bottom:2px solid rgba(91,168,178,.3)">'
+    + '<img src="https://qp-homepage.netlify.app/assets/images/qp-logo.png" alt="Quantum Physician" style="max-width:180px;height:auto;margin:0 auto 24px;display:block" onerror="this.style.display=\'none\'">';
+
+  var signature = '<div style="margin-top:32px;padding:28px;border-top:1px solid rgba(91,168,178,.15);text-align:center">'
+    + '<img src="https://qp-homepage.netlify.app/assets/images/tracey-about-me.png" alt="Dr. Tracey Clark" style="width:90px;height:90px;border-radius:50%;border:2px solid rgba(91,168,178,.3);object-fit:cover;display:block;margin:0 auto 16px">'
+    + '<p style="margin:0;color:rgba(255,255,255,.7);font-size:14px">With care,</p>'
+    + '<p style="margin:6px 0 0;font-weight:700;font-size:18px;color:#5ba8b2;font-family:Georgia,serif">Dr. Tracey Clark</p>'
+    + '<p style="margin:4px 0 0;font-size:12px;color:rgba(255,255,255,.4)">Quantum Physician | BodyTalk Practitioner</p>'
+    + '</div></div>';
+
+  function footer(linkUrl, linkText) {
+    return '<div style="background-color:#081420;padding:24px 20px;text-align:center;color:rgba(255,255,255,.35);font-size:12px;border-top:1px solid rgba(91,168,178,.1)">'
+      + '<p style="margin:6px 0"><strong>Quantum Physician</strong></p>'
+      + '<p style="margin:6px 0">&copy; 2026 Quantum Physician. All rights reserved.</p>'
+      + '<p style="margin:10px 0"><a href="' + esc(linkUrl) + '" style="color:#5ba8b2;text-decoration:none;font-size:11px">' + linkText + '</a></p>'
+      + '</div></div></body></html>';
+  }
 
   if(type === 'day-before'){
-    return '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f5f0eb;font-family:Georgia,serif">'
-      + '<div style="max-width:600px;margin:0 auto;padding:20px">'
-      + '<div style="text-align:center;padding:20px 0"><img src="https://qp-homepage.netlify.app/assets/images/qp-logo.png" alt="Quantum Physician" style="height:50px" onerror="this.style.display=\'none\'"></div>'
-      + '<div style="background:#fff;border-radius:12px;padding:32px;box-shadow:0 2px 8px rgba(0,0,0,.06)">'
-      + '<h1 style="margin:0 0 8px;font-size:22px;color:#0e1a30;font-family:Georgia,serif">Your Session is Tomorrow</h1>'
-      + '<p style="color:#5a5a5a;font-size:15px;line-height:1.6;margin:0 0 20px">Hi ' + esc(name) + ',</p>'
-      + '<p style="color:#5a5a5a;font-size:15px;line-height:1.6;margin:0 0 20px">This is a friendly reminder that your 1-on-1 session with Dr. Tracey Clark is scheduled for <strong>tomorrow</strong>.</p>'
-      + '<div style="background:linear-gradient(135deg,#0e1a30 0%,#1a3a4a 100%);border-radius:10px;padding:20px;margin:20px 0;color:#fff">'
-      + '<div style="font-size:13px;opacity:.7;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">Session Details</div>'
-      + '<div style="font-size:18px;font-weight:700;margin-bottom:4px">' + esc(date) + '</div>'
-      + '<div style="font-size:15px;opacity:.9">' + esc(time) + '</div>'
-      + '</div>'
-      + '<div style="text-align:center;margin:24px 0">'
-      + '<a href="' + esc(zoomLink) + '" style="display:inline-block;padding:14px 32px;background:#5ba8b2;color:#fff;text-decoration:none;border-radius:8px;font-size:15px;font-weight:600;font-family:Georgia,serif">Join Zoom Session</a>'
-      + '</div>'
-      + '<div style="background:#f9f7f4;border-radius:8px;padding:16px;margin:20px 0"><div style="font-size:13px;font-weight:600;color:#0e1a30;margin-bottom:6px">Before Your Session</div>'
-      + '<ul style="margin:0;padding-left:18px;color:#5a5a5a;font-size:13px;line-height:1.8"><li>Find a quiet, comfortable space</li><li>Have water nearby</li><li>Allow yourself 5 minutes to settle before we begin</li><li>If you have specific areas of concern, note them down</li></ul></div>'
-      + '<p style="color:#5a5a5a;font-size:14px;line-height:1.6;margin:20px 0 0">Looking forward to our session together.</p>'
-      + '<p style="color:#5a5a5a;font-size:14px;margin:8px 0 0">With care,<br><strong style="color:#0e1a30">Dr. Tracey Clark</strong></p>'
-      + '</div>'
-      + '<div style="text-align:center;padding:20px;font-size:11px;color:#999">Quantum Physician &middot; <a href="' + esc(portalUrl) + '" style="color:#5ba8b2">View in Patient Portal</a></div>'
-      + '</div></body></html>';
+    return header + headerBanner
+      + '<h1 style="font-family:Georgia,serif;font-size:32px;font-weight:700;color:#5ba8b2;margin:0 0 8px;letter-spacing:1px">Your Session is Tomorrow</h1>'
+      + '<p style="color:rgba(255,255,255,.7);font-size:15px;margin:0;font-style:italic">A reminder from Dr. Tracey Clark</p></div>'
+      + '<div style="padding:40px 30px;color:rgba(255,255,255,.85)">'
+      + '<p style="font-size:20px;color:#5ba8b2;margin-bottom:20px;text-align:center;font-family:Georgia,serif">Hi ' + esc(name) + ',</p>'
+      + '<p style="font-size:15px;line-height:1.8;color:rgba(255,255,255,.85);margin-bottom:24px;text-align:center">This is a friendly reminder that your 1-on-1 session is scheduled for <strong style="color:#fff">tomorrow</strong>. I\'m looking forward to our time together.</p>'
+      // Session Details Card
+      + '<div style="background:linear-gradient(135deg,rgba(91,168,178,.08),rgba(173,155,132,.08));border:1px solid rgba(91,168,178,.25);border-radius:12px;padding:28px;margin:28px 0;text-align:center">'
+      + '<p style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:2px;margin:0 0 16px">Session Details</p>'
+      + '<div style="font-family:Georgia,serif;font-size:24px;color:#5ba8b2;font-weight:700;margin-bottom:8px;line-height:1.3">' + esc(date) + '</div>'
+      + '<div style="font-size:18px;color:rgba(255,255,255,.9);margin-bottom:12px">' + esc(time) + '</div>'
+      + '<div style="width:50px;height:2px;background:linear-gradient(90deg,#ad9b84,#5ba8b2);margin:0 auto 16px"></div>'
+      + '<p style="font-size:14px;color:rgba(255,255,255,.6);margin:0">60-Minute 1-on-1 Session</p></div>'
+      // Zoom Button
+      + '<div style="text-align:center;margin:28px 0">'
+      + '<a href="' + esc(zoomLink) + '" style="display:inline-block;background:linear-gradient(135deg,#5ba8b2,#4a97a1);color:#fff;padding:16px 40px;text-decoration:none;border-radius:50px;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:2px;font-family:Arial,sans-serif">Join Zoom Session</a></div>'
+      // Prep Tips
+      + '<div style="background-color:rgba(91,168,178,.06);border-left:3px solid #5ba8b2;padding:20px 24px;margin:28px 0;border-radius:0 8px 8px 0">'
+      + '<h3 style="color:#5ba8b2;margin:0 0 14px;font-size:16px;font-family:Georgia,serif">Before Your Session</h3>'
+      + '<p style="color:rgba(255,255,255,.85);margin:8px 0;line-height:1.7;font-size:14px"><strong style="color:#ad9b84">Space:</strong> Find a quiet, comfortable area where you won\'t be disturbed</p>'
+      + '<p style="color:rgba(255,255,255,.85);margin:8px 0;line-height:1.7;font-size:14px"><strong style="color:#ad9b84">Hydrate:</strong> Have water nearby</p>'
+      + '<p style="color:rgba(255,255,255,.85);margin:8px 0;line-height:1.7;font-size:14px"><strong style="color:#ad9b84">Settle:</strong> Allow yourself 5 minutes to arrive before we begin</p>'
+      + '<p style="color:rgba(255,255,255,.85);margin:8px 0;line-height:1.7;font-size:14px"><strong style="color:#ad9b84">Intention:</strong> If you have specific areas of concern, note them down</p></div>'
+      + signature + footer(portalUrl, 'View in Patient Portal');
   }
 
   if(type === 'follow-up'){
-    return '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f5f0eb;font-family:Georgia,serif">'
-      + '<div style="max-width:600px;margin:0 auto;padding:20px">'
-      + '<div style="text-align:center;padding:20px 0"><img src="https://qp-homepage.netlify.app/assets/images/qp-logo.png" alt="Quantum Physician" style="height:50px" onerror="this.style.display=\'none\'"></div>'
-      + '<div style="background:#fff;border-radius:12px;padding:32px;box-shadow:0 2px 8px rgba(0,0,0,.06)">'
-      + '<h1 style="margin:0 0 8px;font-size:22px;color:#0e1a30;font-family:Georgia,serif">Thank You for Your Session</h1>'
-      + '<p style="color:#5a5a5a;font-size:15px;line-height:1.6;margin:0 0 20px">Hi ' + esc(name) + ',</p>'
-      + '<p style="color:#5a5a5a;font-size:15px;line-height:1.6;margin:0 0 20px">Thank you for our session on <strong>' + esc(date) + '</strong>. It was wonderful working with you, and I appreciate your openness and trust in this process.</p>'
-      + '<div style="background:#f9f7f4;border-radius:8px;padding:16px;margin:20px 0"><div style="font-size:13px;font-weight:600;color:#0e1a30;margin-bottom:6px">Post-Session Guidance</div>'
-      + '<ul style="margin:0;padding-left:18px;color:#5a5a5a;font-size:13px;line-height:1.8"><li>Drink plenty of water over the next 24-48 hours</li><li>Rest when your body tells you to</li><li>Notice any shifts in how you feel \u2014 physical, emotional, or energetic</li><li>Jot down any observations to share at our next session</li></ul></div>'
-      + '<div style="text-align:center;margin:24px 0">'
-      + '<a href="' + esc(portalUrl) + '" style="display:inline-block;padding:14px 32px;background:#5ba8b2;color:#fff;text-decoration:none;border-radius:8px;font-size:15px;font-weight:600;font-family:Georgia,serif">View Your Progress</a>'
-      + '</div>'
-      + '<p style="color:#5a5a5a;font-size:14px;line-height:1.6;margin:20px 0 0">Your session notes and any recordings will be available in your patient portal once I\u2019ve reviewed everything.</p>'
-      + '<p style="color:#5a5a5a;font-size:14px;margin:8px 0 0">With care,<br><strong style="color:#0e1a30">Dr. Tracey Clark</strong></p>'
-      + '</div>'
-      + '<div style="text-align:center;padding:20px;font-size:11px;color:#999">Quantum Physician &middot; <a href="https://qp-homepage.netlify.app/members/dashboard.html" style="color:#5ba8b2">Patient Portal</a></div>'
-      + '</div></body></html>';
+    return header + headerBanner
+      + '<h1 style="font-family:Georgia,serif;font-size:32px;font-weight:700;color:#5ba8b2;margin:0 0 8px;letter-spacing:1px">Thank You</h1>'
+      + '<p style="color:rgba(255,255,255,.7);font-size:15px;margin:0;font-style:italic">A follow-up from Dr. Tracey Clark</p></div>'
+      + '<div style="padding:40px 30px;color:rgba(255,255,255,.85)">'
+      + '<p style="font-size:20px;color:#5ba8b2;margin-bottom:20px;text-align:center;font-family:Georgia,serif">Hi ' + esc(name) + ',</p>'
+      + '<p style="font-size:15px;line-height:1.8;color:rgba(255,255,255,.85);margin-bottom:24px;text-align:center">Thank you for our session on <strong style="color:#fff">' + esc(date) + '</strong>. It was wonderful working with you, and I appreciate your openness and trust in this process.</p>'
+      // Guidance Box
+      + '<div style="background-color:rgba(91,168,178,.06);border-left:3px solid #5ba8b2;padding:20px 24px;margin:28px 0;border-radius:0 8px 8px 0">'
+      + '<h3 style="color:#5ba8b2;margin:0 0 14px;font-size:16px;font-family:Georgia,serif">Post-Session Guidance</h3>'
+      + '<p style="color:rgba(255,255,255,.85);margin:8px 0;line-height:1.7;font-size:14px"><strong style="color:#ad9b84">Hydrate:</strong> Drink plenty of water over the next 24\u201348 hours</p>'
+      + '<p style="color:rgba(255,255,255,.85);margin:8px 0;line-height:1.7;font-size:14px"><strong style="color:#ad9b84">Rest:</strong> Honor your body\u2019s need for rest when it arises</p>'
+      + '<p style="color:rgba(255,255,255,.85);margin:8px 0;line-height:1.7;font-size:14px"><strong style="color:#ad9b84">Observe:</strong> Notice any shifts \u2014 physical, emotional, or energetic</p>'
+      + '<p style="color:rgba(255,255,255,.85);margin:8px 0;line-height:1.7;font-size:14px"><strong style="color:#ad9b84">Journal:</strong> Jot down any observations to share at our next session</p></div>'
+      // Info Note
+      + '<div style="background:linear-gradient(135deg,rgba(91,168,178,.08),rgba(173,155,132,.08));border:1px solid rgba(91,168,178,.25);border-radius:12px;padding:20px;margin:28px 0;text-align:center">'
+      + '<p style="font-size:14px;color:rgba(255,255,255,.7);margin:0;line-height:1.7">Your session notes and any recordings will be available in your patient portal once I\u2019ve reviewed everything.</p></div>'
+      // CTA Button
+      + '<div style="text-align:center;margin:28px 0">'
+      + '<a href="' + esc(progressUrl) + '" style="display:inline-block;background:linear-gradient(135deg,#5ba8b2,#4a97a1);color:#fff;padding:16px 40px;text-decoration:none;border-radius:50px;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:2px;font-family:Arial,sans-serif">View Your Progress</a></div>'
+      + signature + footer('https://qp-homepage.netlify.app/members/dashboard.html', 'Patient Portal');
   }
 
   return '<p>Unknown template type: ' + type + '</p>';
@@ -5812,6 +5909,7 @@ async function sendSessionReminder(type, bookingId, email){
     ? 'Your Session Tomorrow with Dr. Tracey Clark'
     : 'Thank You \u2014 Session Follow-Up from Dr. Tracey';
   var name = b.name || email.split('@')[0];
+  var automationType = type === 'day-before' ? 'day_before' : 'follow_up';
 
   try{
     await fetch(APPS_SCRIPT_URL, {
@@ -5826,9 +5924,22 @@ async function sendSessionReminder(type, bookingId, email){
         fromAlias: 'tracey@quantumphysician.com'
       })
     });
-    // Log it
+    // Log to email_automation_log for dedup with cron
+    try{
+      await proxyFrom('email_automation_log').insert({
+        booking_id: bookingId,
+        email: email,
+        automation_type: automationType,
+        status: 'sent'
+      });
+    }catch(logErr){
+      // Duplicate key is fine — means it was already logged
+      console.log('Automation log insert:', logErr.message);
+    }
+    // Also audit log
     await logAudit('send_session_reminder', email, type + ' reminder sent for booking ' + bookingId);
     showToast('Reminder sent to ' + email, 'success');
+    loadAutomationLog(); // refresh log viewer
   } catch(e){
     showToast('Email queued (no-cors response)', 'info');
   }

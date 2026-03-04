@@ -2,6 +2,10 @@
   publish = "."
   functions = "netlify/functions"
 
+# Session 30: Automated email cron — runs daily at 8 AM ET (13:00 UTC)
+[functions."session-cron"]
+  schedule = "0 13 * * *"
+
 # Redirect everything to index for now (SPA-style catch for future pages)
 # Uncomment when you add auth pages:
 # [[redirects]]

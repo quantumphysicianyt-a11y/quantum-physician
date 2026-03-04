@@ -1,6 +1,6 @@
-# Session 26-28 Build Plan — Patient Portal & CRM
+# Session 26-29 Build Plan — Patient Portal & CRM
 
-## Status (Post Session 28)
+## Status (Post Session 29)
 
 | Component | Status |
 |-----------|--------|
@@ -25,9 +25,9 @@
 | Green Complete button | ✅ DONE (S28) |
 | Deep linking (progress→sessions) | ✅ DONE (S28) - ?highlight=bookingId |
 | Recordings on sessions page | ✅ DONE (S28) |
-| CRM merge into Clients tab | ⬜ PENDING (S29) |
-| Email reminders/invoicing | ⬜ PENDING (S29) |
-| 3D body model (Three.js) | ⬜ PENDING (S29-30) |
+| CRM merge into Clients tab | ✅ DONE (S29) - sub-nav roster/profiles, clickable cards |
+| Email reminders UI | ✅ DONE (S29) - toggles, preview, manual send. TRUE automation pending S30 |
+| 3D body model (Three.js) | ⬜ PENDING (S31+) |
 
 ---
 
@@ -137,8 +137,8 @@ Main Site
 - **refreshBookingsView()**: unified parallel refresh for all actions
 - **Green "✓ Complete" button** on paid bookings
 
-### PENDING: Merge into Clients Tab (Session 29)
-The CRM is currently a standalone `page-crm` sidebar entry. It should be merged into the existing Clients tab within 1-on-1 Sessions to avoid duplication. The client roster in the Clients tab and the CRM client list overlap — combine them into one unified view.
+### ✅ COMPLETE: Merged into Clients Tab (Session 29)
+CRM merged into Clients tab with sub-nav (Client Roster | All Client Profiles). Clickable client cards with teal hover. Action buttons use stopPropagation. Back button returns to active sub-view. Session notes collapsed by default with expand toggle. Progress tab has keyword/date/type filters.
 
 ---
 

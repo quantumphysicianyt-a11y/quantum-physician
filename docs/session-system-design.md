@@ -1,6 +1,6 @@
 # 1-on-1 Sessions System — Full Design Spec
 
-**Last updated:** Session 28 (Mar 3, 2026)
+**Last updated:** Session 29 (Mar 3, 2026)
 
 ## Dr. Tracey's Current Manual Workflow
 1. Works in **4-month booking cycles** (e.g., March-June, July-October, Nov-Feb)
@@ -84,15 +84,23 @@
 - **Recording indicators**: `📝 2 notes · 🎥 1 recording` in collapsible toggle row
 - **Bug fix**: session_recordings uses `uploaded_at` NOT `created_at` (was causing 400 errors)
 
+### ✅ BUILT (Session 29) — CRM Merge + Email Automation UI
+- **CRM merged into Clients tab** — removed standalone page-crm, sub-nav: Client Roster | All Client Profiles
+- **Clickable client cards** — whole card opens profile, teal hover, action buttons use stopPropagation
+- **Session notes collapsed by default** — click row/badge to expand, ▼/▲ toggle arrow
+- **Progress tab filters** — keyword search, date range (3mo/6mo/1yr/all), type filter (check-ins/alignments/milestones/observations)
+- **Email automation UI** — 4 toggle cards, QP-branded templates, preview modals, per-session send buttons
+- **Bug fixes**: duplicate crmDeleteNote, missing fmtTime, data-table→tbl class, profile fetch resilience, reminders panel nesting
+
 ### ⬜ NOT YET BUILT
-- CRM merge into Clients tab (remove standalone page-crm)
-- Email automation (reminders, follow-ups, invoicing)
+
+- TRUE email automation cron (Session 30 — non-negotiable)
 - End-to-end Stripe payment test
 - Three.js 3D body model on progress.html (replacing 2D overlay)
 - 72-hour offer expiry automation
 - 48-hour cancellation enforcement
 - Add-to-calendar (.ics) generation
-- QP-branded premium email template for sessions
+
 
 ### ⬜ FUTURE
 - Analytics dashboard (utilization, retention, revenue)

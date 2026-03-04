@@ -9,7 +9,8 @@ const ALLOWED_TABLES = [
   "session_config", "session_cycles", "session_availability",
   "session_clients", "session_bookings", "session_waitlist",
   "session_notes", "session_recordings", "patient_intake",
-  "patient_checkins", "patient_progress_notes"
+  "patient_checkins", "patient_progress_notes",
+  "email_automation_log", "system_config"
 ];
 
 const WRITABLE_TABLES = [...ALLOWED_TABLES];

@@ -12,7 +12,7 @@ Both sites share the same Supabase project, same Stripe account, same user pool.
 ## 📋 SESSION HANDOFF PROTOCOL — READ THIS FIRST
 
 ### A Note on This Collaboration
-Todd (the founder/developer of Quantum Physician) and Claude have built this admin panel together across 28+ intensive sessions. Todd cares deeply about polish, design details, and getting things right. These handoff documents represent a **shared history** — every bug fix, every design decision, every architectural choice was made collaboratively and often through multiple iterations. The next Claude instance inherits this context and trust. **Treat these docs with the same care Todd does**: update them thoroughly at the end of every session, preserve hard-won lessons, and never make changes that contradict documented decisions without discussing with Todd first. This isn't just a codebase — it's a partnership.
+Todd (the founder/developer of Quantum Physician) and Claude have built this admin panel together across 29+ intensive sessions. Todd cares deeply about polish, design details, and getting things right. These handoff documents represent a **shared history** — every bug fix, every design decision, every architectural choice was made collaboratively and often through multiple iterations. The next Claude instance inherits this context and trust. **Treat these docs with the same care Todd does**: update them thoroughly at the end of every session, preserve hard-won lessons, and never make changes that contradict documented decisions without discussing with Todd first. This isn't just a codebase — it's a partnership.
 
 **These 3 docs are the ONLY source of truth across chat sessions. Claude has NO memory between sessions.**
 
@@ -33,43 +33,101 @@ Todd (the founder/developer of Quantum Physician) and Claude have built this adm
 - These 3 docs + the current `admin/index.html`, `admin/admin.js`, `admin/admin.css`
 - Claude reads all docs BEFORE writing any code
 
-**Last updated:** Session 29 (Mar 3, 2026)
+**Last updated:** Session 30 (Mar 4, 2026)
 
 ---
 
-## Session 29 Summary — CRM Merge, Email Automation, Cleanup (Mar 3, 2026)
+## Session 30 Summary — Automated Email System for 1-on-1 Sessions (Mar 4, 2026)
 
-### CRM Merged into Clients Tab ✅
-- **Removed** standalone `page-crm` sidebar entry and its page div
-- **Added sub-navigation** to Clients tab: "Client Roster" | "All Client Profiles"
-- Client Roster now has a **"Profile →" button** on each client that opens the 5-tab CRM detail view inline
-- "All Client Profiles" shows the full CRM list (including non-roster public clients) with search/filter/sort
-- CRM detail view (Sessions, Intake, Progress, Billing, Notes) now lives inside `sess-tab-clients`
-- **Back button** returns to whichever sub-view was active (roster or all profiles)
-- Sub-nav buttons dim when detail view is open
-- Removed `crm` from TITLES constant and loadPageData switch
-- **Bug fix**: renamed duplicate `crmDeleteNote` → `crmDeleteInternalNote` (was overwriting session note delete)
+### TRUE Automated Email Pipeline Built ✅
+- **Self-contained Pipeline #3** — completely isolated from Fusion (#1) and Academy (#2) email systems
+- **Netlify scheduled function** (`session-cron.js`) — runs daily at 8 AM ET (13:00 UTC via `netlify.toml` cron)
+- **4 automation types**: Day-Before Reminder, Post-Session Follow-Up, Intake Form Nudge, 72-Hour Payment Expiry
+- **Idempotent send logic** — UNIQUE INDEX on `(booking_id, automation_type)` prevents double-sends; `alreadySent()` check before every send
+- **5 QP-branded email templates** in cron: day-before, follow-up, intake nudge, 48h expiry warning, 72h expiry notice
+- **Payment expiry auto-action** — 72h expired bookings get status updated to `expired` + availability slot freed
 
-### Email Automation — 1-on-1 Session Reminders ✅
-- **New "1-on-1 Reminders" sub-tab** in Email Automation page
-- **4 automation toggles**: Day-Before Reminder, Post-Session Follow-Up, Intake Form Nudge, 72-Hour Payment Expiry
-- **Day-before reminder email**: QP-branded (Georgia serif, gradient appointment card), includes Zoom link, date/time, preparation tips, portal deep link
-- **Post-session follow-up email**: Thanks patient, post-session guidance list, links to progress tracker
-- **Intake form reminder**: Sends branded email with link to `/members/intake.html` (replaces "coming soon" placeholder)
-- **Preview system**: iframe-based email preview modal for both templates
-- **Per-booking send**: individual "Send Reminder" / "Send Follow-Up" buttons next to each booking
-- **Batch send**: `sendBatchReminders()` for all tomorrow's sessions at once
-- **Pending reminders list**: shows upcoming paid sessions (highlights tomorrow's) and recently completed sessions
-- All sends go through existing Google Apps Script `APPS_SCRIPT_URL` with `mode:'no-cors'`
-- All sends logged via `logAudit()`
+### New Database Tables ✅
+- **`email_automation_log`** — tracks every automated email (booking_id, email, automation_type, status, error_message, sent_at). Unique constraint on booking_id + automation_type.
+- **`system_config`** — key-value store for toggle persistence (auto_day_before, auto_follow_up, auto_intake_nudge, auto_payment_expiry). Seeded with defaults.
+
+### Admin UI Wired to Database ✅
+- **Toggle persistence** — all 4 checkboxes now call `toggleAutomationConfig()` which writes to `system_config` table. State survives page reload.
+- **Automation Log Viewer** — new section below reminders list showing last 50 sends with timestamp, recipient, type badge, status badge, error message
+- **Manual sends now log to `email_automation_log`** — `sendSessionReminder()` inserts to log table so cron won't double-send
+
+### New Google Apps Script ✅
+- **QP Session Email Sender** (Pipeline #3) — standalone script, completely separate from BulkEmailSender v3 and FusionSessionsAutomation
+- Handles `sendSessionEmail` action
+- Sends from `tracey@quantumphysician.com` alias as "Dr. Tracey Clark — Quantum Physician"
+- Includes `doGet` health check endpoint and `testSend()` function
+
+### Admin Proxy Updated ✅
+- Added `email_automation_log` and `system_config` to ALLOWED_TABLES (now 32 total)
+
+### Cleanup ✅
+- **Orphaned test recordings SQL** included in migration script
+- Migration SQL file: `session-30-migration.sql`
+
+### Files Created
+- `netlify/functions/session-cron.js` — NEW (428 lines)
+- `qp-session-email-script.gs` — NEW Google Apps Script for Pipeline #3
 
 ### Files Modified
-- `admin/index.html` — ~839 lines (from ~773): removed page-crm, embedded CRM in Clients tab, added reminders tab
-- `admin/admin.js` — ~5741 lines (from ~5471): CRM merge functions, session reminder automation, email templates
-- `members/sessions.html` — unchanged (carried forward from S28)
+- `admin/admin.js` — ~5936 lines (from ~5855)
+- `admin/index.html` — ~849 lines (from ~839)
+- `netlify/functions/admin-proxy.js` — 32 allowed tables (from 30)
 
-### No Database Changes
-- No new tables or columns needed this session
+---
+
+## Session 29 Summary — CRM Merge, Email Automation, UX Polish (Mar 3, 2026)
+
+### CRM Merged into Clients Tab ✅
+- **Removed standalone `page-crm`** sidebar entry and page div entirely
+- **Embedded CRM inside Clients tab** with sub-navigation: "Client Roster" | "All Client Profiles"
+- **Client Roster cards are fully clickable** — click anywhere on card to open profile (teal hover border)
+- **Client name rendered in teal** for visual affordance
+- **Action buttons** (Dates, Email, Edit, Pause, Remove) have `stopPropagation` — work independently
+- **"Profile →" button removed** — whole card does that now
+- **Back button** returns to whichever sub-view you came from (roster or all profiles)
+- **Sub-nav buttons dim** when viewing a profile, re-enable on back
+
+### Session Notes Collapsed by Default ✅
+- Notes and recordings **hidden by default** in CRM Sessions tab
+- **Click row or badge** to expand/collapse
+- **▼/▲ arrow** in Actions column with own `onclick` (teal color, padded hit area)
+- Note/recording counts show as clickable badges ("1 note", "1" recording)
+- **+ Note / + Recording** buttons still work independently via `stopPropagation`
+
+### Progress Tab Filters ✅
+- **Keyword search** — filters check-ins by symptom names/notes, practitioner notes by content
+- **Date range dropdown** — All Time, Last 3 Months, Last 6 Months, Last Year
+- **Type filter** — All Types, Check-Ins Only, Alignments, Milestones, Observations
+- **Counts in section headers** — "PATIENT CHECK-INS (8)", "PRACTITIONER NOTES (3)"
+- **Total item count** next to filters
+- **Filter state persists** when adding new notes (doesn't reset selections)
+
+### Email Automation — 1-on-1 Reminders Tab ✅
+- **New "1-on-1 Reminders" sub-tab** in Email Automation page
+- **4 automation toggle cards**: Day-Before Reminder, Post-Session Follow-Up, Intake Form Nudge, 72-Hour Payment Expiry
+- **Generate Reminders Now** — scans bookings, populates upcoming paid sessions + recently completed
+- **Preview Day-Before / Follow-Up** — iframe-based modal with QP-branded templates
+- **Per-session Preview/Send buttons** — Send only appears for tomorrow's sessions
+- **QP-branded email templates**: Georgia serif, gradient appointment cards, teal pill CTAs
+- **Intake reminder wired** — `crmSendIntakeReminder()` now functional (was placeholder)
+- ⚠️ **Toggles are UI-only** — not persisted to database. Reset on page reload.
+- ⚠️ **All sending is manual** — no automated cron yet. Session 30 priority.
+
+### Bug Fixes ✅
+- **Duplicate `crmDeleteNote` function** — two functions with same name. Internal notes version renamed to `crmDeleteInternalNote()`
+- **Missing `fmtTime` function** — `renderCrmSessions` used it but it was never defined. Added: converts "14:00" → "2:00 PM"
+- **`data-table` CSS class doesn't exist** — CRM tables used `class="data-table"` but admin CSS only has `class="tbl"`. All 3 CRM tables fixed.
+- **Profile fetch killing `Promise.all`** — `sb.from('profiles').maybeSingle()` (non-proxy) was in `Promise.all`. If it fails, all 7 fetches fail. Moved to separate try/catch.
+- **Reminders panel nested inside Logs panel** — `autotab-logs` div was never closed before `autotab-reminders` started. Reminders was a child of Logs, so when Logs was hidden, Reminders was hidden too even with `display:block`. Fixed: proper sibling panels.
+
+### Files Modified
+- `admin/admin.js` — ~5855 lines (from ~5471)
+- `admin/index.html` — ~839 lines (from ~773)
 
 ---
 
@@ -78,78 +136,26 @@ Todd (the founder/developer of Quantum Physician) and Claude have built this adm
 ### 3D Body Model: 28 Bone-Accurate Regions ✅
 - Extracted inverse bind matrix positions from GLB skeleton using Three.js
 - 28 standard regions mapped to precise 3D coordinates (with male/female offsets)
-- Regions: atlas, c1-c2, cervical-spine, left-neck, right-neck, thoracic-spine, lumbar-spine, sacrum, coccyx, left-shoulder, right-shoulder, left-elbow, right-elbow, left-wrist, right-wrist, left-hip, right-hip, left-knee, right-knee, left-ankle, right-ankle, pelvis, sternum, left-ribs, right-ribs, tmj, cranium, full-spine
-- All positions verified against the GLB model's actual bone structure
 
 ### Admin Region Picker Modal ✅
-- 28 tappable region chips in a grid layout
-- Multi-select: chips toggle teal when selected
-- **Custom regions**: text input + "nearest standard region" dropdown + "+ Add" button
-- Custom regions create teal chips showing custom label + placement region
-- Custom labels stored in note content as `[Custom alignments: ...]`
-- Placement mapped to nearest standard region's coordinates on 3D body map
-- No database schema changes — uses existing `body_regions` jsonb column
+- 28 tappable region chips, multi-select, custom regions with nearest-standard mapping
 
 ### Session Notes System (Full CRUD) ✅
-- **Add note**: from any booking status (proposed, confirmed, paid, completed)
-- **Edit note**: reopens modal with content, regions pre-selected, visibility state
-- **Delete note**: with confirmation dialog
-- **Toggle visibility**: one-click 🔓/🔒 to share/hide from patient
-- **YES/NO visibility toggle** in modal — large button, dark card, helper text
-- **Multiple notes per session**: unlimited notes per booking
-- **Collapsible in bookings grid**: toggle row shows `▸ 📝 2 notes · 🎥 1 recording click to expand`
-- Notes show: type badge, content, body region pills, visibility badge, time ago, action buttons
+- Add/Edit/Delete notes, toggle visibility, multiple notes per session, body region pills
 
 ### Recording Upload System ✅
-- **Upload modal** with two tabs: "Upload File" and "Paste URL"
-- **Upload File tab**: drag & drop or click-to-select, MP4/MOV/WebM, 50MB max, progress bar
-  - Uploads to Supabase Storage bucket `session-recordings`
-  - Stores `source_type: 'supabase'`, `file_path`, `file_size_mb`
-- **Paste URL tab**: Zoom, Vimeo, Google Drive, YouTube, any link
-  - Stores `source_type: 'external'`
-- **Admin recording indicators**: `🎥 1 recording` in collapsible toggle row
-- **Expanded view**: shows each recording with Hosted/External badge, title, size, Play link, 🗑 Delete button
-- **Delete recording**: confirmation dialog, deletes from Supabase Storage if hosted
-
-### Smart Video Embeds (Patient Side — sessions.html) ✅
-- **Supabase hosted**: Native HTML5 `<video>` player + Download button
-- **Vimeo**: Embedded Vimeo player (title/byline/portrait stripped) + "Watch on Vimeo" link
-- **Google Drive**: Embedded Google Drive preview player
-- **YouTube**: Embedded YouTube player
-- **Zoom/other**: "Opens in new tab" fallback link (Zoom blocks iframe embeds)
-- **Detection**: regex matching on URL pattern, auto-selects correct embed type
+- Upload File (drag & drop, Supabase Storage) + Paste URL (Zoom, Vimeo, GDrive, YouTube)
+- Smart video embeds on patient side, collapsible in admin
 
 ### Patient sessions.html Deep Linking ✅
-- `?highlight=bookingId` URL parameter
-- Auto-switches to Past tab
-- Finds session card by `data-booking-id`
-- Expands details, highlights with teal border, smooth scrolls
-- Triggered from progress.html 3D body map "View Session →" links
+- `?highlight=bookingId` URL parameter, auto-switches to Past tab, smooth scroll
 
 ### Real-Time Refresh System ✅
-- **New `refreshBookingsView()` function**: parallel fetch of bookings + notes + recordings via `Promise.all`
-- Replaces all scattered manual reload calls
-- **Every action triggers it**: add/edit/delete notes, add/delete recordings, status changes, delete bookings
-- **Bookings tab switch** also triggers fresh pull
-- Eliminates need for hard-refresh after actions
-
-### UI Polish ✅
-- **Green "✓ Complete" button** replaces subtle ghost-style "Complete" on paid bookings
-- **Body region badges** on patient sessions.html (teal pills matching admin styling)
-- **Download icon** added to SVG sprite in sessions.html
+- `refreshBookingsView()` — parallel fetch of bookings + notes + recordings
 
 ### Bug Fixes ✅
-- **`session_recordings` column name**: table uses `uploaded_at`, not `created_at` — was causing 400 errors from admin-proxy, recordings returned 0. Fixed all 3 references.
-- **Recording indicator not showing**: was placed in status column which renders before bRecs is computed. Moved to collapsible toggle row where data is already filtered.
-
-### Database Changes
-- `session_recordings` table: added `source_type` (text, default 'external'), `file_path` (text), `file_size_mb` (numeric) via SQL migration
-- Supabase Storage bucket `session-recordings` created (public read, authenticated write/delete)
-
-### Files Modified
-- `admin/admin.js` — ~5471 lines (from ~5048)
-- `members/sessions.html` — ~649 lines (from ~551)
-- `netlify/functions/admin-proxy.js` — unchanged (session_recordings was already whitelisted)
+- `session_recordings` column name: uses `uploaded_at`, not `created_at`
+- Recording indicator placement fixed
 
 ---
 
@@ -159,13 +165,11 @@ Todd (the founder/developer of Quantum Physician) and Claude have built this adm
 - 4 patient portal pages: sessions.html, intake.html, progress.html, billing.html
 - 5 new database tables with RLS policies
 - Admin-proxy updated (30 allowed tables)
-- Cross-domain SSO attempted (QP side done, Fusion caused loading hang)
 
 ### Session 27 — SSO Fix + Admin CRM + Progress Enhancements
 - Cross-domain SSO fixed (Cloudflare truncation was root cause)
 - Admin CRM: Client Profiles with 5-tab detail view
 - Progress page: collapsible charts, symptom/energy charts, before/after toggle, quick stats, body map, milestone markers
-- Demo data populated for testing
 
 ---
 
@@ -181,86 +185,89 @@ See previous handoff docs for full details. Key milestones:
 
 ---
 
-## 🔴 PRIORITY NEXT STEPS (Session 30)
+## 🔴 PRIORITY NEXT STEPS (Session 31)
 
-### 1. Three.js 3D Body Model Rebuild (HIGH PRIORITY)
-- Replace 2D body map overlay on progress.html with proper 3D model
-- Use the 28 bone-accurate region coordinates from Session 28
-- Interactive: click markers to see session details
+### 1. Deploy & Test Email Automation Pipeline (FIRST PRIORITY)
+**Todd's deployment checklist:**
+1. Run `session-30-migration.sql` in Supabase SQL Editor (creates 2 tables + cleanup)
+2. Deploy updated `admin-proxy.js` (32 tables)
+3. Create new Google Apps Script from `qp-session-email-script.gs`:
+   - New project in Google Apps Script
+   - Paste code → Deploy → New deployment → Web app → Execute as Me → Anyone can access
+   - Copy deployment URL
+4. Set Netlify env var: `SESSION_EMAIL_SCRIPT_URL` = deployment URL
+5. Deploy `session-cron.js` + `netlify.toml` cron schedule
+6. Test: Run `testSend()` in Apps Script → verify email arrives
+7. Test: Trigger cron manually in Netlify Functions dashboard
+8. Test: Create a test booking for tomorrow → verify day-before email fires
+9. Test: Toggle automation on/off in admin → verify persists across reload
+10. Test: Check automation log viewer shows entries
 
 ### 2. End-to-End Stripe Payment Test
 - Test with real transaction or Stripe test mode
 - Verify webhook → booking update → confirmation email
 - Test all 3 checkout flows: sessions, Academy, Fusion
 
-### 3. 72-Hour Offer Expiry Automation
-- Wire the toggle in Email Automation to actually auto-expire proposed bookings
-- Send 48-hour reminder, then auto-decline at 72 hours
-- Requires either a Netlify scheduled function or Google Apps Script time trigger
+### 3. Three.js 3D Body Model Rebuild
+- Replace 2D body map overlay on progress.html
+- Use 28 bone-accurate region coordinates from Session 28
 
-### 4. Email Automation Polish
-- Hook up toggles to persistent config (save to session_config or new automation_config table)
-- Add Supabase cron / Google Apps Script trigger for daily auto-scan (instead of manual "Generate")
-- Add email tracking for session reminders
-
-### 5. Outstanding Items
+### 4. Outstanding Items
 - Stripe checkout branding review (all 3 checkout flows)
 - notification_preferences column verification
-- Fusion→QP SSO (not yet needed but planned)
+- GitHub intermittent 500s monitoring
 
 ### Future Features
+- **Pre/post session patient forms** — recurring quick check-ins (needs Tracey's input on process before building)
 - **Student tools**: Flashcards, highlighting, reflection journal, summarizer, progress dashboard, goal tracking
 - **Custom card templates**: Save your own cards in Email Center
+- **Session invoicing**: Multi-currency (CAD+HST, EUR), printable PDFs, refund buttons, batch generation
 - **AI Copilot**: Smart email writing
 - **Memberships / Subscriptions**
 - **Live Event Page**: Branded Zoom experience
 
 ---
 
-## Known Issues (Session 29)
+## Known Issues (Session 30)
 1. **email-decode.min.js 404** — Netlify phantom. Harmless.
 2. **Test email no delivery confirmation** — `mode:'no-cors'` means opaque response. Check inbox manually.
-3. **Rich editor → email fidelity** — Advanced formatting may not render perfectly in all email clients.
-4. **Token refresh first-login** — After deploying auth changes, must log out + back in once.
-5. **Dead code from Session 19-20** — Old EC overrides still present. Low priority cleanup.
-6. **Webhook untested with real payment** — session-webhook.js deployed but not yet triggered by actual Stripe payment.
-7. **Calendar needs active cycle** — Frontend shows "filled" when all cycles completed. Intentional.
-8. **Cross-domain SSO working** — QP→Fusion deployed and tested (Session 27). Fusion→QP not yet needed.
-9. **notification_preferences columns** — Need to verify boolean columns exist.
-10. **GitHub intermittent 500s** — Occurred during Session 27 deploys. Retry or manual Netlify deploy.
-11. **Zoom recordings can't embed** — Zoom blocks iframe embeds. Workaround: download MP4 from Zoom, upload via admin.
-12. **Supabase Free plan storage limit** — 1GB storage. Sufficient for ~3-4 recordings. Pro plan ($25/mo) gives 100GB with overage at $0.021/GB. Decision deferred.
-13. **Old test recordings have dummy booking_id** — 4 records with `aa000001-...` booking_id are orphaned. Can be deleted from session_recordings table. (SQL provided below)
-14. **Automation toggles not persisted** — The 4 reminder toggles in Email Automation are checkbox-only (no DB save). They reset on page reload. Future: save to session_config or new table.
-15. **Batch reminder needs cron** — "Generate Reminders Now" is manual. For true automation, add a Google Apps Script time trigger or Netlify scheduled function to auto-send day-before reminders daily.
+3. **Automation toggles now persisted** — ✅ Fixed in Session 30. Wired to `system_config` table.
+4. **Cron needs deployment + env var** — `session-cron.js` deployed but needs `SESSION_EMAIL_SCRIPT_URL` env var set in Netlify.
+5. **Webhook untested with real payment** — session-webhook.js deployed but not yet triggered by actual Stripe payment.
+6. **Cross-domain SSO working** — QP→Fusion deployed and tested (Session 27). Fusion→QP not yet needed.
+7. **notification_preferences columns** — Need to verify boolean columns exist.
+8. **GitHub intermittent 500s** — Occurred during Session 27 deploys. Retry or manual Netlify deploy.
+9. **Zoom recordings can't embed** — Zoom blocks iframe embeds. Workaround: download MP4 from Zoom, upload via admin.
+10. **Supabase Free plan storage limit** — 1GB storage. Sufficient for ~3-4 recordings. Pro plan ($25/mo) gives 100GB.
+11. **Orphaned test recordings** — Cleanup SQL included in Session 30 migration. Run it.
+12. **Apps Script `mode:'no-cors'` for manual sends** — Admin manual sends still use `mode:'no-cors'` (browser limitation). Cron function runs server-side so gets full response.
 
 ---
 
-## File Sizes (Session 29)
-- `admin/index.html` — ~839 lines (was ~773 in S28)
-- `admin/admin.js` — ~5741 lines (was ~5471 in S28)
+## File Sizes (Session 30)
+- `admin/index.html` — ~849 lines
+- `admin/admin.js` — ~5936 lines
 - `admin/admin.css` — ~142 lines
+- `netlify/functions/admin-proxy.js` — 32 allowed tables
+- `netlify/functions/session-cron.js` — ~428 lines (NEW)
 - `pages/one-on-sessions.html` — ~1333 lines
-- `members/login.html` — ~NEW (Session 25)
-- `members/dashboard.html` — ~734 lines (Session 26)
-- `members/settings.html` — ~NEW (Session 25)
-- `members/reset-password.html` — ~NEW (Session 25)
-- `members/sessions.html` — ~649 lines (Updated Session 28)
-- `members/intake.html` — ~751 lines (Session 26)
-- `members/progress.html` — ~700 lines (Session 27)
-- `members/billing.html` — ~332 lines (Session 26)
-- `js/shared.js` — UPDATED (auth-aware header)
-- `netlify/functions/admin-proxy.js` — 30 allowed tables
+- `members/sessions.html` — ~649 lines
+- `members/intake.html` — ~751 lines
+- `members/progress.html` — ~700 lines
+- `members/billing.html` — ~332 lines
+- `members/dashboard.html` — ~734 lines
+- `js/shared.js` — auth-aware header
 
 ---
 
 ## Lessons Learned (ALL SESSIONS)
-1-35: See previous docs.
-36. **Column name mismatches cause proxy 400 errors** — `session_recordings` uses `uploaded_at`, not `created_at`. Always verify actual column names in Supabase Table Editor before writing order-by queries.
-37. **Proxy 400 ≠ table not whitelisted** — The proxy returns 400 for both "invalid table" and "Postgres query error". Check the actual error message. If the table IS in ALLOWED_TABLES, the 400 is from the database query itself.
-38. **Promise.all silently swallows individual failures** — When one of 8 parallel proxy calls fails, the others succeed but the failed one returns `{data: null}`. This makes it look like data is missing rather than erroring. Add console.log to diagnose.
-39. **Recording upload works on Free plan** — Supabase Storage bucket works on Free tier (1GB limit, 50MB per file). No Pro plan required to start using it.
-40. **Vimeo embed cleanup** — Add `?title=0&byline=0&portrait=0` to Vimeo player URL to remove the overlay showing uploader name/avatar. Reduces dead space significantly.
-41. **refreshBookingsView() is the standard** — All bookings tab actions should call this one function instead of individual table refreshes. It does parallel fetch of bookings + notes + recordings and re-renders everything.
-42. **Duplicate function names silently overwrite** — Session 28 had two `crmDeleteNote` functions (one for session notes, one for internal notes). JS silently uses the last-defined one, causing the first to be unreachable. Always use unique names. Fixed in S29 by renaming to `crmDeleteInternalNote`.
-43. **Embedded sub-views beat standalone pages** — Merging CRM into the Clients tab (with sub-nav switching) is cleaner than a separate sidebar entry. Less navigation overhead, shared data context, and the client roster → profile flow is natural.
+1-41: See previous docs.
+42. **Duplicate function names silently overwrite** — JS allows two `function crmDeleteNote()` definitions. The second silently replaces the first. No error. Session notes delete was broken because internal notes delete overwrote it. Always use unique function names.
+43. **Embedded sub-views beat standalone pages** — CRM as a standalone sidebar page was disconnected from the Clients tab. Merging it as sub-nav within the Clients tab makes the workflow seamless — roster → profile → back to roster.
+44. **CSS class typos fail silently** — `class="data-table"` has no styling but produces no errors. Tables render with no spacing. Always verify CSS class names match actual stylesheet.
+45. **Nested panel divs cause invisible content** — If panel A isn't closed before panel B starts, B becomes a child of A. When A is `display:none`, B is invisible even if B itself is `display:block`. Always verify HTML nesting with dev tools.
+46. **Missing helper functions crash entire views** — `fmtTime is not defined` killed the entire Sessions tab render. When a function is used in a template, it must be defined. Add it near related helpers (`fmtDate`, `fmtMoney`).
+47. **`stopPropagation` blocks child click handlers** — If a `<td>` has `stopPropagation`, clicks on child elements inside that td won't trigger parent row handlers. Give children their own `onclick` handlers.
+48. **Idempotent automation requires both DB constraint + pre-check** — The UNIQUE INDEX on `(booking_id, automation_type)` is the safety net, but `alreadySent()` query before each send avoids noisy duplicate-key errors. Belt and suspenders.
+49. **Server-side cron vs browser no-cors** — Admin manual sends use `mode:'no-cors'` and get opaque responses (can't confirm delivery). The Netlify cron function runs server-side with full `fetch()` and gets real HTTP responses. Always prefer server-side for reliability.
+50. **Separate Apps Scripts for separate pipelines** — Option B (new script) beats Option A (extend existing) for isolation. Each pipeline has its own deployment URL, its own logs, its own failure modes. No shared state = no cross-contamination.

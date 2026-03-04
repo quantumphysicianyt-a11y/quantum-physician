@@ -540,7 +540,7 @@
 <div class="card auto-tab-panel" id="autotab-reminders" style="display:none;margin-bottom:20px">
 <div class="card-header"><div class="card-title">1-on-1 Session Email Automation</div></div>
 <div class="card-body">
-<p style="font-size:12px;color:var(--text-dim);margin-bottom:20px">Configure automated emails for 1-on-1 session bookings. Emails are generated from existing bookings and use Dr. Tracey's branded QP template.</p>
+<p style="font-size:12px;color:var(--text-dim);margin-bottom:20px">Configure automated emails for 1-on-1 session bookings. Toggle states are saved to the database and persist across sessions. The daily cron runs at 8 AM ET — manual sends are also available below.</p>
 
 <!-- Automation toggles -->
 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-bottom:24px">
@@ -548,7 +548,7 @@
 <div style="padding:16px;border:1px solid var(--border);border-radius:10px;background:rgba(0,0,0,.08)">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
 <div style="font-weight:600;font-size:13px;color:var(--text)">Day-Before Reminder</div>
-<label style="display:flex;align-items:center;cursor:pointer"><input type="checkbox" id="auto-reminder-day" checked style="accent-color:var(--teal);width:16px;height:16px"></label>
+<label style="display:flex;align-items:center;cursor:pointer"><input type="checkbox" id="auto-reminder-day" checked onchange="toggleAutomationConfig('auto_day_before',this)" style="accent-color:var(--teal);width:16px;height:16px"></label>
 </div>
 <div style="font-size:11px;color:var(--text-dim)">Sent 24 hours before each session. Includes Zoom link, date/time, and preparation tips.</div>
 </div>
@@ -556,7 +556,7 @@
 <div style="padding:16px;border:1px solid var(--border);border-radius:10px;background:rgba(0,0,0,.08)">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
 <div style="font-weight:600;font-size:13px;color:var(--text)">Post-Session Follow-Up</div>
-<label style="display:flex;align-items:center;cursor:pointer"><input type="checkbox" id="auto-reminder-followup" checked style="accent-color:var(--teal);width:16px;height:16px"></label>
+<label style="display:flex;align-items:center;cursor:pointer"><input type="checkbox" id="auto-reminder-followup" checked onchange="toggleAutomationConfig('auto_follow_up',this)" style="accent-color:var(--teal);width:16px;height:16px"></label>
 </div>
 <div style="font-size:11px;color:var(--text-dim)">Sent 2 hours after session is marked complete. Thanks the patient and links to their progress tracker.</div>
 </div>
@@ -564,7 +564,7 @@
 <div style="padding:16px;border:1px solid var(--border);border-radius:10px;background:rgba(0,0,0,.08)">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
 <div style="font-weight:600;font-size:13px;color:var(--text)">Intake Form Nudge</div>
-<label style="display:flex;align-items:center;cursor:pointer"><input type="checkbox" id="auto-reminder-intake" style="accent-color:var(--teal);width:16px;height:16px"></label>
+<label style="display:flex;align-items:center;cursor:pointer"><input type="checkbox" id="auto-reminder-intake" onchange="toggleAutomationConfig('auto_intake_nudge',this)" style="accent-color:var(--teal);width:16px;height:16px"></label>
 </div>
 <div style="font-size:11px;color:var(--text-dim)">Sent to clients who have a paid session but haven't completed their intake form yet.</div>
 </div>
@@ -572,7 +572,7 @@
 <div style="padding:16px;border:1px solid var(--border);border-radius:10px;background:rgba(0,0,0,.08)">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
 <div style="font-weight:600;font-size:13px;color:var(--text)">72-Hour Payment Expiry</div>
-<label style="display:flex;align-items:center;cursor:pointer"><input type="checkbox" id="auto-reminder-expiry" style="accent-color:var(--teal);width:16px;height:16px"></label>
+<label style="display:flex;align-items:center;cursor:pointer"><input type="checkbox" id="auto-reminder-expiry" onchange="toggleAutomationConfig('auto_payment_expiry',this)" style="accent-color:var(--teal);width:16px;height:16px"></label>
 </div>
 <div style="font-size:11px;color:var(--text-dim)">Sends a reminder at 48h, then auto-expires proposed bookings that haven't been paid within 72 hours.</div>
 </div>
@@ -589,6 +589,16 @@
 <!-- Pending reminders list -->
 <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:10px">Pending Session Reminders</div>
 <div id="session-reminders-list"><div class="empty"><p>Click "Generate Reminders Now" to scan upcoming bookings and create reminders.</p></div></div>
+
+<!-- Automation Send Log -->
+<div style="margin-top:28px;border-top:1px solid var(--border);padding-top:20px">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+<div style="font-size:14px;font-weight:600;color:var(--text)">Automation Send Log</div>
+<button class="btn btn-ghost btn-sm" onclick="loadAutomationLog()">Refresh</button>
+</div>
+<p style="font-size:11px;color:var(--text-dim);margin-bottom:12px">Emails sent by the daily automation cron and manual sends. The cron runs daily at 8 AM ET. Duplicate sends are prevented by the unique booking + type constraint.</p>
+<div id="automation-log-list"><div class="empty"><p>Loading...</p></div></div>
+</div>
 </div></div>
 
 <!-- Session Schedule Tab -->
