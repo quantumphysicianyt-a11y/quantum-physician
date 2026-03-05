@@ -7318,6 +7318,8 @@ async function executeBulkInvoices(){
   var price=sessConfigData?sessConfigData.session_price:150;
   var created=0;
 
+  showToast('Creating invoices...','info');
+
   for(var i=0;i<checks.length;i++){
     var bid=checks[i].getAttribute('data-bid');
     var b=sessBookingsData.find(function(x){return x.id===bid});
@@ -7327,9 +7329,9 @@ async function executeBulkInvoices(){
       var numRes=await adminProxy({type:'rpc',fn:'generate_invoice_number'});
       var invNumber=numRes.data;
       var amountCents=price*100;
-      var isPaid=b.stripe_payment_id||b.status==='paid';
 
-      await proxyFrom('invoices').insert({
+      // Completed/paid bookings are always marked as paid invoices
+      var res=await proxyFrom('invoices').insert({
         invoice_number:invNumber,
         booking_id:b.id,
         client_id:b.client_id,
@@ -7340,19 +7342,31 @@ async function executeBulkInvoices(){
         currency:'USD',
         tax_cents:0,
         total_cents:amountCents,
-        status:isPaid?'paid':'draft',
-        paid_at:isPaid?(b.confirmed_at||new Date().toISOString()):null,
+        status:'paid',
+        issued_at:b.confirmed_at||new Date().toISOString(),
+        paid_at:b.confirmed_at||new Date().toISOString(),
         stripe_payment_id:b.stripe_payment_id||null,
-        pay_url:b.confirmation_token?'https://qp-homepage.netlify.app/pages/one-on-sessions.html?pay='+b.confirmation_token:null,
-        due_date:getDefaultDueDate(),
+        due_date:null,
         notes:'Thank you for your trust in this healing journey.'
-      });
+      }).select('id');
+
+      // Auto-generate PDF
+      if(res.data&&res.data[0]){
+        try{
+          var token=sessionStorage.getItem('qp_admin_token');
+          await fetch('/.netlify/functions/generate-invoice',{
+            method:'POST',
+            headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+            body:JSON.stringify({invoice_id:res.data[0].id})
+          });
+        }catch(pdfErr){console.error('PDF gen error:',pdfErr)}
+      }
       created++;
     }catch(e){console.error('Bulk invoice error for '+b.email+':',e)}
   }
 
   var modal=document.getElementById('inv-bulk-modal');if(modal)modal.remove();
-  showToast(created+' invoice(s) created','success');
+  showToast(created+' invoice(s) created with PDFs','success');
   await loadInvoicesData();
 }
 

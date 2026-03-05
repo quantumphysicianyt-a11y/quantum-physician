@@ -134,7 +134,7 @@ exports.handler = async (event) => {
     // --- Fetch session config for Zoom link ---
     const { data: config } = await supabase
       .from("session_config")
-      .select("zoom_link, session_duration_minutes")
+      .select("zoom_link, session_duration_minutes, session_price")
       .limit(1)
       .single();
 
@@ -194,6 +194,100 @@ exports.handler = async (event) => {
       });
     } catch (auditErr) {
       console.error("Audit log error (non-fatal):", auditErr.message);
+    }
+
+    // --- Auto-generate paid invoice + PDF ---
+    try {
+      // Fetch session price from config
+      const sessionPrice = config?.session_price || (amountPaid ? amountPaid : 150);
+      const invoiceAmountCents = Math.round(sessionPrice * 100);
+
+      // Generate invoice number via DB function
+      const { data: invNumber, error: seqErr } = await supabase.rpc("generate_invoice_number");
+      if (seqErr) throw new Error("Invoice number generation failed: " + seqErr.message);
+
+      const now = new Date().toISOString();
+      const name = booking.name || (email ? email.split("@")[0] : "Client");
+
+      // Create invoice record
+      const { data: newInvoice, error: invErr } = await supabase
+        .from("invoices")
+        .insert({
+          invoice_number: invNumber,
+          booking_id: bookingId,
+          client_id: booking.client_id || null,
+          email: email,
+          name: name,
+          description: "1-on-1 Healing Session (60 min)",
+          amount_cents: invoiceAmountCents,
+          currency: "USD",
+          tax_cents: 0,
+          total_cents: invoiceAmountCents,
+          status: "paid",
+          issued_at: now,
+          paid_at: now,
+          due_date: new Date().toISOString().slice(0, 10),
+          stripe_payment_id: stripeSessionId,
+          pay_url: null,
+          notes: "Thank you for your trust in this healing journey."
+        })
+        .select("id, invoice_number")
+        .single();
+
+      if (invErr) throw new Error("Invoice insert failed: " + invErr.message);
+
+      console.log("✅ Invoice created:", newInvoice.invoice_number);
+
+      // Generate branded PDF via generate-invoice function (internal call)
+      const SITE = process.env.URL || "https://qp-homepage.netlify.app";
+      let pdfUrl = null;
+      try {
+        const pdfRes = await fetch(SITE + "/.netlify/functions/generate-invoice", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ invoice_id: newInvoice.id, internal: true })
+        });
+        const pdfData = await pdfRes.json();
+        if (pdfData.pdf_url) {
+          pdfUrl = pdfData.pdf_url;
+          console.log("✅ Invoice PDF generated:", newInvoice.invoice_number);
+        }
+      } catch (pdfErr) {
+        console.error("PDF generation error (non-fatal):", pdfErr.message);
+      }
+
+      // Send paid invoice email to client
+      const dateObj2 = new Date(booking.date + "T12:00:00");
+      const dateFmt2 = dateObj2.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+      const timeFmt2 = formatTime12(booking.start_time);
+
+      const invoiceEmailHtml = buildPaidInvoiceEmailHtml({
+        name: name,
+        invoiceNumber: newInvoice.invoice_number,
+        sessionDate: dateFmt2,
+        sessionTime: timeFmt2,
+        amount: "$" + (invoiceAmountCents / 100).toFixed(2),
+        paidDate: new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
+        pdfUrl: pdfUrl
+      });
+
+      await fetch(APPS_SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify({
+          to: email,
+          from: "tracey@quantumphysician.com",
+          subject: `Paid Invoice ${newInvoice.invoice_number} — Quantum Physician`,
+          body: invoiceEmailHtml,
+          isHtml: true
+        })
+      });
+
+      console.log("✅ Paid invoice email sent to:", email, newInvoice.invoice_number);
+
+    } catch (invoiceErr) {
+      // Never fail the webhook over an invoice error
+      console.error("Auto-invoice error (non-fatal):", invoiceErr.message);
     }
 
     return { statusCode: 200, body: JSON.stringify({ ok: true, booking_id: bookingId }) };
@@ -296,4 +390,94 @@ function formatTime12(time24) {
 function escHtml(str) {
   if (!str) return "";
   return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+// --- Paid Invoice email HTML (QP branded) ---
+function buildPaidInvoiceEmailHtml({ name, invoiceNumber, sessionDate, sessionTime, amount, paidDate, pdfUrl }) {
+  const traceyImg = "https://qp-homepage.netlify.app/assets/images/tracey-about-me.png";
+
+  const pdfSection = pdfUrl
+    ? `<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:24px 0;">
+        <tr><td align="center">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+            <tr><td style="background:linear-gradient(135deg,#5ba8b2,#4acfd9);border-radius:50px;box-shadow:0 4px 20px rgba(91,168,178,.35);">
+              <a href="${pdfUrl}" target="_blank" style="display:inline-block;padding:14px 44px;color:#fff;text-decoration:none;font-weight:700;font-size:14px;letter-spacing:1.5px;text-transform:uppercase;font-family:Arial,Helvetica,sans-serif;">DOWNLOAD INVOICE PDF</a>
+            </td></tr>
+          </table>
+        </td></tr>
+       </table>`
+    : "";
+
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:20px;font-family:Georgia,Times New Roman,serif;background-color:#0a1322;">
+<div style="max-width:600px;margin:0 auto;background-color:#0f1d34;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5),0 0 0 1px rgba(91,168,178,.08);">
+
+<!-- Header -->
+<div style="background:linear-gradient(180deg,#0a1628,#0f1d34);padding:40px 30px 28px;text-align:center;border-bottom:2px solid rgba(91,168,178,.2);">
+  <p style="color:rgba(91,168,178,.5);font-size:11px;margin:0 0 8px;letter-spacing:4px;text-transform:uppercase;font-weight:600;">Paid Invoice</p>
+  <p style="color:#5ba8b2;font-size:28px;margin:0;font-weight:700;font-family:Georgia,serif;">${escHtml(invoiceNumber)}</p>
+</div>
+
+<!-- Body -->
+<div style="padding:36px 36px;color:rgba(255,255,255,.82);font-size:16px;line-height:1.85;text-align:center;font-family:Georgia,serif;">
+
+  <p style="margin:0 0 24px;font-size:16px;">Hi ${escHtml(name)},</p>
+  <p style="margin:0 0 28px;font-size:15px;color:rgba(255,255,255,.6);">Thank you for your payment. Here is your paid invoice for your records.</p>
+
+  <!-- Invoice Summary Card -->
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:24px 0;">
+    <tr><td style="background:linear-gradient(135deg,rgba(91,168,178,.1),rgba(91,168,178,.03));border:1px solid rgba(91,168,178,.25);border-radius:12px;padding:0;overflow:hidden;">
+      <div style="height:3px;background:linear-gradient(90deg,#3dd68c,#5ba8b2,rgba(91,168,178,.15));"></div>
+      <div style="padding:24px 28px;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+          <tr>
+            <td style="color:rgba(91,168,178,.6);font-size:11px;letter-spacing:1.5px;text-transform:uppercase;padding:6px 0;text-align:left;">Description</td>
+            <td style="color:rgba(255,255,255,.75);font-size:14px;padding:6px 0;text-align:right;">1-on-1 Healing Session</td>
+          </tr>
+          <tr>
+            <td style="color:rgba(91,168,178,.6);font-size:11px;letter-spacing:1.5px;text-transform:uppercase;padding:6px 0;text-align:left;">Session Date</td>
+            <td style="color:rgba(255,255,255,.75);font-size:14px;padding:6px 0;text-align:right;">${escHtml(sessionDate)}</td>
+          </tr>
+          <tr>
+            <td style="color:rgba(91,168,178,.6);font-size:11px;letter-spacing:1.5px;text-transform:uppercase;padding:6px 0;text-align:left;">Time</td>
+            <td style="color:rgba(255,255,255,.75);font-size:14px;padding:6px 0;text-align:right;">${escHtml(sessionTime)}</td>
+          </tr>
+          <tr><td colspan="2" style="border-top:1px solid rgba(91,168,178,.2);padding:0;height:12px;"></td></tr>
+          <tr>
+            <td style="color:#3dd68c;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:6px 0;text-align:left;">TOTAL PAID</td>
+            <td style="color:#3dd68c;font-size:20px;font-weight:700;padding:6px 0;text-align:right;">${escHtml(amount)}</td>
+          </tr>
+          <tr>
+            <td colspan="2" style="text-align:center;padding:10px 0 0;">
+              <span style="display:inline-block;background:rgba(61,214,140,.15);color:#3dd68c;padding:4px 16px;border-radius:20px;font-size:12px;font-weight:700;letter-spacing:1px;">✓ PAID — ${escHtml(paidDate)}</span>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </td></tr>
+  </table>
+
+  ${pdfSection}
+
+  <p style="margin:24px 0 0;font-size:13px;color:rgba(255,255,255,.35);">
+    Keep this email for your records. You can also view your invoices in your
+    <a href="https://qp-homepage.netlify.app/members/billing.html" style="color:#5ba8b2;text-decoration:underline;">patient portal</a>.
+  </p>
+</div>
+
+<!-- Sign-off -->
+<div style="padding:28px 36px;border-top:1px solid rgba(91,168,178,.1);text-align:center;background:linear-gradient(180deg,transparent,rgba(91,168,178,.03));">
+  <img src="${traceyImg}" alt="Dr. Tracey Clark" style="width:64px;height:64px;border-radius:50%;border:2px solid rgba(91,168,178,.3);object-fit:cover;display:block;margin:0 auto 12px;">
+  <p style="margin:0;color:#5ba8b2;font-weight:700;font-size:17px;font-family:Georgia,serif;">Dr. Tracey Clark</p>
+  <p style="margin:4px 0 0;color:rgba(255,255,255,.3);font-size:11px;letter-spacing:1.5px;">Quantum Physician</p>
+</div>
+
+<!-- Footer -->
+<div style="background:#071220;padding:18px 30px;text-align:center;border-top:1px solid rgba(91,168,178,.06);">
+  <p style="margin:0;font-size:11px;color:rgba(255,255,255,.2);">&copy; 2026 Quantum Physician. All rights reserved.</p>
+  <p style="margin:6px 0 0;font-size:10px;"><a href="https://qp-homepage.netlify.app" style="color:rgba(91,168,178,.35);text-decoration:none;">quantumphysician.com</a></p>
+</div>
+
+</div>
+</body></html>`;
 }
