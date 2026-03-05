@@ -139,7 +139,7 @@ exports.handler = async (event) => {
     }
 
     // ── DIVIDER ─────────────────────────────────
-    y = 188;
+    y = Math.max(y + 14, dy + 14); // whichever column is taller
     doc.moveTo(L, y).lineTo(R, y).strokeColor(border).lineWidth(0.75).stroke();
 
     // ── SESSION DETAILS ROW ─────────────────────
