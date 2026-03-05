@@ -3641,15 +3641,16 @@ async function saveSessionType(existingId){
     await ensureFreshToken();
     if(existingId){
       await proxyFrom('session_types').update(data).eq('id',existingId);
-      var idx=sessTypesData.findIndex(function(t){return t.id===existingId});
-      if(idx>=0) Object.assign(sessTypesData[idx],data);
       showToast('Session type updated','success');
     } else {
-      var res=await proxyFrom('session_types').insert(data).select('*');
-      if(res.data&&res.data[0]) sessTypesData.push(res.data[0]);
+      await proxyFrom('session_types').insert(data);
       showToast('Session type created','success');
     }
-    sessTypesData.sort(function(a,b){return(a.sort_order||0)-(b.sort_order||0)});
+    // Re-fetch to get accurate data including server-generated ids
+    var el=document.getElementById('sess-types-list');
+    if(el) el.innerHTML='<div class="loading-center"><div class="spinner"></div></div>';
+    var res=await proxyFrom('session_types').select('*').order('sort_order',{ascending:true});
+    sessTypesData=res.data||[];
     document.getElementById('sess-type-modal').remove();
     renderSessionTypes();
   }catch(e){showToast('Error: '+e.message,'error')}
@@ -3660,7 +3661,10 @@ async function deleteSessionType(id){
   try{
     await ensureFreshToken();
     await proxyFrom('session_types').delete().eq('id',id);
-    sessTypesData=sessTypesData.filter(function(t){return t.id!==id});
+    var el=document.getElementById('sess-types-list');
+    if(el) el.innerHTML='<div class="loading-center"><div class="spinner"></div></div>';
+    var res=await proxyFrom('session_types').select('*').order('sort_order',{ascending:true});
+    sessTypesData=res.data||[];
     renderSessionTypes();
     showToast('Session type deleted','success');
   }catch(e){showToast('Error: '+e.message,'error')}
