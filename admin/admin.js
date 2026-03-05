@@ -7295,33 +7295,33 @@ async function downloadInvoicePdf(invId){
   }
 }
 
-/* ---- Full-Screen PDF Preview Modal ---- */
+/* ---- PDF Preview Modal — centered window, no sidebar ---- */
 function showInvoicePdfModal(url, title){
   var old=document.getElementById('pdf-preview-modal');if(old)old.remove();
   var ov=document.createElement('div');ov.id='pdf-preview-modal';
-  ov.style.cssText='position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.85);backdrop-filter:blur(4px);display:flex;flex-direction:column;animation:fadeIn .2s ease';
+  ov.style.cssText='position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:24px;animation:fadeIn .2s ease';
+  ov.onclick=function(e){if(e.target===ov)ov.remove()};
+
+  var box=document.createElement('div');
+  box.style.cssText='background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);width:95%;max-width:820px;height:88vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.5)';
 
   // Top bar
-  var bar=document.createElement('div');
-  bar.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:12px 24px;background:var(--navy-deep);border-bottom:1px solid var(--border);flex-shrink:0';
-  bar.innerHTML='<div style="font-weight:600;font-size:15px;color:var(--teal);font-family:Playfair Display,serif">'+(title||'Invoice')+'</div>'
-    +'<div style="display:flex;gap:10px;align-items:center">'
-    +'<a href="'+url+'" download class="btn btn-primary btn-sm" style="font-size:12px;padding:8px 20px;text-decoration:none">⬇ Download PDF</a>'
-    +'<a href="'+url+'" target="_blank" class="btn btn-ghost btn-sm" style="font-size:11px">Open in Tab</a>'
-    +'<button onclick="document.getElementById(\'pdf-preview-modal\').remove()" class="btn btn-ghost btn-sm" style="font-size:18px;padding:4px 12px;line-height:1">&times;</button>'
-    +'</div>';
+  box.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 20px;border-bottom:1px solid var(--border);flex-shrink:0">'
+    +'<div style="font-weight:600;font-size:14px;color:var(--teal);font-family:Playfair Display,serif">'+(title||'Invoice')+'</div>'
+    +'<div style="display:flex;gap:8px;align-items:center">'
+    +'<a href="'+url+'" download class="btn btn-primary btn-sm" style="font-size:11px;padding:6px 16px;text-decoration:none">Download PDF</a>'
+    +'<a href="'+url+'" target="_blank" class="btn btn-ghost btn-sm" style="font-size:11px">New Tab</a>'
+    +'<button onclick="document.getElementById(\'pdf-preview-modal\').remove()" class="btn btn-ghost btn-sm" style="font-size:16px;padding:4px 10px;line-height:1">&times;</button>'
+    +'</div></div>';
 
-  // PDF iframe — fills remaining space, no sidebar
   var frame=document.createElement('iframe');
   frame.src=url+'#toolbar=1&navpanes=0&scrollbar=1&view=FitH';
   frame.style.cssText='flex:1;border:none;background:#525659';
   frame.title='Invoice PDF';
+  box.appendChild(frame);
 
-  ov.appendChild(bar);
-  ov.appendChild(frame);
-  document.body.appendChild(ov);
+  ov.appendChild(box);document.body.appendChild(ov);
 
-  // ESC to close
   var escHandler=function(e){if(e.key==='Escape'){var m=document.getElementById('pdf-preview-modal');if(m)m.remove();document.removeEventListener('keydown',escHandler)}};
   document.addEventListener('keydown',escHandler);
 }
