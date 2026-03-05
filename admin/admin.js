@@ -5508,11 +5508,39 @@ function switchCrmTab(tab, btn){
   switch(tab){ case 'sessions': renderCrmSessions(); break; case 'intake': renderCrmIntake(); break; case 'progress': renderCrmProgress(); break; case 'billing': renderCrmBilling(); break; case 'notes': renderCrmNotes(); break; case 'emails': renderCrmEmails(); break; }
 }
 
+var crmSessSortCol = 'date', crmSessSortDir = 'desc';
+function sortCrmSessions(col){
+  if(crmSessSortCol===col){crmSessSortDir=crmSessSortDir==='asc'?'desc':'asc'}
+  else{crmSessSortCol=col;crmSessSortDir=col==='date'?'desc':'asc'}
+  renderCrmSessions();
+}
+
 function renderCrmSessions(){
   var el = document.getElementById('crm-sessions-content');
   if(!crmBookings.length){ el.innerHTML = '<div class="empty"><p>No sessions found for this client.</p></div>'; return; }
-  var html = '<table class="tbl"><thead><tr><th>Date</th><th>Time</th><th>Status</th><th>Notes</th><th>Recording</th><th>Actions</th></tr></thead><tbody>';
-  crmBookings.forEach(function(b){
+
+  // Sort
+  var sorted = crmBookings.slice().sort(function(a,b){
+    var dir = crmSessSortDir==='asc'?1:-1;
+    var va,vb;
+    if(crmSessSortCol==='date'){va=a.date+(a.start_time||'');vb=b.date+(b.start_time||'')}
+    else if(crmSessSortCol==='time'){va=a.start_time||'';vb=b.start_time||''}
+    else if(crmSessSortCol==='status'){va=a.status;vb=b.status}
+    else{va=a.date;vb=b.date}
+    if(va<vb)return -1*dir;if(va>vb)return 1*dir;return 0;
+  });
+
+  var sortArrow=function(col){return crmSessSortCol===col?(crmSessSortDir==='asc'?' ↑':' ↓'):'';};
+  var thStyle='cursor:pointer;user-select:none;transition:color .15s';
+  var thActive=function(col){return crmSessSortCol===col?'color:var(--teal)':''};
+
+  var html = '<table class="tbl"><thead><tr>'
+    +'<th style="'+thStyle+';'+thActive('date')+'" onclick="sortCrmSessions(\'date\')">Date'+sortArrow('date')+'</th>'
+    +'<th style="'+thStyle+';'+thActive('time')+'" onclick="sortCrmSessions(\'time\')">Time'+sortArrow('time')+'</th>'
+    +'<th style="'+thStyle+';'+thActive('status')+'" onclick="sortCrmSessions(\'status\')">Status'+sortArrow('status')+'</th>'
+    +'<th>Notes</th><th>Recording</th><th>Actions</th></tr></thead><tbody>';
+
+  sorted.forEach(function(b){
     var date = new Date(b.date).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
     var time = b.start_time ? fmtTime(b.start_time) : '\u2014';
     var statusClass = b.status==='paid'?'success':b.status==='completed'?'success':b.status==='proposed'?'warning':b.status==='cancelled'?'danger':'muted';
@@ -6103,13 +6131,71 @@ async function crmAddProgressNote(type){
 function renderCrmBilling(){
   var el = document.getElementById('crm-billing-content');
   var purchases = purchasesData.filter(function(p){ return p.email && p.email.toLowerCase() === crmCurrentClient; });
-  if(!purchases.length){ el.innerHTML = '<div class="empty"><p>No purchases found for this client.</p></div>'; return; }
-  var total = purchases.reduce(function(s,p){ return s + (Number(p.amount_paid)||0); }, 0);
-  var html = '<div style="margin-bottom:16px;font-size:15px;font-weight:600;color:var(--text)">Total Spent: <span style="color:var(--success)">'+fmtMoney(total)+'</span></div>';
-  html += '<table class="tbl"><thead><tr><th>Date</th><th>Product</th><th>Amount</th><th>Status</th></tr></thead><tbody>';
-  purchases.forEach(function(p){ var date = p.purchased_at ? new Date(p.purchased_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '\u2014'; html += '<tr><td>'+date+'</td><td>'+productName(p.product_id)+'</td><td>'+fmtMoney(p.amount_paid)+'</td><td><span class="badge badge-success">Paid</span></td></tr>'; });
-  html += '</tbody></table>';
+  var clientInvoices = sessInvoicesData.filter(function(inv){ return inv.email && inv.email.toLowerCase() === crmCurrentClient; });
+
+  var html = '';
+
+  // ── Invoices Section ──
+  if(clientInvoices.length){
+    var invTotal = clientInvoices.filter(function(i){return i.status==='paid'}).reduce(function(s,i){return s+i.total_cents},0);
+    html += '<div style="margin-bottom:24px">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div style="font-size:13px;font-weight:600;color:var(--teal);text-transform:uppercase;letter-spacing:.06em">Session Invoices</div><div style="font-size:13px;color:var(--success);font-weight:600">'+fmt$(invTotal)+' paid</div></div>';
+    html += '<table class="tbl"><thead><tr><th style="cursor:pointer" onclick="sortCrmBilling(\'number\')">#</th><th style="cursor:pointer" onclick="sortCrmBilling(\'date\')">Session Date</th><th style="cursor:pointer" onclick="sortCrmBilling(\'amount\')">Amount</th><th>Status</th><th style="cursor:pointer" onclick="sortCrmBilling(\'paid\')">Paid</th><th>Actions</th></tr></thead><tbody>';
+
+    var sorted = clientInvoices.slice().sort(function(a,b){
+      var col = crmBillSortCol || 'paid';
+      var dir = crmBillSortDir === 'asc' ? 1 : -1;
+      var va, vb;
+      if(col==='number'){va=a.invoice_number;vb=b.invoice_number}
+      else if(col==='date'){
+        var ba=sessBookingsData.find(function(x){return x.id===a.booking_id});
+        var bb=sessBookingsData.find(function(x){return x.id===b.booking_id});
+        va=ba?ba.date:'';vb=bb?bb.date:'';
+      }
+      else if(col==='amount'){va=a.total_cents;vb=b.total_cents}
+      else{va=a.paid_at||a.created_at;vb=b.paid_at||b.created_at}
+      if(va<vb)return -1*dir;if(va>vb)return 1*dir;return 0;
+    });
+
+    sorted.forEach(function(inv){
+      var booking = sessBookingsData.find(function(b){return b.id===inv.booking_id});
+      var sessDate = booking ? fmtDate(booking.date) : '\u2014';
+      var paidDate = inv.paid_at ? fmtDate(inv.paid_at.slice(0,10)) : '\u2014';
+      html += '<tr>'
+        +'<td style="font-weight:600;color:var(--teal);font-size:12px">'+esc(inv.invoice_number)+'</td>'
+        +'<td>'+sessDate+'</td>'
+        +'<td>'+fmt$(inv.total_cents)+'</td>'
+        +'<td>'+(inv.status==='paid'?'<span class="badge green">Paid</span>':'<span class="badge muted">'+inv.status+'</span>')+'</td>'
+        +'<td>'+paidDate+'</td>'
+        +'<td><div style="display:flex;gap:4px">'
+        +(inv.pdf_path?'<button class="btn btn-ghost btn-sm" onclick="downloadInvoicePdf(\''+inv.id+'\')" style="font-size:11px">📄 PDF</button>':'<button class="btn btn-ghost btn-sm" onclick="generateInvoicePdf(\''+inv.id+'\')" style="font-size:11px">📄 Gen</button>')
+        +'<button class="btn btn-ghost btn-sm" onclick="resendInvoice(\''+inv.id+'\')" style="font-size:11px">📧</button>'
+        +'</div></td></tr>';
+    });
+    html += '</tbody></table></div>';
+  }
+
+  // ── Purchases Section ──
+  if(purchases.length){
+    var total = purchases.reduce(function(s,p){ return s + (Number(p.amount_paid)||0); }, 0);
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div style="font-size:13px;font-weight:600;color:var(--taupe);text-transform:uppercase;letter-spacing:.06em">Other Purchases</div><div style="font-size:13px;color:var(--success);font-weight:600">'+fmtMoney(total)+'</div></div>';
+    html += '<table class="tbl"><thead><tr><th>Date</th><th>Product</th><th>Amount</th><th>Status</th></tr></thead><tbody>';
+    purchases.forEach(function(p){ var date = p.purchased_at ? new Date(p.purchased_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '\u2014'; html += '<tr><td>'+date+'</td><td>'+productName(p.product_id)+'</td><td>'+fmtMoney(p.amount_paid)+'</td><td><span class="badge badge-success">Paid</span></td></tr>'; });
+    html += '</tbody></table>';
+  }
+
+  if(!clientInvoices.length && !purchases.length){
+    html = '<div class="empty"><p>No billing history for this client.</p></div>';
+  }
+
   el.innerHTML = html;
+}
+
+var crmBillSortCol = 'paid', crmBillSortDir = 'desc';
+function sortCrmBilling(col){
+  if(crmBillSortCol===col){crmBillSortDir=crmBillSortDir==='asc'?'desc':'asc'}
+  else{crmBillSortCol=col;crmBillSortDir='desc'}
+  renderCrmBilling();
 }
 
 function renderCrmNotes(){
