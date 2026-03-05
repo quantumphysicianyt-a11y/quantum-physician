@@ -262,15 +262,17 @@
 <!-- TAB: Bookings -->
 <div class="tab-content" id="sess-tab-bookings">
 
-<!-- Sub-nav: Active / Completed / All -->
+<!-- Sub-nav: Active / Completed / Cancelled / All / Invoices -->
 <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
 <button class="btn btn-ghost btn-sm book-view-btn active" onclick="switchBookView('active',this)">Active</button>
 <button class="btn btn-ghost btn-sm book-view-btn" onclick="switchBookView('completed',this)">Completed</button>
 <button class="btn btn-ghost btn-sm book-view-btn" onclick="switchBookView('cancelled',this)">Cancelled</button>
 <button class="btn btn-ghost btn-sm book-view-btn" onclick="switchBookView('all',this)">All</button>
+<span style="width:1px;height:20px;background:var(--border);margin:0 4px"></span>
+<button class="btn btn-ghost btn-sm book-view-btn" onclick="switchBookView('invoices',this)">📄 Invoices</button>
 </div>
 
-<div class="card" style="margin-bottom:16px">
+<div class="card" style="margin-bottom:16px" id="sess-bookings-card">
 <div class="card-header"><div class="card-title">Auto-Populate &amp; Manage</div>
 <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
 <select class="input" style="width:200px" id="sess-book-cycle" onchange="loadBookingsForCycle()"></select>
@@ -291,6 +293,24 @@
 <div id="sess-bookings-grid"><div class="loading-center"><div class="spinner"></div>Loading...</div></div>
 <div class="pagination" id="sess-book-pagination"></div>
 </div></div>
+<!-- Invoices Sub-View (shown when Invoices sub-tab selected) -->
+<div id="sess-invoices-panel" style="display:none">
+<div class="card" style="margin-bottom:16px">
+<div class="card-header"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> All Invoices</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+<select class="input" style="width:130px" id="inv-status-filter" onchange="renderInvoicesGrid()"><option value="all">All Status</option><option value="draft">Draft</option><option value="sent">Sent</option><option value="paid">Paid</option><option value="overdue">Overdue</option><option value="void">Void</option></select>
+<input type="text" class="input" style="width:200px" id="inv-search" placeholder="Search by email or #..." oninput="renderInvoicesGrid()">
+<button class="btn btn-primary btn-sm" onclick="createInvoiceModal()">+ New Invoice</button>
+<button class="btn btn-ghost btn-sm" onclick="bulkGenerateInvoices()">📄 Bulk Generate for Cycle</button>
+<button class="btn btn-ghost btn-sm" onclick="loadInvoicesData()">Refresh</button>
+</div></div>
+<div class="card-body">
+<div id="inv-stats" style="display:flex;gap:12px;flex-wrap:wrap;font-size:13px;margin-bottom:14px"></div>
+<div id="sess-invoices-grid"><div class="loading-center"><div class="spinner"></div>Loading...</div></div>
+<div class="pagination" id="inv-pagination"></div>
+</div></div>
+</div>
+
 </div>
 
 <!-- TAB: Public & Waitlist -->

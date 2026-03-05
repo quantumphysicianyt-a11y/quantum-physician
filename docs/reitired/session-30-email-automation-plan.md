@@ -2,6 +2,16 @@
 
 **Priority: NON-NEGOTIABLE**
 **Goal: Zero manual clicking. Emails send themselves.**
+**Status: ✅ COMPLETE — Built, deployed, and tested end-to-end (Mar 4, 2026)**
+
+### Deployment Notes (discovered during testing)
+- Admin manual sends route through **BulkEmailSender v3** (not Pipeline #3) with `isHtml: true` and `Content-Type: text/plain`
+- Apps Script must be **New Deployment** (not just save) to activate `doPost` code
+- Use the **Web app URL** (ending in `/exec`), not the Deployment ID, for `SESSION_EMAIL_SCRIPT_URL` env var
+- Premium QP-branded templates rebuilt to match Academy/Fusion quality (dark navy, Tracey headshot, gradient accents)
+- Toggle flash fixed by removing default `checked` attributes from HTML
+- Tab + sub-tab persistence added via `sessionStorage`
+- Send buttons always visible regardless of toggle state (toggles only control cron auto-send)
 
 ---
 

@@ -33,50 +33,218 @@ Todd (the founder/developer of Quantum Physician) and Claude have built this adm
 - These 3 docs + the current `admin/index.html`, `admin/admin.js`, `admin/admin.css`
 - Claude reads all docs BEFORE writing any code
 
-**Last updated:** Session 30 (Mar 4, 2026)
+**Last updated:** Session 32 (Mar 4, 2026)
+
+---
+
+## Session 32 Summary — Email Visibility, Automation Dashboard, Invoice Planning (Mar 4, 2026)
+
+### Cron 7-Day Expiry for Regulars ✅
+- `session-cron.js` updated: 5-day payment warning + 7-day auto-expire for `confirmed` regular bookings
+- **Own config toggle**: `auto_regular_expiry` in `system_config` (independent from 72h standard toggle)
+- Session-date guard: only warns/expires after the session date has passed (regulars pay post-session)
+- Two new QP-branded email templates: `buildRegularExpiryWarningEmail()`, `buildRegularExpiryNoticeEmail()`
+- Two new automation types: `regular_expiry_5d`, `regular_expiry_7d`
+- Day-before reminders now also cover `confirmed` bookings (not just `paid`)
+
+### CRM Emails Tab ✅
+- **6th tab on client profile** (Sessions, Intake Form, Progress, Billing, Notes, Emails)
+- **Session-only scope** — pulls exclusively from `email_automation_log` (no marketing/Fusion crossover)
+- Summary stat boxes: Sent, Failed, Skipped, Total
+- **Type filter buttons**: All, Day-Before, Follow-Up, Intake, Expiry, Failed
+- **Date dropdown**: Auto-populated month/year options, combines with type filter
+- **Sortable columns**: Date, Subject, Type, Status — click headers for asc/desc with ▲/▼ arrows
+- Error messages shown as ⚠ tooltip on failed entries
+
+### 7-Day Regular Expiry Toggle Card ✅
+- 5th toggle card on 1-on-1 Reminders tab (after 72-Hour Payment Expiry)
+- Independent `auto_regular_expiry` config key
+- Description: "For regular (trusted) clients: sends a payment reminder at 5 days post-session, then auto-expires confirmed bookings at 7 days if unpaid."
+
+### Automation Dashboard Upgrade ✅
+- **200 entries** loaded (up from 50)
+- **7-day summary stats bar**: sent count, failed, skipped, per-type breakdown
+- **Filter buttons**: All, Sent, Failed, Skipped, Day-Before, Follow-Up, Intake, Expiry (all)
+- **Date dropdown**: Month/year filter, combines with type/status filters
+- **Sortable columns**: Sent, Recipient, Type, Status — click headers for asc/desc
+- `formatAutomationType` and `getAutomationBadgeClass` updated with `regular_expiry_5d` and `regular_expiry_7d`
+
+### Next Cron Run Preview ✅
+- New section above Automation Send Log on 1-on-1 Reminders tab
+- Cross-references current bookings against `email_automation_log` to show unsent items
+- Shows: tomorrow's reminders, yesterday's follow-ups, 48h warnings, 72h expires, 5-day regular warnings, 7-day regular expires
+- Green checkmark "Nothing queued" when no automations pending
+
+### Invoice System Planning ✅
+- Full design spec delivered: `invoice-system-plan.md`
+- Schema: `invoices` table with auto-incrementing `QP-YYYY-NNNN` numbers, status flow (draft→sent→paid/overdue/void)
+- PDF generation via Netlify function (`generate-invoice.js`) + pdfkit, stored in Supabase `invoices` bucket
+- Admin: Invoices sub-tab, per-booking "📄 Invoice" button, bulk generation per cycle
+- Patient portal: Invoices section on billing.html with download/pay
+- Multi-currency ready (USD default, CAD+HST, EUR future)
+- 4-phase implementation plan for Session 33
+- 5 open questions for Dr. Tracey
+
+### 3D Body Model Confirmed Done ✅
+- Three.js 3D body model on progress.html already built and deployed (was incorrectly listed as pending)
+- GLB mesh, 28 bone-accurate regions, session markers, rotate/zoom — all working
+- Removed from priority list
+
+### Files Modified
+- `admin/admin.js` — ~6734 lines (from ~6456)
+- `admin/index.html` — ~883 lines (from ~864)
+- `netlify/functions/session-cron.js` — ~578 lines (from ~456)
+
+### Lessons Learned
+59. **Keep 1-on-1 session data isolated** — CRM client profiles should only show session-related data (automation emails, session notes, bookings). Marketing campaigns and Fusion emails belong in the platform-wide views (Customers, Email Automation). Don't cross-contaminate the session bubble.
+60. **Next-run previews build trust** — Showing what the cron *will* do before it runs eliminates the "blindly trust" problem. Cross-reference current data against the log to find what hasn't been sent yet.
+61. **Clickable stat cards are expected** — When users see summary stat boxes, they expect clicking them to filter. Back burner but plan for it.
+
+---
+
+## Session 31 Summary — Regulars Flow, Bookings Grid Overhaul, CRM Actions (Mar 4, 2026)
+
+### Create Cycle 401 Fix ✅
+- **Root cause**: Auth token expiry race condition — tokens expired during write operations
+- **Fix**: `ensureFreshToken()` pre-flight helper added to `createCycle()` and all write operations
+- **Duplicate `initAdmin()` call removed** — was running initAdmin twice on page load (leftover from earlier session), causing double network load, double event listeners, memory spike → browser crashes
+
+### generateBookingToken UUID Fix ✅
+- **Root cause**: `confirmation_token` column typed as `uuid` but `generateBookingToken()` produced 64-char hex string
+- **Fix**: Rewrote to produce valid UUID v4 format (`xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx`)
+- This was a pre-existing bug — date assignment had been broken since the column type changed
+
+### Regulars / Post-Session Payment Flow ✅
+- **New column**: `session_clients.client_type` (text, default 'standard') — values: 'standard' | 'regular'
+- **Add Client form**: Client Type dropdown (Standard / Regular)
+- **Edit Client modal**: Client Type dropdown
+- **Roster cards**: Teal "Regular" badge on trusted clients
+- **Auto-confirm**: Regular clients' bookings start as `confirmed` (not `proposed`) with `confirmed_at` timestamp
+- **Booking status flow for Regulars**: `proposed → confirmed → completed → paid` (post-session)
+- **Payment Request email**: QP-branded HTML email with pay link, sent via BulkEmailSender v3
+- **`requestRegularPayment()`**: Generates/retrieves confirmation token, builds email, sends, logs to audit
+- **`sendSessionEmail()`**: Wrapper helper for Apps Script sends with console logging
+- **Reminders include confirmed**: Day-before reminders fire for both `paid` and `confirmed` bookings
+
+### Bookings Grid Overhaul ✅
+- **Payment column** (new): Separates payment status from session status
+  - Paid (green badge), Unpaid · Request (red button), Requested + Resend, — (n/a)
+- **Sortable columns**: Click any header (Date, Time, Client, Type, Status, Payment) for asc/desc
+  - Active column highlights in teal with ↑/↓ arrow
+- **Active/Completed/Cancelled/All sub-tabs**: Filters bookings by lifecycle stage
+  - Active: Proposed, Confirmed, Paid
+  - Completed: Completed, No Show
+  - Cancelled: Cancelled, Declined, Expired, Rescheduled
+  - All: Everything
+- **Bulk actions** hide on Completed/Cancelled views
+- **View-aware empty states**: Different messages per view
+
+### Bulk Actions with Preview Checklists ✅
+- **Bulk Request Payments**: Modal listing all completed unpaid regulars with checkboxes
+- **Bulk Send Reminders**: Modal listing all tomorrow's sessions with checkboxes
+- **Select All / individual uncheck**: Custom teal QP-themed checkboxes (`.qp-check` CSS class)
+- **"Previously sent" indicator**: Shows if payment was already requested
+
+### Reschedule System ✅
+- **"Rescheduled" status**: New booking status with purple badge
+- **Reason selector modal**: 6 options (Client requested, Practitioner unavailable, Illness, Scheduling conflict, No-show rebooking, Other) + optional note
+- **Auto-note**: Records reason + original date on the old booking
+- **`rescheduled_from` column**: Links new booking to original
+- **Purple "↩ Rescheduled from [date]" indicator**: Clickable — opens detail popup with reason, original date, and notes
+- **Two reschedule paths**: Roster clients → date picker modal, Public bookings → date/time picker modal
+- **Reactivate button**: Moves cancelled bookings back to Proposed
+
+### Confirmation Dialogs ✅
+- Cancel, Decline, No Show now require confirmation with client name + date
+- Prevents accidental status changes
+
+### CRM Profile Actions ✅
+- **Full action bar on CRM profile header**: Dates, Email, Edit, Pause, Remove buttons under client name
+- **Action buttons in dates modal header**: Email, Edit, Pause accessible without leaving modal
+- **Complete button UX**: Removed misleading checkmark ("✓ Complete" → "Complete")
+
+### New Database Columns (Session 31)
+```sql
+ALTER TABLE session_clients ADD COLUMN IF NOT EXISTS client_type text DEFAULT 'standard';
+ALTER TABLE session_bookings ADD COLUMN IF NOT EXISTS payment_requested_at timestamptz;
+ALTER TABLE session_bookings ADD COLUMN IF NOT EXISTS rescheduled_from uuid;
+ALTER TABLE session_bookings ADD COLUMN IF NOT EXISTS reschedule_reason text;
+```
+
+### New CSS
+- **`.qp-check`** — Custom themed checkboxes: teal gradient when checked, subtle glow on hover, dark mode + light mode
+
+### Files Modified
+- `admin/admin.js` — ~6456 lines (from ~5966)
+- `admin/index.html` — ~864 lines (from ~849)
+- `admin/admin.css` — ~181 lines (from ~142)
+
+### Lessons Learned
+54. **Duplicate `class` attributes are silently ignored** — `class="a" class="b"` only applies "a". Merge into `class="a b"`.
+55. **Supabase rejects explicit null on typed columns** — Sending `confirmed_at: null` fails if column has constraints. Build insert object conditionally.
+56. **`confirmation_token` column type matters** — If DB column is `uuid`, the value MUST be valid UUID format. Random hex strings cause 400 errors.
+57. **Duplicate `initAdmin()` calls cause cascading failures** — Double initialization = double network load, double event listeners, memory spikes, browser crashes.
+58. **Payment status ≠ session status** — Separating into two columns (Status + Payment) eliminates the confusion of "Completed" next to action buttons.
 
 ---
 
 ## Session 30 Summary — Automated Email System for 1-on-1 Sessions (Mar 4, 2026)
 
-### TRUE Automated Email Pipeline Built ✅
+### TRUE Automated Email Pipeline Built & Deployed ✅
 - **Self-contained Pipeline #3** — completely isolated from Fusion (#1) and Academy (#2) email systems
 - **Netlify scheduled function** (`session-cron.js`) — runs daily at 8 AM ET (13:00 UTC via `netlify.toml` cron)
 - **4 automation types**: Day-Before Reminder, Post-Session Follow-Up, Intake Form Nudge, 72-Hour Payment Expiry
 - **Idempotent send logic** — UNIQUE INDEX on `(booking_id, automation_type)` prevents double-sends; `alreadySent()` check before every send
 - **5 QP-branded email templates** in cron: day-before, follow-up, intake nudge, 48h expiry warning, 72h expiry notice
 - **Payment expiry auto-action** — 72h expired bookings get status updated to `expired` + availability slot freed
+- **Fully tested end-to-end**: cron send confirmed, manual send confirmed, idempotency confirmed both directions
+
+### Premium QP-Branded Email Templates ✅
+- Rebuilt ALL templates (admin.js + session-cron.js) to match Academy/Fusion quality level
+- Dark navy container (#0e1a30), rounded corners, box shadow
+- Gradient header banner with QP logo
+- Dr. Tracey's headshot in every signature (circular photo)
+- Teal (#5ba8b2) / taupe (#ad9b84) accent system
+- Left-border info boxes, gradient detail cards, uppercase letter-spaced labels
+- Pill CTAs with gradient backgrounds + uppercase letter-spacing
+- Shared `wrapTemplate()` in cron for DRY template generation
 
 ### New Database Tables ✅
 - **`email_automation_log`** — tracks every automated email (booking_id, email, automation_type, status, error_message, sent_at). Unique constraint on booking_id + automation_type.
 - **`system_config`** — key-value store for toggle persistence (auto_day_before, auto_follow_up, auto_intake_nudge, auto_payment_expiry). Seeded with defaults.
 
-### Admin UI Wired to Database ✅
-- **Toggle persistence** — all 4 checkboxes now call `toggleAutomationConfig()` which writes to `system_config` table. State survives page reload.
-- **Automation Log Viewer** — new section below reminders list showing last 50 sends with timestamp, recipient, type badge, status badge, error message
-- **Manual sends now log to `email_automation_log`** — `sendSessionReminder()` inserts to log table so cron won't double-send
+### Admin UI Improvements ✅
+- **Toggle persistence** — all 4 checkboxes write to `system_config`. State survives page reload.
+- **Toggle flash fixed** — removed default `checked` attributes; toggles load from DB correctly.
+- **Tab persistence** — `sessionStorage` saves current page + sub-tab. Reload stays on same page.
+- **Sub-tab persistence** — Email Automation sub-tabs (Scheduled/Logs/Sessions/Reminders) persist across reload.
+- **Send buttons always visible** — Send Reminder / Send Follow-Up buttons show regardless of toggle state. Toggles only control the cron auto-send.
+- **Automation Log Viewer** — last 50 sends with timestamp, recipient, type badge, status badge, error message.
+- **Manual sends log to `email_automation_log`** — cron respects manual sends (idempotency both directions).
+
+### Deployment Fixes (discovered during testing) ✅
+- **Admin manual send payload fixed** — was sending `{action:'sendEmail', htmlBody}` to BulkEmailSender which expects `{to, body, isHtml}`. Fixed to use correct format: `isHtml: true`, `body` (not `htmlBody`), `Content-Type: text/plain`.
+- **Apps Script Version 3 deployed** — initial deploy was Version 1 (empty `doPost`). Created New Deployment to activate the code.
+- **`SESSION_EMAIL_SCRIPT_URL` env var** — set in Netlify pointing to Web app URL (not Deployment ID).
 
 ### New Google Apps Script ✅
-- **QP Session Email Sender** (Pipeline #3) — standalone script, completely separate from BulkEmailSender v3 and FusionSessionsAutomation
-- Handles `sendSessionEmail` action
+- **QP Session Email Sender** (Pipeline #3) — standalone script, Version 3 deployed
+- Handles `sendSessionEmail` action + legacy `sendEmail` + direct send (no action field)
 - Sends from `tracey@quantumphysician.com` alias as "Dr. Tracey Clark — Quantum Physician"
-- Includes `doGet` health check endpoint and `testSend()` function
+- `doGet` health check + `testSend()` function
 
 ### Admin Proxy Updated ✅
 - Added `email_automation_log` and `system_config` to ALLOWED_TABLES (now 32 total)
 
-### Cleanup ✅
-- **Orphaned test recordings SQL** included in migration script
-- Migration SQL file: `session-30-migration.sql`
-
 ### Files Created
-- `netlify/functions/session-cron.js` — NEW (428 lines)
-- `qp-session-email-script.gs` — NEW Google Apps Script for Pipeline #3
+- `netlify/functions/session-cron.js` — NEW (~456 lines)
+- `qp-session-email-script.gs` — NEW Google Apps Script for Pipeline #3 (137 lines)
 
 ### Files Modified
-- `admin/admin.js` — ~5936 lines (from ~5855)
+- `admin/admin.js` — ~5966 lines (from ~5855)
 - `admin/index.html` — ~849 lines (from ~839)
 - `netlify/functions/admin-proxy.js` — 32 allowed tables (from 30)
+- `netlify.toml` — added `[functions."session-cron"]` cron schedule
 
 ---
 
@@ -185,46 +353,37 @@ See previous handoff docs for full details. Key milestones:
 
 ---
 
-## 🔴 PRIORITY NEXT STEPS (Session 31)
+## 🔴 PRIORITY NEXT STEPS (Session 33)
 
-### 1. Deploy & Test Email Automation Pipeline (FIRST PRIORITY)
-**Todd's deployment checklist:**
-1. Run `session-30-migration.sql` in Supabase SQL Editor (creates 2 tables + cleanup)
-2. Deploy updated `admin-proxy.js` (32 tables)
-3. Create new Google Apps Script from `qp-session-email-script.gs`:
-   - New project in Google Apps Script
-   - Paste code → Deploy → New deployment → Web app → Execute as Me → Anyone can access
-   - Copy deployment URL
-4. Set Netlify env var: `SESSION_EMAIL_SCRIPT_URL` = deployment URL
-5. Deploy `session-cron.js` + `netlify.toml` cron schedule
-6. Test: Run `testSend()` in Apps Script → verify email arrives
-7. Test: Trigger cron manually in Netlify Functions dashboard
-8. Test: Create a test booking for tomorrow → verify day-before email fires
-9. Test: Toggle automation on/off in admin → verify persists across reload
-10. Test: Check automation log viewer shows entries
+### 1. Invoice System Build (Phase 1-2)
+- Run SQL migration: `invoices` table + sequence + RLS + indexes
+- Add `invoices` to admin-proxy allowlist (33 tables)
+- Create Supabase Storage `invoices` bucket
+- Build admin UI: Invoices sub-tab, Create/Edit modal, status management
+- PDF generation with pdfkit (`generate-invoice.js` Netlify function)
+- See `invoice-system-plan.md` for full spec
 
 ### 2. End-to-End Stripe Payment Test
-- Test with real transaction or Stripe test mode
-- Verify webhook → booking update → confirmation email
-- Test all 3 checkout flows: sessions, Academy, Fusion
+- Test all 3 flows: session-checkout (token + public), academy-checkout, Fusion checkout
+- Verify session-webhook.js handles real Stripe payment
+- Review checkout branding across all flows
 
-### 3. Three.js 3D Body Model Rebuild
-- Replace 2D body map overlay on progress.html
-- Use 28 bone-accurate region coordinates from Session 28
-
-### 4. Outstanding Items
-- Stripe checkout branding review (all 3 checkout flows)
-- notification_preferences column verification
-- GitHub intermittent 500s monitoring
+### 3. Outstanding Items
+- Sortable columns on all admin tables (roster, students, orders, audit log)
+- Clickable stat cards on automation dashboard (filter on click)
+- Pre/post session patient forms (needs Tracey's input)
+- SMS reminders (not yet mapped)
 
 ### Future Features
-- **Pre/post session patient forms** — recurring quick check-ins (needs Tracey's input on process before building)
-- **Student tools**: Flashcards, highlighting, reflection journal, summarizer, progress dashboard, goal tracking
+- **Pre/post session patient forms** — recurring quick check-ins (needs Tracey's input)
+- **Student tools**: Flashcards, highlighting, reflection journal, summarizer
 - **Custom card templates**: Save your own cards in Email Center
-- **Session invoicing**: Multi-currency (CAD+HST, EUR), printable PDFs, refund buttons, batch generation
-- **AI Copilot**: Smart email writing
+- **AI Copilot**: Smart email writing / AI documentation / transcription
 - **Memberships / Subscriptions**
 - **Live Event Page**: Branded Zoom experience
+- **In-app secure messaging**
+- **Consent forms / HIPAA agreements**
+- **Multiple preferred times per client** (logged for larger rosters)
 
 ---
 
@@ -244,12 +403,12 @@ See previous handoff docs for full details. Key milestones:
 
 ---
 
-## File Sizes (Session 30)
-- `admin/index.html` — ~849 lines
-- `admin/admin.js` — ~5936 lines
-- `admin/admin.css` — ~142 lines
+## File Sizes (Post-Session 32)
+- `admin/index.html` — ~883 lines
+- `admin/admin.js` — ~6734 lines
+- `admin/admin.css` — ~181 lines
 - `netlify/functions/admin-proxy.js` — 32 allowed tables
-- `netlify/functions/session-cron.js` — ~428 lines (NEW)
+- `netlify/functions/session-cron.js` — ~578 lines
 - `pages/one-on-sessions.html` — ~1333 lines
 - `members/sessions.html` — ~649 lines
 - `members/intake.html` — ~751 lines
@@ -271,3 +430,6 @@ See previous handoff docs for full details. Key milestones:
 48. **Idempotent automation requires both DB constraint + pre-check** — The UNIQUE INDEX on `(booking_id, automation_type)` is the safety net, but `alreadySent()` query before each send avoids noisy duplicate-key errors. Belt and suspenders.
 49. **Server-side cron vs browser no-cors** — Admin manual sends use `mode:'no-cors'` and get opaque responses (can't confirm delivery). The Netlify cron function runs server-side with full `fetch()` and gets real HTTP responses. Always prefer server-side for reliability.
 50. **Separate Apps Scripts for separate pipelines** — Option B (new script) beats Option A (extend existing) for isolation. Each pipeline has its own deployment URL, its own logs, its own failure modes. No shared state = no cross-contamination.
+51. **Apps Script: save ≠ deploy** — Saving code in the editor does NOT update the live web app. Must click Deploy → New Deployment each time code changes. The Executions log will show `doGet` only (from health checks) if `doPost` code was never deployed.
+52. **Match payload formats to the receiver** — Admin manual sends go to BulkEmailSender v3 which expects `{to, body, isHtml, recipientName}` with `Content-Type: text/plain`. Sending `{action, htmlBody}` silently fails because no-cors hides the error. Always verify the receiver's expected payload format.
+53. **Deployment ID vs Web app URL** — Google Apps Script shows both after deploy. The Deployment ID is an internal identifier. The Web app URL (ending in `/exec`) is the callable endpoint. Use the `/exec` URL for env vars.

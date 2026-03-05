@@ -1,6 +1,6 @@
 # QP Admin Panel — Full Infrastructure Documentation
 
-**Last updated:** Session 30 (Mar 4, 2026)
+**Last updated:** Session 32 (Mar 4, 2026)
 
 ---
 
@@ -27,9 +27,9 @@
 quantum-physician/
 ├── _headers
 ├── admin/
-│   ├── index.html             # Admin panel HTML (~849 lines) — UPDATED SESSION 30
-│   ├── admin.css              # Admin panel styles (~142 lines)
-│   └── admin.js               # Admin panel logic (~5936 lines) — UPDATED SESSION 30
+│   ├── index.html             # Admin panel HTML (~883 lines) — UPDATED SESSION 32
+│   ├── admin.css              # Admin panel styles (~181 lines)
+│   └── admin.js               # Admin panel logic (~6734 lines) — UPDATED SESSION 32
 ├── academy/
 │   ├── builder.html, course.html, dashboard.html, index.html
 │   ├── learn.html, login.html, preview.html, reset-password.html
@@ -66,7 +66,7 @@ quantum-physician/
 │   ├── admin-auth.js
 │   ├── admin-proxy.js         # Server-side proxy for all admin ops (32 tables)
 │   ├── session-checkout.js    # Stripe checkout for 1-on-1 sessions
-│   ├── session-cron.js        # Daily automated emails (8 AM ET) — NEW SESSION 30
+│   ├── session-cron.js        # Daily automated emails (8 AM ET) — UPDATED SESSION 32 (7-day regular expiry)
 │   ├── session-webhook.js     # Payment webhook for 1-on-1 sessions
 │   └── stripe-refund.js
 ├── pages/
@@ -112,8 +112,8 @@ quantum-physician/
 | `session_config` | session_price, session_duration_minutes, public_booking_status, timezone, zoom_link | Global settings |
 | `session_cycles` | name, start_date, end_date, status | 4-month booking cycles |
 | `session_availability` | cycle_id, date, start_time, end_time, status, visibility | Daily time blocks |
-| `session_clients` | email, name, frequency, preferred_day, preferred_time, priority, status | Recurring client roster |
-| `session_bookings` | cycle_id, client_id, email, date, start_time, end_time, status, type, stripe_payment_id, confirmation_token | Individual appointments |
+| `session_clients` | email, name, frequency, preferred_day, preferred_time, priority, status, **client_type** (standard/regular) | Recurring client roster |
+| `session_bookings` | cycle_id, client_id, email, date, start_time, end_time, status, type, stripe_payment_id, confirmation_token, **payment_requested_at**, **rescheduled_from** (uuid), **reschedule_reason** | Individual appointments |
 | `session_waitlist` | email, name, preferred_days, preferred_times, message, status | Public waitlist |
 
 ### Patient CRM Tables (5 — Session 26)
@@ -174,19 +174,21 @@ quantum-physician/
 - **Sub-navigation**: "Client Roster" | "All Client Profiles" buttons at top of Clients tab
 - **Three views**: `client-view-roster`, `client-view-all`, `crm-detail-view`
 - **`switchClientView(view, btn)`** — toggles between roster and all profiles
-- **`crmOpenClient(email)`** — hides both sub-views, shows 5-tab detail view, dims sub-nav
+- **`crmOpenClient(email)`** — hides both sub-views, shows 6-tab detail view, dims sub-nav
 - **`crmBackToList()`** — returns to active sub-view (tracked by `clientSubView` global: 'roster'|'all')
 - **Client cards are clickable** — whole card triggers `crmOpenClient()`, action buttons use `stopPropagation`
 
 ### Session Email Automation (Session 29 + 30)
 - **"1-on-1 Reminders" sub-tab** in Email Automation page
-- **4 toggle cards**: Day-Before, Post-Session Follow-Up, Intake Nudge, 72-Hour Expiry
+- **5 toggle cards**: Day-Before, Post-Session Follow-Up, Intake Nudge, 72-Hour Expiry, 7-Day Regular Expiry (Session 32)
 - **Toggles persisted to `system_config` table** — `toggleAutomationConfig(key, checkbox)` writes to DB on every change (Session 30)
 - **`loadSessionRemindersTab()`** — loads config from `system_config`, loads bookings data, renders reminders, loads automation log
-- **`renderSessionReminders()`** — scans `sessBookingsData` for upcoming paid (tomorrow highlighted) and recently completed (last 7 days)
+- **`renderSessionReminders()`** — scans `sessBookingsData` for upcoming paid/confirmed (tomorrow highlighted) and recently completed (last 7 days)
 - **`buildSessionReminderHtml(type, booking)`** — QP-branded HTML templates for day-before and follow-up
 - **`sendSessionReminder(type, bookingId, email)`** — sends via Apps Script, logs to `email_automation_log` for dedup with cron
-- **Automation Log Viewer** — `loadAutomationLog()` shows last 50 automated sends with type/status badges (Session 30)
+- **Automation Log Viewer** — `loadAutomationLog()` shows last 200 sends with type/status badges, summary stats, date dropdown, sortable columns, filter buttons (Session 32)
+- **Next Cron Run Preview** — `renderNextRunPreview()` shows what the cron will process next based on current bookings vs automation log (Session 32)
+- **CRM Emails Tab** — `renderCrmEmails()` shows per-client session email history with filters, date dropdown, sortable columns (Session 32)
 - **Netlify Cron**: `session-cron.js` runs daily at 8 AM ET, checks `system_config` for enabled automations, queries bookings, checks `email_automation_log` for already-sent, sends via new Apps Script, logs results
 - **Idempotent**: UNIQUE INDEX on `(booking_id, automation_type)` + `alreadySent()` pre-check
 
@@ -194,6 +196,9 @@ quantum-physician/
 ```javascript
 var sessConfigData, sessCyclesData, sessAvailData, sessClientsData;
 var sessBookingsData, sessWaitlistData, sessNotesData, sessRecsData;
+var sessBookPage, sessBookPS; // Bookings pagination
+var sessBookSortCol, sessBookSortDir; // Bookings sort state (Session 31)
+var sessBookView; // 'active' | 'completed' | 'cancelled' | 'all' (Session 31)
 var crmCurrentClient; // Currently viewed client in CRM
 var clientSubView = 'roster'; // Active sub-view: 'roster' or 'all'
 var crmBookings, crmNotes, crmRecordings, crmIntake, crmCheckins, crmProgressNotes;
@@ -205,6 +210,38 @@ function fmtTime(t) // Converts "14:00:00" → "2:00 PM"
 function filterCrmProgress() // Filters check-ins and practitioner notes by keyword/date/type
 function toggleCrmBookingDetails(bookingId) // Expands/collapses notes+recordings in CRM Sessions tab
 function crmDeleteInternalNote(id) // Renamed from duplicate crmDeleteNote
+```
+
+### Helper Functions Added (Session 31)
+```javascript
+function ensureFreshToken() // Pre-flight auth token refresh for all write operations
+function generateBookingToken() // Valid UUID v4 format for confirmation_token column
+function sortBookingsGrid(col) // Toggle asc/desc sort on bookings grid column
+function switchBookView(view, btn) // Switch Active/Completed/Cancelled/All sub-tabs
+function requestRegularPayment(bookingId) // Send payment request email to completed regular client
+function sendSessionEmail(to, subject, html) // Wrapper for Apps Script email sends
+function buildPaymentRequestHtml(name, date, price, payLink) // QP-branded payment request email
+function bulkRequestPayments() // Preview checklist modal → batch send payment requests
+function executeBulkPayments() // Execute bulk payment sends from checklist
+function bulkSendReminders() // Preview checklist modal → batch send day-before reminders
+function executeBulkReminders() // Execute bulk reminder sends from checklist
+function rescheduleBooking(bookingId) // Reason modal → mark rescheduled → open date picker
+function executeRescheduleWithReason(bookingId) // Process reschedule with reason + note
+function executeReschedule(oldBookingId) // Create new booking from reschedule modal (public bookings)
+function showRescheduleDetail(origBookingId) // Popup showing reschedule reason + original date + notes
+```
+
+### Helper Functions Added (Session 32)
+```javascript
+function renderCrmEmails() // CRM Emails tab — session-only email history with filters, sorting, date dropdown
+function filterCrmEmails(filter, btn) // Combined type + date filter for CRM emails
+function sortCrmEmails(col) // Toggle sort on CRM emails table columns
+function buildCrmEmailsTable(emails) // Render sorted/filtered CRM email table
+function getAutoSubject(type) // Maps automation_type to email subject line
+function filterAutoLog(filter, btn) // Combined type/status + date filter for automation log
+function sortAutoLog(col) // Toggle sort on automation log columns
+function buildAutoLogTable(rows) // Render sorted/filtered automation log table
+function renderNextRunPreview() // Shows what cron will process next based on current bookings vs log
 ```
 
 ### refreshBookingsView() — THE Standard Refresh (Session 28)
@@ -270,16 +307,18 @@ i-cal, i-video, i-book, i-chat, i-user, i-zap, i-settings, i-home, i-gift, i-log
 
 ---
 
-## Known Issues (Session 30)
+## Known Issues (Session 32)
 1. **email-decode.min.js 404** — Netlify phantom, harmless.
 2. **Test email delivery** — `mode:'no-cors'` means no confirmation for manual admin sends. Cron runs server-side.
-3. **Automation toggles persisted** — ✅ Fixed Session 30. Wired to `system_config` table.
-4. **Cron needs env var** — `SESSION_EMAIL_SCRIPT_URL` must be set in Netlify for cron to work.
-5. **Webhook untested with real payment** — session-webhook.js awaiting first real Stripe payment.
-6. **Cross-domain SSO** — QP→Fusion working. Fusion→QP not yet implemented.
-7. **notification_preferences columns** — Need to verify boolean columns exist.
-8. **GitHub intermittent 500s** — Retry or manual Netlify deploy.
+3. **Automation toggles persisted** — ✅ Fixed Session 30.
+4. **Cron fully deployed** — ✅ Updated Session 32 with 7-day regular expiry + own toggle.
+5. **"Create Cycle" crash** — ✅ Fixed Session 31 (ensureFreshToken + duplicate initAdmin removal).
+6. **Webhook untested with real payment** — session-webhook.js awaiting first real Stripe payment.
+7. **Cross-domain SSO** — QP→Fusion working. Fusion→QP not yet implemented.
+8. **Sortable columns** — Bookings grid + CRM Emails tab + Automation Log have sortable headers. Other tables (roster, orders, students) pending.
 9. **Zoom recordings can't embed** — Download MP4 and upload instead.
 10. **Supabase Free plan 1GB limit** — ~3-4 session recordings before hitting cap.
 11. **session_recordings.uploaded_at** — NOT created_at. All queries must use uploaded_at.
-12. **`patient_intake` email column** — Cron checks intake by email, but table may use `user_id` instead. Cron falls back to `client_id` check.
+12. **BulkEmailSender = FusionSessionsEmailer** — The Apps Script called "FusionSessionsEmailer" in Google Apps Script dashboard IS the BulkEmailSender v3 used by admin panel.
+13. **3D body model is DONE** — Three.js on progress.html is live. No rebuild needed. Was incorrectly listed as pending.
+14. **Clickable stat cards** — Summary stat boxes on automation dashboard don't filter on click yet. Back burner.

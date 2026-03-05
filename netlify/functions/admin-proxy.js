@@ -10,7 +10,8 @@ const ALLOWED_TABLES = [
   "session_clients", "session_bookings", "session_waitlist",
   "session_notes", "session_recordings", "patient_intake",
   "patient_checkins", "patient_progress_notes",
-  "email_automation_log", "system_config"
+  "email_automation_log", "system_config",
+  "invoices"
 ];
 
 const WRITABLE_TABLES = [...ALLOWED_TABLES];
@@ -64,6 +65,7 @@ exports.handler = async (event) => {
     if (type === "insert") return await handleInsert(sbAdmin, body, headers);
     if (type === "update") return await handleUpdate(sbAdmin, body, headers);
     if (type === "delete") return await handleDelete(sbAdmin, body, headers);
+    if (type === "rpc") return await handleRpc(sbAdmin, body, headers);
     if (type === "auth_admin") return await handleAuthAdmin(SUPABASE_URL, SUPABASE_SERVICE_KEY, body, headers);
 
     return { statusCode: 400, headers, body: JSON.stringify({ error: "Unknown type: " + type }) };
@@ -149,6 +151,17 @@ async function handleDelete(sb, body, headers) {
   query = applyFilters(query, filters);
 
   const { data, error } = await query;
+  if (error) return { statusCode: 400, headers, body: JSON.stringify({ error: error.message }) };
+  return { statusCode: 200, headers, body: JSON.stringify({ data }) };
+}
+
+async function handleRpc(sb, body, headers) {
+  const { fn, params } = body;
+  const ALLOWED_RPCS = ["generate_invoice_number"];
+  if (!fn || !ALLOWED_RPCS.includes(fn)) {
+    return { statusCode: 400, headers, body: JSON.stringify({ error: "Invalid RPC: " + fn }) };
+  }
+  const { data, error } = await sb.rpc(fn, params || {});
   if (error) return { statusCode: 400, headers, body: JSON.stringify({ error: error.message }) };
   return { statusCode: 200, headers, body: JSON.stringify({ data }) };
 }

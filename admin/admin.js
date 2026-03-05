@@ -3487,32 +3487,26 @@ var sessConfigData=null, sessCyclesData=[], sessAvailData=[], sessClientsData=[]
 var sessAvailMonth=new Date().getMonth(), sessAvailYear=new Date().getFullYear();
 var sessBookPage=1, sessBookPS=20;
 var sessBookSortCol='date', sessBookSortDir='asc';
-var sessBookView='active'; // 'active', 'completed', 'all'
+var sessBookView='active'; // 'active', 'completed', 'cancelled', 'all', 'invoices'
 
-function switchBookView(view,btn){
-  sessBookView=view;
-  sessBookPage=1;
-  document.querySelectorAll('.book-view-btn').forEach(function(b){b.classList.remove('active')});
-  if(btn)btn.classList.add('active');
-  // Reset status filter to match view
-  var statusEl=document.getElementById('sess-book-status');
-  if(statusEl)statusEl.value='all';
-  renderBookingsGrid();
-}
+// switchBookView is defined in the Invoice System section at the bottom of admin.js
 
 /* Quick-refresh bookings + notes + recordings without full page reload */
 async function refreshBookingsView(){
   try{
     await ensureFreshToken();
-    var [bk, nt, rc] = await Promise.all([
+    var [bk, nt, rc, inv] = await Promise.all([
       proxyFrom('session_bookings').select('*').order('date',{ascending:true}),
       proxyFrom('session_notes').select('*').order('created_at',{ascending:false}),
-      proxyFrom('session_recordings').select('*').order('uploaded_at',{ascending:false})
+      proxyFrom('session_recordings').select('*').order('uploaded_at',{ascending:false}),
+      proxyFrom('invoices').select('*').order('created_at',{ascending:false})
     ]);
     sessBookingsData = bk.data || [];
     sessNotesData = nt.data || [];
     sessRecsData = rc.data || [];
-    renderBookingsGrid();
+    sessInvoicesData = inv.data || [];
+    if(sessBookView==='invoices') renderInvoicesGrid();
+    else renderBookingsGrid();
     renderSessionsStats();
   }catch(e){ console.error('Refresh error:', e); }
 }
@@ -3556,7 +3550,8 @@ async function loadSessionsData(){
       proxyFrom('session_bookings').select('*').order('date',{ascending:true}),
       proxyFrom('session_waitlist').select('*').order('created_at',{ascending:true}),
       proxyFrom('session_notes').select('*').order('created_at',{ascending:false}),
-      proxyFrom('session_recordings').select('*').order('uploaded_at',{ascending:false})
+      proxyFrom('session_recordings').select('*').order('uploaded_at',{ascending:false}),
+      proxyFrom('invoices').select('*').order('created_at',{ascending:false})
     ]);
     sessConfigData=(r[0].data&&r[0].data[0])||null;
     sessCyclesData=r[1].data||[];
@@ -3566,6 +3561,7 @@ async function loadSessionsData(){
     sessWaitlistData=r[5].data||[];
     sessNotesData=r[6].data||[];
     sessRecsData=r[7].data||[];
+    sessInvoicesData=r[8].data||[];
     renderSessionsStats();
     renderCycleBanner();
     renderCyclesList();
@@ -4552,6 +4548,7 @@ function renderBookingsGrid(){
         +(b.status==='proposed'?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'paid\')">Mark Paid</button><button class="btn btn-danger btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'declined\')">Decline</button>':'')
         +(b.status==='confirmed'||b.status==='paid'?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'completed\')">Complete</button><button class="btn btn-ghost btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'no_show\')">No Show</button><button class="btn btn-danger btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'cancelled\')">Cancel</button>':'')
         +(b.status==='completed'||b.status==='paid'||b.status==='confirmed'?'<button class="btn btn-primary btn-sm" onclick="crmAddNote(\''+b.id+'\')">+ Note</button><button class="btn btn-ghost btn-sm" onclick="crmAddRecording(\''+b.id+'\')">+ Recording</button>':'<button class="btn btn-ghost btn-sm" onclick="crmAddNote(\''+b.id+'\')">+ Note</button>')
+        +(b.status==='completed'||b.status==='paid'?invoiceButtonHtml(b.id):'')
         +(b.status==='cancelled'||b.status==='declined'||b.status==='expired'?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'proposed\')">Reactivate</button><button class="btn btn-primary btn-sm" onclick="rescheduleBooking(\''+b.id+'\')">Reschedule</button>':'')
         +'<button class="btn btn-ghost btn-sm" onclick="deleteBooking(\''+b.id+'\')">🗑</button>'
         +'</div></td></tr>';
@@ -6844,4 +6841,572 @@ async function sendBatchReminders(type){
     await sendSessionReminder(type, targets[i].id, targets[i].email);
   }
   showToast('All reminders sent', 'success');
+}
+
+// ═══════════════════════════════════════
+// INVOICE SYSTEM (Session 33)
+// ═══════════════════════════════════════
+var sessInvoicesData=[], invPage=1, invPS=20;
+var invSortCol='created_at', invSortDir='desc';
+
+async function loadInvoicesData(){
+  try{
+    await ensureFreshToken();
+    var res=await proxyFrom('invoices').select('*').order('created_at',{ascending:false});
+    sessInvoicesData=res.data||[];
+    renderInvoicesGrid();
+  }catch(e){console.error('Invoices load error:',e)}
+}
+
+function switchBookView(view,btn){
+  sessBookView=view;
+  sessBookPage=1;
+  invPage=1;
+  document.querySelectorAll('.book-view-btn').forEach(function(b){b.classList.remove('active')});
+  if(btn)btn.classList.add('active');
+
+  var invPanel=document.getElementById('sess-invoices-panel');
+  var bookPanel=document.querySelector('#sess-tab-bookings .card:nth-child(2)'); // auto-populate card
+  var bulkEl=document.getElementById('sess-bulk-actions');
+  var statusEl=document.getElementById('sess-book-status');
+
+  if(view==='invoices'){
+    // Show invoices panel, hide bookings card
+    if(invPanel)invPanel.style.display='block';
+    var bookCard=document.getElementById('sess-bookings-card');
+    if(bookCard)bookCard.style.display='none';
+    loadInvoicesData();
+    return;
+  }
+
+  // Normal booking views
+  if(invPanel)invPanel.style.display='none';
+  var bookCard=document.getElementById('sess-bookings-card');
+  if(bookCard)bookCard.style.display='block';
+  if(statusEl)statusEl.value='all';
+  renderBookingsGrid();
+}
+
+function sortInvoicesGrid(col){
+  if(invSortCol===col){invSortDir=invSortDir==='asc'?'desc':'asc'}
+  else{invSortCol=col;invSortDir=col==='created_at'?'desc':'asc'}
+  renderInvoicesGrid();
+}
+
+function renderInvoicesGrid(){
+  var c=document.getElementById('sess-invoices-grid');
+  if(!c)return;
+  var statusFilter=(document.getElementById('inv-status-filter')||{}).value||'all';
+  var search=((document.getElementById('inv-search')||{}).value||'').toLowerCase();
+
+  var filtered=sessInvoicesData.filter(function(inv){
+    if(statusFilter!=='all'&&inv.status!==statusFilter) return false;
+    if(search){
+      if(inv.email.toLowerCase().indexOf(search)<0
+        &&(inv.name||'').toLowerCase().indexOf(search)<0
+        &&(inv.invoice_number||'').toLowerCase().indexOf(search)<0) return false;
+    }
+    return true;
+  });
+
+  // Sort
+  var dir=invSortDir==='asc'?1:-1;
+  filtered.sort(function(a,b){
+    var va,vb;
+    if(invSortCol==='number'){va=a.invoice_number;vb=b.invoice_number}
+    else if(invSortCol==='client'){va=(a.name||a.email).toLowerCase();vb=(b.name||b.email).toLowerCase()}
+    else if(invSortCol==='amount'){va=a.total_cents;vb=b.total_cents}
+    else if(invSortCol==='status'){va=a.status;vb=b.status}
+    else if(invSortCol==='issued'){va=a.issued_at||'';vb=b.issued_at||''}
+    else{va=a.created_at;vb=b.created_at}
+    if(va<vb)return -1*dir;if(va>vb)return 1*dir;return 0;
+  });
+
+  // Stats
+  var statsEl=document.getElementById('inv-stats');
+  if(statsEl){
+    var total=sessInvoicesData.length;
+    var drafts=sessInvoicesData.filter(function(i){return i.status==='draft'}).length;
+    var sent=sessInvoicesData.filter(function(i){return i.status==='sent'}).length;
+    var paid=sessInvoicesData.filter(function(i){return i.status==='paid'}).length;
+    var overdue=sessInvoicesData.filter(function(i){return i.status==='overdue'}).length;
+    var totalRevenue=sessInvoicesData.filter(function(i){return i.status==='paid'}).reduce(function(s,i){return s+i.total_cents},0);
+    statsEl.innerHTML='<span style="color:var(--text-muted)">'+total+' invoices</span>'
+      +(drafts?'<span style="color:var(--text-dim)">📝 '+drafts+' draft</span>':'')
+      +(sent?'<span style="color:var(--warning)">📧 '+sent+' sent</span>':'')
+      +(paid?'<span style="color:var(--success)">✅ '+paid+' paid</span>':'')
+      +(overdue?'<span style="color:var(--danger)">⚠ '+overdue+' overdue</span>':'')
+      +(totalRevenue?'<span style="color:var(--teal)">💰 '+fmt$(totalRevenue)+' collected</span>':'');
+  }
+
+  if(!filtered.length){c.innerHTML='<div class="empty"><p>No invoices match filters.</p></div>';return}
+
+  var tp=Math.ceil(filtered.length/invPS)||1;
+  var start=(invPage-1)*invPS;
+  var page=filtered.slice(start,start+invPS);
+
+  var statusBadges={draft:'<span class="badge muted">Draft</span>',sent:'<span class="badge yellow">Sent</span>',paid:'<span class="badge green">Paid</span>',overdue:'<span class="badge danger">Overdue</span>',void:'<span class="badge muted">Void</span>'};
+
+  var sortArrow=function(col){return invSortCol===col?(invSortDir==='asc'?' ↑':' ↓'):'';};
+  var thStyle='cursor:pointer;user-select:none;transition:color .15s';
+  var thActive=function(col){return invSortCol===col?'color:var(--teal)':''};
+
+  c.innerHTML='<table class="tbl"><thead><tr>'
+    +'<th style="'+thStyle+';'+thActive('number')+'" onclick="sortInvoicesGrid(\'number\')">#'+sortArrow('number')+'</th>'
+    +'<th style="'+thStyle+';'+thActive('client')+'" onclick="sortInvoicesGrid(\'client\')">Client'+sortArrow('client')+'</th>'
+    +'<th>Session Date</th>'
+    +'<th style="'+thStyle+';'+thActive('amount')+'" onclick="sortInvoicesGrid(\'amount\')">Amount'+sortArrow('amount')+'</th>'
+    +'<th style="'+thStyle+';'+thActive('status')+'" onclick="sortInvoicesGrid(\'status\')">Status'+sortArrow('status')+'</th>'
+    +'<th style="'+thStyle+';'+thActive('issued')+'" onclick="sortInvoicesGrid(\'issued\')">Issued'+sortArrow('issued')+'</th>'
+    +'<th>Actions</th></tr></thead><tbody>'
+    +page.map(function(inv){
+      var booking=sessBookingsData.find(function(b){return b.id===inv.booking_id});
+      var sessDate=booking?fmtDate(booking.date):'—';
+      var taxNote=inv.tax_cents>0?' <span style="font-size:10px;color:var(--text-dim)">(+'+fmt$(inv.tax_cents)+' '+esc(inv.tax_label||'tax')+')</span>':'';
+
+      return '<tr>'
+        +'<td style="font-weight:600;color:var(--teal);font-size:12px;white-space:nowrap">'+esc(inv.invoice_number)+'</td>'
+        +'<td class="email">'+esc(inv.email)+(inv.name?'<br><span class="name" style="font-size:11px">'+esc(inv.name)+'</span>':'')+'</td>'
+        +'<td style="white-space:nowrap">'+sessDate+'</td>'
+        +'<td>'+fmt$(inv.total_cents)+taxNote+'</td>'
+        +'<td>'+(statusBadges[inv.status]||'<span class="badge muted">'+inv.status+'</span>')+'</td>'
+        +'<td style="white-space:nowrap">'+(inv.issued_at?fmtDate(inv.issued_at.slice(0,10)):'—')+'</td>'
+        +'<td><div style="display:flex;gap:4px;flex-wrap:wrap">'
+        +(inv.status==='draft'?'<button class="btn btn-ghost btn-sm" onclick="editInvoiceModal(\''+inv.id+'\')" style="font-size:11px">✏️ Edit</button>':'')
+        +(inv.status==='draft'?'<button class="btn btn-primary btn-sm" onclick="generateAndSendInvoice(\''+inv.id+'\')" style="font-size:11px">📧 Send</button>':'')
+        +(inv.status==='sent'||inv.status==='overdue'?'<button class="btn btn-success btn-sm" onclick="markInvoicePaid(\''+inv.id+'\')" style="font-size:11px">✓ Mark Paid</button>':'')
+        +(inv.pdf_path?'<button class="btn btn-ghost btn-sm" onclick="downloadInvoicePdf(\''+inv.id+'\')" style="font-size:11px">📄 PDF</button>':'<button class="btn btn-ghost btn-sm" onclick="generateInvoicePdf(\''+inv.id+'\')" style="font-size:11px">📄 Gen PDF</button>')
+        +(inv.status!=='void'&&inv.status!=='paid'?'<button class="btn btn-ghost btn-sm" onclick="voidInvoice(\''+inv.id+'\')" style="font-size:11px;color:var(--danger)">Void</button>':'')
+        +(inv.status==='sent'||inv.status==='overdue'?'<button class="btn btn-ghost btn-sm" onclick="resendInvoice(\''+inv.id+'\')" style="font-size:11px">📧 Resend</button>':'')
+        +'</div></td></tr>';
+    }).join('')+'</tbody></table>';
+
+  document.getElementById('inv-pagination').innerHTML='<span>'+filtered.length+' invoices · Page '+invPage+'/'+tp+'</span><div class="page-btns"><button class="btn btn-ghost btn-sm" onclick="invPage=Math.max(1,invPage-1);renderInvoicesGrid()" '+(invPage<=1?'disabled':'')+'>Prev</button><button class="btn btn-ghost btn-sm" onclick="invPage=Math.min('+tp+',invPage+1);renderInvoicesGrid()" '+(invPage>=tp?'disabled':'')+'>Next</button></div>';
+}
+
+/* ---- Invoice button on bookings grid ---- */
+function getInvoiceForBooking(bookingId){
+  return sessInvoicesData.find(function(inv){return inv.booking_id===bookingId});
+}
+
+/* ---- Create Invoice Modal ---- */
+async function createInvoiceModal(bookingId){
+  var old=document.getElementById('inv-modal');if(old)old.remove();
+  var booking=null,client=null;
+  if(bookingId){
+    booking=sessBookingsData.find(function(b){return b.id===bookingId});
+    if(booking&&booking.client_id) client=sessClientsData.find(function(c){return c.id===booking.client_id});
+  }
+  var price=sessConfigData?sessConfigData.session_price:150;
+  var amountCents=price*100;
+
+  var ov=document.createElement('div');ov.id='inv-modal';ov.className='modal-overlay';
+  ov.onclick=function(e){if(e.target===ov)ov.remove()};
+  var box=document.createElement('div');
+  box.style.cssText='background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;max-width:520px;width:94%;max-height:90vh;overflow-y:auto';
+  box.innerHTML='<div style="font-weight:600;font-size:16px;margin-bottom:16px;font-family:Playfair Display,serif">Create Invoice</div>'
+    +'<div class="form-group" style="margin-bottom:12px"><label class="label-sm">Client Email</label><input type="email" class="input" id="inv-email" placeholder="client@example.com" value="'+(booking?esc(booking.email):'')+'"'+(booking?' readonly style="opacity:.7"':'')+'></div>'
+    +'<div class="form-group" style="margin-bottom:12px"><label class="label-sm">Client Name</label><input type="text" class="input" id="inv-name" value="'+(booking?esc(booking.name||''):(client?esc(client.name):''))+'"></div>'
+    +(booking?'<div style="font-size:12px;color:var(--text-dim);margin-bottom:12px">Session: '+fmtDate(booking.date)+' at '+fmtTime(booking.start_time)+'</div>':'')
+    +'<div class="form-group" style="margin-bottom:12px"><label class="label-sm">Description</label><input type="text" class="input" id="inv-desc" value="1-on-1 Healing Session (60 min)"></div>'
+    +'<div class="form-row" style="margin-bottom:12px"><div class="form-group"><label class="label-sm">Amount ($)</label><input type="number" class="input" id="inv-amount" value="'+price+'" step="0.01" min="0" oninput="invCalcTotal()"></div>'
+    +'<div class="form-group"><label class="label-sm">Currency</label><select class="input" id="inv-currency"><option value="USD">USD</option><option value="CAD">CAD</option><option value="EUR">EUR</option></select></div></div>'
+    +'<div style="margin-bottom:12px"><label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text-muted)"><input type="checkbox" id="inv-tax-toggle" onchange="invToggleTax()" style="accent-color:var(--teal);width:15px;height:15px"> Add Tax</label></div>'
+    +'<div id="inv-tax-fields" style="display:none;margin-bottom:12px"><div class="form-row"><div class="form-group"><label class="label-sm">Tax Label</label><input type="text" class="input" id="inv-tax-label" value="HST" oninput="invCalcTotal()"></div>'
+    +'<div class="form-group"><label class="label-sm">Tax Rate (%)</label><input type="number" class="input" id="inv-tax-rate" value="13" step="0.01" min="0" max="100" oninput="invCalcTotal()"></div>'
+    +'<div class="form-group"><label class="label-sm">Tax Amount</label><div class="input" id="inv-tax-amount" style="background:rgba(255,255,255,.02);color:var(--teal)">$0.00</div></div></div></div>'
+    +'<div style="font-size:14px;font-weight:700;color:var(--teal);margin-bottom:12px">Total: <span id="inv-total-display">$'+price.toFixed(2)+'</span></div>'
+    +'<div class="form-group" style="margin-bottom:12px"><label class="label-sm">Due Date</label><input type="date" class="input" id="inv-due" value="'+getDefaultDueDate()+'"></div>'
+    +'<div class="form-group" style="margin-bottom:16px"><label class="label-sm">Notes (shown on invoice)</label><input type="text" class="input" id="inv-notes" placeholder="Thank you for your trust in this healing journey." value="Thank you for your trust in this healing journey."></div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end">'
+    +'<button class="btn btn-ghost" onclick="document.getElementById(\'inv-modal\').remove()">Cancel</button>'
+    +'<button class="btn btn-primary" onclick="saveInvoice(null, \''+((booking&&booking.id)||'')+'\')">Save Draft</button>'
+    +'<button class="btn btn-success" onclick="saveAndSendInvoice(null, \''+((booking&&booking.id)||'')+'\')">Generate PDF & Send</button>'
+    +'</div>';
+  ov.appendChild(box);document.body.appendChild(ov);
+}
+
+function getDefaultDueDate(){
+  var d=new Date();d.setDate(d.getDate()+7);
+  return d.toISOString().slice(0,10);
+}
+
+function invToggleTax(){
+  var show=document.getElementById('inv-tax-toggle').checked;
+  document.getElementById('inv-tax-fields').style.display=show?'block':'none';
+  invCalcTotal();
+}
+
+function invCalcTotal(){
+  var amount=parseFloat(document.getElementById('inv-amount').value)||0;
+  var taxOn=document.getElementById('inv-tax-toggle').checked;
+  var taxRate=taxOn?parseFloat(document.getElementById('inv-tax-rate').value)||0:0;
+  var taxAmount=Math.round(amount*taxRate)/100;
+  var total=amount+taxAmount;
+  if(document.getElementById('inv-tax-amount'))document.getElementById('inv-tax-amount').textContent='$'+taxAmount.toFixed(2);
+  document.getElementById('inv-total-display').textContent='$'+total.toFixed(2);
+}
+
+async function saveInvoice(existingId,bookingId){
+  var email=(document.getElementById('inv-email').value||'').trim();
+  var name=(document.getElementById('inv-name').value||'').trim();
+  if(!email){showToast('Email is required','error');return}
+  var amount=parseFloat(document.getElementById('inv-amount').value)||0;
+  var amountCents=Math.round(amount*100);
+  var currency=document.getElementById('inv-currency').value;
+  var taxOn=document.getElementById('inv-tax-toggle').checked;
+  var taxLabel=taxOn?(document.getElementById('inv-tax-label').value||null):null;
+  var taxRate=taxOn?parseFloat(document.getElementById('inv-tax-rate').value)||0:0;
+  var taxCents=taxOn?Math.round(amount*taxRate):0;
+  var totalCents=amountCents+taxCents;
+  var dueDate=document.getElementById('inv-due').value||null;
+  var notes=document.getElementById('inv-notes').value||null;
+  var desc=document.getElementById('inv-desc').value||'1-on-1 Healing Session (60 min)';
+
+  try{
+    await ensureFreshToken();
+    if(existingId){
+      // Update existing
+      await proxyFrom('invoices').update({
+        email:email,name:name,description:desc,amount_cents:amountCents,currency:currency,
+        tax_label:taxLabel,tax_rate:taxRate||null,tax_cents:taxCents,total_cents:totalCents,
+        due_date:dueDate,notes:notes,updated_at:new Date().toISOString()
+      }).eq('id',existingId);
+      showToast('Invoice updated','success');
+    }else{
+      // Generate invoice number via RPC
+      var numRes=await adminProxy({type:'rpc',fn:'generate_invoice_number'});
+      var invNumber=numRes.data;
+      if(!invNumber){showToast('Failed to generate invoice number','error');return}
+
+      // Find client_id from booking or roster
+      var clientId=null;
+      if(bookingId){
+        var bk=sessBookingsData.find(function(b){return b.id===bookingId});
+        if(bk)clientId=bk.client_id;
+      }
+      if(!clientId){
+        var cl=sessClientsData.find(function(c){return c.email.toLowerCase()===email.toLowerCase()});
+        if(cl)clientId=cl.id;
+      }
+
+      // Build pay URL from booking token
+      var payUrl=null;
+      if(bookingId){
+        var bk2=sessBookingsData.find(function(b){return b.id===bookingId});
+        if(bk2&&bk2.confirmation_token) payUrl='https://qp-homepage.netlify.app/pages/one-on-sessions.html?pay='+bk2.confirmation_token;
+      }
+
+      var insertData={
+        invoice_number:invNumber,email:email,name:name||null,
+        booking_id:bookingId||null,client_id:clientId,
+        description:desc,amount_cents:amountCents,currency:currency,
+        tax_label:taxLabel,tax_rate:taxRate||null,tax_cents:taxCents,total_cents:totalCents,
+        due_date:dueDate,notes:notes,pay_url:payUrl,status:'draft'
+      };
+      // Check if booking already has Stripe payment
+      if(bookingId){
+        var bk3=sessBookingsData.find(function(b){return b.id===bookingId});
+        if(bk3&&(bk3.stripe_payment_id||bk3.status==='paid')){
+          insertData.status='paid';
+          insertData.paid_at=bk3.confirmed_at||new Date().toISOString();
+          insertData.stripe_payment_id=bk3.stripe_payment_id;
+        }
+      }
+      await proxyFrom('invoices').insert(insertData);
+      showToast('Invoice '+invNumber+' created','success');
+    }
+    var modal=document.getElementById('inv-modal');if(modal)modal.remove();
+    await loadInvoicesData();
+  }catch(e){showToast('Error: '+e.message,'error')}
+}
+
+async function saveAndSendInvoice(existingId,bookingId){
+  await saveInvoice(existingId,bookingId);
+  // After save, find the newest invoice and generate+send it
+  var inv=sessInvoicesData[0]; // Most recent
+  if(inv&&inv.status==='draft'){
+    await generateAndSendInvoice(inv.id);
+  }
+}
+
+/* ---- Edit Invoice Modal ---- */
+async function editInvoiceModal(invId){
+  var inv=sessInvoicesData.find(function(i){return i.id===invId});
+  if(!inv){showToast('Invoice not found','error');return}
+
+  var old=document.getElementById('inv-modal');if(old)old.remove();
+  var booking=inv.booking_id?sessBookingsData.find(function(b){return b.id===inv.booking_id}):null;
+
+  var ov=document.createElement('div');ov.id='inv-modal';ov.className='modal-overlay';
+  ov.onclick=function(e){if(e.target===ov)ov.remove()};
+  var box=document.createElement('div');
+  box.style.cssText='background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;max-width:520px;width:94%;max-height:90vh;overflow-y:auto';
+  box.innerHTML='<div style="font-weight:600;font-size:16px;margin-bottom:4px;font-family:Playfair Display,serif">Edit Invoice</div>'
+    +'<div style="font-size:12px;color:var(--teal);margin-bottom:16px">'+esc(inv.invoice_number)+'</div>'
+    +'<div class="form-group" style="margin-bottom:12px"><label class="label-sm">Client Email</label><input type="email" class="input" id="inv-email" value="'+esc(inv.email)+'"></div>'
+    +'<div class="form-group" style="margin-bottom:12px"><label class="label-sm">Client Name</label><input type="text" class="input" id="inv-name" value="'+esc(inv.name||'')+'"></div>'
+    +(booking?'<div style="font-size:12px;color:var(--text-dim);margin-bottom:12px">Session: '+fmtDate(booking.date)+' at '+fmtTime(booking.start_time)+'</div>':'')
+    +'<div class="form-group" style="margin-bottom:12px"><label class="label-sm">Description</label><input type="text" class="input" id="inv-desc" value="'+esc(inv.description||'1-on-1 Healing Session (60 min)')+'"></div>'
+    +'<div class="form-row" style="margin-bottom:12px"><div class="form-group"><label class="label-sm">Amount ($)</label><input type="number" class="input" id="inv-amount" value="'+(inv.amount_cents/100).toFixed(2)+'" step="0.01" min="0" oninput="invCalcTotal()"></div>'
+    +'<div class="form-group"><label class="label-sm">Currency</label><select class="input" id="inv-currency"><option value="USD"'+(inv.currency==='USD'?' selected':'')+'>USD</option><option value="CAD"'+(inv.currency==='CAD'?' selected':'')+'>CAD</option><option value="EUR"'+(inv.currency==='EUR'?' selected':'')+'>EUR</option></select></div></div>'
+    +'<div style="margin-bottom:12px"><label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text-muted)"><input type="checkbox" id="inv-tax-toggle" onchange="invToggleTax()"'+(inv.tax_cents>0?' checked':'')+' style="accent-color:var(--teal);width:15px;height:15px"> Add Tax</label></div>'
+    +'<div id="inv-tax-fields" style="display:'+(inv.tax_cents>0?'block':'none')+';margin-bottom:12px"><div class="form-row"><div class="form-group"><label class="label-sm">Tax Label</label><input type="text" class="input" id="inv-tax-label" value="'+esc(inv.tax_label||'HST')+'" oninput="invCalcTotal()"></div>'
+    +'<div class="form-group"><label class="label-sm">Tax Rate (%)</label><input type="number" class="input" id="inv-tax-rate" value="'+(inv.tax_rate||13)+'" step="0.01" min="0" max="100" oninput="invCalcTotal()"></div>'
+    +'<div class="form-group"><label class="label-sm">Tax Amount</label><div class="input" id="inv-tax-amount" style="background:rgba(255,255,255,.02);color:var(--teal)">$'+(inv.tax_cents/100).toFixed(2)+'</div></div></div></div>'
+    +'<div style="font-size:14px;font-weight:700;color:var(--teal);margin-bottom:12px">Total: <span id="inv-total-display">$'+(inv.total_cents/100).toFixed(2)+'</span></div>'
+    +'<div class="form-group" style="margin-bottom:12px"><label class="label-sm">Due Date</label><input type="date" class="input" id="inv-due" value="'+(inv.due_date||getDefaultDueDate())+'"></div>'
+    +'<div class="form-group" style="margin-bottom:16px"><label class="label-sm">Notes</label><input type="text" class="input" id="inv-notes" value="'+esc(inv.notes||'')+'"></div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end">'
+    +'<button class="btn btn-ghost" onclick="document.getElementById(\'inv-modal\').remove()">Cancel</button>'
+    +'<button class="btn btn-primary" onclick="saveInvoice(\''+inv.id+'\',\''+(inv.booking_id||'')+'\')">Save</button>'
+    +'<button class="btn btn-success" onclick="saveAndSendInvoice(\''+inv.id+'\',\''+(inv.booking_id||'')+'\')">Save & Send</button>'
+    +'</div>';
+  ov.appendChild(box);document.body.appendChild(ov);
+}
+
+/* ---- Generate PDF ---- */
+async function generateInvoicePdf(invId){
+  showToast('Generating PDF...','info');
+  try{
+    await ensureFreshToken();
+    var token=sessionStorage.getItem('qp_admin_token');
+    var res=await fetch('/.netlify/functions/generate-invoice',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({invoice_id:invId})
+    });
+    var data=await res.json();
+    if(!res.ok) throw new Error(data.error||'PDF generation failed');
+    showToast('PDF generated','success');
+    if(data.pdf_url) window.open(data.pdf_url,'_blank');
+    await loadInvoicesData();
+  }catch(e){showToast('Error: '+e.message,'error')}
+}
+
+/* ---- Download existing PDF ---- */
+async function downloadInvoicePdf(invId){
+  var inv=sessInvoicesData.find(function(i){return i.id===invId});
+  if(!inv||!inv.pdf_path){showToast('No PDF found — generating...','info');await generateInvoicePdf(invId);return}
+  try{
+    await ensureFreshToken();
+    var token=sessionStorage.getItem('qp_admin_token');
+    // Get signed URL via admin proxy
+    var res=await fetch('/.netlify/functions/generate-invoice',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({invoice_id:invId})
+    });
+    var data=await res.json();
+    if(data.pdf_url) window.open(data.pdf_url,'_blank');
+    else showToast('Could not get PDF URL','error');
+  }catch(e){showToast('Error: '+e.message,'error')}
+}
+
+/* ---- Generate PDF & Send Invoice Email ---- */
+async function generateAndSendInvoice(invId){
+  var inv=sessInvoicesData.find(function(i){return i.id===invId});
+  if(!inv){showToast('Invoice not found','error');return}
+
+  showToast('Generating PDF & sending...','info');
+  try{
+    await ensureFreshToken();
+    // 1. Generate PDF
+    var token=sessionStorage.getItem('qp_admin_token');
+    var pdfRes=await fetch('/.netlify/functions/generate-invoice',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({invoice_id:invId})
+    });
+    var pdfData=await pdfRes.json();
+    if(!pdfRes.ok) throw new Error(pdfData.error||'PDF generation failed');
+
+    // 2. Send email with invoice summary
+    var booking=inv.booking_id?sessBookingsData.find(function(b){return b.id===inv.booking_id}):null;
+    var html=buildInvoiceEmailHtml(inv, booking, pdfData.pdf_url);
+    await fetch(APPS_SCRIPT_URL,{
+      method:'POST', mode:'no-cors',
+      headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify({to:inv.email, body:html, isHtml:true, recipientName:inv.name||'Client'})
+    });
+
+    // 3. Update status to sent
+    await proxyFrom('invoices').update({
+      status:'sent',
+      issued_at:new Date().toISOString(),
+      updated_at:new Date().toISOString()
+    }).eq('id',invId);
+
+    showToast('Invoice '+inv.invoice_number+' sent to '+inv.email,'success');
+    await logAudit('send_invoice',inv.email,'Sent invoice '+inv.invoice_number,{amount:inv.total_cents});
+    await loadInvoicesData();
+  }catch(e){showToast('Error: '+e.message,'error')}
+}
+
+/* ---- Resend Invoice ---- */
+async function resendInvoice(invId){
+  if(!await qpConfirm('Resend Invoice','Resend this invoice email?',{okText:'Resend'})) return;
+  await generateAndSendInvoice(invId);
+}
+
+/* ---- Mark Invoice Paid ---- */
+async function markInvoicePaid(invId){
+  if(!await qpConfirm('Mark Paid','Mark this invoice as paid?',{okText:'Mark Paid'})) return;
+  try{
+    await ensureFreshToken();
+    await proxyFrom('invoices').update({
+      status:'paid', paid_at:new Date().toISOString(), updated_at:new Date().toISOString()
+    }).eq('id',invId);
+    showToast('Invoice marked as paid','success');
+    await loadInvoicesData();
+  }catch(e){showToast('Error: '+e.message,'error')}
+}
+
+/* ---- Void Invoice ---- */
+async function voidInvoice(invId){
+  if(!await qpConfirm('Void Invoice','Void this invoice? This cannot be undone.',{okText:'Void',danger:true})) return;
+  try{
+    await ensureFreshToken();
+    await proxyFrom('invoices').update({
+      status:'void', voided_at:new Date().toISOString(), updated_at:new Date().toISOString()
+    }).eq('id',invId);
+    showToast('Invoice voided','success');
+    await loadInvoicesData();
+  }catch(e){showToast('Error: '+e.message,'error')}
+}
+
+/* ---- Bulk Generate Invoices for Cycle ---- */
+async function bulkGenerateInvoices(){
+  var cycleId=document.getElementById('sess-book-cycle').value;
+  if(!cycleId){showToast('Select a cycle first','error');return}
+
+  // Find completed bookings without invoices
+  var completedBookings=sessBookingsData.filter(function(b){
+    if(b.cycle_id!==cycleId) return false;
+    if(b.status!=='completed'&&b.status!=='paid') return false;
+    var hasInv=sessInvoicesData.some(function(inv){return inv.booking_id===b.id});
+    return !hasInv;
+  });
+
+  if(!completedBookings.length){showToast('All completed bookings already have invoices','info');return}
+
+  // Show preview checklist
+  var old=document.getElementById('inv-bulk-modal');if(old)old.remove();
+  var ov=document.createElement('div');ov.id='inv-bulk-modal';ov.className='modal-overlay';
+  ov.onclick=function(e){if(e.target===ov)ov.remove()};
+  var box=document.createElement('div');
+  box.style.cssText='background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;max-width:520px;width:94%;max-height:90vh;overflow-y:auto';
+
+  var listHtml=completedBookings.map(function(b,i){
+    return '<label style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">'
+      +'<input type="checkbox" class="qp-check inv-bulk-check" data-bid="'+b.id+'" checked>'
+      +'<div style="flex:1"><span style="color:var(--text)">'+esc(b.name||b.email)+'</span>'
+      +'<span style="color:var(--text-dim);margin-left:8px;font-size:11px">'+fmtDate(b.date)+'</span>'
+      +'<span class="badge '+(b.status==='paid'?'green':'teal')+'" style="font-size:9px;margin-left:6px">'+b.status+'</span></div></label>';
+  }).join('');
+
+  box.innerHTML='<div style="font-weight:600;font-size:16px;margin-bottom:4px;font-family:Playfair Display,serif">Bulk Generate Invoices</div>'
+    +'<div style="font-size:12px;color:var(--text-dim);margin-bottom:16px">'+completedBookings.length+' completed bookings without invoices</div>'
+    +'<div style="margin-bottom:12px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--teal)"><input type="checkbox" class="qp-check" checked onchange="document.querySelectorAll(\'.inv-bulk-check\').forEach(function(c){c.checked=this.checked}.bind(this))"> Select All</label></div>'
+    +'<div style="max-height:300px;overflow-y:auto;margin-bottom:16px">'+listHtml+'</div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end">'
+    +'<button class="btn btn-ghost" onclick="document.getElementById(\'inv-bulk-modal\').remove()">Cancel</button>'
+    +'<button class="btn btn-primary" onclick="executeBulkInvoices()">Create Drafts</button>'
+    +'</div>';
+  ov.appendChild(box);document.body.appendChild(ov);
+}
+
+async function executeBulkInvoices(){
+  var checks=document.querySelectorAll('.inv-bulk-check:checked');
+  if(!checks.length){showToast('No bookings selected','error');return}
+  var price=sessConfigData?sessConfigData.session_price:150;
+  var created=0;
+
+  for(var i=0;i<checks.length;i++){
+    var bid=checks[i].getAttribute('data-bid');
+    var b=sessBookingsData.find(function(x){return x.id===bid});
+    if(!b) continue;
+
+    try{
+      var numRes=await adminProxy({type:'rpc',fn:'generate_invoice_number'});
+      var invNumber=numRes.data;
+      var amountCents=price*100;
+      var isPaid=b.stripe_payment_id||b.status==='paid';
+
+      await proxyFrom('invoices').insert({
+        invoice_number:invNumber,
+        booking_id:b.id,
+        client_id:b.client_id,
+        email:b.email,
+        name:b.name||null,
+        description:'1-on-1 Healing Session (60 min)',
+        amount_cents:amountCents,
+        currency:'USD',
+        tax_cents:0,
+        total_cents:amountCents,
+        status:isPaid?'paid':'draft',
+        paid_at:isPaid?(b.confirmed_at||new Date().toISOString()):null,
+        stripe_payment_id:b.stripe_payment_id||null,
+        pay_url:b.confirmation_token?'https://qp-homepage.netlify.app/pages/one-on-sessions.html?pay='+b.confirmation_token:null,
+        due_date:getDefaultDueDate(),
+        notes:'Thank you for your trust in this healing journey.'
+      });
+      created++;
+    }catch(e){console.error('Bulk invoice error for '+b.email+':',e)}
+  }
+
+  var modal=document.getElementById('inv-bulk-modal');if(modal)modal.remove();
+  showToast(created+' invoice(s) created','success');
+  await loadInvoicesData();
+}
+
+/* ---- Invoice Email Template (QP-branded, matches session emails) ---- */
+function buildInvoiceEmailHtml(inv, booking, pdfUrl){
+  var sessDate=booking?new Date(booking.date+'T12:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}):'';
+  var sessTime=booking&&booking.start_time?booking.start_time.slice(0,5):'';
+  var paySection='';
+  if(inv.pay_url&&inv.status!=='paid'){
+    paySection='<div style="text-align:center;margin:24px 0"><a href="'+inv.pay_url+'" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#5ba8b2,#4acfd9);color:#fff;text-decoration:none;border-radius:8px;font-weight:700;font-size:14px;letter-spacing:.06em;text-transform:uppercase">PAY NOW</a></div>';
+  }
+
+  return '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;background:#f4f0eb;font-family:Georgia,serif">'
+    +'<div style="max-width:600px;margin:0 auto;background:#0e1a30;border-radius:12px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.3)">'
+    // Header
+    +'<div style="background:linear-gradient(135deg,#0e1a30 0%,#1a3a5c 100%);padding:32px 36px;text-align:center">'
+    +'<div style="font-size:24px;font-weight:700;color:#5ba8b2;font-family:Georgia,serif;margin-bottom:4px">INVOICE</div>'
+    +'<div style="font-size:13px;color:#94a3b8;letter-spacing:.08em">'+inv.invoice_number+'</div></div>'
+    // Body
+    +'<div style="padding:32px 36px">'
+    +'<p style="color:#e2e8f0;font-size:16px;line-height:1.6;margin:0 0 20px">Dear '+(inv.name||'Client')+',</p>'
+    +'<p style="color:#94a3b8;font-size:14px;line-height:1.6;margin:0 0 24px">Please find your invoice details below'+(booking?' for your healing session'+(' on '+sessDate):'')+'.</p>'
+    // Detail card
+    +'<div style="background:linear-gradient(135deg,rgba(91,168,178,.08),rgba(173,155,132,.08));border:1px solid rgba(91,168,178,.2);border-radius:10px;padding:20px;margin-bottom:20px">'
+    +'<table style="width:100%;border-collapse:collapse">'
+    +'<tr><td style="color:#94a3b8;font-size:12px;padding:6px 0;text-transform:uppercase;letter-spacing:.06em">Description</td><td style="color:#e2e8f0;font-size:14px;text-align:right;padding:6px 0">'+esc(inv.description)+'</td></tr>'
+    +(booking?'<tr><td style="color:#94a3b8;font-size:12px;padding:6px 0;text-transform:uppercase;letter-spacing:.06em">Session Date</td><td style="color:#e2e8f0;font-size:14px;text-align:right;padding:6px 0">'+sessDate+(sessTime?' at '+sessTime:'')+'</td></tr>':'')
+    +'<tr><td style="color:#94a3b8;font-size:12px;padding:6px 0;text-transform:uppercase;letter-spacing:.06em">Amount</td><td style="color:#e2e8f0;font-size:14px;text-align:right;padding:6px 0">'+fmt$(inv.amount_cents)+'</td></tr>'
+    +(inv.tax_cents>0?'<tr><td style="color:#94a3b8;font-size:12px;padding:6px 0;text-transform:uppercase;letter-spacing:.06em">Tax ('+(inv.tax_label||'')+')</td><td style="color:#e2e8f0;font-size:14px;text-align:right;padding:6px 0">'+fmt$(inv.tax_cents)+'</td></tr>':'')
+    +'<tr><td colspan="2" style="border-top:1px solid rgba(91,168,178,.2);padding:0;height:1px"></td></tr>'
+    +'<tr><td style="color:#5ba8b2;font-size:14px;font-weight:700;padding:10px 0;text-transform:uppercase;letter-spacing:.06em">Total</td><td style="color:#5ba8b2;font-size:18px;font-weight:700;text-align:right;padding:10px 0">'+fmt$(inv.total_cents)+'</td></tr>'
+    +(inv.due_date?'<tr><td style="color:#94a3b8;font-size:12px;padding:6px 0;text-transform:uppercase;letter-spacing:.06em">Due Date</td><td style="color:#e2e8f0;font-size:14px;text-align:right;padding:6px 0">'+new Date(inv.due_date+'T12:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})+'</td></tr>':'')
+    +'</table></div>'
+    +paySection
+    +(pdfUrl?'<div style="text-align:center;margin:16px 0"><a href="'+pdfUrl+'" style="color:#5ba8b2;font-size:13px;text-decoration:underline" target="_blank">Download PDF Invoice</a></div>':'')
+    +'</div>'
+    // Footer
+    +'<div style="background:#071825;padding:28px 36px;text-align:center">'
+    +'<div style="font-size:14px;color:#94a3b8;font-style:italic;margin-bottom:8px">Thank you for your trust in this healing journey.</div>'
+    +'<div style="font-size:12px;color:#5ba8b2">Dr. Tracey Clark — Quantum Physician</div>'
+    +'<div style="font-size:11px;color:#4a5568;margin-top:8px"><a href="https://quantumphysician.com" style="color:#5ba8b2;text-decoration:none">quantumphysician.com</a></div>'
+    +'</div></div></body></html>';
+}
+
+/* ---- Per-booking Invoice button (added to bookings grid) ---- */
+function invoiceButtonHtml(bookingId){
+  if(!sessInvoicesData.length&&sessBookView!=='invoices') return ''; // Not loaded yet
+  var inv=sessInvoicesData.find(function(i){return i.booking_id===bookingId});
+  if(!inv) return '<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();createInvoiceModal(\''+bookingId+'\')" style="font-size:10px">📄</button>';
+  if(inv.status==='draft') return '<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();editInvoiceModal(\''+inv.id+'\')" style="font-size:10px;color:var(--text-dim)" title="Draft invoice">📄 Draft</button>';
+  if(inv.status==='paid') return '<span style="font-size:10px;color:var(--success)" title="Invoice '+inv.invoice_number+' paid">📄✓</span>';
+  return '<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();downloadInvoicePdf(\''+inv.id+'\')" style="font-size:10px;color:var(--teal)" title="Invoice '+inv.invoice_number+'">📄</button>';
 }

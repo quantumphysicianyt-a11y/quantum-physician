@@ -1,6 +1,6 @@
 # 1-on-1 Sessions System — Full Design Spec
 
-**Last updated:** Session 29 (Mar 3, 2026)
+**Last updated:** Session 32 (Mar 4, 2026)
 
 ## Dr. Tracey's Current Manual Workflow
 1. Works in **4-month booking cycles** (e.g., March-June, July-October, Nov-Feb)
@@ -21,6 +21,7 @@
 - **All bookings require payment** — recurring and public alike
 - **48-hour cancellation policy** (details TBD with Dr. Tracey)
 - **72-hour reservation window** for offered/proposed slots — auto-expires if unpaid
+- **Regulars flow (Tracey request, Session 31)** — trusted clients confirm date without upfront payment, 7-day expiry, pay after session
 
 ---
 
@@ -92,19 +93,50 @@
 - **Email automation UI** — 4 toggle cards, QP-branded templates, preview modals, per-session send buttons
 - **Bug fixes**: duplicate crmDeleteNote, missing fmtTime, data-table→tbl class, profile fetch resilience, reminders panel nesting
 
+### ✅ BUILT (Session 30) — Automated Email System (Deployed & Tested)
+- **Netlify cron** (`session-cron.js`) — daily 8 AM ET, 5 automation types, fully automated
+- **Google Apps Script Pipeline #3** — standalone, Version 3 deployed, `SESSION_EMAIL_SCRIPT_URL` env var set
+- **Premium QP-branded templates** — dark navy, Tracey headshot, teal/taupe, Georgia serif (rebuilt to match Academy quality)
+- **`email_automation_log` + `system_config` tables** — idempotent sends, persistent toggles
+- **Idempotency confirmed both directions** — manual send blocks cron, cron blocks manual
+- **Admin UX fixes** — toggle flash removed, tab/sub-tab persistence, send buttons always visible
+- **Admin manual sends** routed through BulkEmailSender v3 with `isHtml:true` (confirmed working)
+- **72-hour auto-expiry** — proposed bookings auto-expire, slots freed, notice sent
+
+### ✅ BUILT (Session 31) — Regulars Flow, Bookings Overhaul, Reschedule System
+- **Create Cycle 401 fix** — `ensureFreshToken()` pre-flight + duplicate `initAdmin()` removal
+- **UUID token fix** — `generateBookingToken()` now produces valid UUID v4 (was causing 400 on date assignment)
+- **Regulars flow** — `client_type` column, auto-confirm for regulars, payment request email system
+- **Bookings grid**: Payment column, sortable headers, Active/Completed/Cancelled/All sub-tabs
+- **Bulk actions**: Preview checklists with themed checkboxes for payment requests + reminders
+- **Reschedule system**: Reason modal (6 options + note), purple "Rescheduled" badge, `rescheduled_from` linking, clickable detail popup
+- **Reactivate button** on cancelled bookings + confirmation dialogs on Cancel/Decline/No Show
+- **CRM profile**: Full action buttons (Dates, Email, Edit, Pause, Remove) + dates modal header actions
+
+### ✅ BUILT (Session 32) — Email Visibility, Automation Dashboard, Cron Update
+- **Cron 7-day regular expiry** — `session-cron.js` updated: 5-day warning + 7-day auto-expire for confirmed regulars
+- **Own toggle**: `auto_regular_expiry` config key (independent from 72h standard)
+- **CRM Emails tab** — 6th tab on client profile, session-only scope from `email_automation_log`
+- **Filters**: type buttons (All, Day-Before, Follow-Up, Intake, Expiry, Failed) + date dropdown + sortable columns
+- **7-Day Regular Expiry toggle card** — 5th card on 1-on-1 Reminders tab
+- **Automation dashboard upgrade** — 200 entries, 7-day summary stats, filter buttons, date dropdown, sortable columns
+- **Next Cron Run Preview** — shows queued automations cross-referencing bookings vs log
+- **Day-before reminders** expanded to include `confirmed` bookings (not just `paid`)
+- **2 new email templates**: `buildRegularExpiryWarningEmail()`, `buildRegularExpiryNoticeEmail()`
+- **2 new automation types**: `regular_expiry_5d`, `regular_expiry_7d`
+
 ### ⬜ NOT YET BUILT
 
-- TRUE email automation cron (Session 30 — non-negotiable)
+- **Cron 7-day expiry for regulars** — ✅ DONE (Session 32)
 - End-to-end Stripe payment test
-- Three.js 3D body model on progress.html (replacing 2D overlay)
-- 72-hour offer expiry automation
+- Three.js 3D body model on progress.html — ✅ DONE (already deployed, confirmed Session 32)
 - 48-hour cancellation enforcement
 - Add-to-calendar (.ics) generation
+- Invoice system (PDF generation, auto-send, admin + portal views)
 
 
 ### ⬜ FUTURE
 - Analytics dashboard (utilization, retention, revenue)
-- Post-session follow-up automation
 - Cycle summary report to Tracey
 - Multi-currency invoicing (CAD+HST, EUR)
 - Memberships / Subscriptions
@@ -120,8 +152,8 @@
 | `session_config` | session_price ($150), session_duration_minutes (60), booking_buffer_minutes, public_booking_status, timezone, zoom_link |
 | `session_cycles` | name, start_date, end_date, status (planning/client_confirm/public_open/active/complete) |
 | `session_availability` | cycle_id, date, start_time, end_time, status (available/booked/blocked), visibility (recurring/public/both) |
-| `session_clients` | email, name, frequency, preferred_day, preferred_time, priority, status (active/paused/inactive) |
-| `session_bookings` | cycle_id, client_id, email, name, date, start_time, end_time, status, type (recurring/public), stripe_payment_id, confirmation_token |
+| `session_clients` | email, name, frequency, preferred_day, preferred_time, priority, status (active/paused/inactive), **client_type** (standard/regular — Session 31) |
+| `session_bookings` | cycle_id, client_id, email, name, date, start_time, end_time, status, type (recurring/public), stripe_payment_id, confirmation_token, **payment_requested_at** (Session 31), **rescheduled_from** uuid (Session 31), **reschedule_reason** text (Session 31) |
 | `session_waitlist` | email, name, preferred_days (jsonb), preferred_times (jsonb), message, status (pending/notified/booked/expired) |
 
 ### Patient CRM Tables (5 — Session 26+28)
@@ -143,27 +175,71 @@
 
 ## Booking Status Flow
 
+### Standard Clients
 ```
 proposed → paid → completed
-                → cancelled (48-hour policy)
+                → cancelled
                 → no_show
 proposed → declined (slot freed)
 proposed → expired (72 hours passed without payment)
 ```
 
-No separate "confirmed" state — confirm & pay is one atomic step via Stripe checkout.
+### Regular (Trusted) Clients — Session 31
+```
+proposed → confirmed (auto, no payment) → completed → paid (post-session)
+                                        → cancelled
+                                        → no_show
+confirmed → rescheduled (with reason + note)
+```
+
+### Rescheduled Flow — Session 31
+```
+Any status → rescheduled (old booking, purple badge)
+  → new booking created with rescheduled_from linking to original
+  → reason stored: client_request | practitioner_unavailable | illness | scheduling_conflict | no_show_rebooking | other
+  → auto-note added to old booking with original date + reason
+```
+
+### Cancelled → Reactivate
+```
+cancelled/declined/expired → proposed (via Reactivate button, clears timestamps)
+```
 
 ---
 
-## Admin Bookings Grid (Session 28)
+## Admin Bookings Grid (Session 28 + 31)
 
-### Per-Booking Row
-- Date, time, client email/name, type badge, status badge
-- **Actions by status:**
-  - Proposed: Pay Link, Mark Paid, Decline, + Note
-  - Paid: ✓ Complete (green), No Show, Cancel (red), + Note, + Recording
-  - Completed: + Note, + Recording
-  - Confirmed: + Note
+### Sub-Tabs (Session 31)
+- **Active**: Proposed, Confirmed, Paid — what needs attention
+- **Completed**: Completed, No Show — session history
+- **Cancelled**: Cancelled, Declined, Expired, Rescheduled — with Reactivate + Reschedule buttons
+- **All**: Everything
+
+### Sortable Columns (Session 31)
+Click any header for asc/desc sort: Date, Time, Client, Type, Status, Payment
+
+### Per-Booking Row (7 columns)
+- Date, Time, Client (email + name + Regular badge + rescheduled indicator), Type, Status, **Payment** (Session 31), Actions
+
+### Payment Column (Session 31)
+- **Paid** (green badge) — Stripe payment confirmed or manually marked
+- **Unpaid · Request** (red button) — Completed regular, no payment, click to send request
+- **Requested** (yellow badge) + Resend — Payment email already sent, with resend option
+- **—** — Not applicable (proposed, confirmed, or non-regular completed)
+
+### Actions by Status
+- **Proposed**: Pay Link (🔗), Confirm (regulars only), Mark Paid, Decline, + Note
+- **Proposed (Regular)**: Confirm button (skips payment)
+- **Confirmed / Paid**: Complete, No Show, Cancel (all with confirmation dialogs), + Note, + Recording
+- **Completed**: + Note, + Recording
+- **Cancelled / Declined / Expired**: Reactivate, Reschedule, + Note
+- **Rescheduled**: + Note only (no further actions)
+- All rows: 🗑 Delete
+
+### Bulk Actions (Session 31)
+- **💳 Bulk Request Payments** — modal with checklist of all completed unpaid regulars
+- **📧 Bulk Send Reminders** — modal with checklist of all tomorrow's sessions
+- Custom `.qp-check` themed checkboxes, Select All toggle
 
 ### Collapsible Notes/Recordings Row
 - Toggle: `▸ 📝 2 notes · 🎥 1 recording click to expand`

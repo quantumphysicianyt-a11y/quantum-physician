@@ -26,7 +26,7 @@
 | Deep linking (progress→sessions) | ✅ DONE (S28) - ?highlight=bookingId |
 | Recordings on sessions page | ✅ DONE (S28) |
 | CRM merge into Clients tab | ✅ DONE (S29) - sub-nav roster/profiles, clickable cards |
-| Email reminders UI | ✅ DONE (S29) - toggles, preview, manual send. TRUE automation pending S30 |
+| Email reminders UI | ✅ DONE (S29+S30) - toggles, preview, manual send, TRUE cron automation deployed & tested |
 | 3D body model (Three.js) | ⬜ PENDING (S31+) |
 
 ---
