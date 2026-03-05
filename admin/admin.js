@@ -6896,11 +6896,9 @@ function sortInvoicesGrid(col){
 function renderInvoicesGrid(){
   var c=document.getElementById('sess-invoices-grid');
   if(!c)return;
-  var statusFilter=(document.getElementById('inv-status-filter')||{}).value||'all';
   var search=((document.getElementById('inv-search')||{}).value||'').toLowerCase();
 
   var filtered=sessInvoicesData.filter(function(inv){
-    if(statusFilter!=='all'&&inv.status!==statusFilter) return false;
     if(search){
       if(inv.email.toLowerCase().indexOf(search)<0
         &&(inv.name||'').toLowerCase().indexOf(search)<0
@@ -6926,17 +6924,17 @@ function renderInvoicesGrid(){
   var statsEl=document.getElementById('inv-stats');
   if(statsEl){
     var total=sessInvoicesData.length;
-    var drafts=sessInvoicesData.filter(function(i){return i.status==='draft'}).length;
-    var sent=sessInvoicesData.filter(function(i){return i.status==='sent'}).length;
     var paid=sessInvoicesData.filter(function(i){return i.status==='paid'}).length;
-    var overdue=sessInvoicesData.filter(function(i){return i.status==='overdue'}).length;
     var totalRevenue=sessInvoicesData.filter(function(i){return i.status==='paid'}).reduce(function(s,i){return s+i.total_cents},0);
-    statsEl.innerHTML='<span style="color:var(--text-muted)">'+total+' invoices</span>'
-      +(drafts?'<span style="color:var(--text-dim)">📝 '+drafts+' draft</span>':'')
-      +(sent?'<span style="color:var(--warning)">📧 '+sent+' sent</span>':'')
-      +(paid?'<span style="color:var(--success)">✅ '+paid+' paid</span>':'')
-      +(overdue?'<span style="color:var(--danger)">⚠ '+overdue+' overdue</span>':'')
-      +(totalRevenue?'<span style="color:var(--teal)">💰 '+fmt$(totalRevenue)+' collected</span>':'');
+    var thisMonth=sessInvoicesData.filter(function(i){
+      if(i.status!=='paid'||!i.paid_at) return false;
+      var d=new Date(i.paid_at);var now=new Date();
+      return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();
+    }).length;
+    statsEl.innerHTML='<span style="color:var(--teal);font-weight:600">'+total+' invoices</span>'
+      +'<span style="color:var(--success)">✅ '+paid+' paid</span>'
+      +(thisMonth?'<span style="color:var(--text-muted)">📅 '+thisMonth+' this month</span>':'')
+      +(totalRevenue?'<span style="color:var(--teal);font-weight:600">💰 '+fmt$(totalRevenue)+' total revenue</span>':'');
   }
 
   if(!filtered.length){c.innerHTML='<div class="empty"><p>No invoices match filters.</p></div>';return}
@@ -6957,27 +6955,25 @@ function renderInvoicesGrid(){
     +'<th>Session Date</th>'
     +'<th style="'+thStyle+';'+thActive('amount')+'" onclick="sortInvoicesGrid(\'amount\')">Amount'+sortArrow('amount')+'</th>'
     +'<th style="'+thStyle+';'+thActive('status')+'" onclick="sortInvoicesGrid(\'status\')">Status'+sortArrow('status')+'</th>'
-    +'<th style="'+thStyle+';'+thActive('issued')+'" onclick="sortInvoicesGrid(\'issued\')">Issued'+sortArrow('issued')+'</th>'
+    +'<th style="'+thStyle+';'+thActive('issued')+'" onclick="sortInvoicesGrid(\'issued\')">Paid'+sortArrow('issued')+'</th>'
     +'<th>Actions</th></tr></thead><tbody>'
     +page.map(function(inv){
       var booking=sessBookingsData.find(function(b){return b.id===inv.booking_id});
       var sessDate=booking?fmtDate(booking.date):'—';
+      var sessTime=booking?fmtTime(booking.start_time):'';
       var taxNote=inv.tax_cents>0?' <span style="font-size:10px;color:var(--text-dim)">(+'+fmt$(inv.tax_cents)+' '+esc(inv.tax_label||'tax')+')</span>':'';
+      var paidDate=inv.paid_at?fmtDate(inv.paid_at.slice(0,10)):(inv.issued_at?fmtDate(inv.issued_at.slice(0,10)):'—');
 
       return '<tr>'
         +'<td style="font-weight:600;color:var(--teal);font-size:12px;white-space:nowrap">'+esc(inv.invoice_number)+'</td>'
         +'<td class="email">'+esc(inv.email)+(inv.name?'<br><span class="name" style="font-size:11px">'+esc(inv.name)+'</span>':'')+'</td>'
-        +'<td style="white-space:nowrap">'+sessDate+'</td>'
+        +'<td style="white-space:nowrap">'+sessDate+(sessTime?'<br><span style="font-size:11px;color:var(--text-dim)">'+sessTime+'</span>':'')+'</td>'
         +'<td>'+fmt$(inv.total_cents)+taxNote+'</td>'
-        +'<td>'+(statusBadges[inv.status]||'<span class="badge muted">'+inv.status+'</span>')+'</td>'
-        +'<td style="white-space:nowrap">'+(inv.issued_at?fmtDate(inv.issued_at.slice(0,10)):'—')+'</td>'
+        +'<td>'+(inv.status==='paid'?'<span class="badge green">Paid</span>':'<span class="badge muted">'+inv.status+'</span>')+'</td>'
+        +'<td style="white-space:nowrap">'+paidDate+'</td>'
         +'<td><div style="display:flex;gap:4px;flex-wrap:wrap">'
-        +(inv.status==='draft'?'<button class="btn btn-ghost btn-sm" onclick="editInvoiceModal(\''+inv.id+'\')" style="font-size:11px">✏️ Edit</button>':'')
-        +(inv.status==='draft'?'<button class="btn btn-primary btn-sm" onclick="generateAndSendInvoice(\''+inv.id+'\')" style="font-size:11px">📧 Send</button>':'')
-        +(inv.status==='sent'||inv.status==='overdue'?'<button class="btn btn-success btn-sm" onclick="markInvoicePaid(\''+inv.id+'\')" style="font-size:11px">✓ Mark Paid</button>':'')
-        +(inv.pdf_path?'<button class="btn btn-ghost btn-sm" onclick="downloadInvoicePdf(\''+inv.id+'\')" style="font-size:11px">📄 PDF</button>':'<button class="btn btn-ghost btn-sm" onclick="generateInvoicePdf(\''+inv.id+'\')" style="font-size:11px">📄 Gen PDF</button>')
-        +(inv.status!=='void'&&inv.status!=='paid'?'<button class="btn btn-ghost btn-sm" onclick="voidInvoice(\''+inv.id+'\')" style="font-size:11px;color:var(--danger)">Void</button>':'')
-        +(inv.status==='sent'||inv.status==='overdue'?'<button class="btn btn-ghost btn-sm" onclick="resendInvoice(\''+inv.id+'\')" style="font-size:11px">📧 Resend</button>':'')
+        +(inv.pdf_path?'<button class="btn btn-ghost btn-sm" onclick="downloadInvoicePdf(\''+inv.id+'\')" style="font-size:11px">📄 Download</button>':'<button class="btn btn-ghost btn-sm" onclick="generateInvoicePdf(\''+inv.id+'\')" style="font-size:11px">📄 Generate PDF</button>')
+        +'<button class="btn btn-ghost btn-sm" onclick="resendInvoice(\''+inv.id+'\')" style="font-size:11px">📧 Email</button>'
         +'</div></td></tr>';
     }).join('')+'</tbody></table>';
 

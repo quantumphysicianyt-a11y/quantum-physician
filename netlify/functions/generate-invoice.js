@@ -1,5 +1,7 @@
 // /netlify/functions/generate-invoice.js
-// Generates QP-branded PDF invoices using pdfkit, uploads to Supabase Storage
+// Generates QP-branded PDF paid invoices using pdfkit
+// Uploads to Supabase Storage 'invoices' bucket
+// Called by: session-webhook.js (auto) or admin panel (manual)
 
 const { createClient } = require("@supabase/supabase-js");
 
@@ -21,148 +23,244 @@ exports.handler = async (event) => {
     return { statusCode: 500, headers, body: JSON.stringify({ error: "Missing env vars" }) };
   }
 
-  // Auth check — must be admin
-  const sbAnon = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const sbAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-  const authHeader = event.headers["authorization"] || "";
-  const token = authHeader.replace("Bearer ", "");
-  if (!token) return { statusCode: 401, headers, body: JSON.stringify({ error: "No auth token" }) };
 
   try {
-    const { data: { user }, error: authErr } = await sbAnon.auth.getUser(token);
-    if (authErr || !user) return { statusCode: 401, headers, body: JSON.stringify({ error: "Invalid token" }) };
-    const { data: adminUser } = await sbAdmin.from("admin_users").select("id").eq("email", user.email.toLowerCase()).eq("is_active", true).single();
-    if (!adminUser) return { statusCode: 403, headers, body: JSON.stringify({ error: "Not admin" }) };
-  } catch (e) {
-    return { statusCode: 401, headers, body: JSON.stringify({ error: "Auth failed" }) };
-  }
+    const body = JSON.parse(event.body || "{}");
+    const { invoice_id, internal } = body;
 
-  try {
-    const { invoice_id } = JSON.parse(event.body || "{}");
+    // If not an internal call (from webhook), verify admin auth
+    if (!internal) {
+      const sbAnon = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      const authHeader = event.headers["authorization"] || "";
+      const token = authHeader.replace("Bearer ", "");
+      if (!token) return { statusCode: 401, headers, body: JSON.stringify({ error: "No auth token" }) };
+
+      const { data: { user }, error: authErr } = await sbAnon.auth.getUser(token);
+      if (authErr || !user) return { statusCode: 401, headers, body: JSON.stringify({ error: "Invalid token" }) };
+      const { data: adminUser } = await sbAdmin.from("admin_users").select("id").eq("email", user.email.toLowerCase()).eq("is_active", true).single();
+      if (!adminUser) return { statusCode: 403, headers, body: JSON.stringify({ error: "Not admin" }) };
+    }
+
     if (!invoice_id) return { statusCode: 400, headers, body: JSON.stringify({ error: "invoice_id required" }) };
 
     // Fetch invoice
     const { data: invoice, error: invErr } = await sbAdmin.from("invoices").select("*").eq("id", invoice_id).single();
     if (invErr || !invoice) return { statusCode: 404, headers, body: JSON.stringify({ error: "Invoice not found" }) };
 
+    // Fetch booking details if linked
+    let booking = null;
+    if (invoice.booking_id) {
+      const { data: bk } = await sbAdmin.from("session_bookings").select("date,start_time,end_time").eq("id", invoice.booking_id).single();
+      booking = bk;
+    }
+
+    // Fetch QP logo as buffer for embedding
+    let logoBuffer = null;
+    try {
+      const logoRes = await fetch("https://qp-homepage.netlify.app/assets/images/QP-Logo.png");
+      if (logoRes.ok) logoBuffer = Buffer.from(await logoRes.arrayBuffer());
+    } catch (e) { console.log("Logo fetch failed, using text fallback"); }
+
+    // Fetch Tracey headshot
+    let headshotBuffer = null;
+    try {
+      const hsRes = await fetch("https://qp-homepage.netlify.app/assets/images/tracey-headshot.jpg");
+      if (hsRes.ok) headshotBuffer = Buffer.from(await hsRes.arrayBuffer());
+    } catch (e) { console.log("Headshot fetch failed, skipping"); }
+
     // Generate PDF
     const PDFDocument = require("pdfkit");
-    const pdfDoc = new PDFDocument({ size: "LETTER", margin: 50, bufferPages: true });
+    const pdfDoc = new PDFDocument({ size: "LETTER", margin: 0, bufferPages: true });
 
     const chunks = [];
     pdfDoc.on("data", (chunk) => chunks.push(chunk));
 
-    // --- Colors ---
+    // --- Brand Colors ---
     const navy = "#0e1a30";
+    const navyLight = "#1a3a5c";
     const teal = "#5ba8b2";
-    const taupe = "#ad9b84";
     const white = "#ffffff";
-    const lightGray = "#e8e8e8";
+    const offWhite = "#f8fafc";
     const textDark = "#1a1a2e";
     const textMuted = "#6b7280";
+    const lightBorder = "#e2e8f0";
+    const paidGreen = "#3dd68c";
 
-    // --- Header ---
-    pdfDoc.rect(0, 0, 612, 110).fill(navy);
-    pdfDoc.fontSize(28).font("Helvetica-Bold").fillColor(white).text("INVOICE", 50, 40, { align: "right" });
-    pdfDoc.fontSize(18).font("Helvetica-Bold").fillColor(teal).text("Quantum Physician", 50, 38);
-    pdfDoc.fontSize(10).font("Helvetica").fillColor("#94a3b8").text("Dr. Tracey Clark", 50, 62);
-    pdfDoc.text("tracey@quantumphysician.com", 50, 76);
+    const pageW = 612;
+    const pageH = 792;
+    const margin = 50;
 
-    // --- Invoice Number & Dates ---
-    const infoY = 130;
-    pdfDoc.fontSize(9).font("Helvetica-Bold").fillColor(textMuted).text("INVOICE NUMBER", 50, infoY);
-    pdfDoc.fontSize(13).font("Helvetica-Bold").fillColor(teal).text(invoice.invoice_number, 50, infoY + 14);
+    // ═══════════════════════════════════
+    // HEADER — Navy background
+    // ═══════════════════════════════════
+    pdfDoc.rect(0, 0, pageW, 130).fill(navy);
 
-    pdfDoc.fontSize(9).font("Helvetica-Bold").fillColor(textMuted).text("INVOICE DATE", 220, infoY);
-    pdfDoc.fontSize(11).font("Helvetica").fillColor(textDark).text(formatDate(invoice.issued_at || invoice.created_at), 220, infoY + 14);
-
-    if (invoice.due_date) {
-      pdfDoc.fontSize(9).font("Helvetica-Bold").fillColor(textMuted).text("DUE DATE", 380, infoY);
-      pdfDoc.fontSize(11).font("Helvetica").fillColor(textDark).text(formatDate(invoice.due_date), 380, infoY + 14);
+    // Logo
+    if (logoBuffer) {
+      try {
+        pdfDoc.image(logoBuffer, margin, 28, { height: 50 });
+      } catch (e) {
+        pdfDoc.fontSize(22).font("Helvetica-Bold").fillColor(teal).text("Quantum Physician", margin, 35);
+      }
+    } else {
+      pdfDoc.fontSize(22).font("Helvetica-Bold").fillColor(teal).text("Quantum Physician", margin, 35);
     }
 
-    // --- Bill To ---
-    const billY = 185;
-    pdfDoc.fontSize(9).font("Helvetica-Bold").fillColor(textMuted).text("BILL TO", 50, billY);
-    pdfDoc.fontSize(12).font("Helvetica-Bold").fillColor(textDark).text(invoice.name || "Client", 50, billY + 14);
-    pdfDoc.fontSize(10).font("Helvetica").fillColor(textMuted).text(invoice.email, 50, billY + 30);
+    // Practitioner info
+    pdfDoc.fontSize(10).font("Helvetica").fillColor("#94a3b8").text("Dr. Tracey Clark", margin, 85);
+    pdfDoc.text("tracey@quantumphysician.com", margin, 99);
 
-    // Session date (from booking if available)
-    if (invoice.booking_id) {
-      const { data: booking } = await sbAdmin.from("session_bookings").select("date,start_time").eq("id", invoice.booking_id).single();
-      if (booking) {
-        pdfDoc.fontSize(9).font("Helvetica-Bold").fillColor(textMuted).text("SESSION DATE", 380, billY);
-        pdfDoc.fontSize(11).font("Helvetica").fillColor(textDark).text(formatDate(booking.date) + (booking.start_time ? " at " + formatTime(booking.start_time) : ""), 380, billY + 14);
+    // INVOICE title + number
+    pdfDoc.fontSize(32).font("Helvetica-Bold").fillColor(white).text("INVOICE", 0, 40, { width: pageW - margin, align: "right" });
+    pdfDoc.fontSize(11).font("Helvetica").fillColor(teal).text(invoice.invoice_number, 0, 78, { width: pageW - margin, align: "right" });
+
+    // ═══════════════════════════════════
+    // PAID WATERMARK (diagonal)
+    // ═══════════════════════════════════
+    if (invoice.status === "paid") {
+      pdfDoc.save();
+      pdfDoc.translate(pageW / 2, pageH / 2);
+      pdfDoc.rotate(-35);
+      pdfDoc.fontSize(120).font("Helvetica-Bold").fillColor(paidGreen).opacity(0.08);
+      pdfDoc.text("PAID", -200, -60, { width: 400, align: "center" });
+      pdfDoc.restore();
+      pdfDoc.opacity(1);
+    }
+
+    // ═══════════════════════════════════
+    // BILL TO + DATES
+    // ═══════════════════════════════════
+    const infoY = 150;
+
+    pdfDoc.fontSize(8).font("Helvetica-Bold").fillColor(textMuted).text("BILL TO", margin, infoY);
+    pdfDoc.fontSize(14).font("Helvetica-Bold").fillColor(textDark).text(invoice.name || "Client", margin, infoY + 16);
+    pdfDoc.fontSize(10).font("Helvetica").fillColor(textMuted).text(invoice.email, margin, infoY + 34);
+
+    const rightCol = 370;
+    pdfDoc.fontSize(8).font("Helvetica-Bold").fillColor(textMuted).text("INVOICE DATE", rightCol, infoY);
+    pdfDoc.fontSize(11).font("Helvetica").fillColor(textDark).text(formatDate(invoice.issued_at || invoice.created_at), rightCol, infoY + 14);
+
+    if (invoice.due_date) {
+      pdfDoc.fontSize(8).font("Helvetica-Bold").fillColor(textMuted).text("DUE DATE", rightCol, infoY + 36);
+      pdfDoc.fontSize(11).font("Helvetica").fillColor(textDark).text(formatDate(invoice.due_date), rightCol, infoY + 50);
+    }
+
+    if (invoice.paid_at) {
+      pdfDoc.fontSize(8).font("Helvetica-Bold").fillColor(paidGreen).text("PAID ON", rightCol + 130, infoY);
+      pdfDoc.fontSize(11).font("Helvetica-Bold").fillColor(paidGreen).text(formatDate(invoice.paid_at), rightCol + 130, infoY + 14);
+    }
+
+    // ═══════════════════════════════════
+    // SESSION DETAILS
+    // ═══════════════════════════════════
+    let currentY = infoY + 75;
+
+    if (booking) {
+      pdfDoc.roundedRect(margin, currentY, pageW - margin * 2, 50, 6).fillAndStroke(offWhite, lightBorder);
+      pdfDoc.fontSize(8).font("Helvetica-Bold").fillColor(textMuted).text("SESSION DATE & TIME", margin + 16, currentY + 10);
+      pdfDoc.fontSize(12).font("Helvetica-Bold").fillColor(textDark).text(
+        formatDate(booking.date) + (booking.start_time ? "  ·  " + formatTime(booking.start_time) + " – " + formatTime(booking.end_time) : ""),
+        margin + 16, currentY + 26
+      );
+
+      if (headshotBuffer) {
+        try {
+          pdfDoc.save();
+          const hx = pageW - margin - 46, hy = currentY + 9, hr = 16;
+          pdfDoc.circle(hx + hr, hy + hr, hr).clip();
+          pdfDoc.image(headshotBuffer, hx, hy, { width: 32, height: 32 });
+          pdfDoc.restore();
+        } catch (e) { /* skip */ }
+      }
+
+      currentY += 65;
+    }
+
+    // ═══════════════════════════════════
+    // LINE ITEMS TABLE
+    // ═══════════════════════════════════
+    currentY += 10;
+
+    pdfDoc.roundedRect(margin, currentY, pageW - margin * 2, 32, 4).fill(navy);
+    pdfDoc.fontSize(9).font("Helvetica-Bold").fillColor(white);
+    pdfDoc.text("DESCRIPTION", margin + 16, currentY + 11);
+    pdfDoc.text("AMOUNT", pageW - margin - 90, currentY + 11, { width: 74, align: "right" });
+
+    currentY += 40;
+    pdfDoc.fontSize(12).font("Helvetica").fillColor(textDark).text(invoice.description || "1-on-1 Healing Session (60 min)", margin + 16, currentY);
+    pdfDoc.fontSize(12).font("Helvetica-Bold").fillColor(textDark).text(formatMoney(invoice.amount_cents, invoice.currency), pageW - margin - 90, currentY, { width: 74, align: "right" });
+
+    // ═══════════════════════════════════
+    // TOTALS
+    // ═══════════════════════════════════
+    currentY += 35;
+    pdfDoc.moveTo(320, currentY).lineTo(pageW - margin, currentY).strokeColor(lightBorder).lineWidth(0.5).stroke();
+
+    currentY += 12;
+    pdfDoc.fontSize(10).font("Helvetica").fillColor(textMuted).text("Subtotal", 330, currentY);
+    pdfDoc.fontSize(10).font("Helvetica").fillColor(textDark).text(formatMoney(invoice.amount_cents, invoice.currency), pageW - margin - 90, currentY, { width: 74, align: "right" });
+
+    if (invoice.tax_cents && invoice.tax_cents > 0) {
+      currentY += 22;
+      const taxLabel = invoice.tax_label ? "Tax (" + invoice.tax_label + " " + invoice.tax_rate + "%)" : "Tax";
+      pdfDoc.fontSize(10).font("Helvetica").fillColor(textMuted).text(taxLabel, 330, currentY);
+      pdfDoc.fontSize(10).font("Helvetica").fillColor(textDark).text(formatMoney(invoice.tax_cents, invoice.currency), pageW - margin - 90, currentY, { width: 74, align: "right" });
+    }
+
+    currentY += 26;
+    pdfDoc.moveTo(320, currentY).lineTo(pageW - margin, currentY).strokeColor(teal).lineWidth(2).stroke();
+    currentY += 12;
+
+    pdfDoc.fontSize(13).font("Helvetica-Bold").fillColor(teal).text("TOTAL", 330, currentY);
+    pdfDoc.fontSize(16).font("Helvetica-Bold").fillColor(teal).text(formatMoney(invoice.total_cents, invoice.currency), pageW - margin - 90, currentY - 2, { width: 74, align: "right" });
+
+    // ═══════════════════════════════════
+    // PAID BADGE
+    // ═══════════════════════════════════
+    currentY += 40;
+    if (invoice.status === "paid") {
+      const badgeW = 140, badgeH = 32;
+      pdfDoc.roundedRect(margin, currentY, badgeW, badgeH, 6).fill(paidGreen);
+      pdfDoc.fontSize(14).font("Helvetica-Bold").fillColor(white).text("PAID", margin, currentY + 8, { width: badgeW, align: "center" });
+      if (invoice.paid_at) {
+        pdfDoc.fontSize(9).font("Helvetica").fillColor(textMuted).text("Payment received " + formatDate(invoice.paid_at), margin + badgeW + 12, currentY + 10);
       }
     }
 
-    // --- Separator ---
-    const lineY = 240;
-    pdfDoc.moveTo(50, lineY).lineTo(562, lineY).strokeColor(lightGray).lineWidth(1).stroke();
-
-    // --- Line Items Table ---
-    const tableY = 260;
-    // Header row
-    pdfDoc.rect(50, tableY, 512, 28).fill("#f8fafc");
-    pdfDoc.fontSize(9).font("Helvetica-Bold").fillColor(textMuted);
-    pdfDoc.text("DESCRIPTION", 60, tableY + 9);
-    pdfDoc.text("AMOUNT", 460, tableY + 9, { width: 90, align: "right" });
-
-    // Line item
-    const rowY = tableY + 38;
-    pdfDoc.fontSize(11).font("Helvetica").fillColor(textDark).text(invoice.description || "1-on-1 Healing Session (60 min)", 60, rowY);
-    pdfDoc.fontSize(11).font("Helvetica-Bold").fillColor(textDark).text(formatMoney(invoice.amount_cents, invoice.currency), 460, rowY, { width: 90, align: "right" });
-
-    // --- Totals ---
-    pdfDoc.moveTo(350, rowY + 30).lineTo(562, rowY + 30).strokeColor(lightGray).lineWidth(0.5).stroke();
-
-    let totalY = rowY + 42;
-    pdfDoc.fontSize(10).font("Helvetica").fillColor(textMuted).text("Subtotal", 360, totalY);
-    pdfDoc.fontSize(10).font("Helvetica").fillColor(textDark).text(formatMoney(invoice.amount_cents, invoice.currency), 460, totalY, { width: 90, align: "right" });
-
-    if (invoice.tax_cents && invoice.tax_cents > 0) {
-      totalY += 20;
-      const taxLabel = invoice.tax_label ? "Tax (" + invoice.tax_label + " " + invoice.tax_rate + "%)" : "Tax";
-      pdfDoc.fontSize(10).font("Helvetica").fillColor(textMuted).text(taxLabel, 360, totalY);
-      pdfDoc.fontSize(10).font("Helvetica").fillColor(textDark).text(formatMoney(invoice.tax_cents, invoice.currency), 460, totalY, { width: 90, align: "right" });
-    }
-
-    totalY += 24;
-    pdfDoc.moveTo(350, totalY).lineTo(562, totalY).strokeColor(teal).lineWidth(2).stroke();
-    totalY += 10;
-    pdfDoc.fontSize(14).font("Helvetica-Bold").fillColor(teal).text("TOTAL", 360, totalY);
-    pdfDoc.fontSize(14).font("Helvetica-Bold").fillColor(teal).text(formatMoney(invoice.total_cents, invoice.currency), 460, totalY, { width: 90, align: "right" });
-
-    // --- Status Badge ---
-    totalY += 36;
-    const statusColors = { draft: "#6b7280", sent: "#f0b429", paid: "#3dd68c", overdue: "#ef5350", void: "#6b7280" };
-    const statusColor = statusColors[invoice.status] || "#6b7280";
-    const statusText = invoice.status.toUpperCase() + (invoice.status === "paid" ? " ✓" : "");
-    pdfDoc.fontSize(12).font("Helvetica-Bold").fillColor(statusColor).text("Status: " + statusText, 50, totalY);
-
-    // --- Pay URL ---
-    if (invoice.pay_url && invoice.status !== "paid" && invoice.status !== "void") {
-      totalY += 22;
-      pdfDoc.fontSize(10).font("Helvetica").fillColor(teal).text("Pay online: " + invoice.pay_url, 50, totalY, { link: invoice.pay_url, underline: true });
-    }
-
-    // --- Notes ---
+    // ═══════════════════════════════════
+    // NOTES
+    // ═══════════════════════════════════
     if (invoice.notes) {
-      totalY += 30;
-      pdfDoc.moveTo(50, totalY).lineTo(562, totalY).strokeColor(lightGray).lineWidth(0.5).stroke();
-      totalY += 14;
-      pdfDoc.fontSize(10).font("Helvetica-Oblique").fillColor(textMuted).text(invoice.notes, 50, totalY, { width: 512 });
+      currentY += 50;
+      pdfDoc.moveTo(margin, currentY).lineTo(pageW - margin, currentY).strokeColor(lightBorder).lineWidth(0.5).stroke();
+      currentY += 14;
+      pdfDoc.fontSize(10).font("Helvetica-Oblique").fillColor(textMuted).text(invoice.notes, margin, currentY, { width: pageW - margin * 2 });
     }
 
-    // --- Footer ---
-    const footerY = 710;
-    pdfDoc.rect(0, footerY, 612, 82).fill(navy);
-    pdfDoc.fontSize(10).font("Helvetica").fillColor("#94a3b8").text("Thank you for your trust in this healing journey.", 50, footerY + 20, { width: 512, align: "center" });
-    pdfDoc.fontSize(9).fillColor(teal).text("quantumphysician.com", 50, footerY + 40, { width: 512, align: "center", link: "https://quantumphysician.com" });
+    // ═══════════════════════════════════
+    // FOOTER
+    // ═══════════════════════════════════
+    const footerY = pageH - 80;
+    pdfDoc.rect(0, footerY, pageW, 80).fill(navy);
+
+    if (headshotBuffer) {
+      try {
+        pdfDoc.save();
+        const fx = margin, fy = footerY + 16, fr = 20;
+        pdfDoc.circle(fx + fr, fy + fr, fr).clip();
+        pdfDoc.image(headshotBuffer, fx, fy, { width: 40, height: 40 });
+        pdfDoc.restore();
+      } catch (e) { /* skip */ }
+    }
+
+    const footerTextX = headshotBuffer ? margin + 52 : margin;
+    pdfDoc.fontSize(11).font("Helvetica-Bold").fillColor(teal).text("Dr. Tracey Clark", footerTextX, footerY + 18);
+    pdfDoc.fontSize(9).font("Helvetica").fillColor("#94a3b8").text("Quantum Physician  ·  quantumphysician.com", footerTextX, footerY + 34);
+    pdfDoc.fontSize(9).font("Helvetica").fillColor("#4a5568").text("Thank you for your trust in this healing journey.", 0, footerY + 52, { width: pageW, align: "center" });
 
     pdfDoc.end();
 
-    // Wait for PDF to complete
     const pdfBuffer = await new Promise((resolve) => {
       pdfDoc.on("end", () => resolve(Buffer.concat(chunks)));
     });
@@ -195,6 +293,7 @@ exports.handler = async (event) => {
         success: true,
         pdf_path: storagePath,
         pdf_url: signedData ? signedData.signedUrl : null,
+        invoice_number: invoice.invoice_number,
       }),
     };
   } catch (err) {
@@ -204,7 +303,7 @@ exports.handler = async (event) => {
 };
 
 function formatDate(d) {
-  if (!d) return "—";
+  if (!d) return "";
   return new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 }
 

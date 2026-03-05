@@ -296,12 +296,10 @@
 <!-- Invoices Sub-View (shown when Invoices sub-tab selected) -->
 <div id="sess-invoices-panel" style="display:none">
 <div class="card" style="margin-bottom:16px">
-<div class="card-header"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> All Invoices</div>
+<div class="card-header"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> Paid Invoices</div>
 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-<select class="input" style="width:130px" id="inv-status-filter" onchange="renderInvoicesGrid()"><option value="all">All Status</option><option value="draft">Draft</option><option value="sent">Sent</option><option value="paid">Paid</option><option value="overdue">Overdue</option><option value="void">Void</option></select>
-<input type="text" class="input" style="width:200px" id="inv-search" placeholder="Search by email or #..." oninput="renderInvoicesGrid()">
-<button class="btn btn-primary btn-sm" onclick="createInvoiceModal()">+ New Invoice</button>
-<button class="btn btn-ghost btn-sm" onclick="bulkGenerateInvoices()">📄 Bulk Generate for Cycle</button>
+<input type="text" class="input" style="width:220px" id="inv-search" placeholder="Search by email, name, or #..." oninput="renderInvoicesGrid()">
+<button class="btn btn-ghost btn-sm" onclick="bulkGenerateInvoices()">📄 Generate for Cycle</button>
 <button class="btn btn-ghost btn-sm" onclick="loadInvoicesData()">Refresh</button>
 </div></div>
 <div class="card-body">
