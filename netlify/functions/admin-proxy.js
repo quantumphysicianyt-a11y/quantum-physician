@@ -11,7 +11,8 @@ const ALLOWED_TABLES = [
   "session_notes", "session_recordings", "patient_intake",
   "patient_checkins", "patient_progress_notes",
   "email_automation_log", "system_config",
-  "invoices"
+  "invoices",
+  "session_types"
 ];
 
 const WRITABLE_TABLES = [...ALLOWED_TABLES];

@@ -3486,6 +3486,7 @@ function loadTemplate(key){
 
 /* ---------- State ---------- */
 var sessConfigData=null, sessCyclesData=[], sessAvailData=[], sessClientsData=[], sessBookingsData=[], sessWaitlistData=[], sessNotesData=[], sessRecsData=[];
+var sessTypesData=[];
 var sessAvailMonth=new Date().getMonth(), sessAvailYear=new Date().getFullYear();
 var sessBookPage=1, sessBookPS=20;
 var sessBookSortCol='date', sessBookSortDir='asc';
@@ -3521,6 +3522,7 @@ function switchSessTab(tab,btn){
   if(tab==='clients'){ renderClientRoster(); }
   if(tab==='bookings') loadBookingsForCycle();
   if(tab==='public') renderPublicWaitlist();
+  if(tab==='types') renderSessionTypes();
 }
 
 /* ---------- Client Sub-View Switching (Roster / All Profiles / Detail) ---------- */
@@ -3553,7 +3555,8 @@ async function loadSessionsData(){
       proxyFrom('session_waitlist').select('*').order('created_at',{ascending:true}),
       proxyFrom('session_notes').select('*').order('created_at',{ascending:false}),
       proxyFrom('session_recordings').select('*').order('uploaded_at',{ascending:false}),
-      proxyFrom('invoices').select('*').order('created_at',{ascending:false})
+      proxyFrom('invoices').select('*').order('created_at',{ascending:false}),
+      proxyFrom('session_types').select('*').order('sort_order',{ascending:true})
     ]);
     sessConfigData=(r[0].data&&r[0].data[0])||null;
     sessCyclesData=r[1].data||[];
@@ -3564,6 +3567,7 @@ async function loadSessionsData(){
     sessNotesData=r[6].data||[];
     sessRecsData=r[7].data||[];
     sessInvoicesData=r[8].data||[];
+    sessTypesData=r[9].data||[];
     renderSessionsStats();
     renderCycleBanner();
     renderCyclesList();
@@ -3572,6 +3576,109 @@ async function loadSessionsData(){
 }
 
 /* ---------- Stats ---------- */
+/* ---------- Session Types Manager ---------- */
+function renderSessionTypes(){
+  var el=document.getElementById('sess-types-list');
+  if(!el) return;
+  if(!sessTypesData.length){
+    el.innerHTML='<div class="empty"><p>No session types defined yet. Add your first session type below.</p></div>';
+  } else {
+    var html='';
+    sessTypesData.forEach(function(t){
+      var cur=t.currency||'EUR';
+      var sym=cur==='EUR'?'\u20AC':(cur==='CAD'?'CA$':'$');
+      var priceStr=sym+(t.price_cents/100).toFixed(0);
+      html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:14px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px;background:rgba(0,0,0,.1)">'
+        +'<div><div style="font-weight:600;font-size:14px;color:var(--text)">'+esc(t.name)+'</div>'
+        +'<div style="font-size:12px;color:var(--text-dim);margin-top:2px">'+esc(t.description||'')+'</div>'
+        +'<div style="font-size:12px;color:var(--teal);margin-top:4px">'+t.duration_minutes+' min &middot; '+priceStr+' '+cur
+        +(t.is_active?'':' &middot; <span style="color:var(--danger)">Inactive</span>')+'</div></div>'
+        +'<div style="display:flex;gap:4px">'
+        +'<button class="btn btn-ghost btn-sm" onclick="editSessionType(\''+t.id+'\')">Edit</button>'
+        +'<button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteSessionType(\''+t.id+'\')">Delete</button>'
+        +'</div></div>';
+    });
+    el.innerHTML=html;
+  }
+}
+
+function showAddSessionTypeModal(existingId){
+  var existing=existingId?sessTypesData.find(function(t){return t.id===existingId}):null;
+  var old=document.getElementById('sess-type-modal');if(old)old.remove();
+  var ov=document.createElement('div');ov.id='sess-type-modal';ov.className='modal-overlay';
+  ov.onclick=function(e){if(e.target===ov)ov.remove()};
+  var box=document.createElement('div');
+  box.style.cssText='background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;max-width:440px;width:94%';
+  box.innerHTML='<div style="font-weight:600;font-size:16px;margin-bottom:16px;color:var(--teal)">'+(existing?'Edit':'Add')+' Session Type</div>'
+    +'<div style="margin-bottom:12px"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px">Name</label><input type="text" class="input" id="st-name" style="width:100%" value="'+esc(existing?existing.name:'')+'" placeholder="e.g. Zoom Session"></div>'
+    +'<div style="margin-bottom:12px"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px">Description</label><input type="text" class="input" id="st-desc" style="width:100%" value="'+esc(existing?existing.description||'':'')+'" placeholder="Brief description..."></div>'
+    +'<div style="display:flex;gap:10px;margin-bottom:12px">'
+    +'<div style="flex:1"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px">Duration (min)</label><input type="number" class="input" id="st-duration" style="width:100%" value="'+(existing?existing.duration_minutes:30)+'"></div>'
+    +'<div style="flex:1"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px">Price</label><input type="number" class="input" id="st-price" style="width:100%" step="0.01" value="'+(existing?(existing.price_cents/100).toFixed(2):'150.00')+'"></div>'
+    +'<div style="flex:1"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px">Currency</label><select class="input" id="st-currency" style="width:100%"><option value="EUR"'+(existing&&existing.currency==='EUR'?' selected':(!existing?' selected':''))+'>EUR</option><option value="CAD"'+(existing&&existing.currency==='CAD'?' selected':'')+'>CAD</option><option value="USD"'+(existing&&existing.currency==='USD'?' selected':'')+'>USD</option></select></div></div>'
+    +'<div style="display:flex;gap:10px;margin-bottom:16px;align-items:center">'
+    +'<div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px">Sort Order</label><input type="number" class="input" id="st-sort" style="width:80px" value="'+(existing?existing.sort_order:sessTypesData.length+1)+'"></div>'
+    +'<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-dim);margin-top:14px"><input type="checkbox" id="st-active" '+(existing?existing.is_active!==false?'checked':'':'checked')+' style="accent-color:var(--teal)"> Active</label></div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end">'
+    +'<button class="btn btn-ghost btn-sm" onclick="document.getElementById(\'sess-type-modal\').remove()">Cancel</button>'
+    +'<button class="btn btn-primary btn-sm" onclick="saveSessionType('+(existing?"'"+existing.id+"'":'null')+')">Save</button></div>';
+  ov.appendChild(box);document.body.appendChild(ov);
+}
+
+function editSessionType(id){ showAddSessionTypeModal(id); }
+
+async function saveSessionType(existingId){
+  var name=document.getElementById('st-name').value.trim();
+  var desc=document.getElementById('st-desc').value.trim();
+  var duration=parseInt(document.getElementById('st-duration').value)||30;
+  var price=parseFloat(document.getElementById('st-price').value)||0;
+  var currency=document.getElementById('st-currency').value;
+  var sortOrder=parseInt(document.getElementById('st-sort').value)||0;
+  var isActive=document.getElementById('st-active').checked;
+  if(!name){showToast('Name is required','error');return}
+  var data={name:name,description:desc||null,duration_minutes:duration,price_cents:Math.round(price*100),currency:currency,sort_order:sortOrder,is_active:isActive,updated_at:new Date().toISOString()};
+  try{
+    await ensureFreshToken();
+    if(existingId){
+      await proxyFrom('session_types').update(data).eq('id',existingId);
+      var idx=sessTypesData.findIndex(function(t){return t.id===existingId});
+      if(idx>=0) Object.assign(sessTypesData[idx],data);
+      showToast('Session type updated','success');
+    } else {
+      var res=await proxyFrom('session_types').insert(data).select('*');
+      if(res.data&&res.data[0]) sessTypesData.push(res.data[0]);
+      showToast('Session type created','success');
+    }
+    sessTypesData.sort(function(a,b){return(a.sort_order||0)-(b.sort_order||0)});
+    document.getElementById('sess-type-modal').remove();
+    renderSessionTypes();
+  }catch(e){showToast('Error: '+e.message,'error')}
+}
+
+async function deleteSessionType(id){
+  if(!await qpConfirm('Delete Session Type','Delete this session type? Existing bookings referencing it will retain their data.',{okText:'Delete',danger:true}))return;
+  try{
+    await ensureFreshToken();
+    await proxyFrom('session_types').delete().eq('id',id);
+    sessTypesData=sessTypesData.filter(function(t){return t.id!==id});
+    renderSessionTypes();
+    showToast('Session type deleted','success');
+  }catch(e){showToast('Error: '+e.message,'error')}
+}
+
+function getSessionTypeById(id){
+  return sessTypesData.find(function(t){return t.id===id})||null;
+}
+
+function formatTypePrice(type, client){
+  if(!type) return '';
+  // If client has currency override, convert display (actual Stripe amount handled server-side)
+  var cur=(client&&client.currency)?client.currency:type.currency;
+  var sym=cur==='EUR'?'\u20AC':(cur==='CAD'?'CA$':'$');
+  var cents=type.price_cents;
+  return sym+(cents/100).toFixed(0)+' '+cur;
+}
+
 function renderSessionsStats(){
   var active=sessCyclesData.find(function(c){return c.status==='active'||c.status==='client_confirmation'||c.status==='public_open'});
   var totalClients=sessClientsData.filter(function(c){return c.status==='active'}).length;
@@ -4558,7 +4665,7 @@ function renderBookingsGrid(){
       var row='<tr><td style="white-space:nowrap">'+fmtDate(b.date)+'</td>'
         +'<td>'+b.start_time.slice(0,5)+'–'+b.end_time.slice(0,5)+'</td>'
         +'<td class="email" style="cursor:pointer" onclick="event.stopPropagation();crmOpenClient(\''+esc(b.email.toLowerCase()).replace(/'/g,"\\'")+'\')">'+esc(b.email)+(b.name?'<br><span class="name" style="font-size:11px">'+esc(b.name)+'</span>':'')+(isRegular?' <span class="badge teal" style="font-size:9px;vertical-align:middle">Regular</span>':'')+reschedLabel+'</td>'
-        +'<td>'+typeBadges[b.type]+'</td>'
+        +'<td>'+typeBadges[b.type]+(b.session_type_id?(function(){var st=getSessionTypeById(b.session_type_id);return st?'<div style="font-size:10px;color:var(--text-dim);margin-top:2px">'+esc(st.name)+'</div>':''})():'')+'</td>'
         +'<td>'+(statusBadges[b.status]||'<span class="badge muted">'+b.status+'</span>')+(b.client_cancelled&&!b.admin_acknowledged?'<span class="badge danger" style="margin-left:4px" title="Client self-cancelled">🔔 Client</span>':'')+'</td>'
         +'<td>'+payCol+'</td>'
         +'<td><div style="display:flex;gap:4px;flex-wrap:wrap">'
@@ -5097,9 +5204,13 @@ async function offerSlot(waitlistId,email){
   var box=document.createElement('div');
   box.style.cssText='background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;max-width:520px;width:94%;max-height:85vh;overflow-y:auto';
 
-  var duration=sessConfigData?sessConfigData.session_duration_minutes:60;
-  var price=sessConfigData?sessConfigData.session_price:null;
-  var priceStr=price?'$'+Number(price).toFixed(0):'TBD';
+  var activeTypes=sessTypesData.filter(function(t){return t.is_active!==false});
+  var typeOpts=activeTypes.map(function(t){
+    var sym=t.currency==='EUR'?'\u20AC':(t.currency==='CAD'?'CA$':'$');
+    return '<option value="'+t.id+'">'+esc(t.name)+' ('+t.duration_minutes+'min · '+sym+(t.price_cents/100).toFixed(0)+')</option>';
+  }).join('');
+  var firstType=activeTypes[0];
+  var duration=firstType?firstType.duration_minutes:30;
 
   var availOpts=availDays.map(function(a){
     var dayName=new Date(a.date+'T12:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
@@ -5116,9 +5227,11 @@ async function offerSlot(waitlistId,email){
   box.innerHTML='<div style="font-weight:600;font-size:16px;margin-bottom:4px;color:var(--teal)">Offer Slot to '+esc(wl?wl.name:email)+'</div>'
     +'<div style="font-size:12px;color:var(--text-dim);margin-bottom:14px">'+esc(email)+(cycle?' · '+esc(cycle.name):'')+'</div>'
     +prefInfo
+    +'<div style="margin-bottom:14px"><label style="font-size:11px;font-weight:600;color:var(--text-dim);display:block;margin-bottom:4px;letter-spacing:.5px">SESSION TYPE</label>'
+    +'<select class="input" id="os-type" style="width:100%;margin-bottom:10px">'+(typeOpts||'<option value="">No session types defined</option>')+'</select></div>'
     +'<div style="margin-bottom:14px"><label style="font-size:11px;font-weight:600;color:var(--text-dim);display:block;margin-bottom:4px;letter-spacing:.5px">SELECT DATE & TIME</label>'
-    +'<select class="input" id="os-date" style="width:100%;margin-bottom:8px"><option value="">Choose an available slot…</option>'+availOpts+'</select>'
-    +'<div style="display:flex;gap:8px;align-items:center"><input type="time" class="input" id="os-time" value="10:00" style="width:120px"><span style="font-size:12px;color:var(--text-dim)">'+duration+' min · '+priceStr+'</span></div></div>'
+    +'<select class="input" id="os-date" style="width:100%;margin-bottom:8px"><option value="">Choose an available slot\u2026</option>'+availOpts+'</select>'
+    +'<div style="display:flex;gap:8px;align-items:center"><input type="time" class="input" id="os-time" value="10:00" style="width:120px"><span id="os-type-summary" style="font-size:12px;color:var(--text-dim)">'+duration+' min</span></div></div>'
     +'<div style="padding:14px 0;border-top:1px solid var(--border)">'
     +'<label style="font-size:11px;font-weight:600;color:var(--text-dim);display:block;margin-bottom:8px;letter-spacing:.5px">EMAIL PREVIEW</label>'
     +'<div id="os-email-preview" style="font-size:12px;color:var(--text-dim);background:rgba(0,0,0,.15);border-radius:var(--radius-sm);padding:14px;line-height:1.7">Select a date above to preview the email</div></div>'
@@ -5126,13 +5239,22 @@ async function offerSlot(waitlistId,email){
     +'<button class="btn btn-ghost btn-sm" onclick="document.getElementById(\'sess-offer-slot-modal\').remove()">Cancel</button>'
     +'<button class="btn btn-ghost btn-sm" style="color:var(--purple);border-color:rgba(131,56,236,.3)" onclick="previewOfferEmail(\''+esc(email)+'\')">Preview Email</button>'
     +'<button class="btn btn-ghost btn-sm" style="color:var(--warning);border-color:rgba(240,180,41,.3)" onclick="testOfferEmail()">Send Test</button>'
-    +'<button class="btn btn-primary btn-sm" onclick="sendOfferSlot(\''+waitlistId+'\',\''+esc(email)+'\')">Send Offer Email</button></div>';
+    +'<button class="btn btn-primary btn-sm" onclick="sendOfferSlot(\''+waitlistId+'\',\''+esc(email)+'\')">Confirm Slot</button></div>';
 
   ov.appendChild(box);document.body.appendChild(ov);
 
-  // Update preview when date changes
+  // Update preview when date or type changes
   document.getElementById('os-date').addEventListener('change',function(){updateOfferPreview(wl,email)});
   document.getElementById('os-time').addEventListener('change',function(){updateOfferPreview(wl,email)});
+  document.getElementById('os-type').addEventListener('change',function(){
+    var sel=this.value;
+    var st=sessTypesData.find(function(t){return t.id===sel});
+    if(st){
+      var sym=st.currency==='EUR'?'\u20AC':(st.currency==='CAD'?'CA$':'$');
+      document.getElementById('os-type-summary').textContent=st.duration_minutes+' min \u00B7 '+sym+(st.price_cents/100).toFixed(0)+' '+st.currency;
+    }
+    updateOfferPreview(wl,email);
+  });
   if(availDays.length){
     // Auto-select first matching preferred day
     var prefDay=wl&&wl.preferred_days&&wl.preferred_days[0]?wl.preferred_days[0]:null;
@@ -5148,6 +5270,8 @@ async function offerSlot(waitlistId,email){
 function updateOfferPreview(wl,email){
   var dateStr=document.getElementById('os-date').value;
   var time=document.getElementById('os-time').value;
+  var typeId=document.getElementById('os-type')?document.getElementById('os-type').value:'';
+  var st=typeId?sessTypesData.find(function(t){return t.id===typeId}):null;
   var preview=document.getElementById('os-email-preview');
   if(!dateStr){preview.innerHTML='Select a date above to preview the email';return}
   var dateObj=new Date(dateStr+'T12:00');
@@ -5155,44 +5279,41 @@ function updateOfferPreview(wl,email){
   var h=parseInt(time.split(':')[0]),mi=time.split(':')[1];
   var ampm=h>=12?'PM':'AM';var h12=h>12?h-12:(h===0?12:h);
   var timeFmt=h12+':'+mi+' '+ampm;
-  var duration=sessConfigData?sessConfigData.session_duration_minutes:60;
-  var price=sessConfigData?sessConfigData.session_price:null;
-  var priceStr=price?'$'+Number(price).toFixed(0):'';
-  var name=wl?wl.name||'there':'there';
+  var duration=st?st.duration_minutes:30;
+  var typeName=st?st.name:'Session';
 
-  preview.innerHTML='<strong>Subject:</strong> Your Session with Dr. Tracey Clark — '+dayFmt
+  preview.innerHTML='<strong>Subject:</strong> Your '+esc(typeName)+' with Dr. Tracey Clark \u2014 '+dayFmt
     +'<br><br><strong>Body:</strong><br>'
-    +'Hi '+esc(name)+',<br><br>'
-    +'Great news! A session slot has opened up just for you.<br><br>'
+    +'Hi '+esc(wl?wl.name||'there':'there')+',<br><br>'
+    +'Great news! Your session has been confirmed.<br><br>'
     +'<div style="background:rgba(91,168,178,.1);border:1px solid rgba(91,168,178,.2);border-radius:6px;padding:12px 14px;margin:8px 0">'
     +'<strong style="color:var(--teal)">'+dayFmt+'</strong><br>'
-    +timeFmt+' · '+duration+' minutes'+(priceStr?' · '+priceStr:'')+'</div>'
-    +'This slot is reserved for you for <strong>72 hours</strong>.<br><br>'
-    +'<span style="display:inline-block;background:var(--teal);color:#fff;padding:6px 16px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:.5px">CONFIRM & PAY →</span><br><br>'
+    +timeFmt+' \u00B7 '+duration+' minutes \u00B7 '+esc(typeName)+'</div>'
+    +'A payment link will be sent the day before your session.<br><br>'
+    +'<span style="display:inline-block;background:var(--teal);color:#fff;padding:6px 16px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:.5px">VIEW YOUR SESSION \u2192</span><br><br>'
     +'With care,<br>Dr. Tracey Clark';
 }
 
 function buildOfferEmailBody(wl,email,token){
   var dateStr=document.getElementById('os-date').value;
   var time=document.getElementById('os-time').value;
+  var typeId=document.getElementById('os-type')?document.getElementById('os-type').value:'';
+  var st=typeId?sessTypesData.find(function(t){return t.id===typeId}):null;
   if(!dateStr) return null;
   var dateObj=new Date(dateStr+'T12:00');
   var dayFmt=dateObj.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
   var h=parseInt(time.split(':')[0]),mi=time.split(':')[1];
   var ampm=h>=12?'PM':'AM';var h12=h>12?h-12:(h===0?12:h);
   var timeFmt=h12+':'+mi+' '+ampm;
-  var duration=sessConfigData?sessConfigData.session_duration_minutes:60;
-  var price=sessConfigData?sessConfigData.session_price:null;
-  var priceStr=price?'$'+Number(price).toFixed(0):'';
+  var duration=st?st.duration_minutes:30;
+  var typeName=st?st.name:'Session';
   var name=wl?wl.name||'there':'there';
 
-  // If token provided, CTA goes to checkout page with token; otherwise generic link
-  var ctaUrl=token
-    ?'https://qp-homepage.netlify.app/pages/one-on-sessions.html?pay='+token
-    :'https://qp-homepage.netlify.app/pages/one-on-sessions.html#book';
+  // CTA goes to sessions page (view booking, not pay)
+  var ctaUrl='https://qp-homepage.netlify.app/members/sessions.html';
 
-  var subject='Your Session with Dr. Tracey Clark — '+dayFmt;
-  var body='Hi '+name+',\n\nGreat news! A private session slot has opened up just for you with Dr. Tracey Clark.\n\n---\n\n**Your Appointment**\n**'+dayFmt+'**\n'+timeFmt+' · '+duration+' minutes'+(priceStr?' · '+priceStr:'')+'\n\n---\n\nThis slot is reserved for you for **72 hours**. After that, it will be offered to the next person on the waitlist.\n\nTo secure your appointment, confirm and complete payment using the link below.\n\n[Confirm & Pay Now]('+ctaUrl+')\n\n**What to expect:**\n• A personalized, integrative healing session via Zoom\n• Practical guidance and next steps tailored to you\n• Follow-up resources to support your journey\n\nIf this time doesn\'t work, simply reply to this email and we\'ll find an alternative.\n\nWith care and healing,\nDr. Tracey Clark\nQuantum Physician';
+  var subject='Your '+typeName+' with Dr. Tracey Clark \u2014 '+dayFmt;
+  var body='Hi '+name+',\n\nGreat news! Your session with Dr. Tracey Clark has been confirmed.\n\n---\n\n**Your Appointment**\n**'+dayFmt+'**\n'+timeFmt+' \u00B7 '+duration+' minutes \u00B7 '+typeName+'\n\n---\n\nYou\u2019ll receive a reminder the day before your session with a payment link and any details you\u2019ll need.\n\n[View Your Session]('+ctaUrl+')\n\n**What to expect:**\n\u2022 A personalized, integrative healing session\n\u2022 Practical guidance and next steps tailored to you\n\u2022 Follow-up resources to support your journey\n\nIf this time doesn\u2019t work, simply reply to this email and we\u2019ll find an alternative.\n\nWith care and healing,\nDr. Tracey Clark\nQuantum Physician';
 
   return {subject:subject, body:body, name:name};
 }
@@ -5269,8 +5390,11 @@ async function testOfferEmail(){
 async function sendOfferSlot(waitlistId,email){
   var dateStr=document.getElementById('os-date').value;
   var time=document.getElementById('os-time').value;
+  var typeId=document.getElementById('os-type')?document.getElementById('os-type').value:'';
+  var st=typeId?sessTypesData.find(function(t){return t.id===typeId}):null;
   if(!dateStr){showToast('Select a date first','error');return}
-  var duration=sessConfigData?sessConfigData.session_duration_minutes:60;
+  if(!st){showToast('Select a session type','error');return}
+  var duration=st.duration_minutes;
   var endH=parseInt(time.split(':')[0]),endM=parseInt(time.split(':')[1])+duration;
   endH+=Math.floor(endM/60);endM=endM%60;
   var endTime=String(endH).padStart(2,'0')+':'+String(endM).padStart(2,'0');
@@ -5282,17 +5406,21 @@ async function sendOfferSlot(waitlistId,email){
   var emailData=buildOfferEmailBody(wl,email,offerToken);
   if(!emailData){showToast('Select a date first','error');return}
 
-  if(!await qpConfirm('Send Offer','Send offer email to '+email+' for '+emailData.subject.replace('Your Session with Dr. Tracey Clark — ','')+'?\n\nThis will create a proposed booking and send the branded email.',{okText:'Send Offer'}))return;
+  if(!await qpConfirm('Confirm Slot','Confirm session for '+email+' on '+emailData.subject.replace(/Your .+ with Dr\. Tracey Clark \u2014 /,'')+'?\n\nThis will create a confirmed booking and send the confirmation email. Payment will be collected via the day-before reminder.',{okText:'Confirm Slot'}))return;
 
   try{
-    // Insert booking
+    // Insert booking as CONFIRMED (not proposed) — payment comes later via day-before reminder
     var res=await proxyFrom('session_bookings').insert({
       cycle_id:cycleId,email:email.toLowerCase(),name:wl?wl.name:'',
       date:dateStr,start_time:time,end_time:endTime,
-      status:'proposed',type:'public',
+      status:'confirmed',type:'public',
+      session_type_id:st.id,
+      amount_cents:st.price_cents,
+      currency:st.currency,
       confirmation_token:offerToken,
-      notes:'Offered from waitlist. Expires 72hr.',
-      proposed_at:new Date().toISOString()
+      confirmed_at:new Date().toISOString(),
+      zoom_link:sessConfigData?sessConfigData.zoom_link:null,
+      notes:'Confirmed from waitlist. '+st.name+'.'
     });
     if(res.error){showToast('Error creating booking: '+res.error.message,'error');return}
 
@@ -5319,7 +5447,7 @@ async function sendOfferSlot(waitlistId,email){
     var br=await proxyFrom('session_bookings').select('*').order('date',{ascending:true});sessBookingsData=br.data||[];
     var wr=await proxyFrom('session_waitlist').select('*').order('created_at',{ascending:true});sessWaitlistData=wr.data||[];
 
-    await logAudit('offer_slot',email,'Offered '+emailData.subject.replace('Your Session with Dr. Tracey Clark — ','')+' from waitlist',{date:dateStr,time:time});
+    await logAudit('confirm_slot',email,'Confirmed '+st.name+' on '+dateStr+' from waitlist',{date:dateStr,time:time,session_type:st.name});
 
     // Close modal
     var modal=document.getElementById('sess-offer-slot-modal');if(modal)modal.remove();
@@ -5327,7 +5455,7 @@ async function sendOfferSlot(waitlistId,email){
     renderPublicWaitlist();
     renderSessionsStats();
     renderBookingsGrid();
-    showToast('Offer sent to '+email+' — branded email delivered','success');
+    showToast('Session confirmed for '+email+' \u2014 confirmation email sent','success');
   }catch(e){showToast('Error: '+e.message,'error')}
 }
 

@@ -91,6 +91,7 @@
 <button class="tab-btn" onclick="switchSessTab('clients',this)">Clients</button>
 <button class="tab-btn" onclick="switchSessTab('bookings',this)">Bookings</button>
 <button class="tab-btn" onclick="switchSessTab('public',this)">Public &amp; Waitlist</button>
+<button class="tab-btn" onclick="switchSessTab('types',this)">Session Types</button>
 </div>
 
 <!-- TAB: Cycles -->
@@ -323,8 +324,18 @@
 </div>
 </div>
 
+<!-- TAB: Session Types -->
+<div class="tab-content" id="sess-tab-types">
+<div class="card">
+<div class="card-header"><div class="card-title">Session Types</div><button class="btn btn-primary btn-sm" onclick="showAddSessionTypeModal()">+ Add Type</button></div>
+<div class="card-body">
+<p style="font-size:12px;color:var(--text-dim);margin-bottom:14px">Define the types of sessions Dr. Tracey offers. Each booking will be linked to a session type with its own price, duration, and currency.</p>
+<div id="sess-types-list"><div class="loading-center"><div class="spinner"></div>Loading...</div></div>
+</div>
+</div>
 </div>
 
+</div>
 
 <div class="page" id="page-memberships"><div class="card"><div class="card-body"><div class="empty"><p>Membership tiers coming in a future session.</p></div></div></div></div>
 
