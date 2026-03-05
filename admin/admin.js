@@ -5231,7 +5231,7 @@ async function offerSlot(waitlistId,email){
 
   box.innerHTML='<div style="font-weight:600;font-size:16px;margin-bottom:4px;color:var(--teal)">'+(isRegular?'Confirm Slot for ':'Offer Slot to ')+esc(wl?wl.name:email)+'</div>'
     +'<div style="font-size:12px;color:var(--text-dim);margin-bottom:'+(isRegular?'4':'14')+'px">'+esc(email)+(cycle?' · '+esc(cycle.name):'')+'</div>'
-    +(isRegular?'<div style="font-size:11px;color:var(--teal);margin-bottom:14px;padding:4px 10px;background:rgba(91,168,178,.08);border:1px solid rgba(91,168,178,.2);border-radius:6px;display:inline-block">\u2605 Regular Client \u2014 confirmed without upfront payment</div>':'')
+    +(isRegular?'<div style="font-size:11px;color:var(--teal);margin-bottom:14px;padding:4px 10px;background:rgba(91,168,178,.08);border:1px solid rgba(91,168,178,.2);border-radius:6px;display:inline-block">\u2605 Regular Client \u2014 confirm date first, payment via day-before reminder</div>':'')
     +prefInfo
     +'<div style="margin-bottom:14px"><label style="font-size:11px;font-weight:600;color:var(--text-dim);display:block;margin-bottom:4px;letter-spacing:.5px">SESSION TYPE</label>'
     +'<select class="input" id="os-type" style="width:100%;margin-bottom:10px">'+(typeOpts||'<option value="">No session types defined</option>')+'</select></div>'
@@ -5245,7 +5245,7 @@ async function offerSlot(waitlistId,email){
     +'<button class="btn btn-ghost btn-sm" onclick="document.getElementById(\'sess-offer-slot-modal\').remove()">Cancel</button>'
     +'<button class="btn btn-ghost btn-sm" style="color:var(--purple);border-color:rgba(131,56,236,.3)" onclick="previewOfferEmail(\''+esc(email)+'\')">Preview Email</button>'
     +'<button class="btn btn-ghost btn-sm" style="color:var(--warning);border-color:rgba(240,180,41,.3)" onclick="testOfferEmail()">Send Test</button>'
-    +'<button class="btn btn-primary btn-sm" onclick="sendOfferSlot(\''+waitlistId+'\',\''+esc(email)+'\')">'+(isRegular?'Confirm Slot':'Send Offer')+'</button></div>';
+    +'<button class="btn btn-primary btn-sm" onclick="sendOfferSlot(\''+waitlistId+'\',\''+esc(email)+'\')">Send Offer</button></div>';
 
   ov.appendChild(box);document.body.appendChild(ov);
 
@@ -5295,15 +5295,16 @@ function updateOfferPreview(wl,email){
 
   if(isRegular){
     preview.innerHTML='<strong>Subject:</strong> Your '+esc(typeName)+' with Dr. Tracey Clark \u2014 '+dayFmt
-      +'<br><span style="color:var(--teal);font-size:10px;font-weight:600">\u2605 REGULAR CLIENT \u2014 Confirmed without payment</span>'
+      +'<br><span style="color:var(--teal);font-size:10px;font-weight:600">\u2605 REGULAR CLIENT \u2014 Confirm date, payment via day-before reminder</span>'
       +'<br><br><strong>Body:</strong><br>'
       +'Hi '+esc(wl?wl.name||'there':'there')+',<br><br>'
-      +'Great news! Your session has been confirmed.<br><br>'
+      +'Great news! A session slot has opened up just for you.<br><br>'
       +'<div style="background:rgba(91,168,178,.1);border:1px solid rgba(91,168,178,.2);border-radius:6px;padding:12px 14px;margin:8px 0">'
       +'<strong style="color:var(--teal)">'+dayFmt+'</strong><br>'
       +timeFmt+' \u00B7 '+duration+' minutes \u00B7 '+esc(typeName)+'</div>'
-      +'A payment link will be sent the day before your session.<br><br>'
-      +'<span style="display:inline-block;background:var(--teal);color:#fff;padding:6px 16px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:.5px">VIEW YOUR SESSION \u2192</span><br><br>'
+      +'This slot is reserved for you for <strong>7 days</strong>. Confirm this date works for you.<br><br>'
+      +'<span style="display:inline-block;background:var(--teal);color:#fff;padding:6px 16px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:.5px">CONFIRM YOUR DATE \u2192</span><br><br>'
+      +'You\u2019ll receive a payment link the day before your session.<br><br>'
       +'With care,<br>Dr. Tracey Clark';
   } else {
     preview.innerHTML='<strong>Subject:</strong> Your '+esc(typeName)+' with Dr. Tracey Clark \u2014 '+dayFmt
@@ -5339,10 +5340,12 @@ function buildOfferEmailBody(wl,email,token){
   var isRegular=sessClientsData.some(function(cl){return cl.email&&cl.email.toLowerCase()===email.toLowerCase()&&cl.client_type==='regular'});
 
   if(isRegular){
-    // Regular: confirmed, payment later
-    var ctaUrl='https://qp-homepage.netlify.app/members/sessions.html';
+    // Regular: confirm date, payment comes later via day-before reminder
+    var ctaUrl=token
+      ?'https://qp-homepage.netlify.app/pages/one-on-sessions.html?pay='+token
+      :'https://qp-homepage.netlify.app/pages/one-on-sessions.html#book';
     var subject='Your '+typeName+' with Dr. Tracey Clark \u2014 '+dayFmt;
-    var body='Hi '+name+',\n\nGreat news! Your session with Dr. Tracey Clark has been confirmed.\n\n---\n\n**Your Appointment**\n**'+dayFmt+'**\n'+timeFmt+' \u00B7 '+duration+' minutes \u00B7 '+typeName+'\n\n---\n\nYou\u2019ll receive a reminder the day before your session with a payment link and any details you\u2019ll need.\n\n[View Your Session]('+ctaUrl+')\n\n**What to expect:**\n\u2022 A personalized, integrative healing session\n\u2022 Practical guidance and next steps tailored to you\n\u2022 Follow-up resources to support your journey\n\nIf this time doesn\u2019t work, simply reply to this email and we\u2019ll find an alternative.\n\nWith care and healing,\nDr. Tracey Clark\nQuantum Physician';
+    var body='Hi '+name+',\n\nGreat news! A private session slot has opened up just for you with Dr. Tracey Clark.\n\n---\n\n**Your Appointment**\n**'+dayFmt+'**\n'+timeFmt+' \u00B7 '+duration+' minutes \u00B7 '+typeName+'\n\n---\n\nThis slot is reserved for you for **7 days**. Please confirm this date works for you using the link below.\n\n[Confirm Your Date]('+ctaUrl+')\n\nYou\u2019ll receive a payment link the day before your session.\n\n**What to expect:**\n\u2022 A personalized, integrative healing session\n\u2022 Practical guidance and next steps tailored to you\n\u2022 Follow-up resources to support your journey\n\nIf this time doesn\u2019t work, simply reply to this email and we\u2019ll find an alternative.\n\nWith care and healing,\nDr. Tracey Clark\nQuantum Physician';
     return {subject:subject, body:body, name:name};
   } else {
     // Public: proposed, must pay to confirm
@@ -5447,21 +5450,20 @@ async function sendOfferSlot(waitlistId,email){
   var isRegular=sessClientsData.some(function(cl){return cl.email&&cl.email.toLowerCase()===email.toLowerCase()&&cl.client_type==='regular'});
 
   if(isRegular){
-    // REGULAR flow: confirmed immediately, payment via day-before reminder
-    if(!await qpConfirm('Confirm Slot (Regular)','Confirm session for '+email+'?\n\nAs a regular client, the booking will be confirmed immediately. Payment will be collected via the day-before reminder.',{okText:'Confirm Slot'}))return;
+    // REGULAR flow: proposed, client confirms date (7 days), payment comes via day-before reminder
+    if(!await qpConfirm('Send Offer (Regular)','Send offer to '+email+'?\n\nAs a regular client, they\u2019ll confirm the date (7 days to respond). Payment will be collected via the day-before reminder.',{okText:'Send Offer'}))return;
 
     try{
       var res=await proxyFrom('session_bookings').insert({
         cycle_id:cycleId,email:email.toLowerCase(),name:wl?wl.name:'',
         date:dateStr,start_time:time,end_time:endTime,
-        status:'confirmed',type:'public',
+        status:'proposed',type:'public',
         session_type_id:st.id,
         amount_cents:st.price_cents,
         currency:st.currency,
         confirmation_token:offerToken,
-        confirmed_at:new Date().toISOString(),
-        zoom_link:sessConfigData?sessConfigData.zoom_link:null,
-        notes:'Confirmed from waitlist (regular). '+st.name+'.'
+        proposed_at:new Date().toISOString(),
+        notes:'Offered from waitlist (regular). '+st.name+'. Expires 7 days.'
       });
       if(res.error){showToast('Error creating booking: '+res.error.message,'error');return}
       await proxyFrom('session_waitlist').update({status:'notified',notified_at:new Date().toISOString()}).eq('id',waitlistId);
@@ -5469,10 +5471,10 @@ async function sendOfferSlot(waitlistId,email){
       await fetch(APPS_SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({to:email,from:'tracey@quantumphysician.com',subject:emailData.subject,body:richHtml,isHtml:true})});
       var br=await proxyFrom('session_bookings').select('*').order('date',{ascending:true});sessBookingsData=br.data||[];
       var wr=await proxyFrom('session_waitlist').select('*').order('created_at',{ascending:true});sessWaitlistData=wr.data||[];
-      await logAudit('confirm_slot',email,'Confirmed '+st.name+' on '+dateStr+' (regular client)',{date:dateStr,time:time,session_type:st.name});
+      await logAudit('offer_slot',email,'Offered '+st.name+' on '+dateStr+' (regular, 7-day confirm)',{date:dateStr,time:time,session_type:st.name});
       var modal=document.getElementById('sess-offer-slot-modal');if(modal)modal.remove();
       renderPublicWaitlist();renderSessionsStats();renderBookingsGrid();
-      showToast('Session confirmed for '+email+' \u2014 confirmation email sent','success');
+      showToast('Offer sent to '+email+' \u2014 7 days to confirm date','success');
     }catch(e){showToast('Error: '+e.message,'error')}
 
   } else {
