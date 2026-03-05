@@ -4538,7 +4538,7 @@ function renderBookingsGrid(){
 
       var row='<tr><td style="white-space:nowrap">'+fmtDate(b.date)+'</td>'
         +'<td>'+b.start_time.slice(0,5)+'–'+b.end_time.slice(0,5)+'</td>'
-        +'<td class="email">'+esc(b.email)+(b.name?'<br><span class="name" style="font-size:11px">'+esc(b.name)+'</span>':'')+(isRegular?' <span class="badge teal" style="font-size:9px;vertical-align:middle">Regular</span>':'')+reschedLabel+'</td>'
+        +'<td class="email" style="cursor:pointer" onclick="event.stopPropagation();crmOpenClient(\''+esc(b.email.toLowerCase()).replace(/'/g,"\\'")+'\')">'+esc(b.email)+(b.name?'<br><span class="name" style="font-size:11px">'+esc(b.name)+'</span>':'')+(isRegular?' <span class="badge teal" style="font-size:9px;vertical-align:middle">Regular</span>':'')+reschedLabel+'</td>'
         +'<td>'+typeBadges[b.type]+'</td>'
         +'<td>'+(statusBadges[b.status]||'<span class="badge muted">'+b.status+'</span>')+'</td>'
         +'<td>'+payCol+'</td>'
@@ -5027,7 +5027,7 @@ function renderPublicWaitlist(){
     +waiting.map(function(w){
       var days=(w.preferred_days||[]).join(', ');
       var times=(w.preferred_times||[]).join(', ');
-      return'<tr><td class="email">'+esc(w.email)+'</td><td class="name">'+esc(w.name||'—')+'</td>'
+      return'<tr><td class="email" style="cursor:pointer" onclick="crmOpenClient(\''+esc(w.email.toLowerCase()).replace(/'/g,"\\'")+'\')">'+esc(w.email)+'</td><td class="name">'+esc(w.name||'—')+'</td>'
         +'<td style="font-size:12px">'+esc(days||'—')+' '+esc(times||'')+'</td>'
         +'<td style="font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis">'+esc(w.message||'—')+'</td>'
         +'<td>'+timeAgo(w.created_at)+'</td>'
@@ -5432,6 +5432,16 @@ function renderCrmList(){
 
 async function crmOpenClient(email){
   crmCurrentClient = email.toLowerCase();
+
+  // Navigate to Sessions page > Clients tab if not already there
+  if(currentPage !== 'sessions'){
+    go('sessions');
+    await new Promise(function(r){setTimeout(r,100)});
+  }
+  // Switch to Clients tab
+  var clientsBtn = document.querySelector('#page-sessions .tab-nav .tab-btn:nth-child(3)');
+  if(clientsBtn) switchSessTab('clients', clientsBtn);
+
   // Hide both roster and list views, show detail
   document.getElementById('client-view-roster').style.display = 'none';
   document.getElementById('client-view-all').style.display = 'none';
@@ -7052,7 +7062,7 @@ function renderInvoicesGrid(){
 
       return '<tr>'
         +'<td style="font-weight:600;color:var(--teal);font-size:12px;white-space:nowrap">'+esc(inv.invoice_number)+'</td>'
-        +'<td class="email">'+esc(inv.email)+(inv.name?'<br><span class="name" style="font-size:11px">'+esc(inv.name)+'</span>':'')+'</td>'
+        +'<td class="email" style="cursor:pointer" onclick="event.stopPropagation();crmOpenClient(\''+esc(inv.email.toLowerCase()).replace(/'/g,"\\'")+'\')">'+esc(inv.email)+(inv.name?'<br><span class="name" style="font-size:11px">'+esc(inv.name)+'</span>':'')+'</td>'
         +'<td style="white-space:nowrap">'+sessDate+(sessTime?'<br><span style="font-size:11px;color:var(--text-dim)">'+sessTime+'</span>':'')+'</td>'
         +'<td>'+fmt$(inv.total_cents)+taxNote+'</td>'
         +'<td>'+(inv.status==='paid'?'<span class="badge green">Paid</span>':'<span class="badge muted">'+inv.status+'</span>')+'</td>'
