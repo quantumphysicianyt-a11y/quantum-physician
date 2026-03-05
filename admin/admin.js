@@ -4461,7 +4461,7 @@ function renderBookingsGrid(){
     // View-based filtering
     if(sessBookView==='active'&&(b.status==='completed'||b.status==='no_show'||b.status==='cancelled'||b.status==='declined'||b.status==='expired'||b.status==='rescheduled')) return false;
     if(sessBookView==='completed'&&b.status!=='completed'&&b.status!=='no_show') return false;
-    if(sessBookView==='cancelled'&&b.status!=='cancelled'&&b.status!=='declined'&&b.status!=='expired'&&b.status!=='rescheduled') return false;
+    if(sessBookView==='cancelled'&&b.status!=='cancelled'&&b.status!=='cancelled_no_refund'&&b.status!=='declined'&&b.status!=='expired'&&b.status!=='rescheduled') return false;
     // Additional status filter on top of view
     if(statusFilter!=='all'&&b.status!==statusFilter) return false;
     if(typeFilter!=='all'&&b.type!==typeFilter) return false;
@@ -4512,7 +4512,7 @@ function renderBookingsGrid(){
   var start=(sessBookPage-1)*sessBookPS;
   var page=bookings.slice(start,start+sessBookPS);
 
-  var statusBadges={proposed:'<span class="badge yellow">Proposed</span>',paid:'<span class="badge green">Paid</span>',confirmed:'<span class="badge green">Confirmed</span>',declined:'<span class="badge danger">Declined</span>',expired:'<span class="badge muted">Expired</span>',cancelled:'<span class="badge muted">Cancelled</span>',completed:'<span class="badge teal">Completed</span>',no_show:'<span class="badge danger">No Show</span>',rescheduled:'<span class="badge purple">Rescheduled</span>'};
+  var statusBadges={proposed:'<span class="badge yellow">Proposed</span>',paid:'<span class="badge green">Paid</span>',confirmed:'<span class="badge green">Confirmed</span>',declined:'<span class="badge danger">Declined</span>',expired:'<span class="badge muted">Expired</span>',cancelled:'<span class="badge muted">Cancelled</span>',cancelled_no_refund:'<span class="badge danger" title="Cancelled within 24hrs — no refund">Cancelled (No Refund)</span>',completed:'<span class="badge teal">Completed</span>',no_show:'<span class="badge danger">No Show</span>',rescheduled:'<span class="badge purple">Rescheduled</span>'};
   var typeBadges={recurring:'<span class="badge teal">Recurring</span>',public:'<span class="badge purple">Public</span>',manual:'<span class="badge muted">Manual</span>'};
 
   var sortArrow=function(col){return sessBookSortCol===col?(sessBookSortDir==='asc'?' ↑':' ↓'):'';};
@@ -4559,7 +4559,7 @@ function renderBookingsGrid(){
         +'<td>'+b.start_time.slice(0,5)+'–'+b.end_time.slice(0,5)+'</td>'
         +'<td class="email" style="cursor:pointer" onclick="event.stopPropagation();crmOpenClient(\''+esc(b.email.toLowerCase()).replace(/'/g,"\\'")+'\')">'+esc(b.email)+(b.name?'<br><span class="name" style="font-size:11px">'+esc(b.name)+'</span>':'')+(isRegular?' <span class="badge teal" style="font-size:9px;vertical-align:middle">Regular</span>':'')+reschedLabel+'</td>'
         +'<td>'+typeBadges[b.type]+'</td>'
-        +'<td>'+(statusBadges[b.status]||'<span class="badge muted">'+b.status+'</span>')+'</td>'
+        +'<td>'+(statusBadges[b.status]||'<span class="badge muted">'+b.status+'</span>')+(b.client_cancelled&&!b.admin_acknowledged?'<span class="badge danger" style="margin-left:4px" title="Client self-cancelled">🔔 Client</span>':'')+'</td>'
         +'<td>'+payCol+'</td>'
         +'<td><div style="display:flex;gap:4px;flex-wrap:wrap">'
         +(b.status==='proposed'&&payLink?'<button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText(\''+payLink+'\');showToast(\'Pay link copied\',\'success\')" title="Copy payment link">🔗</button>':'')
@@ -4568,7 +4568,8 @@ function renderBookingsGrid(){
         +(b.status==='confirmed'||b.status==='paid'?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'completed\')">Complete</button><button class="btn btn-ghost btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'no_show\')">No Show</button><button class="btn btn-danger btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'cancelled\')">Cancel</button>':'')
         +(b.status==='completed'||b.status==='paid'||b.status==='confirmed'?'<button class="btn btn-primary btn-sm" onclick="crmAddNote(\''+b.id+'\')">+ Note</button><button class="btn btn-ghost btn-sm" onclick="crmAddRecording(\''+b.id+'\')">+ Recording</button>':'<button class="btn btn-ghost btn-sm" onclick="crmAddNote(\''+b.id+'\')">+ Note</button>')
         +(b.status==='completed'||b.status==='paid'?invoiceButtonHtml(b.id):'')
-        +(b.status==='cancelled'||b.status==='declined'||b.status==='expired'?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'proposed\')">Reactivate</button><button class="btn btn-primary btn-sm" onclick="rescheduleBooking(\''+b.id+'\')">Reschedule</button>':'')
+        +(b.status==='cancelled'||b.status==='cancelled_no_refund'||b.status==='declined'||b.status==='expired'?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'proposed\')">'+'Reactivate</button><button class="btn btn-primary btn-sm" onclick="rescheduleBooking(\''+b.id+'\')">'+'Reschedule</button>':'')
+        +(b.client_cancelled&&!b.admin_acknowledged?'<button class="btn btn-ghost btn-sm" style="font-size:11px;color:var(--teal)" onclick="acknowledgeClientCancel(\''+b.id+'\')" title="Mark acknowledged">✓ Ack</button>':'')
         +'<button class="btn btn-ghost btn-sm" onclick="deleteBooking(\''+b.id+'\')">🗑</button>'
         +'</div></td></tr>';
       // Render notes & recordings under this booking (collapsed by default)
@@ -4631,6 +4632,14 @@ async function updateBookingStatus(id,status){
     await proxyFrom('session_bookings').update(updates).eq('id',id);
     if(b) await logAudit('update_booking',b.email,'Booking '+status+' for '+b.date,{});
     showToast('Booking '+status,'success');
+    await refreshBookingsView();
+  }catch(e){showToast('Error: '+e.message,'error')}
+}
+
+async function acknowledgeClientCancel(bookingId){
+  try{
+    await proxyFrom('session_bookings').update({admin_acknowledged:true}).eq('id',bookingId);
+    showToast('Cancellation acknowledged','success');
     await refreshBookingsView();
   }catch(e){showToast('Error: '+e.message,'error')}
 }
