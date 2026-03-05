@@ -393,92 +393,53 @@ function escHtml(str) {
   return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-// --- Paid Invoice email HTML (QP branded) ---
+
+// --- Paid Invoice email HTML (QP branded — matches premium reminder template style) ---
 function buildPaidInvoiceEmailHtml({ name, invoiceNumber, sessionDate, sessionTime, amount, paidDate, pdfUrl }) {
-  const traceyImg = "https://qp-homepage.netlify.app/assets/images/tracey-about-me.png";
 
-  const pdfSection = pdfUrl
-    ? `<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:24px 0;">
-        <tr><td align="center">
-          <table role="presentation" cellspacing="0" cellpadding="0" border="0">
-            <tr><td style="background:linear-gradient(135deg,#5ba8b2,#4acfd9);border-radius:50px;box-shadow:0 4px 20px rgba(91,168,178,.35);">
-              <a href="${pdfUrl}" target="_blank" style="display:inline-block;padding:14px 44px;color:#fff;text-decoration:none;font-weight:700;font-size:14px;letter-spacing:1.5px;text-transform:uppercase;font-family:Arial,Helvetica,sans-serif;">DOWNLOAD INVOICE PDF</a>
-            </td></tr>
-          </table>
-        </td></tr>
-       </table>`
-    : "";
+  const pdfBtn = pdfUrl
+    ? '<div style="text-align:center;margin:28px 0;">'
+      + '<a href="' + pdfUrl + '" target="_blank" style="display:inline-block;background:linear-gradient(135deg,#5ba8b2,#4a97a1);color:#fff;padding:16px 40px;text-decoration:none;border-radius:50px;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:2px;font-family:Arial,sans-serif;">Download Invoice PDF</a>'
+      + '</div>'
+    : '';
 
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
-<body style="margin:0;padding:20px;font-family:Georgia,Times New Roman,serif;background-color:#0a1322;">
-<div style="max-width:600px;margin:0 auto;background-color:#0f1d34;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5),0 0 0 1px rgba(91,168,178,.08);">
+  const inner = '<p style="font-size:20px;color:#5ba8b2;margin-bottom:20px;text-align:center;font-family:Georgia,serif;">Hi ' + escHtml(name) + ',</p>'
+    + '<p style="font-size:15px;line-height:1.8;color:rgba(255,255,255,.85);margin-bottom:24px;text-align:center;">Thank you for your payment. Here is your paid invoice for your records.</p>'
+    // Invoice summary card
+    + '<div style="background:linear-gradient(135deg,rgba(91,168,178,.08),rgba(173,155,132,.08));border:1px solid rgba(91,168,178,.25);border-radius:12px;padding:28px;margin:28px 0;">'
+    + '<p style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:2px;margin:0 0 16px;text-align:center;">Invoice Summary</p>'
+    + '<p style="font-family:Georgia,serif;font-size:22px;color:#5ba8b2;font-weight:700;margin:0 0 20px;text-align:center;">' + escHtml(invoiceNumber) + '</p>'
+    + '<table style="width:100%;border-collapse:collapse;">'
+    + '<tr><td style="color:rgba(255,255,255,.5);font-size:13px;padding:8px 0;border-bottom:1px solid rgba(91,168,178,.1);">Description</td><td style="color:rgba(255,255,255,.85);font-size:13px;padding:8px 0;border-bottom:1px solid rgba(91,168,178,.1);text-align:right;">1-on-1 Healing Session</td></tr>'
+    + '<tr><td style="color:rgba(255,255,255,.5);font-size:13px;padding:8px 0;border-bottom:1px solid rgba(91,168,178,.1);">Session Date</td><td style="color:rgba(255,255,255,.85);font-size:13px;padding:8px 0;border-bottom:1px solid rgba(91,168,178,.1);text-align:right;">' + escHtml(sessionDate) + '</td></tr>'
+    + '<tr><td style="color:rgba(255,255,255,.5);font-size:13px;padding:8px 0;border-bottom:1px solid rgba(91,168,178,.1);">Time</td><td style="color:rgba(255,255,255,.85);font-size:13px;padding:8px 0;border-bottom:1px solid rgba(91,168,178,.1);text-align:right;">' + escHtml(sessionTime) + '</td></tr>'
+    + '<tr><td style="color:#3dd68c;font-size:15px;font-weight:700;padding:12px 0 0;">Total Paid</td><td style="color:#3dd68c;font-size:20px;font-weight:700;padding:12px 0 0;text-align:right;">' + escHtml(amount) + '</td></tr>'
+    + '</table>'
+    + '<div style="text-align:center;margin-top:18px;">'
+    + '<span style="display:inline-block;background:rgba(61,214,140,.15);color:#3dd68c;padding:6px 20px;border-radius:20px;font-size:12px;font-weight:700;letter-spacing:1px;">✓ PAID — ' + escHtml(paidDate) + '</span>'
+    + '</div></div>'
+    + pdfBtn
+    + '<p style="font-size:13px;color:rgba(255,255,255,.45);text-align:center;margin:8px 0 0;">Keep this email for your records. You can also view your invoices in your <a href="https://qp-homepage.netlify.app/members/billing.html" style="color:#5ba8b2;text-decoration:underline;">patient portal</a>.</p>';
 
-<!-- Header -->
-<div style="background:linear-gradient(180deg,#0a1628,#0f1d34);padding:40px 30px 28px;text-align:center;border-bottom:2px solid rgba(91,168,178,.2);">
-  <p style="color:rgba(91,168,178,.5);font-size:11px;margin:0 0 8px;letter-spacing:4px;text-transform:uppercase;font-weight:600;">Paid Invoice</p>
-  <p style="color:#5ba8b2;font-size:28px;margin:0;font-weight:700;font-family:Georgia,serif;">${escHtml(invoiceNumber)}</p>
-</div>
-
-<!-- Body -->
-<div style="padding:36px 36px;color:rgba(255,255,255,.82);font-size:16px;line-height:1.85;text-align:center;font-family:Georgia,serif;">
-
-  <p style="margin:0 0 24px;font-size:16px;">Hi ${escHtml(name)},</p>
-  <p style="margin:0 0 28px;font-size:15px;color:rgba(255,255,255,.6);">Thank you for your payment. Here is your paid invoice for your records.</p>
-
-  <!-- Invoice Summary Card -->
-  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:24px 0;">
-    <tr><td style="background:linear-gradient(135deg,rgba(91,168,178,.1),rgba(91,168,178,.03));border:1px solid rgba(91,168,178,.25);border-radius:12px;padding:0;overflow:hidden;">
-      <div style="height:3px;background:linear-gradient(90deg,#3dd68c,#5ba8b2,rgba(91,168,178,.15));"></div>
-      <div style="padding:24px 28px;">
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-          <tr>
-            <td style="color:rgba(91,168,178,.6);font-size:11px;letter-spacing:1.5px;text-transform:uppercase;padding:6px 0;text-align:left;">Description</td>
-            <td style="color:rgba(255,255,255,.75);font-size:14px;padding:6px 0;text-align:right;">1-on-1 Healing Session</td>
-          </tr>
-          <tr>
-            <td style="color:rgba(91,168,178,.6);font-size:11px;letter-spacing:1.5px;text-transform:uppercase;padding:6px 0;text-align:left;">Session Date</td>
-            <td style="color:rgba(255,255,255,.75);font-size:14px;padding:6px 0;text-align:right;">${escHtml(sessionDate)}</td>
-          </tr>
-          <tr>
-            <td style="color:rgba(91,168,178,.6);font-size:11px;letter-spacing:1.5px;text-transform:uppercase;padding:6px 0;text-align:left;">Time</td>
-            <td style="color:rgba(255,255,255,.75);font-size:14px;padding:6px 0;text-align:right;">${escHtml(sessionTime)}</td>
-          </tr>
-          <tr><td colspan="2" style="border-top:1px solid rgba(91,168,178,.2);padding:0;height:12px;"></td></tr>
-          <tr>
-            <td style="color:#3dd68c;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:6px 0;text-align:left;">TOTAL PAID</td>
-            <td style="color:#3dd68c;font-size:20px;font-weight:700;padding:6px 0;text-align:right;">${escHtml(amount)}</td>
-          </tr>
-          <tr>
-            <td colspan="2" style="text-align:center;padding:10px 0 0;">
-              <span style="display:inline-block;background:rgba(61,214,140,.15);color:#3dd68c;padding:4px 16px;border-radius:20px;font-size:12px;font-weight:700;letter-spacing:1px;">✓ PAID — ${escHtml(paidDate)}</span>
-            </td>
-          </tr>
-        </table>
-      </div>
-    </td></tr>
-  </table>
-
-  ${pdfSection}
-
-  <p style="margin:24px 0 0;font-size:13px;color:rgba(255,255,255,.35);">
-    Keep this email for your records. You can also view your invoices in your
-    <a href="https://qp-homepage.netlify.app/members/billing.html" style="color:#5ba8b2;text-decoration:underline;">patient portal</a>.
-  </p>
-</div>
-
-<!-- Sign-off -->
-<div style="padding:28px 36px;border-top:1px solid rgba(91,168,178,.1);text-align:center;background:linear-gradient(180deg,transparent,rgba(91,168,178,.03));">
-  <img src="${traceyImg}" alt="Dr. Tracey Clark" style="width:64px;height:64px;border-radius:50%;border:2px solid rgba(91,168,178,.3);object-fit:cover;display:block;margin:0 auto 12px;">
-  <p style="margin:0;color:#5ba8b2;font-weight:700;font-size:17px;font-family:Georgia,serif;">Dr. Tracey Clark</p>
-  <p style="margin:4px 0 0;color:rgba(255,255,255,.3);font-size:11px;letter-spacing:1.5px;">Quantum Physician</p>
-</div>
-
-<!-- Footer -->
-<div style="background:#071220;padding:18px 30px;text-align:center;border-top:1px solid rgba(91,168,178,.06);">
-  <p style="margin:0;font-size:11px;color:rgba(255,255,255,.2);">&copy; 2026 Quantum Physician. All rights reserved.</p>
-  <p style="margin:6px 0 0;font-size:10px;"><a href="https://qp-homepage.netlify.app" style="color:rgba(91,168,178,.35);text-decoration:none;">quantumphysician.com</a></p>
-</div>
-
-</div>
-</body></html>`;
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>'
+    + '<body style="margin:0;padding:20px;font-family:Georgia,\'Times New Roman\',serif;background-color:#f4f1ec;">'
+    + '<div style="max-width:600px;margin:0 auto;background-color:#0e1a30;border-radius:16px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.3);">'
+    + '<div style="background:linear-gradient(135deg,#0e1a30,#12283e 50%,#1a3a4a);padding:40px 30px;text-align:center;border-bottom:2px solid rgba(91,168,178,.3);">'
+    + '<img src="https://qp-homepage.netlify.app/assets/images/qp-logo.png" alt="Quantum Physician" style="max-width:180px;height:auto;margin:0 auto 24px;display:block;">'
+    + '<h1 style="font-family:Georgia,serif;font-size:32px;font-weight:700;color:#5ba8b2;margin:0 0 8px;letter-spacing:1px;">Paid Invoice</h1>'
+    + '<p style="color:rgba(255,255,255,.7);font-size:15px;margin:0;font-style:italic;">From Dr. Tracey Clark — Quantum Physician</p>'
+    + '</div>'
+    + '<div style="padding:40px 30px;color:rgba(255,255,255,.85);">'
+    + inner
+    + '<div style="margin-top:32px;padding:28px;border-top:1px solid rgba(91,168,178,.15);text-align:center;">'
+    + '<img src="https://qp-homepage.netlify.app/assets/images/tracey-about-me.png" alt="Dr. Tracey Clark" style="width:90px;height:90px;border-radius:50%;border:2px solid rgba(91,168,178,.3);object-fit:cover;display:block;margin:0 auto 16px;">'
+    + '<p style="margin:0;color:rgba(255,255,255,.7);font-size:14px;">With care,</p>'
+    + '<p style="margin:6px 0 0;font-weight:700;font-size:18px;color:#5ba8b2;font-family:Georgia,serif;">Dr. Tracey Clark</p>'
+    + '<p style="margin:4px 0 0;font-size:12px;color:rgba(255,255,255,.4);">Quantum Physician | BodyTalk Practitioner</p>'
+    + '</div></div>'
+    + '<div style="background-color:#081420;padding:24px 20px;text-align:center;color:rgba(255,255,255,.35);font-size:12px;border-top:1px solid rgba(91,168,178,.1);">'
+    + '<p style="margin:6px 0;"><strong>Quantum Physician</strong></p>'
+    + '<p style="margin:6px 0;">&copy; 2026 Quantum Physician. All rights reserved.</p>'
+    + '<p style="margin:10px 0;"><a href="https://qp-homepage.netlify.app/members/billing.html" style="color:#5ba8b2;text-decoration:none;font-size:11px;">View in Patient Portal</a></p>'
+    + '</div></div></body></html>';
 }
