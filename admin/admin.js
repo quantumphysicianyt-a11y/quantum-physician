@@ -6495,12 +6495,13 @@ async function loadAutomationLog(){
 
     var html = '';
     // Stats bar
+    var statCardStyle = 'padding:8px 14px;border-radius:8px;font-size:12px;cursor:pointer;transition:opacity .15s';
     html += '<div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">';
-    html += '<div style="padding:8px 14px;background:rgba(91,168,178,.08);border:1px solid rgba(91,168,178,.2);border-radius:8px;font-size:12px"><strong style="color:var(--teal)">'+sentCount+'</strong> <span style="color:var(--text-dim)">sent (7d)</span></div>';
-    if(failedCount) html += '<div style="padding:8px 14px;background:rgba(239,83,80,.08);border:1px solid rgba(239,83,80,.2);border-radius:8px;font-size:12px"><strong style="color:var(--danger)">'+failedCount+'</strong> <span style="color:var(--text-dim)">failed</span></div>';
-    if(skippedCount) html += '<div style="padding:8px 14px;background:rgba(255,193,7,.08);border:1px solid rgba(255,193,7,.2);border-radius:8px;font-size:12px"><strong style="color:var(--warning)">'+skippedCount+'</strong> <span style="color:var(--text-dim)">skipped</span></div>';
+    html += '<div style="'+statCardStyle+';background:rgba(91,168,178,.08);border:1px solid rgba(91,168,178,.2)" onclick="clickAutoStat(\'sent\')" title="Filter to sent"><strong style="color:var(--teal)">'+sentCount+'</strong> <span style="color:var(--text-dim)">sent (7d)</span></div>';
+    if(failedCount) html += '<div style="'+statCardStyle+';background:rgba(239,83,80,.08);border:1px solid rgba(239,83,80,.2)" onclick="clickAutoStat(\'failed\')" title="Filter to failed"><strong style="color:var(--danger)">'+failedCount+'</strong> <span style="color:var(--text-dim)">failed</span></div>';
+    if(skippedCount) html += '<div style="'+statCardStyle+';background:rgba(255,193,7,.08);border:1px solid rgba(255,193,7,.2)" onclick="clickAutoStat(\'skipped\')" title="Filter to skipped"><strong style="color:var(--warning)">'+skippedCount+'</strong> <span style="color:var(--text-dim)">skipped</span></div>';
     Object.keys(typeCounts).forEach(function(t){
-      html += '<div style="padding:8px 14px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;font-size:12px"><strong style="color:var(--text)">'+typeCounts[t]+'</strong> <span style="color:var(--text-dim)">'+formatAutomationType(t)+'</span></div>';
+      html += '<div style="'+statCardStyle+';background:rgba(255,255,255,.04);border:1px solid var(--border)" onclick="clickAutoStat(\''+t+'\')" title="Filter to '+formatAutomationType(t)+'"><strong style="color:var(--text)">'+typeCounts[t]+'</strong> <span style="color:var(--text-dim)">'+formatAutomationType(t)+'</span></div>';
     });
     html += '</div>';
 
@@ -6577,6 +6578,27 @@ function filterAutoLog(filter, btn){
   }
 
   document.getElementById('auto-log-table-wrap').innerHTML = buildAutoLogTable(rows);
+}
+
+function clickAutoStat(filter){
+  // Find the matching filter button and activate it, then scroll to log
+  var btns = document.querySelectorAll('.auto-log-filter');
+  var matched = null;
+  btns.forEach(function(b){
+    var onclick = b.getAttribute('onclick') || '';
+    if(onclick.indexOf("'" + filter + "'") !== -1) matched = b;
+  });
+  if(matched){
+    filterAutoLog(filter, matched);
+  } else {
+    // For type-specific filters not in the button bar, apply directly
+    window._autoLogActiveFilter = filter;
+    document.querySelectorAll('.auto-log-filter').forEach(function(b){ b.classList.remove('active'); b.classList.add('btn-ghost'); });
+    filterAutoLog(null, null);
+  }
+  // Scroll log into view
+  var wrap = document.getElementById('auto-log-table-wrap');
+  if(wrap) wrap.scrollIntoView({behavior:'smooth', block:'start'});
 }
 
 function sortAutoLog(col){
