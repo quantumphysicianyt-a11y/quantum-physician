@@ -163,7 +163,10 @@ exports.handler = async (event) => {
         time: timeFmt,
         duration,
         zoomLink,
-        siteUrl: SITE_URL
+        siteUrl: SITE_URL,
+        rawDate: booking.date,
+        rawStart: booking.start_time,
+        rawEnd: booking.end_time || null,
       });
 
       await fetch(APPS_SCRIPT_URL, {
@@ -300,7 +303,62 @@ exports.handler = async (event) => {
 };
 
 // --- Confirmation email HTML (QP branded, matches buildSessionEmail style) ---
-function buildConfirmationEmailHtml({ name, date, time, duration, zoomLink, siteUrl }) {
+function buildConfirmationEmailHtml({ name, date, time, duration, zoomLink, siteUrl, rawDate, rawStart, rawEnd }) {
+  // --- Calendar buttons ---
+  function toIcalDate(d, t) {
+    return d.replace(/-/g,"") + "T" + (t||"000000").replace(/:/g,"").padEnd(6,"0").slice(0,6);
+  }
+  const dtStart = rawDate && rawStart ? toIcalDate(rawDate, rawStart) : "";
+  const dtEnd   = rawDate && rawEnd   ? toIcalDate(rawDate, rawEnd)   : "";
+
+  // Google Calendar URL
+  const gcUrl = rawDate && rawStart ? (() => {
+    const p = new URLSearchParams({
+      action: "TEMPLATE",
+      text: "Session with Dr. Tracey Clark",
+      dates: `${dtStart}/${dtEnd}`,
+      details: zoomLink ? `Join your session: ${zoomLink}` : "1-on-1 Healing Session with Dr. Tracey Clark",
+      location: zoomLink || "",
+    });
+    return "https://calendar.google.com/calendar/render?" + p.toString();
+  })() : "";
+
+  // Apple / Outlook .ics download URL
+  const icsParams = rawDate && rawStart ? new URLSearchParams({
+    date: rawDate,
+    start: rawStart,
+    end: rawEnd || "",
+    name: name || "",
+    zoom: zoomLink || "",
+  }).toString() : "";
+  const icsUrl = icsParams ? `${siteUrl}/.netlify/functions/generate-ics?${icsParams}` : "";
+
+  const calendarSection = rawDate && rawStart ? `
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:24px 0 8px;">
+    <tr><td align="center">
+      <p style="font-size:12px;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:2px;margin:0 0 14px;font-family:Arial,sans-serif;">Add to your calendar</p>
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+        <tr>
+          <td style="padding:0 5px;">
+            <a href="${gcUrl}" target="_blank" style="display:inline-block;background:rgba(91,168,178,.1);border:1px solid rgba(91,168,178,.3);color:#5ba8b2;text-decoration:none;padding:10px 18px;border-radius:30px;font-size:12px;font-weight:600;font-family:Arial,sans-serif;letter-spacing:.5px;">
+              Google Calendar
+            </a>
+          </td>
+          <td style="padding:0 5px;">
+            <a href="${icsUrl}" target="_blank" style="display:inline-block;background:rgba(91,168,178,.1);border:1px solid rgba(91,168,178,.3);color:#5ba8b2;text-decoration:none;padding:10px 18px;border-radius:30px;font-size:12px;font-weight:600;font-family:Arial,sans-serif;letter-spacing:.5px;">
+              Apple Calendar
+            </a>
+          </td>
+          <td style="padding:0 5px;">
+            <a href="${icsUrl}" target="_blank" style="display:inline-block;background:rgba(91,168,178,.1);border:1px solid rgba(91,168,178,.3);color:#5ba8b2;text-decoration:none;padding:10px 18px;border-radius:30px;font-size:12px;font-weight:600;font-family:Arial,sans-serif;letter-spacing:.5px;">
+              Outlook
+            </a>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>` : "";
+
   const logoImg = "https://qp-homepage.netlify.app/assets/images/qp-logo.png";
   const traceyImg = "https://qp-homepage.netlify.app/assets/images/tracey-about-me.png";
 
@@ -351,6 +409,8 @@ function buildConfirmationEmailHtml({ name, date, time, duration, zoomLink, site
 
   ${zoomSection}
 
+  ${calendarSection}
+
   <p style="margin:28px 0 0;font-size:15px;line-height:1.8;color:rgba(255,255,255,.6);">
     <span style="color:#5ba8b2;margin-right:8px;">✦</span> A personalized, integrative healing session via Zoom<br>
     <span style="color:#5ba8b2;margin-right:8px;">✦</span> Practical guidance tailored to your needs<br>
@@ -358,7 +418,7 @@ function buildConfirmationEmailHtml({ name, date, time, duration, zoomLink, site
   </p>
 
   <p style="margin:28px 0 0;font-size:14px;color:rgba(255,255,255,.45);">
-    Need to reschedule? Reply to this email at least 48 hours before your session.
+    Need to reschedule? Reply to this email at least 24 hours before your session.
   </p>
 </div>
 
