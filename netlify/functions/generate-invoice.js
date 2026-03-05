@@ -108,7 +108,7 @@ exports.handler = async (event) => {
     }
 
     // ── CLIENT + DATE INFO ──────────────────────
-    let y = 120;
+    let y = 108;
 
     // Left: Bill To
     doc.font("Helvetica-Bold").fontSize(7.5).fillColor(grayLt).text("BILL TO", L, y);
@@ -119,7 +119,7 @@ exports.handler = async (event) => {
 
     // Right: Dates column
     const dCol = 380;
-    let dy = 120;
+    let dy = 108;
     doc.font("Helvetica-Bold").fontSize(7.5).fillColor(grayLt).text("DATE", dCol, dy);
     dy += 12;
     doc.font("Helvetica").fontSize(9.5).fillColor(grayDk).text(fmtDate(inv.issued_at || inv.created_at), dCol, dy);
@@ -139,7 +139,7 @@ exports.handler = async (event) => {
     }
 
     // ── DIVIDER ─────────────────────────────────
-    y = 188;
+    y = 176;
     doc.moveTo(L, y).lineTo(R, y).strokeColor(border).lineWidth(0.75).stroke();
 
     // ── SESSION DETAILS ROW ─────────────────────
@@ -229,8 +229,8 @@ exports.handler = async (event) => {
     }
 
     // ── FOOTER ──────────────────────────────────
-    const fY = H - 72;
-    doc.rect(0, fY, W, 72).fill(navy);
+    const fY = Math.max(y + 40, 480); // dynamic: just below content, minimum 480
+    doc.rect(0, fY, W, 80).fill(navy);
 
     // Headshot in footer
     let fTextX = L;
@@ -262,7 +262,7 @@ exports.handler = async (event) => {
 
     await sbAdmin.from("invoices").update({ pdf_path: storagePath, pdf_generated_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", invoice_id);
 
-    const { data: signed } = await sbAdmin.storage.from("invoices").createSignedUrl(storagePath, 3600 * 24 * 7); // 7 days
+    const { data: signed } = await sbAdmin.storage.from("invoices").createSignedUrl(storagePath, 3600);
 
     return { statusCode: 200, headers, body: JSON.stringify({ success: true, pdf_path: storagePath, pdf_url: signed?.signedUrl || null, invoice_number: inv.invoice_number }) };
 
