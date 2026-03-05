@@ -87,7 +87,7 @@ exports.handler = async (event) => {
     } else {
       doc.font("Helvetica-Bold").fontSize(18).fillColor(teal).text("QUANTUM PHYSICIAN", L, 30);
     }
-    doc.font("Helvetica").fontSize(8.5).fillColor(grayLt).text("Dr. Tracey Clark  ·  tracey@quantumphysician.com", L, 68);
+    doc.font("Helvetica").fontSize(8.5).fillColor(grayLt).text("Dr. Tracey Clark  ·  tracey@quantumphysician.com", L, 80);
 
     // Invoice title block (right)
     doc.font("Helvetica-Bold").fontSize(11).fillColor(grayLt).text("INVOICE", 0, 28, { width: R, align: "right" });
@@ -108,7 +108,7 @@ exports.handler = async (event) => {
     }
 
     // ── CLIENT + DATE INFO ──────────────────────
-    let y = 108;
+    let y = 120;
 
     // Left: Bill To
     doc.font("Helvetica-Bold").fontSize(7.5).fillColor(grayLt).text("BILL TO", L, y);
@@ -119,7 +119,7 @@ exports.handler = async (event) => {
 
     // Right: Dates column
     const dCol = 380;
-    let dy = 108;
+    let dy = 120;
     doc.font("Helvetica-Bold").fontSize(7.5).fillColor(grayLt).text("DATE", dCol, dy);
     dy += 12;
     doc.font("Helvetica").fontSize(9.5).fillColor(grayDk).text(fmtDate(inv.issued_at || inv.created_at), dCol, dy);
@@ -139,7 +139,7 @@ exports.handler = async (event) => {
     }
 
     // ── DIVIDER ─────────────────────────────────
-    y = 176;
+    y = 188;
     doc.moveTo(L, y).lineTo(R, y).strokeColor(border).lineWidth(0.75).stroke();
 
     // ── SESSION DETAILS ROW ─────────────────────
@@ -229,25 +229,23 @@ exports.handler = async (event) => {
     }
 
     // ── FOOTER ──────────────────────────────────
-    const fY = Math.max(y + 40, 480); // dynamic: just below content, minimum 480
-    doc.rect(0, fY, W, 80).fill(navy);
+    const fY = H - 100;
+    doc.rect(0, fY, W, 100).fill(navy);
 
-    // Headshot in footer
-    let fTextX = L;
+    // Centered headshot
     if (headshotBuffer) {
       try {
         doc.save();
-        const fx = L, fy = fY + 14, fr = 16;
-        doc.circle(fx + fr, fy + fr, fr).clip();
-        doc.image(headshotBuffer, fx, fy, { width: 32, height: 32 });
+        const cx = W / 2 - 18, cy = fY + 10, fr = 18;
+        doc.circle(cx + fr, cy + fr, fr).clip();
+        doc.image(headshotBuffer, cx, cy, { width: 36, height: 36 });
         doc.restore();
-        fTextX = L + 42;
       } catch(e) {}
     }
 
-    doc.font("Helvetica-Bold").fontSize(9.5).fillColor(teal).text("Dr. Tracey Clark", fTextX, fY + 14);
-    doc.font("Helvetica").fontSize(8).fillColor(grayLt).text("Quantum Physician  ·  quantumphysician.com", fTextX, fY + 28);
-    doc.font("Helvetica-Oblique").fontSize(7.5).fillColor(grayLt).text("Thank you for your trust in this healing journey.", 0, fY + 52, { width: W, align: "center" });
+    doc.font("Helvetica-Bold").fontSize(9.5).fillColor(teal).text("Dr. Tracey Clark", 0, fY + 50, { width: W, align: "center" });
+    doc.font("Helvetica").fontSize(8).fillColor(grayLt).text("Quantum Physician  ·  quantumphysician.com", 0, fY + 64, { width: W, align: "center" });
+    doc.font("Helvetica-Oblique").fontSize(7.5).fillColor(grayLt).text("Thank you for your trust in this healing journey.", 0, fY + 80, { width: W, align: "center" });
 
     doc.end();
 
