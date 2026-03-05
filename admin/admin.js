@@ -4261,7 +4261,13 @@ var SESS_EMAIL_TEMPLATES={
   custom:{subject:'',body:'Hi {{client_name}},\n\n\n\nWarmly,\nDr. Tracey'}
 };
 
-function openClientEmail(clientId){
+function sessEmailClient(email, name) {
+  var cl = sessClientsData.find(function(c){ return c.email === email; });
+  if (cl) { openClientEmail(cl.id); return; }
+  showToast('Client not found in roster — reload the page and try again', 'error');
+}
+
+
   var cl=sessClientsData.find(function(c){return c.id===clientId});if(!cl)return;
   var cycleId=sessSelectedCycleId;
   var cycle=cycleId?sessCyclesData.find(function(c){return c.id===cycleId}):null;
