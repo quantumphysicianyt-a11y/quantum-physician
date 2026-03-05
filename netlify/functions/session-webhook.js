@@ -103,6 +103,7 @@ exports.handler = async (event) => {
       .update({
         status: "paid",
         stripe_payment_id: stripeSessionId,
+        stripe_session_id: stripeSessionId,
         confirmed_at: new Date().toISOString()
       })
       .eq("id", bookingId);
