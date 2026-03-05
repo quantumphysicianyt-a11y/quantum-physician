@@ -13,8 +13,8 @@
 const Stripe = require("stripe");
 const { createClient } = require("@supabase/supabase-js");
 
-// Apps Script URL for sending emails (same one used by admin panel)
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzjTls1RhJRsObLbOSfZehJhZPx_Wm6Jaqpj3GYGabsNGFzFpCvwfLiZnIVPDIdR_JX/exec";
+// Apps Script URL for sending emails — set SESSION_EMAIL_SCRIPT_URL in Netlify env vars
+const APPS_SCRIPT_URL = process.env.SESSION_EMAIL_SCRIPT_URL;
 
 exports.handler = async (event) => {
   try {
@@ -30,7 +30,8 @@ exports.handler = async (event) => {
         hasStripe: !!STRIPE_SECRET_KEY,
         hasWebhook: !!WEBHOOK_SECRET,
         hasSupabaseUrl: !!SUPABASE_URL,
-        hasSupabaseKey: !!SUPABASE_SERVICE_KEY
+        hasSupabaseKey: !!SUPABASE_SERVICE_KEY,
+        hasEmailScript: !!APPS_SCRIPT_URL
       });
       return { statusCode: 500, body: JSON.stringify({ error: "Missing env vars" }) };
     }
@@ -207,7 +208,7 @@ exports.handler = async (event) => {
       if (seqErr) throw new Error("Invoice number generation failed: " + seqErr.message);
 
       const now = new Date().toISOString();
-      const name = booking.name || (email ? email.split("@")[0] : "Client");
+      const clientName = booking.name || (email ? email.split("@")[0] : "Client");
 
       // Create invoice record
       const { data: newInvoice, error: invErr } = await supabase
@@ -217,7 +218,7 @@ exports.handler = async (event) => {
           booking_id: bookingId,
           client_id: booking.client_id || null,
           email: email,
-          name: name,
+          name: clientName,
           description: "1-on-1 Healing Session (60 min)",
           amount_cents: invoiceAmountCents,
           currency: "USD",
@@ -262,7 +263,7 @@ exports.handler = async (event) => {
       const timeFmt2 = formatTime12(booking.start_time);
 
       const invoiceEmailHtml = buildPaidInvoiceEmailHtml({
-        name: name,
+        name: clientName,
         invoiceNumber: newInvoice.invoice_number,
         sessionDate: dateFmt2,
         sessionTime: timeFmt2,

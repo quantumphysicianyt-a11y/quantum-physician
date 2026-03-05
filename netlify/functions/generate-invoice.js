@@ -262,7 +262,7 @@ exports.handler = async (event) => {
 
     await sbAdmin.from("invoices").update({ pdf_path: storagePath, pdf_generated_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", invoice_id);
 
-    const { data: signed } = await sbAdmin.storage.from("invoices").createSignedUrl(storagePath, 3600);
+    const { data: signed } = await sbAdmin.storage.from("invoices").createSignedUrl(storagePath, 3600 * 24 * 7); // 7 days
 
     return { statusCode: 200, headers, body: JSON.stringify({ success: true, pdf_path: storagePath, pdf_url: signed?.signedUrl || null, invoice_number: inv.invoice_number }) };
 
