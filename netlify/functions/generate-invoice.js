@@ -87,13 +87,13 @@ exports.handler = async (event) => {
     } else {
       doc.font("Helvetica-Bold").fontSize(18).fillColor(teal).text("QUANTUM PHYSICIAN", L, 30);
     }
-    doc.font("Helvetica").fontSize(8.5).fillColor(grayLt).text("Dr. Tracey Clark  ·  tracey@quantumphysician.com", L, 70);
+    doc.font("Helvetica").fontSize(8.5).fillColor(grayLt).text("Dr. Tracey Clark  ·  tracey@quantumphysician.com", L, 68);
 
     // Invoice title block (right)
     doc.font("Helvetica-Bold").fontSize(11).fillColor(grayLt).text("INVOICE", 0, 28, { width: R, align: "right" });
     doc.font("Helvetica-Bold").fontSize(20).fillColor(white).text(inv.invoice_number, 0, 42, { width: R, align: "right" });
     if (isPaid) {
-      doc.font("Helvetica-Bold").fontSize(8).fillColor(green).text("PAID", 0, 68, { width: R, align: "right" });
+      doc.font("Helvetica-Bold").fontSize(13).fillColor(green).text("PAID", 0, 66, { width: R, align: "right" });
     }
 
     // ── PAID WATERMARK ──────────────────────────
@@ -229,25 +229,25 @@ exports.handler = async (event) => {
     }
 
     // ── FOOTER ──────────────────────────────────
-    const fY = H - 60;
-    doc.rect(0, fY, W, 60).fill(navy);
+    const fY = H - 72;
+    doc.rect(0, fY, W, 72).fill(navy);
 
     // Headshot in footer
     let fTextX = L;
     if (headshotBuffer) {
       try {
         doc.save();
-        const fx = L, fy = fY + 12, fr = 18;
+        const fx = L, fy = fY + 14, fr = 16;
         doc.circle(fx + fr, fy + fr, fr).clip();
-        doc.image(headshotBuffer, fx, fy, { width: 36, height: 36 });
+        doc.image(headshotBuffer, fx, fy, { width: 32, height: 32 });
         doc.restore();
-        fTextX = L + 46;
+        fTextX = L + 42;
       } catch(e) {}
     }
 
-    doc.font("Helvetica-Bold").fontSize(9.5).fillColor(teal).text("Dr. Tracey Clark", fTextX, fY + 15);
-    doc.font("Helvetica").fontSize(8).fillColor(grayLt).text("Quantum Physician  ·  quantumphysician.com", fTextX, fY + 29);
-    doc.font("Helvetica-Oblique").fontSize(7.5).fillColor(grayLt).text("Thank you for your trust in this healing journey.", 0, fY + 44, { width: W, align: "center" });
+    doc.font("Helvetica-Bold").fontSize(9.5).fillColor(teal).text("Dr. Tracey Clark", fTextX, fY + 14);
+    doc.font("Helvetica").fontSize(8).fillColor(grayLt).text("Quantum Physician  ·  quantumphysician.com", fTextX, fY + 28);
+    doc.font("Helvetica-Oblique").fontSize(7.5).fillColor(grayLt).text("Thank you for your trust in this healing journey.", 0, fY + 52, { width: W, align: "center" });
 
     doc.end();
 
