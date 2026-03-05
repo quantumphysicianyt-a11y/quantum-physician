@@ -4268,6 +4268,7 @@ function sessEmailClient(email, name) {
 }
 
 
+function openClientEmail(clientId){
   var cl=sessClientsData.find(function(c){return c.id===clientId});if(!cl)return;
   var cycleId=sessSelectedCycleId;
   var cycle=cycleId?sessCyclesData.find(function(c){return c.id===cycleId}):null;
