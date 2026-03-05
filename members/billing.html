@@ -342,8 +342,35 @@
             const inv = allInvoices.find(i => i.id === invId);
             if (!inv || !inv.pdf_path) return;
             const { data } = await sb.storage.from('invoices').createSignedUrl(inv.pdf_path, 3600);
-            if (data?.signedUrl) window.open(data.signedUrl, '_blank');
-        } catch(e) { console.error('PDF download error:', e); }
+            if (data?.signedUrl) showPdfModal(data.signedUrl, inv.invoice_number);
+            else alert('Could not load PDF. Please try again.');
+        } catch(e) { console.error('PDF download error:', e); alert('Error loading PDF'); }
+    }
+
+    function showPdfModal(url, title) {
+        var old = document.getElementById('pdf-modal'); if (old) old.remove();
+        var ov = document.createElement('div'); ov.id = 'pdf-modal';
+        ov.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(10,19,34,.85);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:24px';
+        ov.onclick = function(e) { if (e.target === ov) ov.remove(); };
+
+        var box = document.createElement('div');
+        box.style.cssText = 'background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);width:95%;max-width:820px;height:88vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.5)';
+
+        box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid var(--border);flex-shrink:0">'
+            + '<div style="font-family:Playfair Display,serif;font-weight:600;font-size:15px;color:var(--teal)">' + esc(title || 'Invoice') + '</div>'
+            + '<div style="display:flex;gap:8px;align-items:center">'
+            + '<a href="' + url + '" download style="padding:7px 18px;border-radius:8px;font-size:12px;font-weight:600;background:linear-gradient(135deg,var(--teal),var(--teal-light));color:#fff;text-decoration:none;border:none;cursor:pointer">Download PDF</a>'
+            + '<button onclick="document.getElementById(\'pdf-modal\').remove()" style="background:none;border:1px solid var(--border);border-radius:8px;color:var(--text-muted);font-size:16px;padding:4px 12px;cursor:pointer;line-height:1">&times;</button>'
+            + '</div></div>';
+
+        var frame = document.createElement('iframe');
+        frame.src = url + '#toolbar=1&navpanes=0&scrollbar=1&view=FitH';
+        frame.style.cssText = 'flex:1;border:none;background:#525659';
+        box.appendChild(frame);
+        ov.appendChild(box);
+        document.body.appendChild(ov);
+
+        document.addEventListener('keydown', function escH(e) { if (e.key === 'Escape') { var m = document.getElementById('pdf-modal'); if (m) m.remove(); document.removeEventListener('keydown', escH); } });
     }
 
     function renderTable() {
