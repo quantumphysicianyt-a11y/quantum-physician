@@ -7271,28 +7271,46 @@ async function generateInvoicePdf(invId){
     var data=await res.json();
     if(!res.ok) throw new Error(data.error||'PDF generation failed');
     showToast('PDF generated','success');
-    if(data.pdf_url) window.open(data.pdf_url,'_blank');
+    if(data.pdf_url) showInvoicePdfModal(data.pdf_url, data.invoice_number||'Invoice');
     await loadInvoicesData();
   }catch(e){showToast('Error: '+e.message,'error')}
 }
 
-/* ---- Download existing PDF ---- */
+/* ---- Download existing PDF — instant signed URL from Supabase ---- */
 async function downloadInvoicePdf(invId){
   var inv=sessInvoicesData.find(function(i){return i.id===invId});
   if(!inv||!inv.pdf_path){showToast('No PDF found — generating...','info');await generateInvoicePdf(invId);return}
   try{
-    await ensureFreshToken();
-    var token=sessionStorage.getItem('qp_admin_token');
-    // Get signed URL via admin proxy
-    var res=await fetch('/.netlify/functions/generate-invoice',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-      body:JSON.stringify({invoice_id:invId})
-    });
-    var data=await res.json();
-    if(data.pdf_url) window.open(data.pdf_url,'_blank');
-    else showToast('Could not get PDF URL','error');
-  }catch(e){showToast('Error: '+e.message,'error')}
+    // Get signed URL directly from Supabase Storage (no function call = instant)
+    var res=await sb.storage.from('invoices').createSignedUrl(inv.pdf_path, 3600);
+    if(res.data&&res.data.signedUrl){
+      showInvoicePdfModal(res.data.signedUrl, inv.invoice_number);
+    } else {
+      // Fallback: regenerate
+      showToast('Regenerating PDF...','info');
+      await generateInvoicePdf(invId);
+    }
+  }catch(e){
+    showToast('Error: '+e.message,'error');
+  }
+}
+
+/* ---- Inline PDF Preview Modal ---- */
+function showInvoicePdfModal(url, title){
+  var old=document.getElementById('pdf-preview-modal');if(old)old.remove();
+  var ov=document.createElement('div');ov.id='pdf-preview-modal';ov.className='modal-overlay';
+  ov.style.cssText='display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.onclick=function(e){if(e.target===ov)ov.remove()};
+  var box=document.createElement('div');
+  box.style.cssText='background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);width:95%;max-width:800px;height:90vh;display:flex;flex-direction:column;overflow:hidden';
+  box.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid var(--border)">'
+    +'<div style="font-weight:600;font-size:14px;color:var(--teal)">'+(title||'Invoice PDF')+'</div>'
+    +'<div style="display:flex;gap:8px">'
+    +'<a href="'+url+'" target="_blank" class="btn btn-ghost btn-sm" style="font-size:11px">Open in New Tab</a>'
+    +'<button class="btn btn-ghost btn-sm" onclick="document.getElementById(\'pdf-preview-modal\').remove()" style="font-size:14px;padding:4px 10px">&times;</button>'
+    +'</div></div>'
+    +'<iframe src="'+url+'" style="flex:1;border:none;background:#fff" title="Invoice PDF"></iframe>';
+  ov.appendChild(box);document.body.appendChild(ov);
 }
 
 /* ---- Generate PDF & Send Invoice Email ---- */
