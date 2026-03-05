@@ -7317,20 +7317,36 @@ async function executeBulkInvoices(){
   if(!checks.length){showToast('No bookings selected','error');return}
   var price=sessConfigData?sessConfigData.session_price:150;
   var created=0;
+  var total=checks.length;
 
-  showToast('Creating invoices...','info');
+  // Replace modal content with progress UI
+  var modal=document.getElementById('inv-bulk-modal');
+  var box=modal?modal.querySelector('div'):null;
+  if(box){
+    box.innerHTML='<div style="font-weight:600;font-size:16px;margin-bottom:16px;font-family:Playfair Display,serif">Generating Invoices</div>'
+      +'<div style="font-size:13px;color:var(--text-muted);margin-bottom:16px" id="inv-prog-label">Creating invoice 1 of '+total+'...</div>'
+      +'<div style="background:rgba(0,0,0,.2);border-radius:10px;height:10px;overflow:hidden;margin-bottom:12px"><div id="inv-prog-bar" style="width:0%;height:100%;background:linear-gradient(90deg,var(--teal),var(--teal-light));border-radius:10px;transition:width .3s ease"></div></div>'
+      +'<div id="inv-prog-log" style="max-height:200px;overflow-y:auto;font-size:12px"></div>';
+  }
 
-  for(var i=0;i<checks.length;i++){
+  var logEl=document.getElementById('inv-prog-log');
+  var barEl=document.getElementById('inv-prog-bar');
+  var labelEl=document.getElementById('inv-prog-label');
+
+  for(var i=0;i<total;i++){
     var bid=checks[i].getAttribute('data-bid');
     var b=sessBookingsData.find(function(x){return x.id===bid});
     if(!b) continue;
+
+    var clientName=b.name||b.email;
+    if(labelEl) labelEl.textContent='Creating invoice '+(i+1)+' of '+total+' — '+clientName+'...';
+    if(barEl) barEl.style.width=Math.round((i/total)*100)+'%';
 
     try{
       var numRes=await adminProxy({type:'rpc',fn:'generate_invoice_number'});
       var invNumber=numRes.data;
       var amountCents=price*100;
 
-      // Completed/paid bookings are always marked as paid invoices
       var res=await proxyFrom('invoices').insert({
         invoice_number:invNumber,
         booking_id:b.id,
@@ -7350,8 +7366,9 @@ async function executeBulkInvoices(){
         notes:'Thank you for your trust in this healing journey.'
       }).select('id');
 
-      // Auto-generate PDF
+      // Generate PDF
       if(res.data&&res.data[0]){
+        if(labelEl) labelEl.textContent='Generating PDF '+(i+1)+' of '+total+' — '+clientName+'...';
         try{
           var token=sessionStorage.getItem('qp_admin_token');
           await fetch('/.netlify/functions/generate-invoice',{
@@ -7361,12 +7378,28 @@ async function executeBulkInvoices(){
           });
         }catch(pdfErr){console.error('PDF gen error:',pdfErr)}
       }
+
+      if(logEl) logEl.innerHTML+='<div style="padding:3px 0;color:var(--success)">✅ '+invNumber+' — '+esc(clientName)+'</div>';
       created++;
-    }catch(e){console.error('Bulk invoice error for '+b.email+':',e)}
+    }catch(e){
+      if(logEl) logEl.innerHTML+='<div style="padding:3px 0;color:var(--danger)">❌ '+esc(clientName)+' — '+e.message+'</div>';
+      console.error('Bulk invoice error for '+b.email+':',e);
+    }
+
+    if(barEl) barEl.style.width=Math.round(((i+1)/total)*100)+'%';
+    if(logEl) logEl.scrollTop=logEl.scrollHeight;
   }
 
-  var modal=document.getElementById('inv-bulk-modal');if(modal)modal.remove();
-  showToast(created+' invoice(s) created with PDFs','success');
+  // Done — show completion state
+  if(labelEl) labelEl.innerHTML='<span style="color:var(--success);font-weight:600">✅ Done — '+created+' invoice(s) created with PDFs</span>';
+  if(barEl) barEl.style.width='100%';
+  if(box){
+    var closeBtn=document.createElement('div');
+    closeBtn.style.cssText='text-align:right;margin-top:16px';
+    closeBtn.innerHTML='<button class="btn btn-primary" onclick="document.getElementById(\'inv-bulk-modal\').remove()">Close</button>';
+    box.appendChild(closeBtn);
+  }
+
   await loadInvoicesData();
 }
 
