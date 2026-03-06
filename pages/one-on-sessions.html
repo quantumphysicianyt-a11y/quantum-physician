@@ -1345,6 +1345,10 @@
         bookBookings = bookRes.data || [];
 
         document.getElementById('booking-loading').style.display = 'none';
+
+        // Inject demo slots if no real availability
+        injectTestSlots();
+
         renderBookingState();
       } catch (e) {
         console.error('Booking init error:', e);
@@ -1359,37 +1363,41 @@
       var activeCycle = bookCycles.find(function(c) {
         return c.status === 'active' || c.status === 'public_open';
       });
-      var price = bookConfig ? bookConfig.session_price : null;
-      var duration = bookConfig ? bookConfig.session_duration_minutes : 60;
-      var priceStr = price ? '$' + Number(price).toFixed(0) : '';
+      var price = bookConfig ? bookConfig.session_price : 150;
+      var duration = bookConfig ? bookConfig.session_duration_minutes : 30;
+      var currency = '\u20AC';
+      var priceStr = price ? currency + Number(price).toFixed(0) : '';
 
-      if (status === 'open' && activeCycle) {
-        // Public booking is open — show calendar
+      // Demo mode with test slots — treat as open
+      var showCalendar = (status === 'open' && activeCycle) || isDemoMode;
+
+      if (showCalendar) {
         banner.style.display = 'block';
-        bannerContent.innerHTML = '<div class="banner-open"><h3>Booking Is Open</h3><p>' + (priceStr ? priceStr + ' · ' : '') + duration + '-minute private session with Dr. Tracey Clark</p></div>';
+        if (isDemoMode) {
+          bannerContent.innerHTML = '<div class="banner-open"><h3>Preview Available Sessions</h3><p>' + (priceStr ? priceStr + ' \u00B7 ' : '') + duration + '-minute private session with Dr. Tracey Clark</p></div>';
+        } else {
+          bannerContent.innerHTML = '<div class="banner-open"><h3>Booking Is Open</h3><p>' + (priceStr ? priceStr + ' \u00B7 ' : '') + duration + '-minute private session with Dr. Tracey Clark</p></div>';
+        }
         document.getElementById('booking-slots').style.display = 'block';
 
-        // Initialize calendar to current month
         var now = new Date();
         slotsMonth = now.getMonth();
         slotsYear = now.getFullYear();
         renderSlotsCalendar();
 
       } else if (status === 'coming_soon' && bookConfig.public_booking_opens_at) {
-        // Coming soon with countdown
         banner.style.display = 'block';
         bannerContent.innerHTML = '<div class="banner-closed"><h3>Booking Opens Soon</h3><p>The next booking window is just around the corner.</p></div>';
         document.getElementById('countdown-section').style.display = 'block';
         startCountdown(new Date(bookConfig.public_booking_opens_at));
 
       } else {
-        // Closed — show waitlist with compelling design
         banner.style.display = 'block';
         var nextCycle = bookCycles.find(function(c) { return c.status === 'planning' || c.status === 'client_confirmation'; });
         var nextDate = nextCycle ? new Date(nextCycle.start_date + 'T12:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : null;
         
         bannerContent.innerHTML = '<div style="text-align:center;padding:32px 24px">'
-          + '<div style="font-size:36px;margin-bottom:12px">✦</div>'
+          + '<div style="font-size:36px;margin-bottom:12px">\u2726</div>'
           + '<h3 style="font-family:Playfair Display,serif;font-size:clamp(22px,3vw,28px);font-weight:400;color:#fff;margin-bottom:10px">All Sessions Are Currently Filled</h3>'
           + '<p style="color:rgba(255,255,255,.55);font-size:15px;max-width:50ch;margin:0 auto 20px;line-height:1.7">Dr. Clark works in focused 4-month booking cycles to ensure every client receives her full attention and care.</p>'
           + (nextDate ? '<div style="display:inline-block;background:rgba(91,168,178,.1);border:1px solid rgba(91,168,178,.2);border-radius:8px;padding:12px 24px;margin-bottom:8px"><span style="font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--teal)">Next Cycle Opens</span><div style="font-family:Playfair Display,serif;font-size:22px;color:#fff;margin-top:4px">' + nextDate + '</div></div>' : '')
@@ -1400,7 +1408,6 @@
         document.getElementById('book-subtitle').textContent = '';
       }
 
-      // Update hero CTA and floating CTA
       updateCTAs(status);
     }
 
@@ -1467,6 +1474,7 @@
       }
 
       var html = '';
+      var logoHtml = '<img src="/assets/images/qp-logo.png" alt="Quantum Physician" style="height:48px;margin:0 auto 20px;display:block" onerror="this.style.display=\'none\'">';
 
       if (status === 'open') {
         var price = bookConfig ? bookConfig.session_price : 150;
@@ -1475,6 +1483,7 @@
         var priceStr = price ? currency + Number(price).toFixed(0) : '';
 
         html += '<div class="cal-modal-header">'
+          + logoHtml
           + '<div class="cal-modal-kicker">\u2726 Private Healing Sessions</div>'
           + '<h2 class="cal-modal-title">Book Your Session</h2>'
           + '<p class="cal-modal-sub">' + (priceStr ? '<strong>' + priceStr + '</strong> &middot; ' : '') + duration + '-minute session with Dr. Tracey Clark</p>'
@@ -1491,6 +1500,7 @@
 
       } else if (status === 'coming_soon' && bookConfig && bookConfig.public_booking_opens_at) {
         html += '<div class="cal-modal-header">'
+          + logoHtml
           + '<div class="cal-modal-kicker">\u2726 Coming Soon</div>'
           + '<h2 class="cal-modal-title">Booking Opens Soon</h2>'
           + '<p class="cal-modal-sub">The next booking window is just around the corner.</p></div>'
@@ -1501,6 +1511,7 @@
         var nextCycle = bookCycles.find(function(c) { return c.status === 'planning' || c.status === 'client_confirmation'; });
         var nextDate = nextCycle ? new Date(nextCycle.start_date + 'T12:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : null;
         html += '<div class="cal-modal-header" style="border:none;margin-bottom:0;padding-bottom:0">'
+          + logoHtml
           + '<div class="cal-modal-kicker">\u2726 Private Healing Sessions</div>'
           + '<h2 class="cal-modal-title">All Sessions Are Currently Filled</h2>'
           + '<p class="cal-modal-sub" style="max-width:44ch;margin:0 auto">Dr. Clark works in focused 4-month booking cycles to ensure every client receives her full attention and care.</p></div>'
