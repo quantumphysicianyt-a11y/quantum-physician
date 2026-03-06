@@ -576,93 +576,255 @@
       .cd-block { min-width: 56px; }
     }
 
-    /* ========== FLOATING CTA ========== */
+    /* ========== FLOATING CTA (matches homepage orb) ========== */
     .sess-float {
       position: fixed;
-      bottom: 24px;
-      right: 24px;
-      z-index: 90;
+      right: 20px; bottom: 20px;
+      width: 120px; height: 120px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #0b0b0b, #1a1a1a);
+      color: var(--taupe);
+      display: flex; align-items: center; justify-content: center;
+      text-align: center;
+      z-index: 999;
+      box-shadow: 0 10px 30px rgba(0,0,0,.3);
+      border: 1px solid rgba(255,255,255,.1);
+      transition: all .3s cubic-bezier(.175,.885,.32,1.275);
+      cursor: pointer;
+      animation: floatBounce 3s ease-in-out infinite;
+      user-select: none;
+      -webkit-user-select: none;
       opacity: 0;
-      transform: translateY(20px);
-      transition: opacity .3s, transform .3s;
       pointer-events: none;
     }
     .sess-float.show {
       opacity: 1;
-      transform: translateY(0);
       pointer-events: auto;
     }
-    .sess-float .btn {
-      box-shadow: 0 8px 30px rgba(0,0,0,.3);
+    @keyframes floatBounce {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    .sess-float:hover {
+      transform: scale(1.1) translateY(-4px);
+      box-shadow: 0 20px 50px rgba(91,168,178,.4), 0 0 30px rgba(91,168,178,.3);
+      background: linear-gradient(135deg, var(--navy), #1e3a5f);
+      border-color: var(--teal);
+      color: #fff;
+      animation: none;
+    }
+    .sess-float::after {
+      content: '';
+      position: absolute; inset: 0;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.15), transparent);
+    }
+    .sess-float-label {
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .1em;
+      line-height: 1.2;
+      text-transform: uppercase;
       position: relative;
-      z-index: 2;
+      z-index: 1;
+      transition: transform .3s;
     }
-    .sess-float-ring {
-      position: absolute;
-      top: 50%; left: 50%;
-      width: 100%; height: 100%;
-      transform: translate(-50%, -50%);
-      border-radius: 999px;
-      border: 2px solid var(--taupe);
-      opacity: 0;
-      animation: pulseRing 2.4s ease-out infinite;
-      pointer-events: none;
+    .sess-float:hover .sess-float-label { transform: scale(1.05); }
+    .sess-float .pulse {
+      position: absolute; inset: 0;
+      border-radius: 50%;
+      border: 2px solid var(--teal);
+      animation: pulseRing 2s ease-out infinite;
     }
-    .sess-float-ring:nth-child(2) { animation-delay: .8s; }
     @keyframes pulseRing {
-      0% { opacity: .6; transform: translate(-50%,-50%) scale(1); }
-      100% { opacity: 0; transform: translate(-50%,-50%) scale(1.5); }
+      0% { transform: scale(1); opacity: .6; }
+      100% { transform: scale(1.5); opacity: 0; }
+    }
+    @media (max-width: 600px) {
+      .sess-float { width: 100px; height: 100px; right: 14px; bottom: 14px; }
+      .sess-float-label { font-size: 10px; }
     }
 
     /* ========== CALENDAR MODAL ========== */
     .cal-modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(11,22,40,.88);
+      background: rgba(0,0,0,.75);
       z-index: 9998;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 20px;
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       opacity: 0;
-      transition: opacity .25s ease;
+      transition: opacity .3s ease;
     }
     .cal-modal-overlay.open { opacity: 1; }
     .cal-modal-box {
-      background: var(--navy);
-      border: 1px solid rgba(91,168,178,.15);
-      border-radius: 20px;
-      max-width: 640px;
+      background: linear-gradient(180deg, #0e1a30 0%, #121f3a 40%, #0b1528 100%);
+      border: 1px solid rgba(91,168,178,.18);
+      border-radius: 24px;
+      max-width: 620px;
       width: 100%;
       max-height: calc(100vh - 60px);
       overflow-y: auto;
-      padding: 40px 36px 36px;
+      padding: 44px 40px 36px;
       position: relative;
-      box-shadow: 0 24px 80px rgba(0,0,0,.5);
-      transform: translateY(16px);
-      transition: transform .25s ease;
+      box-shadow: 0 32px 80px rgba(0,0,0,.6), 0 0 60px rgba(91,168,178,.06), inset 0 1px 0 rgba(255,255,255,.05);
+      transform: translateY(20px) scale(.97);
+      transition: transform .3s ease;
     }
-    .cal-modal-overlay.open .cal-modal-box { transform: translateY(0); }
+    .cal-modal-overlay.open .cal-modal-box { transform: translateY(0) scale(1); }
     .cal-modal-close {
       position: absolute;
       top: 16px; right: 16px;
       width: 36px; height: 36px;
       border-radius: 50%;
-      border: 1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.06);
-      color: rgba(255,255,255,.5);
-      font-size: 18px;
+      border: 1px solid rgba(255,255,255,.1);
+      background: rgba(255,255,255,.04);
+      color: rgba(255,255,255,.4);
+      font-size: 20px;
       cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      transition: background .15s;
+      transition: all .15s;
     }
-    .cal-modal-close:hover { background: rgba(255,255,255,.12); color: #fff; }
-    .cal-modal-box .sess-heading { margin-bottom: 28px; }
-    .cal-modal-box .sess-heading h2 { font-size: clamp(22px, 3vw, 30px); }
+    .cal-modal-close:hover { background: rgba(255,255,255,.1); color: #fff; border-color: rgba(255,255,255,.2); }
+
+    /* Modal header */
+    .cal-modal-header {
+      text-align: center;
+      margin-bottom: 32px;
+      padding-bottom: 28px;
+      border-bottom: 1px solid rgba(91,168,178,.12);
+    }
+    .cal-modal-kicker {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: var(--teal);
+      margin-bottom: 12px;
+    }
+    .cal-modal-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(26px, 4vw, 34px);
+      font-weight: 400;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+    .cal-modal-sub {
+      color: rgba(255,255,255,.45);
+      font-size: 14px;
+    }
+    .cal-modal-sub strong { color: var(--teal); font-weight: 600; }
+
+    /* Modal calendar overrides (premium) */
+    .cal-modal-box .slots-cal {
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .cal-modal-box .slots-cal-head {
+      color: var(--teal);
+      opacity: .6;
+      font-size: 10px;
+      letter-spacing: .15em;
+    }
+    .cal-modal-box .slots-day {
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 500;
+      transition: all .2s;
+    }
+    .cal-modal-box .slots-day.available {
+      background: rgba(91,168,178,.08);
+      border: 1px solid rgba(91,168,178,.2);
+      color: #fff;
+      font-weight: 600;
+    }
+    .cal-modal-box .slots-day.available:hover {
+      background: rgba(91,168,178,.18);
+      border-color: rgba(91,168,178,.45);
+      transform: scale(1.08);
+      box-shadow: 0 4px 16px rgba(91,168,178,.15);
+    }
+    .cal-modal-box .slots-day.available.selected {
+      background: linear-gradient(135deg, var(--teal), #4acfd9);
+      border-color: transparent;
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(91,168,178,.35);
+    }
+    .cal-modal-box .slots-day .dot {
+      background: var(--teal);
+      box-shadow: 0 0 6px rgba(91,168,178,.5);
+    }
+
+    /* Modal month nav */
+    .cal-modal-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    .cal-modal-nav h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px;
+      font-weight: 500;
+      color: #fff;
+    }
+    .cal-nav-btn {
+      padding: 8px 18px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      color: rgba(255,255,255,.5);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all .15s;
+    }
+    .cal-nav-btn:hover { background: rgba(255,255,255,.08); color: #fff; border-color: rgba(255,255,255,.2); }
+
+    /* Modal time slots (premium) */
+    .cal-modal-box .slot-time-btn {
+      padding: 14px 28px;
+      border-radius: 12px;
+      border: 1px solid rgba(91,168,178,.2);
+      background: rgba(91,168,178,.06);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      transition: all .2s;
+    }
+    .cal-modal-box .slot-time-btn:hover {
+      background: rgba(91,168,178,.15);
+      border-color: rgba(91,168,178,.4);
+      box-shadow: 0 4px 16px rgba(91,168,178,.12);
+      transform: translateY(-1px);
+    }
+
+    /* Modal detail section */
+    .cal-modal-day-detail {
+      margin-top: 28px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(91,168,178,.1);
+    }
+    .cal-modal-day-label {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px;
+      font-weight: 400;
+      color: var(--teal);
+      margin-bottom: 16px;
+    }
+
     @media (max-width: 600px) {
-      .cal-modal-box { padding: 28px 20px 24px; border-radius: 16px; }
+      .cal-modal-box { padding: 28px 20px 24px; border-radius: 18px; }
+      .cal-modal-title { font-size: 24px; }
+      .cal-modal-box .slots-day { font-size: 13px; }
+      .cal-modal-box .slot-time-btn { padding: 12px 20px; font-size: 14px; }
     }
 
     /* ========== RESPONSIVE ========== */
@@ -1083,20 +1245,17 @@
   <!-- ========== SHARED FOOTER ========== -->
   <div id="shared-footer"></div>
 
-  <!-- ========== FLOATING CTA ========== -->
-  <div class="sess-float" id="floatCta">
-    <span class="sess-float-ring"></span>
-    <span class="sess-float-ring"></span>
-    <button class="btn taupe" id="floatCtaBtn" onclick="openCalendarModal()">Book a Session</button>
+  <!-- ========== FLOATING CTA (orb) ========== -->
+  <div class="sess-float" id="floatCta" onclick="openCalendarModal()">
+    <div class="pulse"></div>
+    <span class="sess-float-label" id="floatCtaLabel">BOOK A<br>SESSION</span>
   </div>
 
   <!-- ========== CALENDAR MODAL ========== -->
   <div class="cal-modal-overlay" id="calModal" style="display:none">
     <div class="cal-modal-box">
       <button class="cal-modal-close" onclick="closeCalendarModal()" aria-label="Close">&times;</button>
-      <div id="cal-modal-content">
-        <!-- populated dynamically -->
-      </div>
+      <div id="cal-modal-content"></div>
     </div>
   </div>
 
@@ -1246,81 +1405,125 @@
 
     function updateCTAs(status) {
       var heroCta = document.querySelector('.sess-hero-actions .btn.taupe');
-      var floatBtn = document.getElementById('floatCtaBtn');
+      var floatLabel = document.getElementById('floatCtaLabel');
       var finalCta = document.querySelector('.sess-cta .btn.taupe');
       if (status === 'open') {
         if (heroCta) heroCta.textContent = 'View Available Slots';
-        if (floatBtn) floatBtn.textContent = 'Book a Session';
+        if (floatLabel) floatLabel.innerHTML = 'BOOK A<br>SESSION';
         if (finalCta) finalCta.textContent = 'View Available Slots';
       } else {
         if (heroCta) heroCta.textContent = 'Join the Waitlist';
-        if (floatBtn) floatBtn.textContent = 'Join the Waitlist';
+        if (floatLabel) floatLabel.innerHTML = 'JOIN<br>WAITLIST';
         if (finalCta) finalCta.textContent = 'Join the Waitlist';
+      }
+    }
+
+    /* ===== Demo / Test Appointments ===== */
+    // Inject test availability so the public can see how booking works
+    // These get merged into bookAvail after data loads
+    function injectTestSlots() {
+      // Only inject if there are NO real available slots (demo mode)
+      var hasRealSlots = bookAvail.length > 0;
+      if (hasRealSlots) return;
+
+      var today = new Date();
+      var testSlots = [];
+      // Add 5 sample available dates over next 3 weeks
+      var offsets = [3, 7, 10, 14, 17]; // days from now
+      offsets.forEach(function(offset) {
+        var d = new Date(today);
+        d.setDate(d.getDate() + offset);
+        // Skip weekends for realism
+        if (d.getDay() === 0) d.setDate(d.getDate() + 1);
+        if (d.getDay() === 6) d.setDate(d.getDate() + 2);
+        var dateStr = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+        testSlots.push({ date: dateStr, start_time: '09:00', end_time: '12:00', status: 'available', visibility: 'public' });
+        testSlots.push({ date: dateStr, start_time: '14:00', end_time: '17:00', status: 'available', visibility: 'public' });
+      });
+      bookAvail = testSlots;
+      // Also add a couple "taken" bookings so it looks realistic
+      if (testSlots.length >= 4) {
+        bookBookings.push({ date: testSlots[0].date, start_time: '10:00', end_time: '10:30', status: 'paid' });
+        bookBookings.push({ date: testSlots[2].date, start_time: '14:00', end_time: '14:30', status: 'paid' });
       }
     }
 
     /* ===== Calendar Modal ===== */
     var calModalOpen = false;
+    var modalSlotsMonth, modalSlotsYear;
+    var modalSelectedDate = null;
+    var modalCountdownInterval = null;
 
     function openCalendarModal() {
       var modal = document.getElementById('calModal');
       var content = document.getElementById('cal-modal-content');
       if (!modal || !content) return;
 
-      // Build modal content based on current booking state
+      // Inject test slots if no real data
+      injectTestSlots();
+
       var status = bookConfig ? bookConfig.public_booking_status : 'closed';
+      // If we have test slots, treat as open for demo
+      if (bookAvail.length > 0 && status !== 'open' && status !== 'coming_soon') {
+        status = 'open';
+      }
+
       var html = '';
 
       if (status === 'open') {
-        var price = bookConfig ? bookConfig.session_price : null;
-        var duration = bookConfig ? bookConfig.session_duration_minutes : 60;
-        var priceStr = price ? '$' + Number(price).toFixed(0) : '';
-        html += '<div class="sess-heading"><h2>Book Your Session</h2>'
-          + '<p>' + (priceStr ? priceStr + ' &middot; ' : '') + duration + '-minute private session with Dr. Tracey Clark</p></div>';
-        // Calendar
-        html += '<div id="modal-slots-nav" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">'
-          + '<button class="btn outline" style="padding:10px 20px" onclick="modalSlotsPrev()">&#8592; Prev</button>'
-          + '<h3 id="modal-month-label" style="font-family:Playfair Display,serif;font-size:20px;font-weight:400;color:#fff"></h3>'
-          + '<button class="btn outline" style="padding:10px 20px" onclick="modalSlotsNext()">Next &#8594;</button></div>'
+        var price = bookConfig ? bookConfig.session_price : 150;
+        var duration = bookConfig ? bookConfig.session_duration_minutes : 30;
+        var currency = '\u20AC'; // EUR default
+        var priceStr = price ? currency + Number(price).toFixed(0) : '';
+
+        html += '<div class="cal-modal-header">'
+          + '<div class="cal-modal-kicker">\u2726 Private Healing Sessions</div>'
+          + '<h2 class="cal-modal-title">Book Your Session</h2>'
+          + '<p class="cal-modal-sub">' + (priceStr ? '<strong>' + priceStr + '</strong> &middot; ' : '') + duration + '-minute session with Dr. Tracey Clark</p>'
+          + '</div>';
+
+        html += '<div class="cal-modal-nav">'
+          + '<button class="cal-nav-btn" onclick="modalSlotsPrev()">\u2190 Prev</button>'
+          + '<h3 id="modal-month-label"></h3>'
+          + '<button class="cal-nav-btn" onclick="modalSlotsNext()">Next \u2192</button></div>'
           + '<div id="modal-slots-calendar" class="slots-cal"></div>'
-          + '<div id="modal-slots-detail" style="display:none;margin-top:24px">'
-          + '<h4 id="modal-day-label" style="font-family:Playfair Display,serif;font-size:18px;font-weight:400;color:#fff;margin-bottom:14px"></h4>'
+          + '<div id="modal-slots-detail" class="cal-modal-day-detail" style="display:none">'
+          + '<h4 id="modal-day-label" class="cal-modal-day-label"></h4>'
           + '<div id="modal-time-list"></div></div>';
 
       } else if (status === 'coming_soon' && bookConfig && bookConfig.public_booking_opens_at) {
-        html += '<div class="sess-heading"><h2>Booking Opens Soon</h2>'
-          + '<p>The next booking window is just around the corner.</p></div>'
-          + '<div id="modal-countdown" style="text-align:center"><div id="modal-countdown-timer" style="display:flex;gap:16px;justify-content:center;margin-bottom:28px"></div>'
-          + '<button class="btn teal" onclick="closeCalendarModal();document.getElementById(\'waitlist-section\').scrollIntoView({behavior:\'smooth\'})">Join the Waitlist</button></div>';
+        html += '<div class="cal-modal-header">'
+          + '<div class="cal-modal-kicker">\u2726 Coming Soon</div>'
+          + '<h2 class="cal-modal-title">Booking Opens Soon</h2>'
+          + '<p class="cal-modal-sub">The next booking window is just around the corner.</p></div>'
+          + '<div style="text-align:center;padding:12px 0"><div id="modal-countdown-timer" style="display:flex;gap:16px;justify-content:center;margin-bottom:28px"></div>'
+          + '<button class="btn teal" onclick="closeCalendarModal();setTimeout(function(){document.getElementById(\'waitlist-section\').scrollIntoView({behavior:\'smooth\'})},150)">Join the Waitlist</button></div>';
 
       } else {
-        // Closed / waitlist
         var nextCycle = bookCycles.find(function(c) { return c.status === 'planning' || c.status === 'client_confirmation'; });
         var nextDate = nextCycle ? new Date(nextCycle.start_date + 'T12:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : null;
-        html += '<div style="text-align:center;padding:12px 0">'
-          + '<div style="font-size:36px;margin-bottom:12px">&#10038;</div>'
-          + '<h2 style="font-family:Playfair Display,serif;font-size:clamp(22px,3vw,28px);font-weight:400;color:#fff;margin-bottom:10px">All Sessions Are Currently Filled</h2>'
-          + '<p style="color:rgba(255,255,255,.55);font-size:15px;max-width:50ch;margin:0 auto 20px;line-height:1.7">Dr. Clark works in focused 4-month booking cycles to ensure every client receives her full attention and care.</p>'
-          + (nextDate ? '<div style="display:inline-block;background:rgba(91,168,178,.1);border:1px solid rgba(91,168,178,.2);border-radius:8px;padding:12px 24px;margin-bottom:20px"><span style="font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--teal)">Next Cycle Opens</span><div style="font-family:Playfair Display,serif;font-size:22px;color:#fff;margin-top:4px">' + nextDate + '</div></div>' : '')
-          + '<div style="margin-top:8px"><button class="btn teal" onclick="closeCalendarModal();setTimeout(function(){document.getElementById(\'waitlist-section\').scrollIntoView({behavior:\'smooth\'})},100)">Join the Waitlist</button></div>'
-          + '</div>';
+        html += '<div class="cal-modal-header" style="border:none;margin-bottom:0;padding-bottom:0">'
+          + '<div class="cal-modal-kicker">\u2726 Private Healing Sessions</div>'
+          + '<h2 class="cal-modal-title">All Sessions Are Currently Filled</h2>'
+          + '<p class="cal-modal-sub" style="max-width:44ch;margin:0 auto">Dr. Clark works in focused 4-month booking cycles to ensure every client receives her full attention and care.</p></div>'
+          + (nextDate ? '<div style="text-align:center;margin:24px 0"><div style="display:inline-block;background:rgba(91,168,178,.08);border:1px solid rgba(91,168,178,.15);border-radius:12px;padding:16px 28px"><span style="font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--teal);display:block;margin-bottom:4px">Next Cycle Opens</span><span style="font-family:Playfair Display,serif;font-size:22px;color:#fff">' + nextDate + '</span></div></div>' : '')
+          + '<div style="text-align:center;padding:8px 0"><button class="btn teal" onclick="closeCalendarModal();setTimeout(function(){document.getElementById(\'waitlist-section\').scrollIntoView({behavior:\'smooth\'})},150)">Join the Waitlist</button></div>';
       }
 
       content.innerHTML = html;
       modal.style.display = 'flex';
-      // Force reflow then animate in
-      modal.offsetHeight;
+      modal.offsetHeight; // force reflow
       modal.classList.add('open');
       calModalOpen = true;
       document.body.style.overflow = 'hidden';
 
-      // Initialize modal calendar if open
       if (status === 'open') {
-        modalSlotsMonth = slotsMonth;
-        modalSlotsYear = slotsYear;
+        var now = new Date();
+        modalSlotsMonth = now.getMonth();
+        modalSlotsYear = now.getFullYear();
+        modalSelectedDate = null;
         renderModalCalendar();
       }
-      // Initialize modal countdown if coming_soon
       if (status === 'coming_soon' && bookConfig && bookConfig.public_booking_opens_at) {
         startModalCountdown(new Date(bookConfig.public_booking_opens_at));
       }
@@ -1332,7 +1535,7 @@
       modal.classList.remove('open');
       calModalOpen = false;
       document.body.style.overflow = '';
-      setTimeout(function() { modal.style.display = 'none'; }, 250);
+      setTimeout(function() { modal.style.display = 'none'; }, 300);
       if (modalCountdownInterval) { clearInterval(modalCountdownInterval); modalCountdownInterval = null; }
     }
 
@@ -1346,10 +1549,6 @@
     });
 
     /* ===== Modal Calendar ===== */
-    var modalSlotsMonth, modalSlotsYear;
-    var modalSelectedDate = null;
-    var modalCountdownInterval = null;
-
     function modalSlotsPrev() {
       modalSlotsMonth--;
       if (modalSlotsMonth < 0) { modalSlotsMonth = 11; modalSlotsYear--; }
@@ -1416,7 +1615,7 @@
 
       var dayAvail = bookAvail.filter(function(a) { return a.date === dateStr; });
       var dayBooked = bookBookings.filter(function(b) { return b.date === dateStr; });
-      var duration = bookConfig ? bookConfig.session_duration_minutes : 60;
+      var duration = bookConfig ? bookConfig.session_duration_minutes : 30;
       var buffer = bookConfig ? bookConfig.booking_buffer_minutes : 15;
 
       var slots = [];
@@ -1435,9 +1634,9 @@
       });
 
       if (!slots.length) {
-        list.innerHTML = '<p style="color:rgba(255,255,255,.4);font-size:14px">No available time slots on this day.</p>';
+        list.innerHTML = '<p style="color:rgba(255,255,255,.35);font-size:14px">No available time slots on this day.</p>';
       } else {
-        list.innerHTML = slots.map(function(s) {
+        list.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:8px">' + slots.map(function(s) {
           var h = parseInt(s.time.split(':')[0]);
           var mi = s.time.split(':')[1];
           var ampm = h >= 12 ? 'PM' : 'AM';
@@ -1445,7 +1644,7 @@
           var display = h12 + ':' + mi + ' ' + ampm;
           if (s.taken) return '<button class="slot-time-btn taken" disabled>' + display + '</button>';
           return '<button class="slot-time-btn" onclick="closeCalendarModal();selectTimeSlot(\'' + dateStr + '\',\'' + s.time + '\')">' + display + '</button>';
-        }).join('');
+        }).join('') + '</div>';
       }
 
       detail.style.display = 'block';
