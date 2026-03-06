@@ -579,8 +579,8 @@
     /* ========== FLOATING CTA ========== */
     .sess-float {
       position: fixed;
-      bottom: 20px;
-      right: 20px;
+      bottom: 24px;
+      right: 24px;
       z-index: 90;
       opacity: 0;
       transform: translateY(20px);
@@ -594,6 +594,75 @@
     }
     .sess-float .btn {
       box-shadow: 0 8px 30px rgba(0,0,0,.3);
+      position: relative;
+      z-index: 2;
+    }
+    .sess-float-ring {
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 100%; height: 100%;
+      transform: translate(-50%, -50%);
+      border-radius: 999px;
+      border: 2px solid var(--taupe);
+      opacity: 0;
+      animation: pulseRing 2.4s ease-out infinite;
+      pointer-events: none;
+    }
+    .sess-float-ring:nth-child(2) { animation-delay: .8s; }
+    @keyframes pulseRing {
+      0% { opacity: .6; transform: translate(-50%,-50%) scale(1); }
+      100% { opacity: 0; transform: translate(-50%,-50%) scale(1.5); }
+    }
+
+    /* ========== CALENDAR MODAL ========== */
+    .cal-modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(11,22,40,.88);
+      z-index: 9998;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      opacity: 0;
+      transition: opacity .25s ease;
+    }
+    .cal-modal-overlay.open { opacity: 1; }
+    .cal-modal-box {
+      background: var(--navy);
+      border: 1px solid rgba(91,168,178,.15);
+      border-radius: 20px;
+      max-width: 640px;
+      width: 100%;
+      max-height: calc(100vh - 60px);
+      overflow-y: auto;
+      padding: 40px 36px 36px;
+      position: relative;
+      box-shadow: 0 24px 80px rgba(0,0,0,.5);
+      transform: translateY(16px);
+      transition: transform .25s ease;
+    }
+    .cal-modal-overlay.open .cal-modal-box { transform: translateY(0); }
+    .cal-modal-close {
+      position: absolute;
+      top: 16px; right: 16px;
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      color: rgba(255,255,255,.5);
+      font-size: 18px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .15s;
+    }
+    .cal-modal-close:hover { background: rgba(255,255,255,.12); color: #fff; }
+    .cal-modal-box .sess-heading { margin-bottom: 28px; }
+    .cal-modal-box .sess-heading h2 { font-size: clamp(22px, 3vw, 30px); }
+    @media (max-width: 600px) {
+      .cal-modal-box { padding: 28px 20px 24px; border-radius: 16px; }
     }
 
     /* ========== RESPONSIVE ========== */
@@ -727,7 +796,7 @@
           to healing — supporting you in uncovering root causes rather than simply addressing symptoms.
         </p>
         <div class="sess-hero-actions">
-          <a class="btn taupe" href="#book">Book a Session</a>
+          <a class="btn taupe" href="#book-section" onclick="event.preventDefault();openCalendarModal()">Book a Session</a>
           <a class="btn outline" href="#how">How It Works</a>
         </div>
         <div class="sess-hero-meta">
@@ -810,28 +879,28 @@
         <p>For those ready to go deeper — beyond symptom management and into lasting change.</p>
       </div>
       <div class="sess-why-grid">
-        <a href="#book" class="sess-why-item">
+        <a href="#book-section" class="sess-why-item" onclick="event.preventDefault();openCalendarModal()">
           <div class="sess-why-icon"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
           <div>
             <h4>Physical Support</h4>
             <p>Pain, tension, fatigue, chronic stress — address what your body has been holding onto.</p>
           </div>
         </a>
-        <a href="#book" class="sess-why-item">
+        <a href="#book-section" class="sess-why-item" onclick="event.preventDefault();openCalendarModal()">
           <div class="sess-why-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></div>
           <div>
             <h4>Emotional Wellbeing</h4>
             <p>Anxiety, overwhelm, stuck patterns — find clarity and release in a safe, supportive space.</p>
           </div>
         </a>
-        <a href="#book" class="sess-why-item">
+        <a href="#book-section" class="sess-why-item" onclick="event.preventDefault();openCalendarModal()">
           <div class="sess-why-icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
           <div>
             <h4>Mental Clarity</h4>
             <p>Burnout, indecision, brain fog — cut through the noise and reconnect with what matters.</p>
           </div>
         </a>
-        <a href="#book" class="sess-why-item">
+        <a href="#book-section" class="sess-why-item" onclick="event.preventDefault();openCalendarModal()">
           <div class="sess-why-icon"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
           <div>
             <h4>Performance &amp; Growth</h4>
@@ -1005,7 +1074,7 @@
       <h2>Book Your Private Session<br>with Dr. Clark</h2>
       <p>Ready to take the next step? Choose a time that works for you and get support that meets you where you are.</p>
       <div class="btn-wrap">
-        <a class="btn taupe" href="#">Book Now</a>
+        <a class="btn taupe" href="#book-section" onclick="event.preventDefault();openCalendarModal()">Book Now</a>
         <a class="btn outline" href="#how">How It Works</a>
       </div>
     </div>
@@ -1016,7 +1085,19 @@
 
   <!-- ========== FLOATING CTA ========== -->
   <div class="sess-float" id="floatCta">
-    <a class="btn taupe" href="#book">Book a Session</a>
+    <span class="sess-float-ring"></span>
+    <span class="sess-float-ring"></span>
+    <button class="btn taupe" id="floatCtaBtn" onclick="openCalendarModal()">Book a Session</button>
+  </div>
+
+  <!-- ========== CALENDAR MODAL ========== -->
+  <div class="cal-modal-overlay" id="calModal" style="display:none">
+    <div class="cal-modal-box">
+      <button class="cal-modal-close" onclick="closeCalendarModal()" aria-label="Close">&times;</button>
+      <div id="cal-modal-content">
+        <!-- populated dynamically -->
+      </div>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1165,17 +1246,233 @@
 
     function updateCTAs(status) {
       var heroCta = document.querySelector('.sess-hero-actions .btn.taupe');
-      var floatCta = document.querySelector('.sess-float .btn');
+      var floatBtn = document.getElementById('floatCtaBtn');
       var finalCta = document.querySelector('.sess-cta .btn.taupe');
       if (status === 'open') {
-        if (heroCta) { heroCta.textContent = 'View Available Slots'; heroCta.href = '#book-section'; }
-        if (floatCta) { floatCta.textContent = 'View Available Slots'; floatCta.href = '#book-section'; }
-        if (finalCta) { finalCta.textContent = 'View Available Slots'; finalCta.href = '#book-section'; }
+        if (heroCta) heroCta.textContent = 'View Available Slots';
+        if (floatBtn) floatBtn.textContent = 'Book a Session';
+        if (finalCta) finalCta.textContent = 'View Available Slots';
       } else {
-        if (heroCta) { heroCta.textContent = 'Join the Waitlist'; heroCta.href = '#book-section'; }
-        if (floatCta) { floatCta.textContent = 'Join the Waitlist'; floatCta.href = '#book-section'; }
-        if (finalCta) { finalCta.textContent = 'Join the Waitlist'; finalCta.href = '#book-section'; }
+        if (heroCta) heroCta.textContent = 'Join the Waitlist';
+        if (floatBtn) floatBtn.textContent = 'Join the Waitlist';
+        if (finalCta) finalCta.textContent = 'Join the Waitlist';
       }
+    }
+
+    /* ===== Calendar Modal ===== */
+    var calModalOpen = false;
+
+    function openCalendarModal() {
+      var modal = document.getElementById('calModal');
+      var content = document.getElementById('cal-modal-content');
+      if (!modal || !content) return;
+
+      // Build modal content based on current booking state
+      var status = bookConfig ? bookConfig.public_booking_status : 'closed';
+      var html = '';
+
+      if (status === 'open') {
+        var price = bookConfig ? bookConfig.session_price : null;
+        var duration = bookConfig ? bookConfig.session_duration_minutes : 60;
+        var priceStr = price ? '$' + Number(price).toFixed(0) : '';
+        html += '<div class="sess-heading"><h2>Book Your Session</h2>'
+          + '<p>' + (priceStr ? priceStr + ' &middot; ' : '') + duration + '-minute private session with Dr. Tracey Clark</p></div>';
+        // Calendar
+        html += '<div id="modal-slots-nav" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">'
+          + '<button class="btn outline" style="padding:10px 20px" onclick="modalSlotsPrev()">&#8592; Prev</button>'
+          + '<h3 id="modal-month-label" style="font-family:Playfair Display,serif;font-size:20px;font-weight:400;color:#fff"></h3>'
+          + '<button class="btn outline" style="padding:10px 20px" onclick="modalSlotsNext()">Next &#8594;</button></div>'
+          + '<div id="modal-slots-calendar" class="slots-cal"></div>'
+          + '<div id="modal-slots-detail" style="display:none;margin-top:24px">'
+          + '<h4 id="modal-day-label" style="font-family:Playfair Display,serif;font-size:18px;font-weight:400;color:#fff;margin-bottom:14px"></h4>'
+          + '<div id="modal-time-list"></div></div>';
+
+      } else if (status === 'coming_soon' && bookConfig && bookConfig.public_booking_opens_at) {
+        html += '<div class="sess-heading"><h2>Booking Opens Soon</h2>'
+          + '<p>The next booking window is just around the corner.</p></div>'
+          + '<div id="modal-countdown" style="text-align:center"><div id="modal-countdown-timer" style="display:flex;gap:16px;justify-content:center;margin-bottom:28px"></div>'
+          + '<button class="btn teal" onclick="closeCalendarModal();document.getElementById(\'waitlist-section\').scrollIntoView({behavior:\'smooth\'})">Join the Waitlist</button></div>';
+
+      } else {
+        // Closed / waitlist
+        var nextCycle = bookCycles.find(function(c) { return c.status === 'planning' || c.status === 'client_confirmation'; });
+        var nextDate = nextCycle ? new Date(nextCycle.start_date + 'T12:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : null;
+        html += '<div style="text-align:center;padding:12px 0">'
+          + '<div style="font-size:36px;margin-bottom:12px">&#10038;</div>'
+          + '<h2 style="font-family:Playfair Display,serif;font-size:clamp(22px,3vw,28px);font-weight:400;color:#fff;margin-bottom:10px">All Sessions Are Currently Filled</h2>'
+          + '<p style="color:rgba(255,255,255,.55);font-size:15px;max-width:50ch;margin:0 auto 20px;line-height:1.7">Dr. Clark works in focused 4-month booking cycles to ensure every client receives her full attention and care.</p>'
+          + (nextDate ? '<div style="display:inline-block;background:rgba(91,168,178,.1);border:1px solid rgba(91,168,178,.2);border-radius:8px;padding:12px 24px;margin-bottom:20px"><span style="font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--teal)">Next Cycle Opens</span><div style="font-family:Playfair Display,serif;font-size:22px;color:#fff;margin-top:4px">' + nextDate + '</div></div>' : '')
+          + '<div style="margin-top:8px"><button class="btn teal" onclick="closeCalendarModal();setTimeout(function(){document.getElementById(\'waitlist-section\').scrollIntoView({behavior:\'smooth\'})},100)">Join the Waitlist</button></div>'
+          + '</div>';
+      }
+
+      content.innerHTML = html;
+      modal.style.display = 'flex';
+      // Force reflow then animate in
+      modal.offsetHeight;
+      modal.classList.add('open');
+      calModalOpen = true;
+      document.body.style.overflow = 'hidden';
+
+      // Initialize modal calendar if open
+      if (status === 'open') {
+        modalSlotsMonth = slotsMonth;
+        modalSlotsYear = slotsYear;
+        renderModalCalendar();
+      }
+      // Initialize modal countdown if coming_soon
+      if (status === 'coming_soon' && bookConfig && bookConfig.public_booking_opens_at) {
+        startModalCountdown(new Date(bookConfig.public_booking_opens_at));
+      }
+    }
+
+    function closeCalendarModal() {
+      var modal = document.getElementById('calModal');
+      if (!modal) return;
+      modal.classList.remove('open');
+      calModalOpen = false;
+      document.body.style.overflow = '';
+      setTimeout(function() { modal.style.display = 'none'; }, 250);
+      if (modalCountdownInterval) { clearInterval(modalCountdownInterval); modalCountdownInterval = null; }
+    }
+
+    // Close on overlay click
+    document.addEventListener('click', function(e) {
+      if (e.target && e.target.id === 'calModal') closeCalendarModal();
+    });
+    // Close on Escape
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && calModalOpen) closeCalendarModal();
+    });
+
+    /* ===== Modal Calendar ===== */
+    var modalSlotsMonth, modalSlotsYear;
+    var modalSelectedDate = null;
+    var modalCountdownInterval = null;
+
+    function modalSlotsPrev() {
+      modalSlotsMonth--;
+      if (modalSlotsMonth < 0) { modalSlotsMonth = 11; modalSlotsYear--; }
+      modalSelectedDate = null;
+      var d = document.getElementById('modal-slots-detail');
+      if (d) d.style.display = 'none';
+      renderModalCalendar();
+    }
+    function modalSlotsNext() {
+      modalSlotsMonth++;
+      if (modalSlotsMonth > 11) { modalSlotsMonth = 0; modalSlotsYear++; }
+      modalSelectedDate = null;
+      var d = document.getElementById('modal-slots-detail');
+      if (d) d.style.display = 'none';
+      renderModalCalendar();
+    }
+
+    function renderModalCalendar() {
+      var label = document.getElementById('modal-month-label');
+      var cal = document.getElementById('modal-slots-calendar');
+      if (!label || !cal) return;
+      var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      label.textContent = monthNames[modalSlotsMonth] + ' ' + modalSlotsYear;
+
+      var firstDay = new Date(modalSlotsYear, modalSlotsMonth, 1).getDay();
+      var daysInMonth = new Date(modalSlotsYear, modalSlotsMonth + 1, 0).getDate();
+      var today = new Date(); today.setHours(0,0,0,0);
+
+      var dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      var html = dayNames.map(function(d) { return '<div class="slots-cal-head">' + d + '</div>'; }).join('');
+
+      for (var i = 0; i < firstDay; i++) { html += '<div class="slots-day empty"></div>'; }
+
+      for (var d = 1; d <= daysInMonth; d++) {
+        var dateObj = new Date(modalSlotsYear, modalSlotsMonth, d);
+        var dateStr = modalSlotsYear + '-' + String(modalSlotsMonth + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+        var isPast = dateObj < today;
+        var dayAvail = bookAvail.filter(function(a) { return a.date === dateStr; });
+        var hasOpen = dayAvail.length > 0 && !isPast;
+        var isSelected = modalSelectedDate === dateStr;
+
+        var cls = 'slots-day';
+        if (isPast) cls += ' past';
+        else if (hasOpen) cls += ' available' + (isSelected ? ' selected' : '');
+
+        var dot = hasOpen ? '<span class="dot"></span>' : '';
+        var onclick = hasOpen ? ' onclick="selectModalDay(\'' + dateStr + '\')"' : '';
+        html += '<div class="' + cls + '"' + onclick + '>' + d + dot + '</div>';
+      }
+      cal.innerHTML = html;
+    }
+
+    function selectModalDay(dateStr) {
+      modalSelectedDate = dateStr;
+      renderModalCalendar();
+
+      var detail = document.getElementById('modal-slots-detail');
+      var label = document.getElementById('modal-day-label');
+      var list = document.getElementById('modal-time-list');
+      if (!detail || !label || !list) return;
+
+      var dateObj = new Date(dateStr + 'T12:00');
+      label.textContent = dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
+      var dayAvail = bookAvail.filter(function(a) { return a.date === dateStr; });
+      var dayBooked = bookBookings.filter(function(b) { return b.date === dateStr; });
+      var duration = bookConfig ? bookConfig.session_duration_minutes : 60;
+      var buffer = bookConfig ? bookConfig.booking_buffer_minutes : 15;
+
+      var slots = [];
+      dayAvail.forEach(function(a) {
+        var startParts = a.start_time.split(':');
+        var endParts = a.end_time.split(':');
+        var startMin = parseInt(startParts[0]) * 60 + parseInt(startParts[1]);
+        var endMin = parseInt(endParts[0]) * 60 + parseInt(endParts[1]);
+        for (var m = startMin; m + duration <= endMin; m += duration + buffer) {
+          var h = Math.floor(m / 60);
+          var mi = m % 60;
+          var timeStr = String(h).padStart(2, '0') + ':' + String(mi).padStart(2, '0');
+          var taken = dayBooked.some(function(b) { return b.start_time.slice(0, 5) === timeStr; });
+          slots.push({ time: timeStr, taken: taken });
+        }
+      });
+
+      if (!slots.length) {
+        list.innerHTML = '<p style="color:rgba(255,255,255,.4);font-size:14px">No available time slots on this day.</p>';
+      } else {
+        list.innerHTML = slots.map(function(s) {
+          var h = parseInt(s.time.split(':')[0]);
+          var mi = s.time.split(':')[1];
+          var ampm = h >= 12 ? 'PM' : 'AM';
+          var h12 = h > 12 ? h - 12 : (h === 0 ? 12 : h);
+          var display = h12 + ':' + mi + ' ' + ampm;
+          if (s.taken) return '<button class="slot-time-btn taken" disabled>' + display + '</button>';
+          return '<button class="slot-time-btn" onclick="closeCalendarModal();selectTimeSlot(\'' + dateStr + '\',\'' + s.time + '\')">' + display + '</button>';
+        }).join('');
+      }
+
+      detail.style.display = 'block';
+    }
+
+    function startModalCountdown(target) {
+      var el = document.getElementById('modal-countdown-timer');
+      if (!el) return;
+      function update() {
+        var now = new Date();
+        var diff = target - now;
+        if (diff <= 0) {
+          el.innerHTML = '<p style="color:var(--teal);font-size:18px;font-weight:600">Booking is now open!</p>';
+          setTimeout(function() { location.reload(); }, 2000);
+          return;
+        }
+        var days = Math.floor(diff / 86400000);
+        var hours = Math.floor((diff % 86400000) / 3600000);
+        var mins = Math.floor((diff % 3600000) / 60000);
+        var secs = Math.floor((diff % 60000) / 1000);
+        el.innerHTML = '<div class="cd-block"><div class="cd-num">' + days + '</div><div class="cd-label">Days</div></div>'
+          + '<div class="cd-block"><div class="cd-num">' + hours + '</div><div class="cd-label">Hours</div></div>'
+          + '<div class="cd-block"><div class="cd-num">' + mins + '</div><div class="cd-label">Minutes</div></div>'
+          + '<div class="cd-block"><div class="cd-num">' + secs + '</div><div class="cd-label">Seconds</div></div>';
+      }
+      update();
+      modalCountdownInterval = setInterval(update, 1000);
     }
 
     /* ===== Slots Calendar ===== */
