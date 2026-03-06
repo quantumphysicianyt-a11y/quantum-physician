@@ -35,6 +35,15 @@ exports.handler = async (event) => {
     const { data: sessConfig } = await sb.from("session_config").select("*").limit(1).single();
     const zoomLink = sessConfig?.zoom_link || "https://zoom.us/j/your-meeting-id";
 
+    // 3. Load session clients (for regular detection) and session types
+    const { data: sessClients } = await sb.from("session_clients").select("*");
+    const clientMap = {};
+    (sessClients || []).forEach(c => { clientMap[c.email.toLowerCase()] = c; });
+
+    const { data: sessTypes } = await sb.from("session_types").select("*");
+    const typeMap = {};
+    (sessTypes || []).forEach(t => { typeMap[t.id] = t; });
+
     // Date calculations (ET timezone — use UTC offset)
     const now = new Date();
     const todayStr = now.toISOString().slice(0, 10);
@@ -60,7 +69,14 @@ exports.handler = async (event) => {
       for (const b of (tomorrowBookings || [])) {
         if (await alreadySent(sb, b.id, "day_before")) continue;
         try {
-          const html = buildDayBeforeEmail(b, zoomLink);
+          const client = clientMap[b.email.toLowerCase()] || null;
+          const isRegular = client && client.client_type === "regular";
+          const isPaid = b.status === "paid" || !!b.stripe_payment_id;
+          const sessType = b.session_type_id ? (typeMap[b.session_type_id] || null) : null;
+          const isZoom = sessType ? sessType.name.toLowerCase().indexOf("zoom") !== -1 : true;
+          const bookingZoom = isZoom ? (b.zoom_link || zoomLink) : null;
+
+          const html = buildDayBeforeEmail(b, bookingZoom, { isRegular, isPaid, sessType });
           await sendEmail(SESSION_EMAIL_SCRIPT_URL, {
             to: b.email,
             subject: "Your Session Tomorrow with Dr. Tracey Clark",
@@ -431,31 +447,55 @@ function fmtDate(dateStr) {
   return new Date(dateStr + "T12:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
 }
 
-function buildDayBeforeEmail(booking, zoomLink) {
+function buildDayBeforeEmail(booking, zoomLink, ctx) {
   var name = esc(booking.name || booking.email.split("@")[0]);
   var date = esc(fmtDate(booking.date));
   var time = esc(fmtTime(booking.start_time));
   var portalUrl = "https://qp-homepage.netlify.app/members/sessions.html?highlight=" + booking.id;
+  var isRegular = ctx && ctx.isRegular;
+  var isPaid = ctx && ctx.isPaid;
+  var sessType = ctx && ctx.sessType;
+  var typeName = sessType ? esc(sessType.name) : "1-on-1 Session";
+  var duration = sessType ? sessType.duration_minutes : 30;
 
   var inner = '<p style="font-size:20px;color:#5ba8b2;margin-bottom:20px;text-align:center;font-family:Georgia,serif">Hi ' + name + ',</p>'
-    + '<p style="font-size:15px;line-height:1.8;color:rgba(255,255,255,.85);margin-bottom:24px;text-align:center">This is a friendly reminder that your 1-on-1 session is scheduled for <strong style="color:#fff">tomorrow</strong>. I\'m looking forward to our time together.</p>'
+    + '<p style="font-size:15px;line-height:1.8;color:rgba(255,255,255,.85);margin-bottom:24px;text-align:center">This is a friendly reminder that your ' + typeName + ' is scheduled for <strong style="color:#fff">tomorrow</strong>. I\u2019m looking forward to our time together.</p>'
     // Session Details Card
     + '<div style="background:linear-gradient(135deg,rgba(91,168,178,.08),rgba(173,155,132,.08));border:1px solid rgba(91,168,178,.25);border-radius:12px;padding:28px;margin:28px 0;text-align:center">'
     + '<p style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:2px;margin:0 0 16px">Session Details</p>'
     + '<div style="font-family:Georgia,serif;font-size:24px;color:#5ba8b2;font-weight:700;margin-bottom:8px;line-height:1.3">' + date + '</div>'
     + '<div style="font-size:18px;color:rgba(255,255,255,.9);margin-bottom:12px">' + time + '</div>'
     + '<div style="width:50px;height:2px;background:linear-gradient(90deg,#ad9b84,#5ba8b2);margin:0 auto 16px"></div>'
-    + '<p style="font-size:14px;color:rgba(255,255,255,.6);margin:0">60-Minute 1-on-1 Session</p></div>'
-    // Zoom Button
-    + '<div style="text-align:center;margin:28px 0">'
-    + '<a href="' + esc(zoomLink) + '" style="display:inline-block;background:linear-gradient(135deg,#5ba8b2,#4a97a1);color:#fff;padding:16px 40px;text-decoration:none;border-radius:50px;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:2px;font-family:Arial,sans-serif">Join Zoom Session</a></div>'
-    // Prep Tips
-    + '<div style="background-color:rgba(91,168,178,.06);border-left:3px solid #5ba8b2;padding:20px 24px;margin:28px 0;border-radius:0 8px 8px 0">'
-    + '<h3 style="color:#5ba8b2;margin:0 0 14px;font-size:16px;font-family:Georgia,serif">Before Your Session</h3>'
-    + '<p style="color:rgba(255,255,255,.85);margin:8px 0;line-height:1.7;font-size:14px"><strong style="color:#ad9b84">Space:</strong> Find a quiet, comfortable area where you won\'t be disturbed</p>'
+    + '<p style="font-size:14px;color:rgba(255,255,255,.6);margin:0">' + duration + '-Minute ' + typeName + '</p></div>';
+
+  // Health update request (Tracey wants this for all clients)
+  inner += '<div style="background-color:rgba(173,155,132,.08);border-left:3px solid #ad9b84;padding:20px 24px;margin:28px 0;border-radius:0 8px 8px 0">'
+    + '<h3 style="color:#ad9b84;margin:0 0 14px;font-size:16px;font-family:Georgia,serif">Before Tomorrow\u2019s Session</h3>'
+    + '<p style="color:rgba(255,255,255,.85);margin:8px 0;line-height:1.7;font-size:14px">Please share any <strong style="color:#ad9b84">updates on your health</strong> since our last session, along with any <strong style="color:#ad9b84">goals or intentions</strong> you have for tomorrow. You can reply directly to this email.</p></div>';
+
+  // Zoom link (only for zoom sessions)
+  if (zoomLink) {
+    inner += '<div style="text-align:center;margin:28px 0">'
+      + '<a href="' + esc(zoomLink) + '" style="display:inline-block;background:linear-gradient(135deg,#5ba8b2,#4a97a1);color:#fff;padding:16px 40px;text-decoration:none;border-radius:50px;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:2px;font-family:Arial,sans-serif">Join Zoom Session</a></div>'
+      + '<p style="font-size:12px;color:rgba(255,255,255,.4);text-align:center;margin:0 0 20px">Save this link \u2014 you\u2019ll need it tomorrow</p>';
+  }
+
+  // Payment section for regulars who haven't paid yet
+  if (isRegular && !isPaid) {
+    var payUrl = booking.confirmation_token
+      ? "https://qp-homepage.netlify.app/pages/one-on-sessions.html?pay=" + booking.confirmation_token
+      : portalUrl;
+    inner += '<div style="background:linear-gradient(135deg,rgba(91,168,178,.06),rgba(91,168,178,.02));border:1px solid rgba(91,168,178,.2);border-radius:12px;padding:20px;margin:28px 0;text-align:center">'
+      + '<p style="font-size:14px;color:rgba(255,255,255,.7);margin:0 0 12px;line-height:1.7">You can take care of payment for this session at your convenience:</p>'
+      + '<a href="' + esc(payUrl) + '" style="display:inline-block;background:rgba(91,168,178,.15);border:1px solid rgba(91,168,178,.3);color:#5ba8b2;padding:12px 32px;text-decoration:none;border-radius:50px;font-size:13px;font-weight:600;letter-spacing:1px;font-family:Arial,sans-serif">Complete Payment</a></div>';
+  }
+
+  // Prep tips
+  inner += '<div style="background-color:rgba(91,168,178,.06);border-left:3px solid #5ba8b2;padding:20px 24px;margin:28px 0;border-radius:0 8px 8px 0">'
+    + '<h3 style="color:#5ba8b2;margin:0 0 14px;font-size:16px;font-family:Georgia,serif">Prepare for Your Session</h3>'
+    + '<p style="color:rgba(255,255,255,.85);margin:8px 0;line-height:1.7;font-size:14px"><strong style="color:#ad9b84">Space:</strong> Find a quiet, comfortable area where you won\u2019t be disturbed</p>'
     + '<p style="color:rgba(255,255,255,.85);margin:8px 0;line-height:1.7;font-size:14px"><strong style="color:#ad9b84">Hydrate:</strong> Have water nearby</p>'
-    + '<p style="color:rgba(255,255,255,.85);margin:8px 0;line-height:1.7;font-size:14px"><strong style="color:#ad9b84">Settle:</strong> Allow yourself 5 minutes to arrive before we begin</p>'
-    + '<p style="color:rgba(255,255,255,.85);margin:8px 0;line-height:1.7;font-size:14px"><strong style="color:#ad9b84">Intention:</strong> If you have specific areas of concern, note them down</p></div>';
+    + '<p style="color:rgba(255,255,255,.85);margin:8px 0;line-height:1.7;font-size:14px"><strong style="color:#ad9b84">Settle:</strong> Allow yourself 5 minutes to arrive before we begin</p></div>';
 
   return wrapTemplate('Your Session is Tomorrow', 'A reminder from Dr. Tracey Clark', inner, portalUrl, 'View in Patient Portal');
 }
