@@ -618,21 +618,53 @@
 </head>
 <body>
   <script>
-    // Instant redirect for ?pay= tokens — runs before page renders
+    // Instant redirect for ?pay= and ?confirm= tokens — runs before page renders
     (function() {
       var params = new URLSearchParams(window.location.search);
-      var p = params.get('pay');
-      if (p) {
+      var payToken = params.get('pay');
+      var confirmToken = params.get('confirm');
+
+      if (payToken) {
+        // PUBLIC flow: redirect to Stripe checkout
         document.documentElement.style.display = 'none';
         fetch('/.netlify/functions/session-checkout', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token: p })
+          body: JSON.stringify({ token: payToken })
         }).then(function(r) { return r.json(); }).then(function(d) {
           if (d.url) { window.location.href = d.url; }
-          else { document.documentElement.style.display = ''; }
-        }).catch(function() { document.documentElement.style.display = ''; });
+          else {
+            // Show error on the booking section once DOM is ready
+            document.documentElement.style.display = '';
+            window._payTokenError = d.error || 'This link may have expired.';
+            window._payTokenStatus = d.status || null;
+          }
+        }).catch(function() {
+          document.documentElement.style.display = '';
+          window._payTokenError = 'Connection error. Please try again.';
+        });
       }
+
+      if (confirmToken) {
+        // REGULAR flow: confirm date without payment
+        document.documentElement.style.display = 'none';
+        fetch('/.netlify/functions/session-checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: confirmToken, action: 'confirm' })
+        }).then(function(r) { return r.json(); }).then(function(d) {
+          document.documentElement.style.display = '';
+          if (d.confirmed) {
+            window._confirmSuccess = d;
+          } else {
+            window._confirmError = d.error || 'Unable to confirm this booking.';
+          }
+        }).catch(function() {
+          document.documentElement.style.display = '';
+          window._confirmError = 'Connection error. Please try again.';
+        });
+      }
+
       // Payment success/cancelled — floating overlay card
       var ps = params.get('payment');
       if (ps === 'success') {
@@ -997,29 +1029,65 @@
     var selectedDate = null;
 
     (async function initBooking() {
-      // --- Handle ?pay=TOKEN — auto-redirect to Stripe checkout ---
+      // --- Handle ?pay=TOKEN error (IIFE already attempted redirect; show error if it failed) ---
       var urlParams = new URLSearchParams(window.location.search);
       var payToken = urlParams.get('pay');
       if (payToken) {
-        // Show a loading state
+        // IIFE already attempted Stripe redirect. If we're still here, it failed.
+        // Wait a moment for the IIFE error to propagate
+        await new Promise(function(r) { setTimeout(r, 500); });
         var bookSection = document.getElementById('book-section');
-        if (bookSection) bookSection.innerHTML = '<div style="text-align:center;padding:60px 20px"><div style="width:40px;height:40px;border:3px solid rgba(91,168,178,.3);border-top-color:#5ba8b2;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 20px"></div><p style="color:#5ba8b2;font-size:18px;font-weight:600">Preparing your checkout…</p><p style="color:rgba(255,255,255,.5);font-size:14px;margin-top:8px">You\'ll be redirected to our secure payment page.</p></div>';
-        try {
-          var resp = await fetch('/.netlify/functions/session-checkout', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token: payToken })
-          });
-          var data = await resp.json();
-          if (data.url) {
-            window.location.href = data.url;
-            return;
+        if (window._payTokenError && bookSection) {
+          var statusMsg = '';
+          if (window._payTokenStatus === 'paid') {
+            statusMsg = '<div style="width:60px;height:60px;border-radius:50%;background:rgba(91,168,178,.15);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:28px"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#5ba8b2" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>'
+              + '<p style="color:#5ba8b2;font-size:20px;font-weight:600">Already Paid</p>'
+              + '<p style="color:rgba(255,255,255,.55);font-size:14px;margin-top:10px;line-height:1.6">This booking has already been paid. Check your email for your confirmation details.</p>';
+          } else if (window._payTokenStatus === 'expired') {
+            statusMsg = '<p style="color:#ff9f43;font-size:20px;font-weight:600">Offer Expired</p>'
+              + '<p style="color:rgba(255,255,255,.55);font-size:14px;margin-top:10px;line-height:1.6">This booking offer has expired. Please contact us to request a new slot.</p>';
           } else {
-            if (bookSection) bookSection.innerHTML = '<div style="text-align:center;padding:60px 20px"><p style="color:#ff6b6b;font-size:18px;font-weight:600">Unable to process payment</p><p style="color:rgba(255,255,255,.5);font-size:14px;margin-top:8px">' + (data.error || 'This link may have expired.') + '</p><p style="margin-top:20px"><a href="/pages/one-on-sessions.html" style="color:#5ba8b2;text-decoration:underline">Back to Sessions</a></p></div>';
+            statusMsg = '<p style="color:#ff6b6b;font-size:20px;font-weight:600">Unable to Process Payment</p>'
+              + '<p style="color:rgba(255,255,255,.55);font-size:14px;margin-top:10px;line-height:1.6">' + (window._payTokenError) + '</p>';
           }
-        } catch (e) {
-          console.error('Pay token error:', e);
-          if (bookSection) bookSection.innerHTML = '<div style="text-align:center;padding:60px 20px"><p style="color:#ff6b6b;font-size:18px;font-weight:600">Something went wrong</p><p style="color:rgba(255,255,255,.5);font-size:14px;margin-top:8px">Please try again or contact us.</p><p style="margin-top:20px"><a href="/pages/one-on-sessions.html" style="color:#5ba8b2;text-decoration:underline">Back to Sessions</a></p></div>';
+          bookSection.innerHTML = '<div style="text-align:center;padding:60px 20px">'
+            + statusMsg
+            + '<p style="margin-top:24px"><a href="/pages/one-on-sessions.html" style="color:#5ba8b2;text-decoration:underline">Back to Sessions</a>'
+            + ' &nbsp;&middot;&nbsp; <a href="/members/sessions.html" style="color:#5ba8b2;text-decoration:underline">My Sessions</a></p></div>';
+        }
+        document.getElementById('booking-loading').style.display = 'none';
+        return;
+      }
+
+      // --- Handle ?confirm=TOKEN result (regular client date confirmation) ---
+      var confirmToken = urlParams.get('confirm');
+      if (confirmToken) {
+        await new Promise(function(r) { setTimeout(r, 500); });
+        var bookSection3 = document.getElementById('book-section');
+        document.getElementById('booking-loading').style.display = 'none';
+        if (window._confirmSuccess && bookSection3) {
+          var cs = window._confirmSuccess;
+          var dateObj = new Date(cs.date + 'T12:00');
+          var dateFmt = dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+          var h = parseInt(cs.start_time.split(':')[0]), mi = cs.start_time.split(':')[1];
+          var ampm = h >= 12 ? 'PM' : 'AM';
+          var h12 = h > 12 ? h - 12 : (h === 0 ? 12 : h);
+          var timeFmt = h12 + ':' + mi + ' ' + ampm;
+          bookSection3.innerHTML = '<div style="text-align:center;padding:60px 20px">'
+            + '<div style="width:64px;height:64px;border-radius:50%;background:rgba(91,168,178,.12);display:flex;align-items:center;justify-content:center;margin:0 auto 24px"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#5ba8b2" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>'
+            + '<p style="color:#5ba8b2;font-size:24px;font-weight:600;font-family:Playfair Display,serif">Date Confirmed!</p>'
+            + '<div style="background:rgba(91,168,178,.08);border:1px solid rgba(91,168,178,.2);border-radius:12px;padding:20px 24px;margin:24px auto;max-width:340px">'
+            + '<p style="color:#5ba8b2;font-size:18px;font-weight:700;margin:0 0 4px">' + dateFmt + '</p>'
+            + '<p style="color:rgba(255,255,255,.6);font-size:15px;margin:0">' + timeFmt + '</p>'
+            + '</div>'
+            + '<p style="color:rgba(255,255,255,.6);font-size:15px;line-height:1.7;max-width:44ch;margin:16px auto 0">Your session is confirmed. You\u2019ll receive a payment link and preparation details the day before your appointment.</p>'
+            + '<p style="margin-top:28px"><a href="/members/sessions.html" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#5ba8b2,#4acfd9);border-radius:50px;color:#fff;text-decoration:none;font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase">View My Sessions</a></p>'
+            + '</div>';
+        } else if (window._confirmError && bookSection3) {
+          bookSection3.innerHTML = '<div style="text-align:center;padding:60px 20px">'
+            + '<p style="color:#ff6b6b;font-size:20px;font-weight:600">Unable to Confirm</p>'
+            + '<p style="color:rgba(255,255,255,.55);font-size:14px;margin-top:10px;line-height:1.6">' + (window._confirmError) + '</p>'
+            + '<p style="margin-top:24px"><a href="/pages/one-on-sessions.html" style="color:#5ba8b2;text-decoration:underline">Back to Sessions</a></p></div>';
         }
         return;
       }

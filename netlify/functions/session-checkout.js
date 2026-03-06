@@ -2,7 +2,10 @@
 // Creates Stripe Checkout session for 1-on-1 session bookings
 // Two modes:
 //   1. Token-based: existing proposed booking → pay via confirmation_token
+//      Uses booking-level price snapshot (amount_cents, currency) from Session 36
 //   2. Public booking: new slot selection → create booking + pay
+//
+// Session 37: Multi-currency (EUR/CAD), booking-level pricing, regular client confirm-only
 
 const Stripe = require("stripe");
 const { createClient } = require("@supabase/supabase-js");
@@ -37,7 +40,7 @@ exports.handler = async (event) => {
 
     const body = JSON.parse(event.body || "{}");
 
-    // --- Fetch session config (price, duration) ---
+    // --- Fetch session config (fallback price, duration, zoom link) ---
     const { data: config, error: configErr } = await supabase
       .from("session_config")
       .select("*")
@@ -47,9 +50,6 @@ exports.handler = async (event) => {
     if (configErr || !config) {
       return { statusCode: 500, headers, body: JSON.stringify({ error: "Session config not found" }) };
     }
-
-    const priceInCents = Math.round((config.session_price || 150) * 100);
-    const duration = config.session_duration_minutes || 60;
 
     let booking = null;
 
@@ -65,19 +65,67 @@ exports.handler = async (event) => {
         return { statusCode: 404, headers, body: JSON.stringify({ error: "Booking not found or invalid token" }) };
       }
 
-      if (existing.status !== "proposed") {
-        const msg = existing.status === "paid" ? "This booking is already paid" : `Booking status is '${existing.status}' — cannot pay`;
-        return { statusCode: 400, headers, body: JSON.stringify({ error: msg, status: existing.status }) };
+      if (existing.status === "paid") {
+        return { statusCode: 400, headers, body: JSON.stringify({ error: "This booking is already paid", status: "paid" }) };
       }
 
-      // Check 72-hour expiry
+      if (existing.status !== "proposed" && existing.status !== "confirmed") {
+        return { statusCode: 400, headers, body: JSON.stringify({ error: "Booking status is '" + existing.status + "' \u2014 cannot pay", status: existing.status }) };
+      }
+
+      // --- Check if this is a regular client doing a confirm-only action ---
+      if (body.action === "confirm") {
+        // Regular client: just confirm the date, no payment
+        if (existing.status === "proposed") {
+          const { error: confirmErr } = await supabase
+            .from("session_bookings")
+            .update({
+              status: "confirmed",
+              confirmed_at: new Date().toISOString()
+            })
+            .eq("id", existing.id);
+
+          if (confirmErr) {
+            return { statusCode: 500, headers, body: JSON.stringify({ error: "Failed to confirm booking" }) };
+          }
+
+          console.log("\u2705 Regular client confirmed date:", existing.id, existing.email);
+          return {
+            statusCode: 200,
+            headers,
+            body: JSON.stringify({
+              confirmed: true,
+              booking_id: existing.id,
+              date: existing.date,
+              start_time: existing.start_time,
+              message: "Your date is confirmed! You\u2019ll receive a payment link before your session."
+            }),
+          };
+        } else {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: "Booking is already confirmed", status: existing.status }) };
+        }
+      }
+
+      // --- Check expiry based on client type ---
       if (existing.proposed_at) {
+        // Look up client to determine expiry window
+        let expiryHours = 72; // default for public clients
+        if (existing.client_id) {
+          const { data: client } = await supabase
+            .from("session_clients")
+            .select("client_type")
+            .eq("id", existing.client_id)
+            .single();
+          if (client && client.client_type === "regular") {
+            expiryHours = 7 * 24; // 7 days for regulars
+          }
+        }
+
         const proposedAt = new Date(existing.proposed_at);
-        const expiresAt = new Date(proposedAt.getTime() + 72 * 60 * 60 * 1000);
+        const expiresAt = new Date(proposedAt.getTime() + expiryHours * 60 * 60 * 1000);
         if (new Date() > expiresAt) {
-          // Auto-expire the booking
           await supabase.from("session_bookings").update({ status: "expired" }).eq("id", existing.id);
-          return { statusCode: 410, headers, body: JSON.stringify({ error: "This offer has expired (72-hour window passed)" }) };
+          return { statusCode: 410, headers, body: JSON.stringify({ error: "This offer has expired" }) };
         }
       }
 
@@ -88,6 +136,7 @@ exports.handler = async (event) => {
       const email = body.email.toLowerCase().trim();
       const date = body.date;       // YYYY-MM-DD
       const startTime = body.start_time; // HH:MM
+      const duration = config.session_duration_minutes || 60;
 
       // Compute end_time
       const [sh, sm] = startTime.split(":").map(Number);
@@ -133,7 +182,17 @@ exports.handler = async (event) => {
       // Generate confirmation token
       const token = crypto.randomBytes(32).toString("hex");
 
-      // Create the proposed booking
+      // Find default session type (first active)
+      const { data: sessionTypes } = await supabase
+        .from("session_types")
+        .select("*")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true })
+        .limit(1);
+
+      const defaultType = sessionTypes && sessionTypes.length > 0 ? sessionTypes[0] : null;
+
+      // Create the proposed booking with price snapshot
       const { data: newBooking, error: insertErr } = await supabase
         .from("session_bookings")
         .insert({
@@ -145,9 +204,12 @@ exports.handler = async (event) => {
           end_time: endTime,
           status: "proposed",
           type: "public",
+          session_type_id: defaultType ? defaultType.id : null,
+          amount_cents: defaultType ? defaultType.price_cents : Math.round((config.session_price || 150) * 100),
+          currency: defaultType ? defaultType.currency : "EUR",
           confirmation_token: token,
           proposed_at: new Date().toISOString(),
-          notes: "Public booking — pending payment"
+          notes: "Public booking \u2014 pending payment"
         })
         .select()
         .single();
@@ -163,17 +225,79 @@ exports.handler = async (event) => {
       return { statusCode: 400, headers, body: JSON.stringify({ error: "Provide either 'token' or 'email + date + start_time'" }) };
     }
 
+    // ===== Resolve price + currency from booking snapshot =====
+    let priceInCents = booking.amount_cents;
+    let currency = (booking.currency || "eur").toLowerCase();
+    let duration = config.session_duration_minutes || 30;
+    let typeName = "Private Healing Session";
+
+    // If booking has a session_type_id, fetch for display name + duration
+    if (booking.session_type_id) {
+      const { data: st } = await supabase
+        .from("session_types")
+        .select("name, duration_minutes")
+        .eq("id", booking.session_type_id)
+        .single();
+      if (st) {
+        typeName = st.name || typeName;
+        duration = st.duration_minutes || duration;
+      }
+    }
+
+    // Fallback if amount_cents not set on booking (legacy bookings)
+    if (!priceInCents) {
+      priceInCents = Math.round((config.session_price || 150) * 100);
+      currency = "eur";
+    }
+
+    // --- Check if client has tax (Canadian HST) ---
+    let taxLabel = null;
+    let taxRate = 0;
+    let taxCents = 0;
+    if (booking.client_id) {
+      const { data: client } = await supabase
+        .from("session_clients")
+        .select("tax_label, tax_rate")
+        .eq("id", booking.client_id)
+        .single();
+      if (client && client.tax_label && client.tax_rate) {
+        taxLabel = client.tax_label;
+        taxRate = parseFloat(client.tax_rate);
+        taxCents = Math.round(priceInCents * taxRate / 100);
+      }
+    }
+
+    const totalCents = priceInCents + taxCents;
+
     // ===== Create Stripe Checkout Session =====
     const dateObj = new Date(booking.date + "T12:00:00");
     const dateFmt = dateObj.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
     const timeFmt = formatTime12(booking.start_time);
 
+    const descParts = [timeFmt, duration + " min", typeName];
+    if (taxLabel) {
+      descParts.push(taxLabel + " (" + taxRate + "%) included");
+    }
+
+    const lineItems = [{
+      price_data: {
+        currency: currency,
+        product_data: {
+          name: typeName + " \u2014 " + dateFmt,
+          description: descParts.join("  \u00B7  "),
+          images: ["https://qp-homepage.netlify.app/assets/images/1on1-sessions-payment.png"],
+        },
+        unit_amount: totalCents,
+      },
+      quantity: 1,
+    }];
+
     const checkoutSession = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       customer_email: booking.email,
       mode: "payment",
-      success_url: `${SITE_URL}/pages/one-on-sessions.html?payment=success&booking_id=${booking.id}`,
-      cancel_url: `${SITE_URL}/pages/one-on-sessions.html?payment=cancelled`,
+      success_url: SITE_URL + "/pages/one-on-sessions.html?payment=success&booking_id=" + booking.id,
+      cancel_url: SITE_URL + "/pages/one-on-sessions.html?payment=cancelled",
       metadata: {
         type: "session_booking",
         booking_id: booking.id,
@@ -182,29 +306,22 @@ exports.handler = async (event) => {
         start_time: booking.start_time,
         end_time: booking.end_time,
         cycle_id: booking.cycle_id || "",
-        confirmation_token: booking.confirmation_token || ""
+        confirmation_token: booking.confirmation_token || "",
+        currency: currency,
+        amount_cents: String(priceInCents),
+        tax_cents: String(taxCents),
+        tax_label: taxLabel || ""
       },
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: `Private Healing Session — ${dateFmt}`,
-              description: `${timeFmt}  ·  ${duration} min  ·  Integrative healing via Zoom`,
-              images: ["https://qp-homepage.netlify.app/assets/images/1on1-sessions-payment.png"],
-            },
-            unit_amount: priceInCents,
-          },
-          quantity: 1,
-        },
-      ],
+      line_items: lineItems,
     });
 
-    console.log("✅ Session checkout created:", {
+    console.log("\u2705 Session checkout created:", {
       bookingId: booking.id,
       email: booking.email,
       date: booking.date,
-      amount: priceInCents,
+      amount: totalCents,
+      currency: currency,
+      tax: taxLabel ? taxLabel + " " + taxCents + "c" : "none",
       checkoutUrl: checkoutSession.url
     });
 

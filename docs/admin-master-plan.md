@@ -12,7 +12,7 @@ Both sites share the same Supabase project, same Stripe account, same user pool.
 ## 📋 SESSION HANDOFF PROTOCOL — READ THIS FIRST
 
 ### A Note on This Collaboration
-Todd (the founder/developer of Quantum Physician) and Claude have built this admin panel together across 29+ intensive sessions. Todd cares deeply about polish, design details, and getting things right. These handoff documents represent a **shared history** — every bug fix, every design decision, every architectural choice was made collaboratively and often through multiple iterations. The next Claude instance inherits this context and trust. **Treat these docs with the same care Todd does**: update them thoroughly at the end of every session, preserve hard-won lessons, and never make changes that contradict documented decisions without discussing with Todd first. This isn't just a codebase — it's a partnership.
+Todd (the founder/developer of Quantum Physician) and Claude have built this admin panel together across 35+ intensive sessions. Todd cares deeply about polish, design details, and getting things right. These handoff documents represent a **shared history** — every bug fix, every design decision, every architectural choice was made collaboratively and often through multiple iterations. The next Claude instance inherits this context and trust. **Treat these docs with the same care Todd does**: update them thoroughly at the end of every session, preserve hard-won lessons, and never make changes that contradict documented decisions without discussing with Todd first. This isn't just a codebase — it's a partnership.
 
 **These 3 docs are the ONLY source of truth across chat sessions. Claude has NO memory between sessions.**
 
@@ -33,403 +33,265 @@ Todd (the founder/developer of Quantum Physician) and Claude have built this adm
 - These 3 docs + the current `admin/index.html`, `admin/admin.js`, `admin/admin.css`
 - Claude reads all docs BEFORE writing any code
 
-**Last updated:** Session 32 (Mar 4, 2026)
+**Last updated:** Session 36 (Mar 5, 2026)
 
 ---
 
-## Session 32 Summary — Email Visibility, Automation Dashboard, Invoice Planning (Mar 4, 2026)
+## Session 36 Summary — Session Types, Dual Offer Flow, Regular Client UX (Mar 5, 2026)
 
-### Cron 7-Day Expiry for Regulars ✅
-- `session-cron.js` updated: 5-day payment warning + 7-day auto-expire for `confirmed` regular bookings
-- **Own config toggle**: `auto_regular_expiry` in `system_config` (independent from 72h standard toggle)
-- Session-date guard: only warns/expires after the session date has passed (regulars pay post-session)
-- Two new QP-branded email templates: `buildRegularExpiryWarningEmail()`, `buildRegularExpiryNoticeEmail()`
-- Two new automation types: `regular_expiry_5d`, `regular_expiry_7d`
-- Day-before reminders now also cover `confirmed` bookings (not just `paid`)
+### Webhook Bug Fix ✅
+- **Bug**: `stripe_session_id` was never populated on `session_bookings` when payment came through the webhook — cancel button in `sessions.html` requires this field to show
+- **Fix**: Added `stripe_session_id: stripeSessionId` to the booking update in `session-webhook.js`
+- **Backfill SQL**: `UPDATE session_bookings SET stripe_session_id = stripe_payment_id WHERE status = 'paid' AND stripe_session_id IS NULL AND stripe_payment_id IS NOT NULL;`
 
-### CRM Emails Tab ✅
-- **6th tab on client profile** (Sessions, Intake Form, Progress, Billing, Notes, Emails)
-- **Session-only scope** — pulls exclusively from `email_automation_log` (no marketing/Fusion crossover)
-- Summary stat boxes: Sent, Failed, Skipped, Total
-- **Type filter buttons**: All, Day-Before, Follow-Up, Intake, Expiry, Failed
-- **Date dropdown**: Auto-populated month/year options, combines with type filter
-- **Sortable columns**: Date, Subject, Type, Status — click headers for asc/desc with ▲/▼ arrows
-- Error messages shown as ⚠ tooltip on failed entries
+### Clickable Automation Stat Cards ✅
+- Stat cards (sent, failed, skipped, per-type) on the automation log dashboard are now clickable
+- Click filters the log table below and smooth-scrolls into view
+- `clickAutoStat(filter)` finds and activates the matching filter button, or applies direct filter for type-specific cards
 
-### 7-Day Regular Expiry Toggle Card ✅
-- 5th toggle card on 1-on-1 Reminders tab (after 72-Hour Payment Expiry)
-- Independent `auto_regular_expiry` config key
-- Description: "For regular (trusted) clients: sends a payment reminder at 5 days post-session, then auto-expires confirmed bookings at 7 days if unpaid."
+### Session Types System ✅
+- **New `session_types` table**: `id`, `name`, `description`, `duration_minutes`, `price_cents`, `currency`, `is_active`, `sort_order`
+- **Seeded types**: Zoom Session (€200, 30min, EUR) and Recorded Session (€150, 30min, EUR)
+- **Admin UI**: New "Session Types" tab in Sessions page with full CRUD (add, edit, delete)
+- Real-time updates with spinner on save/delete (re-fetches from DB after mutation)
+- `sessTypesData` global loaded in parallel with all session data
+- `admin-proxy.js` updated: `session_types` added to allowed tables (now 34 total)
 
-### Automation Dashboard Upgrade ✅
-- **200 entries** loaded (up from 50)
-- **7-day summary stats bar**: sent count, failed, skipped, per-type breakdown
-- **Filter buttons**: All, Sent, Failed, Skipped, Day-Before, Follow-Up, Intake, Expiry (all)
-- **Date dropdown**: Month/year filter, combines with type/status filters
-- **Sortable columns**: Sent, Recipient, Type, Status — click headers for asc/desc
-- `formatAutomationType` and `getAutomationBadgeClass` updated with `regular_expiry_5d` and `regular_expiry_7d`
+### Multi-Currency Foundation ✅
+- **`session_bookings`** new columns: `session_type_id` (FK), `amount_cents`, `currency` — snapshot price at booking time
+- **`session_clients`** new columns: `currency` (default EUR), `tax_label`, `tax_rate` — for Canadian HST clients
+- Prices display with correct currency symbol (€ / CA$ / $) throughout admin
 
-### Next Cron Run Preview ✅
-- New section above Automation Send Log on 1-on-1 Reminders tab
-- Cross-references current bookings against `email_automation_log` to show unsent items
-- Shows: tomorrow's reminders, yesterday's follow-ups, 48h warnings, 72h expires, 5-day regular warnings, 7-day regular expires
-- Green checkmark "Nothing queued" when no automations pending
+### Dual Offer Flow (Regular vs Public) ✅
+- **Regular clients** (`client_type = 'regular'` in `session_clients`):
+  - Offer Slot modal shows ★ Regular Client badge + descriptive text
+  - Booking created as `proposed` — client confirms the date (7-day window)
+  - Email says "Confirm Your Date" CTA, "payment link sent day before"
+  - No upfront payment required
+- **Public clients** (everyone else):
+  - Standard "Send Offer" flow with Stripe payment link
+  - Booking created as `proposed` — 72hr to confirm & pay
+  - Email says "Confirm & Pay" CTA with Stripe checkout link
+- Both flows include `session_type_id`, `amount_cents`, `currency` on the booking
+- Offer Slot modal has session type dropdown with auto-updating duration/price summary
 
-### Invoice System Planning ✅
-- Full design spec delivered: `invoice-system-plan.md`
-- Schema: `invoices` table with auto-incrementing `QP-YYYY-NNNN` numbers, status flow (draft→sent→paid/overdue/void)
-- PDF generation via Netlify function (`generate-invoice.js`) + pdfkit, stored in Supabase `invoices` bucket
-- Admin: Invoices sub-tab, per-booking "📄 Invoice" button, bulk generation per cycle
-- Patient portal: Invoices section on billing.html with download/pay
-- Multi-currency ready (USD default, CAD+HST, EUR future)
-- 4-phase implementation plan for Session 33
-- 5 open questions for Dr. Tracey
+### Day-Before Cron Upgrade ✅
+- `session-cron.js` now loads `session_clients` and `session_types` tables
+- **All clients**: health update request ("share updates on your health and goals for tomorrow"), prep tips
+- **Zoom sessions only**: Zoom link button (detected by session type name containing "zoom")
+- **Regular + unpaid**: soft payment nudge — subtle outlined "Complete Payment" button (not the main CTA)
+- **Already-paid clients**: no payment section
+- Session type name and duration displayed in session details card (was hardcoded "60-Minute 1-on-1 Session")
 
-### 3D Body Model Confirmed Done ✅
-- Three.js 3D body model on progress.html already built and deployed (was incorrectly listed as pending)
-- GLB mesh, 28 bone-accurate regions, session markers, rotate/zoom — all working
-- Removed from priority list
+### ★ Regular Badge Consistency ✅
+- Shared `isRegularClient(email)` function checks `sessClientsData` by email
+- Shared `regularBadgeHtml(small)` renders consistent teal ★ Regular badge
+- Badge now appears in: waitlist rows, bookings grid (client column), CRM profile header, All Client Profiles table, Offer Slot modal
+- Bookings grid checks both `email` and `client_id` for regular detection (covers waitlist-origin bookings)
 
-### Files Modified
-- `admin/admin.js` — ~6734 lines (from ~6456)
-- `admin/index.html` — ~883 lines (from ~864)
-- `netlify/functions/session-cron.js` — ~578 lines (from ~456)
-
-### Lessons Learned
-59. **Keep 1-on-1 session data isolated** — CRM client profiles should only show session-related data (automation emails, session notes, bookings). Marketing campaigns and Fusion emails belong in the platform-wide views (Customers, Email Automation). Don't cross-contaminate the session bubble.
-60. **Next-run previews build trust** — Showing what the cron *will* do before it runs eliminates the "blindly trust" problem. Cross-reference current data against the log to find what hasn't been sent yet.
-61. **Clickable stat cards are expected** — When users see summary stat boxes, they expect clicking them to filter. Back burner but plan for it.
-
----
-
-## Session 31 Summary — Regulars Flow, Bookings Grid Overhaul, CRM Actions (Mar 4, 2026)
-
-### Create Cycle 401 Fix ✅
-- **Root cause**: Auth token expiry race condition — tokens expired during write operations
-- **Fix**: `ensureFreshToken()` pre-flight helper added to `createCycle()` and all write operations
-- **Duplicate `initAdmin()` call removed** — was running initAdmin twice on page load (leftover from earlier session), causing double network load, double event listeners, memory spike → browser crashes
-
-### generateBookingToken UUID Fix ✅
-- **Root cause**: `confirmation_token` column typed as `uuid` but `generateBookingToken()` produced 64-char hex string
-- **Fix**: Rewrote to produce valid UUID v4 format (`xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx`)
-- This was a pre-existing bug — date assignment had been broken since the column type changed
-
-### Regulars / Post-Session Payment Flow ✅
-- **New column**: `session_clients.client_type` (text, default 'standard') — values: 'standard' | 'regular'
-- **Add Client form**: Client Type dropdown (Standard / Regular)
-- **Edit Client modal**: Client Type dropdown
-- **Roster cards**: Teal "Regular" badge on trusted clients
-- **Auto-confirm**: Regular clients' bookings start as `confirmed` (not `proposed`) with `confirmed_at` timestamp
-- **Booking status flow for Regulars**: `proposed → confirmed → completed → paid` (post-session)
-- **Payment Request email**: QP-branded HTML email with pay link, sent via BulkEmailSender v3
-- **`requestRegularPayment()`**: Generates/retrieves confirmation token, builds email, sends, logs to audit
-- **`sendSessionEmail()`**: Wrapper helper for Apps Script sends with console logging
-- **Reminders include confirmed**: Day-before reminders fire for both `paid` and `confirmed` bookings
-
-### Bookings Grid Overhaul ✅
-- **Payment column** (new): Separates payment status from session status
-  - Paid (green badge), Unpaid · Request (red button), Requested + Resend, — (n/a)
-- **Sortable columns**: Click any header (Date, Time, Client, Type, Status, Payment) for asc/desc
-  - Active column highlights in teal with ↑/↓ arrow
-- **Active/Completed/Cancelled/All sub-tabs**: Filters bookings by lifecycle stage
-  - Active: Proposed, Confirmed, Paid
-  - Completed: Completed, No Show
-  - Cancelled: Cancelled, Declined, Expired, Rescheduled
-  - All: Everything
-- **Bulk actions** hide on Completed/Cancelled views
-- **View-aware empty states**: Different messages per view
-
-### Bulk Actions with Preview Checklists ✅
-- **Bulk Request Payments**: Modal listing all completed unpaid regulars with checkboxes
-- **Bulk Send Reminders**: Modal listing all tomorrow's sessions with checkboxes
-- **Select All / individual uncheck**: Custom teal QP-themed checkboxes (`.qp-check` CSS class)
-- **"Previously sent" indicator**: Shows if payment was already requested
-
-### Reschedule System ✅
-- **"Rescheduled" status**: New booking status with purple badge
-- **Reason selector modal**: 6 options (Client requested, Practitioner unavailable, Illness, Scheduling conflict, No-show rebooking, Other) + optional note
-- **Auto-note**: Records reason + original date on the old booking
-- **`rescheduled_from` column**: Links new booking to original
-- **Purple "↩ Rescheduled from [date]" indicator**: Clickable — opens detail popup with reason, original date, and notes
-- **Two reschedule paths**: Roster clients → date picker modal, Public bookings → date/time picker modal
-- **Reactivate button**: Moves cancelled bookings back to Proposed
-
-### Confirmation Dialogs ✅
-- Cancel, Decline, No Show now require confirmation with client name + date
-- Prevents accidental status changes
-
-### CRM Profile Actions ✅
-- **Full action bar on CRM profile header**: Dates, Email, Edit, Pause, Remove buttons under client name
-- **Action buttons in dates modal header**: Email, Edit, Pause accessible without leaving modal
-- **Complete button UX**: Removed misleading checkmark ("✓ Complete" → "Complete")
-
-### New Database Columns (Session 31)
+### SQL Migration Run This Session
 ```sql
-ALTER TABLE session_clients ADD COLUMN IF NOT EXISTS client_type text DEFAULT 'standard';
-ALTER TABLE session_bookings ADD COLUMN IF NOT EXISTS payment_requested_at timestamptz;
-ALTER TABLE session_bookings ADD COLUMN IF NOT EXISTS rescheduled_from uuid;
-ALTER TABLE session_bookings ADD COLUMN IF NOT EXISTS reschedule_reason text;
+-- Session Types table + seed data
+CREATE TABLE session_types (id uuid PK, name, description, duration_minutes, price_cents, currency, is_active, sort_order, created_at, updated_at);
+INSERT: Zoom Session (€200, 30min), Recorded Session (€150, 30min)
+
+-- Booking columns
+ALTER TABLE session_bookings ADD session_type_id uuid FK, amount_cents integer, currency text DEFAULT 'EUR';
+
+-- Client columns  
+ALTER TABLE session_clients ADD currency text DEFAULT 'EUR', tax_label text, tax_rate numeric(5,2);
 ```
 
-### New CSS
-- **`.qp-check`** — Custom themed checkboxes: teal gradient when checked, subtle glow on hover, dark mode + light mode
-
-### Files Modified
-- `admin/admin.js` — ~6456 lines (from ~5966)
-- `admin/index.html` — ~864 lines (from ~849)
-- `admin/admin.css` — ~181 lines (from ~142)
-
-### Lessons Learned
-54. **Duplicate `class` attributes are silently ignored** — `class="a" class="b"` only applies "a". Merge into `class="a b"`.
-55. **Supabase rejects explicit null on typed columns** — Sending `confirmed_at: null` fails if column has constraints. Build insert object conditionally.
-56. **`confirmation_token` column type matters** — If DB column is `uuid`, the value MUST be valid UUID format. Random hex strings cause 400 errors.
-57. **Duplicate `initAdmin()` calls cause cascading failures** — Double initialization = double network load, double event listeners, memory spikes, browser crashes.
-58. **Payment status ≠ session status** — Separating into two columns (Status + Payment) eliminates the confusion of "Completed" next to action buttons.
+### Files Modified This Session
+- `admin/admin.js` — session types CRUD, dual offer flow, regular badge consistency, clickable stat cards
+- `admin/index.html` — Session Types tab
+- `netlify/functions/admin-proxy.js` — added `session_types` to allowed tables
+- `netlify/functions/session-webhook.js` — populate `stripe_session_id` on payment
+- `netlify/functions/session-cron.js` — day-before reminder with health update, session types, regular payment nudge
 
 ---
 
-## Session 30 Summary — Automated Email System for 1-on-1 Sessions (Mar 4, 2026)
+## Session 35 Summary — Email Button Fix, 24hr Cancellation Policy, Calendar Invites (Mar 5, 2026)
 
-### TRUE Automated Email Pipeline Built & Deployed ✅
-- **Self-contained Pipeline #3** — completely isolated from Fusion (#1) and Academy (#2) email systems
-- **Netlify scheduled function** (`session-cron.js`) — runs daily at 8 AM ET (13:00 UTC via `netlify.toml` cron)
-- **4 automation types**: Day-Before Reminder, Post-Session Follow-Up, Intake Form Nudge, 72-Hour Payment Expiry
-- **Idempotent send logic** — UNIQUE INDEX on `(booking_id, automation_type)` prevents double-sends; `alreadySent()` check before every send
-- **5 QP-branded email templates** in cron: day-before, follow-up, intake nudge, 48h expiry warning, 72h expiry notice
-- **Payment expiry auto-action** — 72h expired bookings get status updated to `expired` + availability slot freed
-- **Fully tested end-to-end**: cron send confirmed, manual send confirmed, idempotency confirmed both directions
+### Email Button Fix (CRM Profile) ✅
+- **Bug**: Email button in CRM client profile was calling undefined `sessEmailClient()` function — nothing happened on click
+- **Fix**: Added `sessEmailClient(email, name)` function that looks up client by email in `sessClientsData` and routes to `openClientEmail(cl.id)`
+- Also fixed a secondary syntax error where `function openClientEmail(clientId){` declaration was accidentally dropped during the fix, leaving orphaned function body and breaking all of admin.js
+- **Files**: `admin/admin.js`
 
-### Premium QP-Branded Email Templates ✅
-- Rebuilt ALL templates (admin.js + session-cron.js) to match Academy/Fusion quality level
-- Dark navy container (#0e1a30), rounded corners, box shadow
-- Gradient header banner with QP logo
-- Dr. Tracey's headshot in every signature (circular photo)
-- Teal (#5ba8b2) / taupe (#ad9b84) accent system
-- Left-border info boxes, gradient detail cards, uppercase letter-spaced labels
-- Pill CTAs with gradient backgrounds + uppercase letter-spacing
-- Shared `wrapTemplate()` in cron for DRY template generation
+### 24-Hour Cancellation Policy ✅
+- **Policy**: Clients can cancel anytime, but within 24 hours of session = no refund. Outside 24 hours = full Stripe refund.
+- **New DB columns** on `session_bookings`:
+  - `client_cancelled boolean DEFAULT false` — flags self-cancellations
+  - `admin_acknowledged boolean DEFAULT false` — Tracey must acknowledge client cancellations
+  - `cancellation_reason text`
+  - `cancelled_at timestamptz`
+  - `stripe_session_id text` — links booking to Stripe checkout session for refund processing
+- **New status**: `cancelled_no_refund` — booking cancelled within 24hr window, no refund issued
+- **`stripe-refund.js` rebuilt** — now accepts `booking_id` + `initiated_by` params:
+  - Fetches booking, calculates hours until session
+  - Within 24hrs → marks `cancelled_no_refund`, skips Stripe refund, sends no-refund email
+  - Outside 24hrs → processes full Stripe refund, marks `cancelled`, sends refund confirmation email
+  - Both paths send QP-branded cancellation email (dark navy, teal/taupe, session card with strikethrough date)
+- **`members/sessions.html`** — Cancel button added to upcoming paid/confirmed bookings that have a `stripe_session_id`:
+  - Shows 24hr policy warning modal (red = no refund, green = full refund eligible)
+  - Confirm → calls `stripe-refund.js` with `initiated_by: 'client'`
+  - Shows toast notification on completion, reloads sessions
+- **`admin/admin.js`** updates:
+  - `cancelled_no_refund` status badge (red, distinct from plain `cancelled`)
+  - 🔔 **Client** badge on bookings where `client_cancelled=true` AND `admin_acknowledged=false`
+  - **✓ Ack** button → `acknowledgeClientCancel()` sets `admin_acknowledged=true`
+  - `cancelled_no_refund` included in Cancelled view filter and Reactivate/Reschedule buttons
 
-### New Database Tables ✅
-- **`email_automation_log`** — tracks every automated email (booking_id, email, automation_type, status, error_message, sent_at). Unique constraint on booking_id + automation_type.
-- **`system_config`** — key-value store for toggle persistence (auto_day_before, auto_follow_up, auto_intake_nudge, auto_payment_expiry). Seeded with defaults.
+### Add-to-Calendar Buttons ✅
+- **`generate-ics.js`** — new Netlify function at `/.netlify/functions/generate-ics`
+  - Accepts query params: `date`, `start`, `end`, `name`, `zoom`
+  - Returns `.ics` file with 24hr + 1hr VALARM reminders, Dr. Tracey as organizer
+  - Tested and working — downloads correct `.ics`, imports cleanly into Apple Calendar
+- **Confirmation email updated** — three calendar pill buttons added below Zoom button:
+  - **Google Calendar** → pre-filled Google Calendar URL (opens in browser)
+  - **Apple Calendar** → downloads `.ics` via `generate-ics.js`
+  - **Outlook** → same `.ics` download
+- **24hr reschedule policy note** updated in confirmation email (was "48 hours" — now "24 hours")
+- **`buildConfirmationEmailHtml()`** now accepts `rawDate`, `rawStart`, `rawEnd` params for calendar URL generation
+- **Files**: `netlify/functions/session-webhook.js`, `netlify/functions/generate-ics.js`
 
-### Admin UI Improvements ✅
-- **Toggle persistence** — all 4 checkboxes write to `system_config`. State survives page reload.
-- **Toggle flash fixed** — removed default `checked` attributes; toggles load from DB correctly.
-- **Tab persistence** — `sessionStorage` saves current page + sub-tab. Reload stays on same page.
-- **Sub-tab persistence** — Email Automation sub-tabs (Scheduled/Logs/Sessions/Reminders) persist across reload.
-- **Send buttons always visible** — Send Reminder / Send Follow-Up buttons show regardless of toggle state. Toggles only control the cron auto-send.
-- **Automation Log Viewer** — last 50 sends with timestamp, recipient, type badge, status badge, error message.
-- **Manual sends log to `email_automation_log`** — cron respects manual sends (idempotency both directions).
+### Files Modified This Session
+- `admin/admin.js` — sessEmailClient fix, cancelled_no_refund badge, acknowledge flow
+- `netlify/functions/stripe-refund.js` — rebuilt with 24hr policy, cancellation emails
+- `members/sessions.html` — cancel button + modal + confirmCancelSession flow
+- `netlify/functions/session-webhook.js` — calendar buttons in confirmation email, rawDate/rawStart/rawEnd params
+- `netlify/functions/generate-ics.js` — NEW
 
-### Deployment Fixes (discovered during testing) ✅
-- **Admin manual send payload fixed** — was sending `{action:'sendEmail', htmlBody}` to BulkEmailSender which expects `{to, body, isHtml}`. Fixed to use correct format: `isHtml: true`, `body` (not `htmlBody`), `Content-Type: text/plain`.
-- **Apps Script Version 3 deployed** — initial deploy was Version 1 (empty `doPost`). Created New Deployment to activate the code.
-- **`SESSION_EMAIL_SCRIPT_URL` env var** — set in Netlify pointing to Web app URL (not Deployment ID).
-
-### New Google Apps Script ✅
-- **QP Session Email Sender** (Pipeline #3) — standalone script, Version 3 deployed
-- Handles `sendSessionEmail` action + legacy `sendEmail` + direct send (no action field)
-- Sends from `tracey@quantumphysician.com` alias as "Dr. Tracey Clark — Quantum Physician"
-- `doGet` health check + `testSend()` function
-
-### Admin Proxy Updated ✅
-- Added `email_automation_log` and `system_config` to ALLOWED_TABLES (now 32 total)
-
-### Files Created
-- `netlify/functions/session-cron.js` — NEW (~456 lines)
-- `qp-session-email-script.gs` — NEW Google Apps Script for Pipeline #3 (137 lines)
-
-### Files Modified
-- `admin/admin.js` — ~5966 lines (from ~5855)
-- `admin/index.html` — ~849 lines (from ~839)
-- `netlify/functions/admin-proxy.js` — 32 allowed tables (from 30)
-- `netlify.toml` — added `[functions."session-cron"]` cron schedule
-
----
-
-## Session 29 Summary — CRM Merge, Email Automation, UX Polish (Mar 3, 2026)
-
-### CRM Merged into Clients Tab ✅
-- **Removed standalone `page-crm`** sidebar entry and page div entirely
-- **Embedded CRM inside Clients tab** with sub-navigation: "Client Roster" | "All Client Profiles"
-- **Client Roster cards are fully clickable** — click anywhere on card to open profile (teal hover border)
-- **Client name rendered in teal** for visual affordance
-- **Action buttons** (Dates, Email, Edit, Pause, Remove) have `stopPropagation` — work independently
-- **"Profile →" button removed** — whole card does that now
-- **Back button** returns to whichever sub-view you came from (roster or all profiles)
-- **Sub-nav buttons dim** when viewing a profile, re-enable on back
-
-### Session Notes Collapsed by Default ✅
-- Notes and recordings **hidden by default** in CRM Sessions tab
-- **Click row or badge** to expand/collapse
-- **▼/▲ arrow** in Actions column with own `onclick` (teal color, padded hit area)
-- Note/recording counts show as clickable badges ("1 note", "1" recording)
-- **+ Note / + Recording** buttons still work independently via `stopPropagation`
-
-### Progress Tab Filters ✅
-- **Keyword search** — filters check-ins by symptom names/notes, practitioner notes by content
-- **Date range dropdown** — All Time, Last 3 Months, Last 6 Months, Last Year
-- **Type filter** — All Types, Check-Ins Only, Alignments, Milestones, Observations
-- **Counts in section headers** — "PATIENT CHECK-INS (8)", "PRACTITIONER NOTES (3)"
-- **Total item count** next to filters
-- **Filter state persists** when adding new notes (doesn't reset selections)
-
-### Email Automation — 1-on-1 Reminders Tab ✅
-- **New "1-on-1 Reminders" sub-tab** in Email Automation page
-- **4 automation toggle cards**: Day-Before Reminder, Post-Session Follow-Up, Intake Form Nudge, 72-Hour Payment Expiry
-- **Generate Reminders Now** — scans bookings, populates upcoming paid sessions + recently completed
-- **Preview Day-Before / Follow-Up** — iframe-based modal with QP-branded templates
-- **Per-session Preview/Send buttons** — Send only appears for tomorrow's sessions
-- **QP-branded email templates**: Georgia serif, gradient appointment cards, teal pill CTAs
-- **Intake reminder wired** — `crmSendIntakeReminder()` now functional (was placeholder)
-- ⚠️ **Toggles are UI-only** — not persisted to database. Reset on page reload.
-- ⚠️ **All sending is manual** — no automated cron yet. Session 30 priority.
-
-### Bug Fixes ✅
-- **Duplicate `crmDeleteNote` function** — two functions with same name. Internal notes version renamed to `crmDeleteInternalNote()`
-- **Missing `fmtTime` function** — `renderCrmSessions` used it but it was never defined. Added: converts "14:00" → "2:00 PM"
-- **`data-table` CSS class doesn't exist** — CRM tables used `class="data-table"` but admin CSS only has `class="tbl"`. All 3 CRM tables fixed.
-- **Profile fetch killing `Promise.all`** — `sb.from('profiles').maybeSingle()` (non-proxy) was in `Promise.all`. If it fails, all 7 fetches fail. Moved to separate try/catch.
-- **Reminders panel nested inside Logs panel** — `autotab-logs` div was never closed before `autotab-reminders` started. Reminders was a child of Logs, so when Logs was hidden, Reminders was hidden too even with `display:block`. Fixed: proper sibling panels.
-
-### Files Modified
-- `admin/admin.js` — ~5855 lines (from ~5471)
-- `admin/index.html` — ~839 lines (from ~773)
+### SQL Migration Run This Session
+```sql
+ALTER TABLE session_bookings
+  ADD COLUMN IF NOT EXISTS client_cancelled boolean DEFAULT false,
+  ADD COLUMN IF NOT EXISTS admin_acknowledged boolean DEFAULT false,
+  ADD COLUMN IF NOT EXISTS cancellation_reason text,
+  ADD COLUMN IF NOT EXISTS cancelled_at timestamptz,
+  ADD COLUMN IF NOT EXISTS stripe_session_id text;
+```
 
 ---
 
-## Session 28 Summary — Body Regions, Notes System, Recording System, Real-Time Refresh (Mar 3, 2026)
+## Session 34 Summary — Stripe Webhook E2E Test, Invoice Polish, Sort Dropdowns (Mar 5, 2026)
 
-### 3D Body Model: 28 Bone-Accurate Regions ✅
-- Extracted inverse bind matrix positions from GLB skeleton using Three.js
-- 28 standard regions mapped to precise 3D coordinates (with male/female offsets)
+### End-to-End Webhook Test ✅
+- Full Stripe payment chain verified: webhook → booking marked paid → invoice created → PDF generated → invoice email + confirmation email delivered
+- Test booking: `25e982ca-ad43-49b0-babb-09909a5ad61a` (btsol@hey.com, Mar 5 2026, $150)
 
-### Admin Region Picker Modal ✅
-- 28 tappable region chips, multi-select, custom regions with nearest-standard mapping
+### Invoice Email Polish ✅
+- Rebuilt `buildPaidInvoiceEmailHtml()` to match premium reminder template structure (logo banner, hero title, session details table, green PAID badge, PDF download button, Tracey headshot signature)
 
-### Session Notes System (Full CRUD) ✅
-- Add/Edit/Delete notes, toggle visibility, multiple notes per session, body region pills
+### Invoice PDF Spacing Fixes ✅
+- Header email pushed lower (y=80) for breathing room
+- Footer made dynamic: `fY = H - 100` (pinned to bottom)
+- Footer fully centered: headshot, name, tagline all centered
+- Divider dynamic: `y = Math.max(y + 14, dy + 14)` prevents PAID date overlapping session row
 
-### Recording Upload System ✅
-- Upload File (drag & drop, Supabase Storage) + Paste URL (Zoom, Vimeo, GDrive, YouTube)
-- Smart video embeds on patient side, collapsible in admin
-
-### Patient sessions.html Deep Linking ✅
-- `?highlight=bookingId` URL parameter, auto-switches to Past tab, smooth scroll
-
-### Real-Time Refresh System ✅
-- `refreshBookingsView()` — parallel fetch of bookings + notes + recordings
-
-### Bug Fixes ✅
-- `session_recordings` column name: uses `uploaded_at`, not `created_at`
-- Recording indicator placement fixed
+### Sort Dropdowns ✅
+- **Audit Log**: Newest First / Oldest First / Email A→Z / Email Z→A / Action A→Z / Admin A→Z (server-side Supabase `.order()`)
+- **Client Roster**: Priority / Name A→Z / Email A→Z / Frequency / Status (client-side `Array.sort()`)
 
 ---
 
-## Sessions 26-27 Summary (condensed)
-
-### Session 26 — Patient Portal Pages + SQL Migration
-- 4 patient portal pages: sessions.html, intake.html, progress.html, billing.html
-- 5 new database tables with RLS policies
-- Admin-proxy updated (30 allowed tables)
-
-### Session 27 — SSO Fix + Admin CRM + Progress Enhancements
-- Cross-domain SSO fixed (Cloudflare truncation was root cause)
-- Admin CRM: Client Profiles with 5-tab detail view
-- Progress page: collapsible charts, symptom/energy charts, before/after toggle, quick stats, body map, milestone markers
+## Session 33 Summary — Invoice System, Auto-Invoice Webhook, CRM Enhancements (Mar 5, 2026)
+*(see previous handoff for full details)*
 
 ---
 
-## Sessions 14-25 Summary (condensed)
-See previous handoff docs for full details. Key milestones:
-- **Sessions 14-18**: Academy Course Builder + Student Experience
-- **Sessions 19-20**: Email Center Card Library, Rich Text Editor, Auth Auto-Refresh
-- **Session 21**: Unified Rich Editor (rolled back — lessons documented)
-- **Session 22**: Unified Rich Editor rebuilt successfully + 7 hotfixes
-- **Session 23**: Full 1-on-1 Sessions system — 6 database tables, admin panel tab, public booking page
-- **Session 24**: Stripe payment backend + frontend checkout
-- **Session 25**: QP Member Portal (login, dashboard, settings, reset-password, auth-aware header, SVG icons)
+## ✅ All Completed Features (cumulative through Session 35)
+
+### Core Admin
+- Analytics dashboard, Email Center, Promotions Manager, Orders Browser
+- Card Library (drag-and-drop), Smart Suggestions, Audit Log
+- Referral code management, bulk enrollment CSV, community moderation
+- Admin roles + 12 permission flags, admin-proxy server-side security pattern
+
+### 1-on-1 Sessions System
+- Cycle Manager, Availability Calendar, Client Roster (with sort dropdown), Bookings Grid (sortable headers, Payment column, Active/Completed/Cancelled/All tabs)
+- Offer Slot flow, Stripe checkout + payment webhook, auto-invoice on payment
+- Reschedule system, bulk actions, reactivate button
+- Regulars flow (client_type, auto-confirm, payment request emails)
+
+### Patient CRM & Portal
+- 4 patient portal pages (sessions, intake, progress, billing)
+- CRM merged into Clients tab (Client Roster | All Client Profiles)
+- Session notes (CRUD, body regions, visibility), recordings system
+- Progress tracking (charts, milestones, filters), 3D body model (Three.js, 28 bone-accurate regions)
+- Billing tab with invoices + sortable columns
+- CRM Emails tab (6th tab, per-client session email history)
+- Clickable client names everywhere → CRM profile
+
+### Invoice System
+- `invoices` table, auto-incrementing `QP-YYYY-NNNN` numbers, RLS
+- PDF generation (pdfkit, QP-branded, PAID watermark, signed URL preview)
+- Admin Invoices sub-tab (sortable, bulk generate per cycle, progress bar)
+- Auto-invoice on Stripe payment (webhook)
+- Patient billing.html with invoice cards + themed PDF modal
+
+### Email Automation
+- 5 toggle cards (Day-Before, Follow-Up, Intake Nudge, 72hr Expiry, 7-Day Regular Expiry)
+- Netlify cron (8 AM ET), idempotent, confirmed working
+- Automation log viewer (200 entries, stats, filters, sort)
+- Next Cron Run Preview
+
+### Cancellation System (Session 35)
+- 24hr cancellation policy enforced (no refund within window)
+- Client cancel button on sessions.html with policy warning modal
+- Admin acknowledge flow for client-initiated cancellations
+- QP-branded cancellation emails (refund + no-refund variants)
+
+### Calendar Invites (Session 35)
+- Add-to-calendar buttons in confirmation email (Google, Apple, Outlook)
+- `generate-ics.js` function with 24hr + 1hr reminders
+
+### Session Types & Multi-Currency (Session 36)
+- `session_types` table with admin CRUD (Zoom €200 / Recorded €150 / 30min EUR)
+- Per-booking price snapshot (`session_type_id`, `amount_cents`, `currency`)
+- Per-client currency override (`currency`, `tax_label`, `tax_rate` on `session_clients`)
+- Session type dropdown in Offer Slot modal
+
+### Dual Offer Flow (Session 36)
+- Regular clients: confirm date (7 days), payment via day-before reminder
+- Public clients: confirm & pay via Stripe (72hr expiry)
+- ★ Regular badge consistent across waitlist, bookings, CRM, profiles
+
+### Day-Before Cron Upgrade (Session 36)
+- Health update request in all day-before reminders
+- Session-type-aware (duration, type name, zoom detection)
+- Soft payment nudge for unpaid regulars (not a gate)
 
 ---
 
-## 🔴 PRIORITY NEXT STEPS (Session 33)
+## 🔴 Next Priorities
 
-### 1. Invoice System Build (Phase 1-2)
-- Run SQL migration: `invoices` table + sequence + RLS + indexes
-- Add `invoices` to admin-proxy allowlist (33 tables)
-- Create Supabase Storage `invoices` bucket
-- Build admin UI: Invoices sub-tab, Create/Edit modal, status management
-- PDF generation with pdfkit (`generate-invoice.js` Netlify function)
-- See `invoice-system-plan.md` for full spec
+### Immediate (Session 37)
+- ⬜ Fix `one-on-sessions.html` pay token handling — public Confirm & Pay link lands on "All Sessions Filled" instead of checkout
+- ⬜ Update `session-checkout.js` to accept `currency` param for EUR/CAD Stripe checkout
+- ⬜ Client roster: add currency/tax dropdown to client edit modal (mark Canadian clients)
+- ⬜ Add calendar buttons (.ics) to day-before reminder emails
+- ⬜ Test day-before cron end-to-end (create tomorrow booking, trigger cron manually)
+- ⬜ Test public offer flow end-to-end with Stripe payment
 
-### 2. End-to-End Stripe Payment Test
-- Test all 3 flows: session-checkout (token + public), academy-checkout, Fusion checkout
-- Verify session-webhook.js handles real Stripe payment
-- Review checkout branding across all flows
+### Short-term
+- ⬜ 24hr reschedule policy enforcement (block reschedules within 24hrs in admin)
+- ⬜ Regular client "Confirm Date" landing page — dedicated confirmation page for regulars (not Stripe checkout)
+- ⬜ Backfill existing bookings with session_type_id where applicable
 
-### 3. Outstanding Items
-- Sortable columns on all admin tables (roster, students, orders, audit log)
-- Clickable stat cards on automation dashboard (filter on click)
-- Pre/post session patient forms (needs Tracey's input)
-- SMS reminders (not yet mapped)
+### Needs Tracey's Input
+- ⬜ Pre/post session patient forms — token-based, mobile-first, 30-60 sec, feeds progress charts
+- ⬜ Invoice defaults: payment terms, tax (HST for Canadian clients?), auto-send preference
+- ⬜ Does she want different Zoom links per session type or one global link?
 
-### Future Features
-- **Pre/post session patient forms** — recurring quick check-ins (needs Tracey's input)
-- **Student tools**: Flashcards, highlighting, reflection journal, summarizer
-- **Custom card templates**: Save your own cards in Email Center
-- **AI Copilot**: Smart email writing / AI documentation / transcription
-- **Memberships / Subscriptions**
-- **Live Event Page**: Branded Zoom experience
-- **In-app secure messaging**
-- **Consent forms / HIPAA agreements**
-- **Multiple preferred times per client** (logged for larger rosters)
-
----
-
-## Known Issues (Session 30)
-1. **email-decode.min.js 404** — Netlify phantom. Harmless.
-2. **Test email no delivery confirmation** — `mode:'no-cors'` means opaque response. Check inbox manually.
-3. **Automation toggles now persisted** — ✅ Fixed in Session 30. Wired to `system_config` table.
-4. **Cron needs deployment + env var** — `session-cron.js` deployed but needs `SESSION_EMAIL_SCRIPT_URL` env var set in Netlify.
-5. **Webhook untested with real payment** — session-webhook.js deployed but not yet triggered by actual Stripe payment.
-6. **Cross-domain SSO working** — QP→Fusion deployed and tested (Session 27). Fusion→QP not yet needed.
-7. **notification_preferences columns** — Need to verify boolean columns exist.
-8. **GitHub intermittent 500s** — Occurred during Session 27 deploys. Retry or manual Netlify deploy.
-9. **Zoom recordings can't embed** — Zoom blocks iframe embeds. Workaround: download MP4 from Zoom, upload via admin.
-10. **Supabase Free plan storage limit** — 1GB storage. Sufficient for ~3-4 recordings. Pro plan ($25/mo) gives 100GB.
-11. **Orphaned test recordings** — Cleanup SQL included in Session 30 migration. Run it.
-12. **Apps Script `mode:'no-cors'` for manual sends** — Admin manual sends still use `mode:'no-cors'` (browser limitation). Cron function runs server-side so gets full response.
-
----
-
-## File Sizes (Post-Session 32)
-- `admin/index.html` — ~883 lines
-- `admin/admin.js` — ~6734 lines
-- `admin/admin.css` — ~181 lines
-- `netlify/functions/admin-proxy.js` — 32 allowed tables
-- `netlify/functions/session-cron.js` — ~578 lines
-- `pages/one-on-sessions.html` — ~1333 lines
-- `members/sessions.html` — ~649 lines
-- `members/intake.html` — ~751 lines
-- `members/progress.html` — ~700 lines
-- `members/billing.html` — ~332 lines
-- `members/dashboard.html` — ~734 lines
-- `js/shared.js` — auth-aware header
-
----
-
-## Lessons Learned (ALL SESSIONS)
-1-41: See previous docs.
-42. **Duplicate function names silently overwrite** — JS allows two `function crmDeleteNote()` definitions. The second silently replaces the first. No error. Session notes delete was broken because internal notes delete overwrote it. Always use unique function names.
-43. **Embedded sub-views beat standalone pages** — CRM as a standalone sidebar page was disconnected from the Clients tab. Merging it as sub-nav within the Clients tab makes the workflow seamless — roster → profile → back to roster.
-44. **CSS class typos fail silently** — `class="data-table"` has no styling but produces no errors. Tables render with no spacing. Always verify CSS class names match actual stylesheet.
-45. **Nested panel divs cause invisible content** — If panel A isn't closed before panel B starts, B becomes a child of A. When A is `display:none`, B is invisible even if B itself is `display:block`. Always verify HTML nesting with dev tools.
-46. **Missing helper functions crash entire views** — `fmtTime is not defined` killed the entire Sessions tab render. When a function is used in a template, it must be defined. Add it near related helpers (`fmtDate`, `fmtMoney`).
-47. **`stopPropagation` blocks child click handlers** — If a `<td>` has `stopPropagation`, clicks on child elements inside that td won't trigger parent row handlers. Give children their own `onclick` handlers.
-48. **Idempotent automation requires both DB constraint + pre-check** — The UNIQUE INDEX on `(booking_id, automation_type)` is the safety net, but `alreadySent()` query before each send avoids noisy duplicate-key errors. Belt and suspenders.
-49. **Server-side cron vs browser no-cors** — Admin manual sends use `mode:'no-cors'` and get opaque responses (can't confirm delivery). The Netlify cron function runs server-side with full `fetch()` and gets real HTTP responses. Always prefer server-side for reliability.
-50. **Separate Apps Scripts for separate pipelines** — Option B (new script) beats Option A (extend existing) for isolation. Each pipeline has its own deployment URL, its own logs, its own failure modes. No shared state = no cross-contamination.
-51. **Apps Script: save ≠ deploy** — Saving code in the editor does NOT update the live web app. Must click Deploy → New Deployment each time code changes. The Executions log will show `doGet` only (from health checks) if `doPost` code was never deployed.
-52. **Match payload formats to the receiver** — Admin manual sends go to BulkEmailSender v3 which expects `{to, body, isHtml, recipientName}` with `Content-Type: text/plain`. Sending `{action, htmlBody}` silently fails because no-cors hides the error. Always verify the receiver's expected payload format.
-53. **Deployment ID vs Web app URL** — Google Apps Script shows both after deploy. The Deployment ID is an internal identifier. The Web app URL (ending in `/exec`) is the callable endpoint. Use the `/exec` URL for env vars.
+### Future
+- ⬜ Student tools (flashcards, highlighting, journal, summarizer)
+- ⬜ Custom card templates (save your own)
+- ⬜ AI Copilot for email writing / documentation / transcription
+- ⬜ Memberships / Subscriptions
+- ⬜ SMS reminders
+- ⬜ In-app secure messaging
+- ⬜ Multiple preferred times per client (better auto-populate for larger rosters)
+- ⬜ Consent forms / HIPAA agreements
+- ⬜ Patient satisfaction surveys

@@ -331,6 +331,49 @@ exports.handler = async (event) => {
       }
     }
 
+    // =============================================
+    // CYCLE AUTO-ADVANCE
+    // =============================================
+    console.log("[session-cron] Processing cycle auto-advance");
+    const { data: cycles } = await sb.from("session_cycles").select("*");
+    const { data: allBookings } = await sb.from("session_bookings").select("*");
+    const { data: sessConfigRow } = await sb.from("session_config").select("*").limit(1).single();
+
+    for (const cycle of (cycles || [])) {
+      // 1. Waitlist 48hr auto-advance → public_open
+      if (cycle.status === "waitlist_open" && cycle.waitlist_expires_at) {
+        if (new Date(cycle.waitlist_expires_at) <= now) {
+          console.log("[session-cron] Waitlist 48hr expired for cycle:", cycle.name, "— advancing to public_open");
+          await sb.from("session_cycles").update({
+            status: "public_open",
+            public_opens_at: new Date().toISOString()
+          }).eq("id", cycle.id);
+          // Auto-open public booking
+          if (sessConfigRow) {
+            await sb.from("session_config").update({ public_booking_status: "open" }).eq("id", sessConfigRow.id);
+          }
+          results.cycle_auto_advance = (results.cycle_auto_advance || 0) + 1;
+          console.log("[session-cron] Cycle auto-advanced to public_open:", cycle.name);
+        }
+      }
+
+      // 2. Cycle end date auto-complete
+      if (cycle.status === "active" && cycle.end_date && cycle.end_date < todayStr) {
+        console.log("[session-cron] Cycle end date passed:", cycle.name, "— auto-completing");
+        await sb.from("session_cycles").update({ status: "completed" }).eq("id", cycle.id);
+        // Expire remaining proposed bookings
+        const remaining = (allBookings || []).filter(b => b.cycle_id === cycle.id && b.status === "proposed");
+        for (const b of remaining) {
+          await sb.from("session_bookings").update({ status: "expired" }).eq("id", b.id);
+        }
+        if (sessConfigRow) {
+          await sb.from("session_config").update({ public_booking_status: "closed" }).eq("id", sessConfigRow.id);
+        }
+        results.cycle_auto_advance = (results.cycle_auto_advance || 0) + 1;
+        console.log("[session-cron] Cycle auto-completed:", cycle.name, "— expired", remaining.length, "bookings");
+      }
+    }
+
     console.log("[session-cron] Complete:", JSON.stringify(results));
     return {
       statusCode: 200,

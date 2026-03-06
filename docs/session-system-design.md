@@ -1,6 +1,6 @@
 # 1-on-1 Sessions System — Full Design Spec
 
-**Last updated:** Session 32 (Mar 4, 2026)
+**Last updated:** Session 33 (Mar 5, 2026)
 
 ## Dr. Tracey's Current Manual Workflow
 1. Works in **4-month booking cycles** (e.g., March-June, July-October, Nov-Feb)
@@ -125,14 +125,21 @@
 - **2 new email templates**: `buildRegularExpiryWarningEmail()`, `buildRegularExpiryNoticeEmail()`
 - **2 new automation types**: `regular_expiry_5d`, `regular_expiry_7d`
 
+### ✅ BUILT (Session 33) — Invoice System + Auto-Invoice Webhook
+- **`invoices` table** with `QP-YYYY-NNNN` auto-numbering (sequence + DB function)
+- **PDF generation** (`generate-invoice.js`) — pdfkit, QP logo, Tracey headshot, session details, PAID watermark, navy/teal branding
+- **Auto-invoice on Stripe payment** — `session-webhook.js` creates invoice + PDF + emails client automatically on `checkout.session.completed`
+- **Admin Invoices sub-tab** — sortable grid, search, stats, bulk generate with progress bar, instant PDF preview modal
+- **Patient billing.html** — invoice cards with themed PDF modal, signed URL download
+- **CRM Billing tab** — per-client invoices with sortable columns, PDF download, email resend
+- **CRM Sessions tab** — sortable Date/Time/Status columns
+- **Clickable client names** — bookings grid, invoices grid, waitlist → auto-navigate to CRM profile
+
 ### ⬜ NOT YET BUILT
 
-- **Cron 7-day expiry for regulars** — ✅ DONE (Session 32)
 - End-to-end Stripe payment test
-- Three.js 3D body model on progress.html — ✅ DONE (already deployed, confirmed Session 32)
+- Invoice PDF polish (tighter spacing)
 - 48-hour cancellation enforcement
-- Add-to-calendar (.ics) generation
-- Invoice system (PDF generation, auto-send, admin + portal views)
 
 
 ### ⬜ FUTURE

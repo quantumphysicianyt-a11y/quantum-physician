@@ -3714,14 +3714,14 @@ function renderCycleBanner(){
   banner.style.display='block';
   document.getElementById('sess-cycle-name-display').textContent=active.name;
   document.getElementById('sess-cycle-dates').textContent=fmtDate(active.start_date)+' → '+fmtDate(active.end_date);
-  var statusColors={planning:'var(--text-dim)',client_confirmation:'var(--warning)',public_open:'var(--purple)',active:'var(--success)',completed:'var(--success)'};
-  var statusLabels={planning:'Planning',client_confirmation:'Client Confirmation',public_open:'Public Booking Open',active:'Active',completed:'Completed'};
+  var statusColors={planning:'var(--text-dim)',client_confirmation:'var(--warning)',waitlist_open:'var(--teal)',public_open:'var(--purple)',active:'var(--success)',completed:'var(--success)'};
+  var statusLabels={planning:'Planning',client_confirmation:'Client Confirmation',waitlist_open:'Waitlist (48hr)',public_open:'Public Booking Open',active:'Active',completed:'Completed'};
   document.getElementById('sess-cycle-status-wrap').innerHTML='<span class="badge" style="background:'+statusColors[active.status]+'22;color:'+statusColors[active.status]+'">'+statusLabels[active.status]+'</span>'
     +(active.status!=='planning'?'<button class="btn btn-ghost btn-sm" onclick="regressCycleStatus(\''+active.id+'\',\''+active.status+'\')">← Back</button>':'')
     +(active.status!=='completed'?'<button class="btn btn-ghost btn-sm" onclick="advanceCycleStatus(\''+active.id+'\',\''+active.status+'\')">Advance →</button>':'');
-  var stages=['planning','client_confirmation','public_open','active','completed'];
-  var stageLabels={planning:'Planning',client_confirmation:'Client Confirm',public_open:'Public Open',active:'Active',completed:'Complete'};
-  var stageColors={planning:'var(--text-dim)',client_confirmation:'var(--warning)',public_open:'var(--purple)',active:'var(--success)',completed:'var(--success)'};
+  var stages=['planning','client_confirmation','waitlist_open','public_open','active','completed'];
+  var stageLabels={planning:'Planning',client_confirmation:'Client Confirm',waitlist_open:'Waitlist',public_open:'Public Open',active:'Active',completed:'Complete'};
+  var stageColors={planning:'var(--text-dim)',client_confirmation:'var(--warning)',waitlist_open:'var(--teal)',public_open:'var(--purple)',active:'var(--success)',completed:'var(--success)'};
   var pipeHtml='';
   stages.forEach(function(s,i){
     var isCurrent=s===active.status;
@@ -3765,8 +3765,8 @@ function selectCycle(id){
 function renderCyclesList(){
   var c=document.getElementById('sess-cycles-list');
   if(!sessCyclesData.length){c.innerHTML='<div class="empty"><p>No cycles created yet. Create your first 4-month cycle above.</p></div>';return}
-  var statusLabels={planning:'Planning',client_confirmation:'Confirming',public_open:'Public Open',active:'Active',completed:'Completed'};
-  var statusColors={planning:'muted',client_confirmation:'yellow',public_open:'purple',active:'green',completed:'green'};
+  var statusLabels={planning:'Planning',client_confirmation:'Confirming',waitlist_open:'Waitlist',public_open:'Public Open',active:'Active',completed:'Completed'};
+  var statusColors={planning:'muted',client_confirmation:'yellow',waitlist_open:'teal',public_open:'purple',active:'green',completed:'green'};
   var borderColors={planning:'var(--border)',client_confirmation:'var(--warning)',public_open:'var(--purple)',active:'var(--success)',completed:'var(--border)'};
   // Auto-select first if none selected
   if(!sessSelectedCycleId && sessCyclesData.length) sessSelectedCycleId=sessCyclesData[0].id;
@@ -3811,31 +3811,211 @@ async function createCycle(){
 }
 
 async function advanceCycleStatus(id,current){
-  var order=['planning','client_confirmation','public_open','active','completed'];
+  var order=['planning','client_confirmation','waitlist_open','public_open','active','completed'];
   var idx=order.indexOf(current);
   if(idx>=order.length-1){showToast('Cycle already completed','info');return}
   var next=order[idx+1];
-  var labels={client_confirmation:'Client Confirmation',public_open:'Public Booking Open',active:'Active',completed:'Completed'};
-  if(!await qpConfirm('Advance Cycle','Move this cycle to "'+labels[next]+'"?',{okText:'Advance'}))return;
-  try{
-    await ensureFreshToken();
-    var updates={status:next};
-    if(next==='client_confirmation') updates.client_confirmation_sent_at=new Date().toISOString();
-    if(next==='public_open') updates.public_opens_at=new Date().toISOString();
-    var r=await proxyFrom('session_cycles').update(updates).eq('id',id);
-    if(r.error) throw new Error(r.error.message);
-    await logAudit('advance_cycle',null,'Advanced cycle to '+next,{cycle_id:id});
-    showToast('Cycle advanced to '+labels[next],'success');
-    await loadSessionsData();
-  }catch(e){showToast('Error: '+e.message,'error')}
+  var labels={client_confirmation:'Client Confirmation',waitlist_open:'Waitlist (48hr Early Access)',public_open:'Public Booking Open',active:'Active',completed:'Completed'};
+
+  // ── STAGE-SPECIFIC CONFIRMATION & AUTOMATION ──
+
+  // PLANNING → CLIENT CONFIRMATION: auto-populate + batch send confirm emails to regulars
+  if(next==='client_confirmation'){
+    var activeClients=sessClientsData.filter(function(c){return c.status==='active'});
+    var existingProposed=sessBookingsData.filter(function(b){return b.cycle_id===id&&b.status==='proposed'});
+    var needsPopulate=activeClients.length>0&&existingProposed.length===0;
+    var confirmMsg=needsPopulate
+      ?'This will auto-populate '+activeClients.length+' active clients and send each one a "Confirm Your Date" email.\n\nRegulars have 7 days to confirm.'
+      :existingProposed.length+' proposed bookings already exist. Send confirmation emails to all clients with proposed dates?\n\nRegulars have 7 days to confirm.';
+    if(!await qpConfirm('Advance to Client Confirmation',confirmMsg,{okText:'Send Confirmations'}))return;
+
+    try{
+      await ensureFreshToken();
+
+      // Auto-populate if needed
+      if(needsPopulate){
+        showToast('Auto-populating '+activeClients.length+' clients...','info');
+        await autoPopulateSilent(id);
+        // Refresh bookings data
+        var br=await proxyFrom('session_bookings').select('*').order('date',{ascending:true});
+        sessBookingsData=br.data||[];
+      }
+
+      // Get all proposed bookings for this cycle
+      var proposed=sessBookingsData.filter(function(b){return b.cycle_id===id&&b.status==='proposed'});
+      if(!proposed.length){showToast('No proposed bookings to send confirmations for','error');return}
+
+      // Group by client email
+      var byClient={};
+      proposed.forEach(function(b){
+        var key=b.email.toLowerCase();
+        if(!byClient[key]) byClient[key]={name:b.name,bookings:[]};
+        byClient[key].bookings.push(b);
+      });
+
+      // Send confirmation emails
+      var clientCount=Object.keys(byClient).length;
+      var sent=0,failed=0;
+      showToast('Sending confirmation emails to '+clientCount+' clients...','info');
+
+      for(var email in byClient){
+        var info=byClient[email];
+        try{
+          var emailBody=buildBatchConfirmEmailBody(info.name,info.bookings);
+          var richHtml=buildSessionEmail(emailBody.body,null);
+          await fetch(APPS_SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({to:email,from:'tracey@quantumphysician.com',subject:emailBody.subject,body:richHtml,isHtml:true})});
+          sent++;
+        }catch(e){
+          console.error('[cycle-advance] Email error for '+email+':',e.message);
+          failed++;
+        }
+      }
+
+      // Update cycle status
+      var updates={status:next,client_confirmation_sent_at:new Date().toISOString(),auto_emails_sent:JSON.stringify({regulars_sent:sent,regulars_failed:failed})};
+      var r=await proxyFrom('session_cycles').update(updates).eq('id',id);
+      if(r.error) throw new Error(r.error.message);
+      await logAudit('advance_cycle',null,'Advanced to client_confirmation — sent '+sent+' emails ('+failed+' failed)',{cycle_id:id,sent:sent,failed:failed});
+      showToast(sent+' confirmation emails sent'+(failed?' ('+failed+' failed)':'')+'  — clients have 7 days','success');
+      await loadSessionsData();
+    }catch(e){showToast('Error: '+e.message,'error')}
+    return;
+  }
+
+  // CLIENT CONFIRMATION → WAITLIST: batch email waitlist with 48hr early access
+  if(next==='waitlist_open'){
+    var openSlots=countOpenSlots(id);
+    var waiting=sessWaitlistData.filter(function(w){return w.status==='waiting'});
+    if(!waiting.length&&openSlots>0){
+      if(!await qpConfirm('Advance to Waitlist','No one is on the waitlist, but '+openSlots+' slots remain open.\n\nAdvance anyway? The 48hr window will start and auto-advance to Public Open.',{okText:'Advance'}))return;
+    } else if(!waiting.length&&openSlots===0){
+      if(!await qpConfirm('Skip Waitlist?','All slots are filled and no one is on the waitlist.\n\nSkip to Active?',{okText:'Skip to Active'}))return;
+      // Skip straight to active
+      try{
+        await ensureFreshToken();
+        await proxyFrom('session_cycles').update({status:'active'}).eq('id',id);
+        if(sessConfigData) await proxyFrom('session_config').update({public_booking_status:'closed'}).eq('id',sessConfigData.id);
+        await logAudit('advance_cycle',null,'Skipped waitlist+public — all slots filled',{cycle_id:id});
+        showToast('All slots filled — cycle is now Active','success');
+        await loadSessionsData();
+      }catch(e){showToast('Error: '+e.message,'error')}
+      return;
+    } else {
+      if(!await qpConfirm('Advance to Waitlist (48hr)','Email '+waiting.length+' waitlisted people about '+openSlots+' open slot'+(openSlots!==1?'s':'')+'?\n\nFirst come, first serve — 48 hours to book and pay.\nAfter 48hrs, remaining slots open to the public.',{okText:'Email Waitlist'}))return;
+    }
+
+    try{
+      await ensureFreshToken();
+      var wlSent=0,wlFailed=0;
+      var sessType=sessTypesData.find(function(t){return t.status==='active'})||sessTypesData[0];
+
+      for(var w=0;w<waiting.length;w++){
+        var wl=waiting[w];
+        try{
+          var wlBody=buildWaitlistAccessEmail(wl.name||'there',openSlots);
+          var wlHtml=buildSessionEmail(wlBody.body,null);
+          await fetch(APPS_SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({to:wl.email,from:'tracey@quantumphysician.com',subject:wlBody.subject,body:wlHtml,isHtml:true})});
+          await proxyFrom('session_waitlist').update({status:'notified',notified_at:new Date().toISOString()}).eq('id',wl.id);
+          wlSent++;
+        }catch(e){
+          console.error('[cycle-advance] Waitlist email error for '+wl.email+':',e.message);
+          wlFailed++;
+        }
+      }
+
+      var wlExpires=new Date(Date.now()+48*60*60*1000).toISOString();
+      var updates={status:next,waitlist_opens_at:new Date().toISOString(),waitlist_expires_at:wlExpires};
+      // Merge auto_emails_sent
+      var cycle=sessCyclesData.find(function(c){return c.id===id});
+      var prevEmails={};try{prevEmails=JSON.parse(cycle.auto_emails_sent||'{}')}catch(e){}
+      prevEmails.waitlist_sent=wlSent;prevEmails.waitlist_failed=wlFailed;
+      updates.auto_emails_sent=JSON.stringify(prevEmails);
+
+      var r=await proxyFrom('session_cycles').update(updates).eq('id',id);
+      if(r.error) throw new Error(r.error.message);
+      await logAudit('advance_cycle',null,'Advanced to waitlist_open — emailed '+wlSent+' waitlist ('+wlFailed+' failed). Expires: '+wlExpires,{cycle_id:id});
+      showToast(wlSent+' waitlist emails sent — 48hr window started','success');
+      // Refresh waitlist data
+      var wr=await proxyFrom('session_waitlist').select('*').order('created_at',{ascending:true});sessWaitlistData=wr.data||[];
+      await loadSessionsData();
+    }catch(e){showToast('Error: '+e.message,'error')}
+    return;
+  }
+
+  // WAITLIST → PUBLIC OPEN: open public booking
+  if(next==='public_open'){
+    var openSlots2=countOpenSlots(id);
+    if(openSlots2===0){
+      if(!await qpConfirm('All Slots Filled','All slots have been booked. Skip to Active?',{okText:'Skip to Active'}))return;
+      try{
+        await ensureFreshToken();
+        await proxyFrom('session_cycles').update({status:'active'}).eq('id',id);
+        if(sessConfigData) await proxyFrom('session_config').update({public_booking_status:'closed'}).eq('id',sessConfigData.id);
+        await logAudit('advance_cycle',null,'Skipped public — all slots filled',{cycle_id:id});
+        showToast('All slots filled — cycle is now Active','success');
+        await loadSessionsData();
+      }catch(e){showToast('Error: '+e.message,'error')}
+      return;
+    }
+    if(!await qpConfirm('Open Public Booking','Open '+openSlots2+' remaining slot'+(openSlots2!==1?'s':'')+' to the public?\n\nAnyone will be able to book and pay on the sessions page.',{okText:'Open to Public'}))return;
+
+    try{
+      await ensureFreshToken();
+      var updates={status:next,public_opens_at:new Date().toISOString()};
+      var r=await proxyFrom('session_cycles').update(updates).eq('id',id);
+      if(r.error) throw new Error(r.error.message);
+      // Auto-open public booking
+      if(sessConfigData) await proxyFrom('session_config').update({public_booking_status:'open'}).eq('id',sessConfigData.id);
+      await logAudit('advance_cycle',null,'Advanced to public_open — public booking opened',{cycle_id:id});
+      showToast('Public booking is now open — '+openSlots2+' slots available','success');
+      await loadSessionsData();
+    }catch(e){showToast('Error: '+e.message,'error')}
+    return;
+  }
+
+  // PUBLIC OPEN → ACTIVE: close public booking, start reminders
+  if(next==='active'){
+    if(!await qpConfirm('Activate Cycle','Close public booking and activate the cycle?\n\nDay-before reminders and payment nudges will begin automatically.',{okText:'Activate'}))return;
+    try{
+      await ensureFreshToken();
+      await proxyFrom('session_cycles').update({status:next}).eq('id',id);
+      if(sessConfigData) await proxyFrom('session_config').update({public_booking_status:'closed'}).eq('id',sessConfigData.id);
+      await logAudit('advance_cycle',null,'Activated cycle — public booking closed',{cycle_id:id});
+      showToast('Cycle is now Active — automated reminders enabled','success');
+      await loadSessionsData();
+    }catch(e){showToast('Error: '+e.message,'error')}
+    return;
+  }
+
+  // ACTIVE → COMPLETED
+  if(next==='completed'){
+    var stillProposed=sessBookingsData.filter(function(b){return b.cycle_id===id&&b.status==='proposed'});
+    var msg='Mark this cycle as completed?';
+    if(stillProposed.length) msg+='\n\n'+stillProposed.length+' proposed booking'+(stillProposed.length!==1?'s':'')+' will be marked as expired.';
+    if(!await qpConfirm('Complete Cycle',msg,{okText:'Complete'}))return;
+    try{
+      await ensureFreshToken();
+      // Expire remaining proposed bookings
+      if(stillProposed.length){
+        for(var i=0;i<stillProposed.length;i++){
+          await proxyFrom('session_bookings').update({status:'expired'}).eq('id',stillProposed[i].id);
+        }
+      }
+      await proxyFrom('session_cycles').update({status:next}).eq('id',id);
+      await logAudit('advance_cycle',null,'Completed cycle — '+stillProposed.length+' expired',{cycle_id:id});
+      showToast('Cycle completed'+(stillProposed.length?' — '+stillProposed.length+' bookings expired':''),'success');
+      await loadSessionsData();
+    }catch(e){showToast('Error: '+e.message,'error')}
+    return;
+  }
 }
 
 async function regressCycleStatus(id,current){
-  var order=['planning','client_confirmation','public_open','active','completed'];
+  var order=['planning','client_confirmation','waitlist_open','public_open','active','completed'];
   var idx=order.indexOf(current);
   if(idx<=0){showToast('Already at planning stage','info');return}
   var prev=order[idx-1];
-  var labels={planning:'Planning',client_confirmation:'Client Confirmation',public_open:'Public Booking Open',active:'Active',completed:'Completed'};
+  var labels={planning:'Planning',client_confirmation:'Client Confirmation',waitlist_open:'Waitlist (48hr)',public_open:'Public Booking Open',active:'Active',completed:'Completed'};
   if(!await qpConfirm('Move Back','Move this cycle back to "'+labels[prev]+'"?',{okText:'Move Back'}))return;
   try{
     await ensureFreshToken();
@@ -4973,7 +5153,6 @@ async function bulkRequestPayments(){
     return isRegular;
   });
   if(!targets.length){showToast('No unpaid completed regular sessions found','info');return}
-  // Build checklist modal
   var old=document.getElementById('bulk-send-modal');if(old)old.remove();
   var ov=document.createElement('div');ov.id='bulk-send-modal';ov.className='modal-overlay';
   ov.onclick=function(e){if(e.target===ov)ov.remove()};
@@ -4986,7 +5165,7 @@ async function bulkRequestPayments(){
     return '<label style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer">'
       +'<input type="checkbox" checked class="bulk-pay-check qp-check" data-idx="'+i+'">'
       +'<div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text)">'+esc(name)+'</div>'
-      +'<div style="font-size:11px;color:var(--text-dim)">'+esc(b.email)+' · '+date+already+'</div></div></label>';
+      +'<div style="font-size:11px;color:var(--text-dim)">'+esc(b.email)+' \u00B7 '+date+already+'</div></div></label>';
   }).join('');
   box.innerHTML='<div style="font-weight:600;font-size:16px;margin-bottom:4px">Bulk Request Payments</div>'
     +'<div style="font-size:12px;color:var(--text-dim);margin-bottom:14px">Uncheck anyone you don\'t want to send to.</div>'
@@ -5006,7 +5185,7 @@ async function executeBulkPayments(){
   var targets=indices.map(function(i){return window._bulkPayTargets[i]});
   document.getElementById('bulk-send-modal').remove();
   var sent=0,failed=0;
-  showToast('Sending '+targets.length+' payment request(s)…','info');
+  showToast('Sending '+targets.length+' payment request(s)\u2026','info');
   for(var i=0;i<targets.length;i++){
     var b=targets[i];
     try{
@@ -5022,7 +5201,7 @@ async function executeBulkPayments(){
       var date=new Date(b.date+'T12:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
       var price=sessConfigData?'$'+sessConfigData.session_price:'$150';
       var html=buildPaymentRequestHtml(name,date,price,payLink);
-      await sendSessionEmail(b.email,'Payment Request — Your Session on '+date.split(',')[0],html);
+      await sendSessionEmail(b.email,'Payment Request \u2014 Your Session on '+date.split(',')[0],html);
       await proxyFrom('session_bookings').update({payment_requested_at:new Date().toISOString()}).eq('id',b.id);
       b.payment_requested_at=new Date().toISOString();
       await logAudit('request_payment',b.email,'Bulk payment request for session '+b.date,{booking_id:b.id});
@@ -5039,7 +5218,6 @@ async function bulkSendReminders(){
     return (b.status==='paid'||b.status==='confirmed')&&b.date===tomorrow;
   });
   if(!targets.length){showToast('No sessions scheduled for tomorrow','info');return}
-  // Build checklist modal
   var old=document.getElementById('bulk-send-modal');if(old)old.remove();
   var ov=document.createElement('div');ov.id='bulk-send-modal';ov.className='modal-overlay';
   ov.onclick=function(e){if(e.target===ov)ov.remove()};
@@ -5047,12 +5225,12 @@ async function bulkSendReminders(){
   box.style.cssText='background:var(--navy-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;max-width:520px;width:94%;max-height:80vh;overflow-y:auto';
   var rows=targets.map(function(b,i){
     var name=b.name||b.email.split('@')[0];
-    var time=b.start_time.slice(0,5)+'–'+b.end_time.slice(0,5);
+    var time=b.start_time.slice(0,5)+'\u2013'+b.end_time.slice(0,5);
     var statusLabel=b.status==='confirmed'?'<span class="badge teal" style="font-size:9px">Confirmed</span>':'<span class="badge green" style="font-size:9px">Paid</span>';
     return '<label style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer">'
       +'<input type="checkbox" checked class="bulk-rem-check qp-check" data-idx="'+i+'">'
       +'<div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text)">'+esc(name)+' '+statusLabel+'</div>'
-      +'<div style="font-size:11px;color:var(--text-dim)">'+esc(b.email)+' · '+time+'</div></div></label>';
+      +'<div style="font-size:11px;color:var(--text-dim)">'+esc(b.email)+' \u00B7 '+time+'</div></div></label>';
   }).join('');
   box.innerHTML='<div style="font-weight:600;font-size:16px;margin-bottom:4px">Bulk Send Day-Before Reminders</div>'
     +'<div style="font-size:12px;color:var(--text-dim);margin-bottom:14px">Sessions scheduled for tomorrow ('+new Date(Date.now()+24*60*60*1000).toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'})+').</div>'
@@ -5071,7 +5249,7 @@ async function executeBulkReminders(){
   if(!indices.length){showToast('No clients selected','error');return}
   var targets=indices.map(function(i){return window._bulkRemTargets[i]});
   document.getElementById('bulk-send-modal').remove();
-  showToast('Sending '+targets.length+' reminder(s)…','info');
+  showToast('Sending '+targets.length+' reminder(s)\u2026','info');
   for(var i=0;i<targets.length;i++){
     await sendSessionReminder('day-before',targets[i].id,targets[i].email);
   }
@@ -5107,6 +5285,151 @@ function buildPaymentRequestHtml(name,date,price,payLink){
     +'<p style="margin:6px 0">&copy; 2026 Quantum Physician. All rights reserved.</p></div></div></body></html>';
 }
 
+/* ========== CYCLE AUTOMATION HELPERS ========== */
+
+// Silent auto-populate (no confirm dialog, no toast — called from advanceCycleStatus)
+async function autoPopulateSilent(cycleId){
+  var cycle=sessCyclesData.find(function(c){return c.id===cycleId});
+  if(!cycle) return;
+  var activeClients=sessClientsData.filter(function(c){return c.status==='active'});
+  if(!activeClients.length) return;
+  var cycleAvail=sessAvailData.filter(function(a){return a.cycle_id===cycleId&&a.status==='available'});
+  if(!cycleAvail.length) return;
+
+  var duration=sessConfigData?sessConfigData.session_duration_minutes:60;
+  var dayMap={sunday:0,monday:1,tuesday:2,wednesday:3,thursday:4,friday:5,saturday:6};
+  var existingBookings=sessBookingsData.filter(function(b){return b.cycle_id===cycleId&&b.status!=='cancelled'&&b.status!=='declined'});
+  var proposed=[];
+
+  activeClients.sort(function(a,b){return a.priority-b.priority});
+
+  activeClients.forEach(function(client){
+    var prefDayNum=dayMap[client.preferred_day];
+    var prefTime=client.preferred_time.slice(0,5);
+    var freqWeeks=client.frequency==='weekly'?1:(client.frequency==='biweekly'?2:(client.frequency==='monthly'?4:8));
+    var matchDays=cycleAvail.filter(function(a){return new Date(a.date+'T12:00').getDay()===prefDayNum});
+    if(!matchDays.length) matchDays=cycleAvail.slice();
+
+    var lastBooked=null;
+    matchDays.forEach(function(day){
+      if(lastBooked){
+        var gap=Math.round((new Date(day.date)-new Date(lastBooked))/(1000*60*60*24*7));
+        if(gap<freqWeeks) return;
+      }
+      var slotTaken=existingBookings.concat(proposed).some(function(b){
+        return b.date===day.date&&b.start_time.slice(0,5)===prefTime;
+      });
+      if(!slotTaken&&prefTime>=day.start_time.slice(0,5)&&prefTime<day.end_time.slice(0,5)){
+        var endH=parseInt(prefTime.split(':')[0]);
+        var endM=parseInt(prefTime.split(':')[1])+duration;
+        endH+=Math.floor(endM/60);endM=endM%60;
+        var endTimeStr=String(endH).padStart(2,'0')+':'+String(endM).padStart(2,'0');
+        proposed.push({
+          cycle_id:cycleId,client_id:client.id,email:client.email,name:client.name,
+          date:day.date,start_time:prefTime,end_time:endTimeStr,
+          status:'proposed',type:'recurring',
+          confirmation_token:generateBookingToken(),
+          zoom_link:sessConfigData?sessConfigData.zoom_link:null,
+          proposed_at:new Date().toISOString()
+        });
+        lastBooked=day.date;
+      }
+    });
+  });
+
+  if(!proposed.length) return;
+  for(var j=0;j<proposed.length;j+=50){
+    await proxyFrom('session_bookings').insert(proposed.slice(j,j+50));
+  }
+  await logAudit('auto_populate',null,'Silent auto-populated '+proposed.length+' bookings',{cycle_id:cycleId});
+}
+
+// Count open slots for a cycle (available dates minus booked)
+function countOpenSlots(cycleId){
+  var avail=sessAvailData.filter(function(a){return a.cycle_id===cycleId&&a.status==='available'});
+  var booked=sessBookingsData.filter(function(b){return b.cycle_id===cycleId&&(b.status==='confirmed'||b.status==='paid'||b.status==='proposed')});
+  // Count unique date+time slots that are available but not yet booked
+  var open=0;
+  avail.forEach(function(a){
+    var taken=booked.filter(function(b){return b.date===a.date}).length;
+    // Estimate slots per availability block (based on duration + buffer)
+    var duration=sessConfigData?sessConfigData.session_duration_minutes:60;
+    var buffer=sessConfigData?sessConfigData.booking_buffer_minutes:15;
+    var startMin=parseInt(a.start_time.split(':')[0])*60+parseInt(a.start_time.split(':')[1]);
+    var endMin=parseInt(a.end_time.split(':')[0])*60+parseInt(a.end_time.split(':')[1]);
+    var slotsInBlock=Math.floor((endMin-startMin)/(duration+buffer))||1;
+    open+=Math.max(0,slotsInBlock-taken);
+  });
+  return open;
+}
+
+// Build batch confirmation email for a regular client (may have multiple dates)
+function buildBatchConfirmEmailBody(name,bookings){
+  var cycleName='';
+  if(bookings.length&&bookings[0].cycle_id){
+    var cy=sessCyclesData.find(function(c){return c.id===bookings[0].cycle_id});
+    if(cy) cycleName=cy.name;
+  }
+  var greeting='Hi '+(name||'there')+',';
+  var intro=cycleName
+    ?'Your **'+cycleName+'** session dates are ready! Please confirm each date below.'
+    :'Your upcoming session dates with Dr. Tracey Clark are ready! Please confirm each date below.';
+
+  var dateCards='';
+  bookings.sort(function(a,b){return a.date<b.date?-1:1});
+  bookings.forEach(function(b){
+    var dateObj=new Date(b.date+'T12:00');
+    var dayFmt=dateObj.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+    var h=parseInt(b.start_time.split(':')[0]),mi=b.start_time.split(':')[1];
+    var ampm=h>=12?'PM':'AM';var h12=h>12?h-12:(h===0?12:h);
+    var timeFmt=h12+':'+mi+' '+ampm;
+    var sessType=b.session_type_id?sessTypesData.find(function(t){return t.id===b.session_type_id}):null;
+    var typeName=sessType?sessType.name:'Session';
+    var duration=sessType?sessType.duration_minutes:(sessConfigData?sessConfigData.session_duration_minutes:60);
+    var confirmUrl='https://qp-homepage.netlify.app/pages/one-on-sessions.html?confirm='+b.confirmation_token;
+
+    dateCards+='\n\n---\n\n**'+dayFmt+'**\n'+timeFmt+' \u00B7 '+duration+' minutes \u00B7 '+typeName+'\n\n---\n\n[Confirm This Date]('+confirmUrl+')\n';
+  });
+
+  var outro='\nYou have **7 days** to confirm. You\u2019ll receive a payment link the day before each session.\n\nIf any dates don\u2019t work, simply reply to this email and we\u2019ll find an alternative.\n\nWith care and healing,\nDr. Tracey Clark\nQuantum Physician';
+
+  var subject=cycleName
+    ?'Your '+cycleName+' Sessions Are Ready \u2014 Please Confirm'
+    :'Your Session Dates Are Ready \u2014 Please Confirm';
+
+  return {subject:subject, body:greeting+'\n\n'+intro+dateCards+outro};
+}
+
+// Build waitlist early access email
+function buildWaitlistAccessEmail(name,openSlots){
+  var cycleName='';
+  var activeCycle=sessCyclesData.find(function(c){return c.status==='client_confirmation'||c.status==='waitlist_open'});
+  if(activeCycle) cycleName=activeCycle.name;
+
+  var bookingUrl='https://qp-homepage.netlify.app/pages/one-on-sessions.html';
+
+  var body='Hi '+(name||'there')+',\n\n'
+    +'Great news! '+(cycleName?'**'+cycleName+'** has ':'We have ')+openSlots+' session slot'+(openSlots!==1?'s':'')+' available, and as someone on our waitlist, you get **exclusive early access** before we open to the public.\n\n'
+    +'---\n\n'
+    +'**'+openSlots+' Slot'+(openSlots!==1?'s':'')+' Available**\nFirst come, first serve\n48 hours to book and pay\n\n'
+    +'---\n\n'
+    +'[View Available Slots & Book Now]('+bookingUrl+')\n\n'
+    +'After 48 hours, any remaining slots will be opened to the public. Don\u2019t miss your chance to secure your spot!\n\n'
+    +'**What to expect:**\n'
+    +'\u2022 A personalized, integrative healing session\n'
+    +'\u2022 Practical guidance and next steps tailored to you\n'
+    +'\u2022 Follow-up resources to support your journey\n\n'
+    +'Questions? Just reply to this email.\n\n'
+    +'With care and healing,\nDr. Tracey Clark\nQuantum Physician';
+
+  var subject=cycleName
+    ?'Exclusive Early Access \u2014 '+cycleName+' Sessions Available'
+    :'Exclusive Early Access \u2014 Book Your Session with Dr. Clark';
+
+  return {subject:subject, body:body};
+}
+
+/* ========== END CYCLE AUTOMATION HELPERS ========== */
 /* ---------- Send Confirmations ---------- */
 async function sendAllConfirmations(){
   var cycleId=document.getElementById('sess-book-cycle').value;
@@ -5352,7 +5675,7 @@ function buildOfferEmailBody(wl,email,token){
   if(isRegular){
     // Regular: confirm date, payment comes later via day-before reminder
     var ctaUrl=token
-      ?'https://qp-homepage.netlify.app/pages/one-on-sessions.html?pay='+token
+      ?'https://qp-homepage.netlify.app/pages/one-on-sessions.html?confirm='+token
       :'https://qp-homepage.netlify.app/pages/one-on-sessions.html#book';
     var subject='Your '+typeName+' with Dr. Tracey Clark \u2014 '+dayFmt;
     var body='Hi '+name+',\n\nGreat news! A private session slot has opened up just for you with Dr. Tracey Clark.\n\n---\n\n**Your Appointment**\n**'+dayFmt+'**\n'+timeFmt+' \u00B7 '+duration+' minutes \u00B7 '+typeName+'\n\n---\n\nThis slot is reserved for you for **7 days**. Please confirm this date works for you using the link below.\n\n[Confirm Your Date]('+ctaUrl+')\n\nYou\u2019ll receive a payment link the day before your session.\n\n**What to expect:**\n\u2022 A personalized, integrative healing session\n\u2022 Practical guidance and next steps tailored to you\n\u2022 Follow-up resources to support your journey\n\nIf this time doesn\u2019t work, simply reply to this email and we\u2019ll find an alternative.\n\nWith care and healing,\nDr. Tracey Clark\nQuantum Physician';
