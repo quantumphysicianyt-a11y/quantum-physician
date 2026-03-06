@@ -3919,10 +3919,46 @@ async function advanceCycleStatus(id,current){
     var activeClients=sessClientsData.filter(function(c){return c.status==='active'});
     var existingProposed=sessBookingsData.filter(function(b){return b.cycle_id===id&&b.status==='proposed'});
     var needsPopulate=activeClients.length>0&&existingProposed.length===0;
-    var confirmMsg=needsPopulate
-      ?'This will auto-populate '+activeClients.length+' active clients and send each one a "Confirm Your Date" email.\n\nRegulars have 7 days to confirm.'
-      :existingProposed.length+' proposed bookings already exist. Send confirmation emails to all clients with proposed dates?\n\nRegulars have 7 days to confirm.';
-    if(!await qpConfirm('Advance to Client Confirmation',confirmMsg,{okText:'Send Confirmations'}))return;
+
+    // Check if emails were already sent (regressed back scenario)
+    var cycle=sessCyclesData.find(function(c){return c.id===id});
+    var prevEmails={};try{prevEmails=JSON.parse(cycle.auto_emails_sent||'{}')}catch(e){}
+    var alreadySentCount=prevEmails.regulars_sent||0;
+    var skipEmails=false;
+
+    if(alreadySentCount>0&&existingProposed.length>0){
+      // Emails were already sent — first ask if they want to resend
+      var wantResend=await qpConfirm('Return to Client Confirmation',
+        'Confirmation emails were already sent to '+alreadySentCount+' client'+(alreadySentCount!==1?'s':'')+'.\n\n'+existingProposed.length+' proposed bookings exist.\n\nDo you want to resend all confirmation emails?',
+        {okText:'Yes, Resend Emails',cancelText:'No'});
+      if(!wantResend){
+        // Ask if they want to advance without resending
+        var advanceOnly=await qpConfirm('Advance Without Resending',
+          'Advance to Client Confirmation and restart the confirmation window without resending emails?',
+          {okText:'Advance Without Resending'});
+        if(!advanceOnly) return;
+        skipEmails=true;
+      }
+    } else {
+      var confirmMsg=needsPopulate
+        ?'This will auto-populate '+activeClients.length+' active clients and send each one a "Confirm Your Date" email.\n\nRegulars have 7 days to confirm.'
+        :existingProposed.length+' proposed bookings already exist. Send confirmation emails to all clients with proposed dates?\n\nRegulars have 7 days to confirm.';
+      if(!await qpConfirm('Advance to Client Confirmation',confirmMsg,{okText:'Send Confirmations'}))return;
+    }
+
+    if(skipEmails){
+      // Just advance status, restart countdown timer
+      try{
+        await ensureFreshToken();
+        var updates={status:next,client_confirmation_sent_at:new Date().toISOString()};
+        var r=await proxyFrom('session_cycles').update(updates).eq('id',id);
+        if(r.error) throw new Error(r.error.message);
+        await logAudit('advance_cycle',null,'Re-advanced to client_confirmation without resending emails',{cycle_id:id});
+        showToast('Advanced to Client Confirmation — confirmation window restarted','success');
+        await loadSessionsData();
+      }catch(e){showToast('Error: '+e.message,'error')}
+      return;
+    }
 
     try{
       await ensureFreshToken();
