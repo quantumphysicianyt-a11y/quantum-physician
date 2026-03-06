@@ -3718,7 +3718,7 @@ function renderCycleBanner(){
   var statusLabels={planning:'Planning',client_confirmation:'Client Confirmation',waitlist_open:'Waitlist (48hr)',public_open:'Public Booking Open',active:'Active',completed:'Completed'};
   document.getElementById('sess-cycle-status-wrap').innerHTML='<span class="badge" style="background:'+statusColors[active.status]+'22;color:'+statusColors[active.status]+'">'+statusLabels[active.status]+'</span>'
     +(active.status!=='planning'?'<button class="btn btn-ghost btn-sm" onclick="regressCycleStatus(\''+active.id+'\',\''+active.status+'\')">← Back</button>':'')
-    +(active.status!=='completed'?'<button class="btn btn-ghost btn-sm" onclick="advanceCycleStatus(\''+active.id+'\',\''+active.status+'\')">Advance →</button>':'');
+    +buildAdvanceButton(active);
   var stages=['planning','client_confirmation','waitlist_open','public_open','active','completed'];
   var stageLabels={planning:'Planning',client_confirmation:'Client Confirm',waitlist_open:'Waitlist',public_open:'Public Open',active:'Active',completed:'Complete'};
   var stageColors={planning:'var(--text-dim)',client_confirmation:'var(--warning)',waitlist_open:'var(--teal)',public_open:'var(--purple)',active:'var(--success)',completed:'var(--success)'};
@@ -3738,6 +3738,101 @@ function renderCycleBanner(){
       +'</div></div>';
   });
   document.getElementById('sess-cycle-pipeline').innerHTML=pipeHtml;
+
+  // Start countdown timer if in client_confirmation
+  if(active.status==='client_confirmation'&&active.client_confirmation_sent_at){
+    startConfirmCountdown(active);
+  }
+}
+
+// ── CONFIRM WINDOW: 5 minutes for testing, change to 7*24*60*60*1000 for production ──
+var CONFIRM_WINDOW_MS=5*60*1000; // 5 minutes for testing
+
+function buildAdvanceButton(cycle){
+  if(cycle.status==='completed') return '';
+
+  var id=cycle.id;
+  var status=cycle.status;
+
+  // Stage-specific button labels
+  var buttonLabels={
+    planning:'Send Confirmations & Advance →',
+    client_confirmation:'Advance to Waitlist →',
+    waitlist_open:'Open to Public →',
+    public_open:'Activate Cycle →',
+    active:'Complete Cycle →'
+  };
+  var label=buttonLabels[status]||'Advance →';
+
+  // During client_confirmation: check if window has expired
+  if(status==='client_confirmation'&&cycle.client_confirmation_sent_at){
+    var sentAt=new Date(cycle.client_confirmation_sent_at).getTime();
+    var expiresAt=sentAt+CONFIRM_WINDOW_MS;
+    var now=Date.now();
+    var remaining=expiresAt-now;
+
+    if(remaining>0){
+      // Window still active — lock the button, show countdown
+      var mins=Math.floor(remaining/60000);
+      var secs=Math.floor((remaining%60000)/1000);
+      var timeStr=mins>0?mins+'m '+secs+'s':secs+'s';
+      return '<span id="sess-confirm-countdown" style="display:inline-flex;align-items:center;gap:8px;margin-left:8px">'
+        +'<span style="font-size:11px;color:var(--warning);font-weight:600">Confirmation window: '+timeStr+' remaining</span>'
+        +'<button class="btn btn-ghost btn-sm" disabled style="opacity:.4;cursor:not-allowed">'+label+'</button>'
+        +'</span>';
+    } else {
+      // Window expired — glow!
+      return '<span id="sess-confirm-countdown" style="display:inline-flex;align-items:center;gap:8px;margin-left:8px">'
+        +'<span style="font-size:11px;color:var(--success);font-weight:600">✓ Confirmation window closed</span>'
+        +'<button class="btn btn-ghost btn-sm sess-advance-glow" onclick="advanceCycleStatus(\''+id+'\',\''+status+'\')">'+label+'</button>'
+        +'</span>';
+    }
+  }
+
+  // During waitlist_open: show 48hr countdown
+  if(status==='waitlist_open'&&cycle.waitlist_expires_at){
+    var wlExpires=new Date(cycle.waitlist_expires_at).getTime();
+    var wlRemaining=wlExpires-Date.now();
+    if(wlRemaining>0){
+      var wlHrs=Math.floor(wlRemaining/3600000);
+      var wlMins=Math.floor((wlRemaining%3600000)/60000);
+      return '<span style="display:inline-flex;align-items:center;gap:8px;margin-left:8px">'
+        +'<span style="font-size:11px;color:var(--teal);font-weight:600">Waitlist window: '+wlHrs+'h '+wlMins+'m remaining</span>'
+        +'<button class="btn btn-ghost btn-sm" onclick="advanceCycleStatus(\''+id+'\',\''+status+'\')">'+label+' (skip wait)</button>'
+        +'</span>';
+    }
+  }
+
+  // Default: normal advance button with stage-specific label
+  return '<button class="btn btn-ghost btn-sm sess-advance-glow" onclick="advanceCycleStatus(\''+id+'\',\''+status+'\')">'+label+'</button>';
+}
+
+// Live countdown timer during client_confirmation
+var _confirmCountdownInterval=null;
+function startConfirmCountdown(cycle){
+  if(_confirmCountdownInterval) clearInterval(_confirmCountdownInterval);
+  var sentAt=new Date(cycle.client_confirmation_sent_at).getTime();
+  var expiresAt=sentAt+CONFIRM_WINDOW_MS;
+
+  _confirmCountdownInterval=setInterval(function(){
+    var el=document.getElementById('sess-confirm-countdown');
+    if(!el){clearInterval(_confirmCountdownInterval);return}
+
+    var remaining=expiresAt-Date.now();
+    if(remaining<=0){
+      clearInterval(_confirmCountdownInterval);
+      // Refresh to show unlocked button with glow
+      loadSessionsData();
+      showToast('Confirmation window closed — ready to advance!','success');
+      return;
+    }
+
+    var mins=Math.floor(remaining/60000);
+    var secs=Math.floor((remaining%60000)/1000);
+    var timeStr=mins>0?mins+'m '+secs+'s':secs+'s';
+    var span=el.querySelector('span');
+    if(span) span.textContent='Confirmation window: '+timeStr+' remaining';
+  },1000);
 }
 
 /* ---------- Cycle Management ---------- */

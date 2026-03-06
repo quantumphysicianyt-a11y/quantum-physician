@@ -8,6 +8,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="admin.css">
+<style>
+@keyframes advanceGlow{0%,100%{box-shadow:0 0 8px rgba(91,168,178,.3),0 0 16px rgba(91,168,178,.1)}50%{box-shadow:0 0 16px rgba(91,168,178,.6),0 0 32px rgba(91,168,178,.25)}}
+.sess-advance-glow{animation:advanceGlow 2s ease-in-out infinite;border-color:var(--teal)!important;color:var(--teal)!important}
+</style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 </head>
 <body>
@@ -278,7 +282,7 @@
 <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
 <select class="input" style="width:200px" id="sess-book-cycle" onchange="loadBookingsForCycle()"></select>
 <button class="btn btn-primary btn-sm" onclick="autoPopulate()">&#9889; Auto-Populate</button>
-<button class="btn btn-ghost btn-sm" onclick="sendAllConfirmations()">&#9993; Send Confirmations</button>
+<button class="btn btn-ghost btn-sm" id="sess-send-confirm-btn" onclick="sendAllConfirmations()" style="display:none">&#9993; Send Confirmations</button>
 </div></div>
 <div class="card-body">
 <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
