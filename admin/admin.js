@@ -4064,6 +4064,8 @@ async function advanceCycleStatus(id,current){
 
       var r=await proxyFrom('session_cycles').update(updates).eq('id',id);
       if(r.error) throw new Error(r.error.message);
+      // Open booking so waitlist can access the calendar
+      if(sessConfigData) await proxyFrom('session_config').update({public_booking_status:'open'}).eq('id',sessConfigData.id);
       await logAudit('advance_cycle',null,'Advanced to waitlist_open — emailed '+wlSent+' waitlist ('+wlFailed+' failed). Expires: '+wlExpires,{cycle_id:id});
       showToast(wlSent+' waitlist emails sent — 48hr window started','success');
       // Refresh waitlist data
@@ -5539,13 +5541,21 @@ function buildWaitlistAccessEmail(name,openSlots){
 
   var bookingUrl='https://qp-homepage.netlify.app/pages/one-on-sessions.html';
 
+  // Only show specific count if under 25 slots — otherwise keep it scarce
+  var slotText=openSlots<25
+    ?'**'+openSlots+' spot'+(openSlots!==1?'s':'')+' available**'
+    :'**Limited spots available**';
+  var cardText=openSlots<25
+    ?'**'+openSlots+' Spot'+(openSlots!==1?'s':'')+' Available**\nFirst come, first serve\n48 hours to book and pay'
+    :'**Limited Spots Available**\nFirst come, first serve\n48 hours to book and pay';
+
   var body='Hi '+(name||'there')+',\n\n'
-    +'Great news! '+(cycleName?'**'+cycleName+'** has ':'We have ')+openSlots+' session slot'+(openSlots!==1?'s':'')+' available, and as someone on our waitlist, you get **exclusive early access** before we open to the public.\n\n'
+    +'Great news! '+(cycleName?'**'+cycleName+'** sessions are':'Sessions with Dr. Tracey Clark are')+' opening soon, and as someone on our waitlist, you get **exclusive early access** before we open to the public.\n\n'
     +'---\n\n'
-    +'**'+openSlots+' Slot'+(openSlots!==1?'s':'')+' Available**\nFirst come, first serve\n48 hours to book and pay\n\n'
+    +cardText+'\n\n'
     +'---\n\n'
     +'[View Available Slots & Book Now]('+bookingUrl+')\n\n'
-    +'After 48 hours, any remaining slots will be opened to the public. Don\u2019t miss your chance to secure your spot!\n\n'
+    +'After 48 hours, any remaining spots will be opened to the public. Don\u2019t miss your chance to secure yours!\n\n'
     +'**What to expect:**\n'
     +'\u2022 A personalized, integrative healing session\n'
     +'\u2022 Practical guidance and next steps tailored to you\n'
