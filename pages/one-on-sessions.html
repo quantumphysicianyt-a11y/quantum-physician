@@ -1158,17 +1158,17 @@
         <div id="banner-content"></div>
       </div>
 
-      <!-- Available Slots (shown when public booking is open) -->
+      <!-- Inline Booking Card (replaces full calendar — the modal has the real calendar) -->
       <div id="booking-slots" style="display:none">
-        <div id="slots-month-nav" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-          <button class="btn outline" style="padding:10px 20px" onclick="slotsPrevMonth()">← Prev</button>
-          <h3 id="slots-month-label" style="font-family:'Playfair Display',serif;font-size:22px;font-weight:400;color:#fff"></h3>
-          <button class="btn outline" style="padding:10px 20px" onclick="slotsNextMonth()">Next →</button>
-        </div>
-        <div id="slots-calendar" class="slots-cal"></div>
-        <div id="slots-day-detail" style="display:none;margin-top:24px">
-          <h4 id="slots-day-label" style="font-family:'Playfair Display',serif;font-size:18px;font-weight:400;color:#fff;margin-bottom:14px"></h4>
-          <div id="slots-time-list"></div>
+        <div style="max-width:520px;margin:0 auto;background:linear-gradient(180deg,rgba(91,168,178,.06),rgba(91,168,178,.02));border:1px solid rgba(91,168,178,.15);border-radius:16px;padding:36px 32px;text-align:center">
+          <div id="inline-avail-summary" style="margin-bottom:24px">
+            <!-- Populated by JS: shows count of available dates -->
+          </div>
+          <button class="btn teal" onclick="openCalendarModal()" style="padding:16px 40px;font-size:13px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            View Calendar &amp; Book
+          </button>
+          <p style="color:rgba(255,255,255,.3);font-size:12px;margin-top:16px">Select your preferred date and time</p>
         </div>
       </div>
 
@@ -1196,8 +1196,8 @@
                 <label style="font-size:11px;color:rgba(255,255,255,.4);display:block;margin-bottom:4px">Preferred time</label>
                 <select id="wl-time" style="width:100%;padding:10px 12px;border-radius:6px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:#fff;font-size:13px;font-family:inherit">
                   <option value="">Any time</option>
-                  <option value="morning">Morning (9am–12pm)</option>
-                  <option value="afternoon">Afternoon (12pm–5pm)</option>
+                  <option value="morning">Morning (9am&#8211;12pm)</option>
+                  <option value="afternoon">Afternoon (12pm&#8211;5pm)</option>
                 </select>
               </div>
             </div>
@@ -1205,7 +1205,7 @@
             <button class="btn teal" onclick="submitWaitlist()" style="width:100%;margin-top:4px">Join Waitlist</button>
           </div>
           <div id="wl-success" style="display:none;text-align:center;padding:20px 0">
-            <div style="font-size:32px;margin-bottom:12px">✓</div>
+            <div style="font-size:32px;margin-bottom:12px">&#10003;</div>
             <h4 style="color:var(--teal);font-family:'Playfair Display',serif;font-size:20px;margin-bottom:8px">You're on the list!</h4>
             <p style="color:rgba(255,255,255,.55);font-size:14px">We'll reach out as soon as the next booking window opens.</p>
           </div>
@@ -1216,7 +1216,7 @@
       <div id="countdown-section" style="display:none;text-align:center">
         <div style="max-width:500px;margin:0 auto">
           <h3 style="font-family:'Playfair Display',serif;font-size:26px;font-weight:400;color:#fff;margin-bottom:8px">Next Booking Window Opens Soon</h3>
-          <p style="color:rgba(255,255,255,.55);font-size:15px;margin-bottom:28px">Mark your calendar — new sessions are on the way.</p>
+          <p style="color:rgba(255,255,255,.55);font-size:15px;margin-bottom:28px">Mark your calendar &#8212; new sessions are on the way.</p>
           <div id="countdown-timer" style="display:flex;gap:16px;justify-content:center;margin-bottom:32px"></div>
           <p style="color:rgba(255,255,255,.4);font-size:13px;margin-bottom:24px">Want to be notified the moment booking opens?</p>
           <button class="btn teal" onclick="document.getElementById('waitlist-section').style.display='block';document.getElementById('countdown-section').style.display='none'">Join the Waitlist</button>
@@ -1226,7 +1226,7 @@
       <!-- Loading state -->
       <div id="booking-loading" style="text-align:center;padding:40px 0">
         <div style="width:32px;height:32px;border:3px solid rgba(255,255,255,.15);border-top-color:var(--teal);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px"></div>
-        <p style="color:rgba(255,255,255,.45);font-size:14px">Checking availability…</p>
+        <p style="color:rgba(255,255,255,.45);font-size:14px">Checking availability&#8230;</p>
       </div>
     </div>
   </section>
@@ -1368,7 +1368,6 @@
       var currency = '\u20AC';
       var priceStr = price ? currency + Number(price).toFixed(0) : '';
 
-      // Demo mode with test slots — treat as open
       var showCalendar = (status === 'open' && activeCycle) || isDemoMode;
 
       if (showCalendar) {
@@ -1380,10 +1379,28 @@
         }
         document.getElementById('booking-slots').style.display = 'block';
 
-        var now = new Date();
-        slotsMonth = now.getMonth();
-        slotsYear = now.getFullYear();
-        renderSlotsCalendar();
+        // Populate inline availability summary
+        var today = new Date(); today.setHours(0,0,0,0);
+        var uniqueDates = [];
+        bookAvail.forEach(function(a) {
+          var d = new Date(a.date + 'T12:00');
+          if (d >= today && uniqueDates.indexOf(a.date) === -1) uniqueDates.push(a.date);
+        });
+        var summaryEl = document.getElementById('inline-avail-summary');
+        if (summaryEl) {
+          if (uniqueDates.length > 0) {
+            // Show next 3 available dates as pill previews
+            var previewDates = uniqueDates.slice(0, 3).map(function(ds) {
+              var d = new Date(ds + 'T12:00');
+              return '<span style="display:inline-block;background:rgba(91,168,178,.1);border:1px solid rgba(91,168,178,.2);border-radius:8px;padding:8px 16px;margin:4px;font-size:14px;color:var(--teal);font-weight:600">' + d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + '</span>';
+            }).join('');
+            var moreText = uniqueDates.length > 3 ? '<span style="color:rgba(255,255,255,.4);font-size:13px;margin-left:4px">+' + (uniqueDates.length - 3) + ' more</span>' : '';
+            summaryEl.innerHTML = '<p style="color:rgba(255,255,255,.5);font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin-bottom:14px">' + uniqueDates.length + ' dates available</p>'
+              + '<div style="margin-bottom:4px">' + previewDates + moreText + '</div>';
+          } else {
+            summaryEl.innerHTML = '<p style="color:rgba(255,255,255,.5);font-size:14px">Check the calendar for upcoming availability.</p>';
+          }
+        }
 
       } else if (status === 'coming_soon' && bookConfig.public_booking_opens_at) {
         banner.style.display = 'block';
@@ -1430,11 +1447,14 @@
     var isDemoMode = false;
 
     function injectTestSlots() {
-      var hasRealSlots = bookAvail.length > 0;
-      if (hasRealSlots) { isDemoMode = false; return; }
+      // Check for real FUTURE available slots (not past dates)
+      var today = new Date(); today.setHours(0,0,0,0);
+      var futureSlots = bookAvail.filter(function(a) {
+        return new Date(a.date + 'T12:00') >= today;
+      });
+      if (futureSlots.length > 0) { isDemoMode = false; return; }
 
       isDemoMode = true;
-      var today = new Date();
       var testSlots = [];
       var offsets = [3, 7, 10, 14, 17];
       offsets.forEach(function(offset) {
@@ -1544,12 +1564,7 @@
       modal.classList.remove('open');
       calModalOpen = false;
       document.body.style.overflow = '';
-      setTimeout(function() {
-        modal.style.display = 'none';
-        // Scroll to the booking section so user lands in context
-        var bookSec = document.getElementById('book-section');
-        if (bookSec) bookSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 300);
+      setTimeout(function() { modal.style.display = 'none'; }, 300);
       if (modalCountdownInterval) { clearInterval(modalCountdownInterval); modalCountdownInterval = null; }
     }
 
