@@ -1346,9 +1346,6 @@
 
         document.getElementById('booking-loading').style.display = 'none';
 
-        // Inject demo slots if no real availability
-        injectTestSlots();
-
         renderBookingState();
       } catch (e) {
         console.error('Booking init error:', e);
@@ -1368,15 +1365,11 @@
       var currency = '\u20AC';
       var priceStr = price ? currency + Number(price).toFixed(0) : '';
 
-      var showCalendar = (status === 'open' && activeCycle) || isDemoMode;
+      var showCalendar = (status === 'open' && activeCycle);
 
       if (showCalendar) {
         banner.style.display = 'block';
-        if (isDemoMode) {
-          bannerContent.innerHTML = '<div class="banner-open"><h3>Preview Available Sessions</h3><p>' + (priceStr ? priceStr + ' \u00B7 ' : '') + duration + '-minute private session with Dr. Tracey Clark</p></div>';
-        } else {
-          bannerContent.innerHTML = '<div class="banner-open"><h3>Booking Is Open</h3><p>' + (priceStr ? priceStr + ' \u00B7 ' : '') + duration + '-minute private session with Dr. Tracey Clark</p></div>';
-        }
+        bannerContent.innerHTML = '<div class="banner-open"><h3>Booking Is Open</h3><p>' + (priceStr ? priceStr + ' \u00B7 ' : '') + duration + '-minute private session with Dr. Tracey Clark</p></div>';
         document.getElementById('booking-slots').style.display = 'block';
 
         // Populate inline availability summary
@@ -1443,36 +1436,6 @@
       }
     }
 
-    /* ===== Demo / Test Appointments ===== */
-    var isDemoMode = false;
-
-    function injectTestSlots() {
-      // Check for real FUTURE available slots (not past dates)
-      var today = new Date(); today.setHours(0,0,0,0);
-      var futureSlots = bookAvail.filter(function(a) {
-        return new Date(a.date + 'T12:00') >= today;
-      });
-      if (futureSlots.length > 0) { isDemoMode = false; return; }
-
-      isDemoMode = true;
-      var testSlots = [];
-      var offsets = [3, 7, 10, 14, 17];
-      offsets.forEach(function(offset) {
-        var d = new Date(today);
-        d.setDate(d.getDate() + offset);
-        if (d.getDay() === 0) d.setDate(d.getDate() + 1);
-        if (d.getDay() === 6) d.setDate(d.getDate() + 2);
-        var dateStr = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-        testSlots.push({ date: dateStr, start_time: '09:00', end_time: '12:00', status: 'available', visibility: 'public' });
-        testSlots.push({ date: dateStr, start_time: '14:00', end_time: '17:00', status: 'available', visibility: 'public' });
-      });
-      bookAvail = testSlots;
-      if (testSlots.length >= 4) {
-        bookBookings.push({ date: testSlots[0].date, start_time: '10:00', end_time: '10:30', status: 'paid' });
-        bookBookings.push({ date: testSlots[2].date, start_time: '14:00', end_time: '14:30', status: 'paid' });
-      }
-    }
-
     /* ===== Calendar Modal ===== */
     var calModalOpen = false;
     var modalSlotsMonth, modalSlotsYear;
@@ -1484,13 +1447,13 @@
       var content = document.getElementById('cal-modal-content');
       if (!modal || !content) return;
 
-      // Inject test slots if no real data
-      injectTestSlots();
-
       var status = bookConfig ? bookConfig.public_booking_status : 'closed';
-      // If we have test slots, treat as open for demo
-      if (bookAvail.length > 0 && status !== 'open' && status !== 'coming_soon') {
-        status = 'open';
+      // Check if there's an active cycle with real availability
+      var activeCycle = bookCycles.find(function(c) { return c.status === 'active' || c.status === 'public_open'; });
+      var today = new Date(); today.setHours(0,0,0,0);
+      var futureSlots = bookAvail.filter(function(a) { return new Date(a.date + 'T12:00') >= today; });
+      if (status === 'open' && activeCycle && futureSlots.length === 0) {
+        status = 'closed'; // No actual future slots even though status says open
       }
 
       var html = '';
@@ -1835,52 +1798,28 @@
       modal.id = 'slot-checkout-modal';
       modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)';
 
-      if (isDemoMode) {
-        // Demo mode — show preview, no real checkout
-        modal.innerHTML = '<div style="background:linear-gradient(180deg,#0e1a30,#121f3a);border:1px solid rgba(91,168,178,.18);border-radius:20px;max-width:440px;width:100%;padding:40px;text-align:center;box-shadow:0 24px 80px rgba(0,0,0,.5)">'
-          + '<p style="color:var(--teal);font-size:11px;letter-spacing:3px;text-transform:uppercase;margin:0 0 16px">\u2726 Session Preview</p>'
-          + '<p style="color:#fff;font-size:22px;font-weight:600;margin:0 0 4px;font-family:Playfair Display,serif">' + dateStr + '</p>'
-          + '<p style="color:rgba(255,255,255,.55);font-size:16px;margin:0 0 28px">' + timeStr + ' \u00B7 ' + duration + ' min \u00B7 ' + currency + Number(price).toFixed(0) + '</p>'
-          + '<div style="background:rgba(91,168,178,.06);border:1px solid rgba(91,168,178,.12);border-radius:12px;padding:20px;margin:0 0 24px">'
-          + '<p style="color:rgba(255,255,255,.7);font-size:14px;line-height:1.7;margin:0">This is a preview of how booking works.<br>Join the waitlist to be notified when sessions open.</p></div>'
-          + '<button onclick="document.getElementById(\'slot-checkout-modal\').remove();document.getElementById(\'waitlist-section\').scrollIntoView({behavior:\'smooth\'})" style="width:100%;padding:14px;background:linear-gradient(135deg,#5ba8b2,#4acfd9);border:none;border-radius:50px;color:#fff;font-size:14px;font-weight:700;letter-spacing:1.5px;cursor:pointer;text-transform:uppercase">Join the Waitlist</button>'
-          + '<p onclick="document.getElementById(\'slot-checkout-modal\').remove()" style="color:rgba(255,255,255,.35);font-size:13px;margin:16px 0 0;cursor:pointer">Close</p>'
-          + '</div>';
-      } else {
-        // Real checkout mode
-        modal.innerHTML = '<div style="background:linear-gradient(180deg,#0e1a30,#121f3a);border:1px solid rgba(91,168,178,.18);border-radius:20px;max-width:440px;width:100%;padding:40px;text-align:center;box-shadow:0 24px 80px rgba(0,0,0,.5)">'
-          + '<p style="color:var(--teal);font-size:11px;letter-spacing:3px;text-transform:uppercase;margin:0 0 16px">Book Your Session</p>'
-          + '<p style="color:#fff;font-size:22px;font-weight:600;margin:0 0 4px;font-family:Playfair Display,serif">' + dateStr + '</p>'
-          + '<p style="color:rgba(255,255,255,.55);font-size:16px;margin:0 0 28px">' + timeStr + ' \u00B7 ' + duration + ' min \u00B7 ' + currency + Number(price).toFixed(0) + '</p>'
-          + '<input type="text" id="slot-name" placeholder="Your name" style="' + inputStyle + '">'
-          + '<input type="email" id="slot-email" placeholder="Your email" style="' + inputStyle + ';margin-bottom:20px">'
-          + '<div id="slot-error" style="color:#ff6b6b;font-size:13px;margin-bottom:12px;display:none"></div>'
-          + '<button id="slot-pay-btn" onclick="processSlotCheckout(\'' + date + '\',\'' + time + '\')" style="width:100%;padding:14px;background:linear-gradient(135deg,#5ba8b2,#4acfd9);border:none;border-radius:50px;color:#fff;font-size:14px;font-weight:700;letter-spacing:1.5px;cursor:pointer;text-transform:uppercase">Confirm &amp; Pay</button>'
-          + '<p onclick="document.getElementById(\'slot-checkout-modal\').remove()" style="color:rgba(255,255,255,.35);font-size:13px;margin:16px 0 0;cursor:pointer">Cancel</p>'
-          + '</div>';
+      modal.innerHTML = '<div style="background:linear-gradient(180deg,#0e1a30,#121f3a);border:1px solid rgba(91,168,178,.18);border-radius:20px;max-width:440px;width:100%;padding:40px;text-align:center;box-shadow:0 24px 80px rgba(0,0,0,.5)">'
+        + '<p style="color:var(--teal);font-size:11px;letter-spacing:3px;text-transform:uppercase;margin:0 0 16px">Book Your Session</p>'
+        + '<p style="color:#fff;font-size:22px;font-weight:600;margin:0 0 4px;font-family:Playfair Display,serif">' + dateStr + '</p>'
+        + '<p style="color:rgba(255,255,255,.55);font-size:16px;margin:0 0 28px">' + timeStr + ' \u00B7 ' + duration + ' min \u00B7 ' + currency + Number(price).toFixed(0) + '</p>'
+        + '<input type="text" id="slot-name" placeholder="Your name" style="' + inputStyle + '">'
+        + '<input type="email" id="slot-email" placeholder="Your email" style="' + inputStyle + ';margin-bottom:20px">'
+        + '<div id="slot-error" style="color:#ff6b6b;font-size:13px;margin-bottom:12px;display:none"></div>'
+        + '<button id="slot-pay-btn" onclick="processSlotCheckout(\'' + date + '\',\'' + time + '\')" style="width:100%;padding:14px;background:linear-gradient(135deg,#5ba8b2,#4acfd9);border:none;border-radius:50px;color:#fff;font-size:14px;font-weight:700;letter-spacing:1.5px;cursor:pointer;text-transform:uppercase">Confirm &amp; Pay</button>'
+        + '<p onclick="document.getElementById(\'slot-checkout-modal\').remove()" style="color:rgba(255,255,255,.35);font-size:13px;margin:16px 0 0;cursor:pointer">Cancel</p>'
+        + '</div>';
 
-        // Force autofill to match dark theme
-        var style = document.createElement('style');
-        style.textContent = '#slot-name:-webkit-autofill,#slot-email:-webkit-autofill{-webkit-box-shadow:0 0 0 50px #0e1a30 inset !important;-webkit-text-fill-color:#fff !important;border-color:rgba(91,168,178,.3) !important;caret-color:#fff !important}';
-        modal.querySelector('div').appendChild(style);
-      }
+      // Force autofill to match dark theme
+      var style = document.createElement('style');
+      style.textContent = '#slot-name:-webkit-autofill,#slot-email:-webkit-autofill{-webkit-box-shadow:0 0 0 50px #0e1a30 inset !important;-webkit-text-fill-color:#fff !important;border-color:rgba(91,168,178,.3) !important;caret-color:#fff !important}';
+      modal.querySelector('div').appendChild(style);
 
       document.body.appendChild(modal);
-      // Click overlay to close
       modal.addEventListener('click', function(e) { if (e.target === modal) modal.remove(); });
-      if (!isDemoMode) document.getElementById('slot-name').focus();
+      document.getElementById('slot-name').focus();
     }
 
     async function processSlotCheckout(date, time) {
-      // Safety: if somehow reached in demo mode, redirect to waitlist
-      if (isDemoMode) {
-        var m = document.getElementById('slot-checkout-modal');
-        if (m) m.remove();
-        var wl = document.getElementById('waitlist-section');
-        if (wl) wl.scrollIntoView({ behavior: 'smooth' });
-        return;
-      }
-
       var name = (document.getElementById('slot-name').value || '').trim();
       var email = (document.getElementById('slot-email').value || '').trim();
       var errEl = document.getElementById('slot-error');
