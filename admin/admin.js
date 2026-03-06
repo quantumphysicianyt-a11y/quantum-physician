@@ -3676,11 +3676,20 @@ function getSessionTypeById(id){
 
 function formatTypePrice(type, client){
   if(!type) return '';
-  // If client has currency override, convert display (actual Stripe amount handled server-side)
   var cur=(client&&client.currency)?client.currency:type.currency;
   var sym=cur==='EUR'?'\u20AC':(cur==='CAD'?'CA$':'$');
   var cents=type.price_cents;
   return sym+(cents/100).toFixed(0)+' '+cur;
+}
+
+function isRegularClient(email){
+  if(!email) return false;
+  return sessClientsData.some(function(cl){return cl.email&&cl.email.toLowerCase()===email.toLowerCase()&&cl.client_type==='regular'});
+}
+
+function regularBadgeHtml(small){
+  var sz=small?'9px':'10px';
+  return '<span class="badge teal" style="font-size:'+sz+';vertical-align:middle">\u2605 Regular</span>';
 }
 
 function renderSessionsStats(){
@@ -4640,7 +4649,7 @@ function renderBookingsGrid(){
     +'<th></th></tr></thead><tbody>'
     +page.map(function(b){
       var payLink=b.confirmation_token?'https://qp-homepage.netlify.app/pages/one-on-sessions.html?pay='+b.confirmation_token:'';
-      var isRegular=sessClientsData.some(function(cl){return cl.id===b.client_id&&cl.client_type==='regular'});
+      var isRegular=isRegularClient(b.email) || sessClientsData.some(function(cl){return cl.id===b.client_id&&cl.client_type==='regular'});
 
       // Payment column content
       var payCol='';
@@ -4653,9 +4662,9 @@ function renderBookingsGrid(){
       }else if(b.status==='completed'&&isRegular&&!b.stripe_payment_id){
         payCol='<button class="btn btn-sm" onclick="requestRegularPayment(\''+b.id+'\')" style="font-size:10px;padding:4px 10px;background:rgba(239,83,80,.12);color:var(--danger);border:1px solid rgba(239,83,80,.25)">Unpaid · Request</button>';
       }else if(b.status==='completed'){
-        payCol='<span style="font-size:11px;color:var(--text-dim)">—</span>';
+        payCol='<span style="font-size:11px;color:var(--text-dim)">\u2014</span>';
       }else{
-        payCol='<span style="font-size:11px;color:var(--text-dim)">—</span>';
+        payCol='<span style="font-size:11px;color:var(--text-dim)">\u2014</span>';
       }
 
       var reschedLabel='';
@@ -4668,7 +4677,7 @@ function renderBookingsGrid(){
 
       var row='<tr><td style="white-space:nowrap">'+fmtDate(b.date)+'</td>'
         +'<td>'+b.start_time.slice(0,5)+'–'+b.end_time.slice(0,5)+'</td>'
-        +'<td class="email" style="cursor:pointer" onclick="event.stopPropagation();crmOpenClient(\''+esc(b.email.toLowerCase()).replace(/'/g,"\\'")+'\')">'+esc(b.email)+(b.name?'<br><span class="name" style="font-size:11px">'+esc(b.name)+'</span>':'')+(isRegular?' <span class="badge teal" style="font-size:9px;vertical-align:middle">Regular</span>':'')+reschedLabel+'</td>'
+        +'<td class="email" style="cursor:pointer" onclick="event.stopPropagation();crmOpenClient(\''+esc(b.email.toLowerCase()).replace(/'/g,"\\'")+'\')">'+esc(b.email)+(b.name?'<br><span class="name" style="font-size:11px">'+esc(b.name)+'</span>':'')+(isRegular?' '+regularBadgeHtml(true):'')+reschedLabel+'</td>'
         +'<td>'+typeBadges[b.type]+(b.session_type_id?(function(){var st=getSessionTypeById(b.session_type_id);return st?'<div style="font-size:10px;color:var(--text-dim);margin-top:2px">'+esc(st.name)+'</div>':''})():'')+'</td>'
         +'<td>'+(statusBadges[b.status]||'<span class="badge muted">'+b.status+'</span>')+(b.client_cancelled&&!b.admin_acknowledged?'<span class="badge danger" style="margin-left:4px" title="Client self-cancelled">🔔 Client</span>':'')+'</td>'
         +'<td>'+payCol+'</td>'
@@ -5166,7 +5175,8 @@ function renderPublicWaitlist(){
     +waiting.map(function(w){
       var days=(w.preferred_days||[]).join(', ');
       var times=(w.preferred_times||[]).join(', ');
-      return'<tr><td class="email" style="cursor:pointer" onclick="crmOpenClient(\''+esc(w.email.toLowerCase()).replace(/'/g,"\\'")+'\')">'+esc(w.email)+'</td><td class="name">'+esc(w.name||'—')+'</td>'
+      var regBadge=isRegularClient(w.email)?' '+regularBadgeHtml(true):'';
+      return'<tr><td class="email" style="cursor:pointer" onclick="crmOpenClient(\''+esc(w.email.toLowerCase()).replace(/'/g,"\\'")+'\')">'+esc(w.email)+regBadge+'</td><td class="name">'+esc(w.name||'\u2014')+'</td>'
         +'<td style="font-size:12px">'+esc(days||'—')+' '+esc(times||'')+'</td>'
         +'<td style="font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis">'+esc(w.message||'—')+'</td>'
         +'<td>'+timeAgo(w.created_at)+'</td>'
@@ -5188,7 +5198,7 @@ async function togglePublicBooking(status){
 
 async function offerSlot(waitlistId,email){
   var wl=sessWaitlistData.find(function(w){return w.id===waitlistId});
-  var isRegular=sessClientsData.some(function(cl){return cl.email&&cl.email.toLowerCase()===email.toLowerCase()&&cl.client_type==='regular'});
+  var isRegular=isRegularClient(email);
   var cycleId=sessSelectedCycleId;
   if(!cycleId){
     // Try to find any active/public_open cycle
@@ -5291,7 +5301,7 @@ function updateOfferPreview(wl,email){
   var priceStr=st?sym+(st.price_cents/100).toFixed(0):'';
 
   // Check if this is a regular (trusted) client
-  var isRegular=sessClientsData.some(function(cl){return cl.email&&cl.email.toLowerCase()===email.toLowerCase()&&cl.client_type==='regular'});
+  var isRegular=isRegularClient(email);
 
   if(isRegular){
     preview.innerHTML='<strong>Subject:</strong> Your '+esc(typeName)+' with Dr. Tracey Clark \u2014 '+dayFmt
@@ -5337,7 +5347,7 @@ function buildOfferEmailBody(wl,email,token){
   var priceStr=st?sym+(st.price_cents/100).toFixed(0):'';
   var name=wl?wl.name||'there':'there';
 
-  var isRegular=sessClientsData.some(function(cl){return cl.email&&cl.email.toLowerCase()===email.toLowerCase()&&cl.client_type==='regular'});
+  var isRegular=isRegularClient(email);
 
   if(isRegular){
     // Regular: confirm date, payment comes later via day-before reminder
@@ -5447,7 +5457,7 @@ async function sendOfferSlot(waitlistId,email){
   if(!emailData){showToast('Select a date first','error');return}
 
   // Check if this is a regular (trusted) client
-  var isRegular=sessClientsData.some(function(cl){return cl.email&&cl.email.toLowerCase()===email.toLowerCase()&&cl.client_type==='regular'});
+  var isRegular=isRegularClient(email);
 
   if(isRegular){
     // REGULAR flow: proposed, client confirms date (7 days), payment comes via day-before reminder
@@ -5626,7 +5636,8 @@ function renderCrmList(){
     var intakeBadge = c.intakeStatus==='completed' ? '<span class="badge badge-success">Complete</span>' : c.intakeStatus==='in_progress' ? '<span class="badge badge-warning">In Progress</span>' : '<span class="badge badge-muted">Not Started</span>';
     var statusBadge = c.status==='active' ? '<span class="badge badge-success">Active</span>' : c.status==='paused' ? '<span class="badge badge-warning">Paused</span>' : '<span class="badge badge-muted">'+esc(c.status)+'</span>';
     var lastDate = c.lastSession ? new Date(c.lastSession).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '\u2014';
-    html += '<tr style="cursor:pointer" onclick="crmOpenClient(\''+esc(c.email)+'\')">'+'<td><div style="font-weight:600">'+esc(c.name||c.email.split('@')[0])+'</div><div style="font-size:11px;color:var(--text-dim)">'+esc(c.email)+'</div></td>'+'<td>'+c.sessionCount+'</td><td>'+lastDate+'</td><td>'+intakeBadge+'</td><td>'+statusBadge+'</td>'+'<td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();crmOpenClient(\''+esc(c.email)+'\')">View \u2192</button></td></tr>';
+    var regBadge = isRegularClient(c.email) ? ' '+regularBadgeHtml(true) : '';
+    html += '<tr style="cursor:pointer" onclick="crmOpenClient(\''+esc(c.email)+'\')">'+'<td><div style="font-weight:600">'+esc(c.name||c.email.split('@')[0])+regBadge+'</div><div style="font-size:11px;color:var(--text-dim)">'+esc(c.email)+'</div></td>'+'<td>'+c.sessionCount+'</td><td>'+lastDate+'</td><td>'+intakeBadge+'</td><td>'+statusBadge+'</td>'+'<td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();crmOpenClient(\''+esc(c.email)+'\')">View \u2192</button></td></tr>';
   });
   html += '</tbody></table>';
   document.getElementById('crm-table').innerHTML = html;
@@ -5681,7 +5692,7 @@ async function crmOpenClient(email){
     var totalSess = crmBookings.length;
     var paidSess = crmBookings.filter(function(b){ return b.status==='paid'||b.status==='completed'; }).length;
     var firstSess = crmBookings.length ? crmBookings[crmBookings.length-1].date : null;
-    var regularBadge = sessClient && sessClient.client_type==='regular' ? ' <span class="badge teal" style="font-size:10px;vertical-align:middle">Regular</span>' : '';
+    var regularBadge = sessClient && sessClient.client_type==='regular' ? ' '+regularBadgeHtml(false) : '';
     var actionBtns = '';
     if(sessClient){
       var cid=sessClient.id;
