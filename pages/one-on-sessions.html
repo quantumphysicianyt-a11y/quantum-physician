@@ -440,28 +440,28 @@
 
     /* ========== BOOKING BANNER ========== */
     #booking-banner {
-      margin-bottom: 36px;
-      border-radius: 8px;
+      margin-bottom: 24px;
+      border-radius: 12px;
       overflow: hidden;
     }
     .banner-open {
       background: linear-gradient(135deg, rgba(91,168,178,.12), rgba(91,168,178,.06));
       border: 1px solid rgba(91,168,178,.25);
-      padding: 24px 28px;
-      border-radius: 8px;
+      padding: 28px 32px;
+      border-radius: 12px;
       text-align: center;
     }
-    .banner-open h3 { color: var(--teal); font-family: 'Playfair Display', serif; font-size: 20px; margin-bottom: 6px; }
-    .banner-open p { color: rgba(255,255,255,.55); font-size: 14px; }
+    .banner-open h3 { color: var(--teal); font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 6px; }
+    .banner-open p { color: rgba(255,255,255,.55); font-size: 15px; }
     .banner-closed {
       background: rgba(255,255,255,.04);
       border: 1px solid rgba(255,255,255,.08);
-      padding: 24px 28px;
-      border-radius: 8px;
+      padding: 28px 32px;
+      border-radius: 12px;
       text-align: center;
     }
-    .banner-closed h3 { color: var(--taupe); font-family: 'Playfair Display', serif; font-size: 20px; margin-bottom: 6px; }
-    .banner-closed p { color: rgba(255,255,255,.45); font-size: 14px; }
+    .banner-closed h3 { color: var(--taupe); font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 6px; }
+    .banner-closed p { color: rgba(255,255,255,.45); font-size: 15px; }
 
     /* ========== SLOTS CALENDAR ========== */
     .slots-cal {
@@ -1160,11 +1160,11 @@
 
       <!-- Inline Booking Card (replaces full calendar — the modal has the real calendar) -->
       <div id="booking-slots" style="display:none">
-        <div style="max-width:520px;margin:0 auto;background:linear-gradient(180deg,rgba(91,168,178,.06),rgba(91,168,178,.02));border:1px solid rgba(91,168,178,.15);border-radius:16px;padding:36px 32px;text-align:center">
-          <div id="inline-avail-summary" style="margin-bottom:24px">
+        <div style="background:linear-gradient(180deg,rgba(91,168,178,.06),rgba(91,168,178,.02));border:1px solid rgba(91,168,178,.15);border-radius:12px;padding:44px 36px;text-align:center">
+          <div id="inline-avail-summary" style="margin-bottom:28px">
             <!-- Populated by JS: shows count of available dates -->
           </div>
-          <button class="btn teal" onclick="openCalendarModal()" style="padding:16px 40px;font-size:13px">
+          <button class="btn teal" onclick="openCalendarModal()" style="padding:18px 48px;font-size:14px">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             View Calendar &amp; Book
           </button>
