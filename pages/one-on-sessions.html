@@ -1756,7 +1756,7 @@
 
       var dayAvail = bookAvail.filter(function(a) { return a.date === dateStr; });
       var dayBooked = bookBookings.filter(function(b) { return b.date === dateStr; });
-      var duration = bookConfig ? bookConfig.session_duration_minutes : 60;
+      var duration = bookConfig ? bookConfig.session_duration_minutes : 30;
       var buffer = bookConfig ? bookConfig.booking_buffer_minutes : 15;
 
       // Generate time slots from availability blocks
@@ -1857,6 +1857,15 @@
     }
 
     async function processSlotCheckout(date, time) {
+      // Safety: if somehow reached in demo mode, redirect to waitlist
+      if (isDemoMode) {
+        var m = document.getElementById('slot-checkout-modal');
+        if (m) m.remove();
+        var wl = document.getElementById('waitlist-section');
+        if (wl) wl.scrollIntoView({ behavior: 'smooth' });
+        return;
+      }
+
       var name = (document.getElementById('slot-name').value || '').trim();
       var email = (document.getElementById('slot-email').value || '').trim();
       var errEl = document.getElementById('slot-error');
