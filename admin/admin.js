@@ -6550,7 +6550,6 @@ async function crmAddNote(bookingId){
           body_regions: regions.length ? regions : null,
           visible_to_patient: !!visible
         };
-        if(currentAdmin && currentAdmin.id) insertData.created_by = currentAdmin.id;
         var insertRes = await proxyFrom('session_notes').insert(insertData);
         if(insertRes.error) throw new Error(insertRes.error.message);
         await logAudit('crm_add_note', crmCurrentClient || 'admin', 'Added session note' + (regions.length ? ' (' + regions.length + ' regions)' : ''));
