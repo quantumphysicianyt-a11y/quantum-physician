@@ -5139,7 +5139,7 @@ function renderBookingsGrid(){
       if (bRecs.length) badgeHtml.push('<span style="color:var(--success)">🎥 ' + bRecs.length + ' recording' + (bRecs.length > 1 ? 's' : '') + '</span>');
       if (!totalItems) badgeHtml.push('<span style="color:var(--text-dim)">No notes</span>');
       // Quick-add buttons (always shown in toggle row)
-      var quickBtns = ' <span style="margin-left:8px"><button class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 6px;color:var(--teal);border-color:rgba(91,168,178,.2)" onclick="event.stopPropagation();crmAddNote(\''+b.id+'\')">+ Note</button> <button class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 6px;color:var(--success);border-color:rgba(91,184,140,.2)" onclick="event.stopPropagation();crmAddRecording(\''+b.id+'\')">+ Recording</button></span>';
+      var quickBtns = ' <span style="margin-left:8px"><button class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 6px;color:var(--teal);border-color:rgba(91,168,178,.2)" onclick="event.stopPropagation();crmAddNote(&quot;'+b.id+'&quot;)">+ Note</button> <button class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 6px;color:var(--success);border-color:rgba(91,184,140,.2)" onclick="event.stopPropagation();crmAddRecording(&quot;'+b.id+'&quot;)">+ Recording</button></span>';
       if (totalItems) {
         row += '<tr class="note-toggle-row" data-bid="'+b.id+'" style="cursor:pointer;background:rgba(91,168,178,0.03)" onclick="var rows=document.querySelectorAll(\'.note-row-'+b.id.replace(/-/g,'')+'\');var show=rows[0]&&rows[0].style.display===\'none\';rows.forEach(function(r){r.style.display=show?\'table-row\':\'none\'});this.querySelector(\'.note-arrow\').textContent=show?\'▾\':\'▸\'"><td colspan="7" style="padding:5px 16px;font-size:12px"><span class="note-arrow" style="margin-right:6px;color:var(--teal)">▸</span>' + badgeHtml.join(' <span style="color:var(--border)">·</span> ') + quickBtns + '</td></tr>';
       } else {
@@ -5158,7 +5158,7 @@ function renderBookingsGrid(){
         bRecs.forEach(function(r){
           var sizeTxt = r.file_size_mb ? ' · ' + r.file_size_mb + ' MB' : '';
           var srcBadge = r.source_type === 'supabase' ? '<span class="badge badge-success" style="font-size:10px">Hosted</span>' : '<span class="badge badge-muted" style="font-size:10px">External</span>';
-          row += '<tr class="note-row-'+b.id.replace(/-/g,'')+'" style="display:none;background:rgba(91,184,140,0.05)"><td colspan="7" style="padding:8px 16px 8px 32px;font-size:13px"><div style="display:flex;justify-content:space-between;align-items:center"><div><span style="color:var(--success);font-weight:600;font-size:11px">🎥 RECORDING</span> '+srcBadge+' <span style="margin-left:6px">'+esc(r.title||'Session Recording')+sizeTxt+'</span><div style="font-size:11px;color:var(--text-dim);margin-top:2px">'+timeAgo(r.uploaded_at)+'</div></div><div style="display:flex;gap:4px"><a href="'+esc(r.recording_url)+'" target="_blank" class="btn btn-ghost btn-sm" style="font-size:11px">▶ Play</a><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();crmDeleteRecording(\''+r.id+'\')" title="Delete" style="font-size:11px;color:var(--error)">🗑</button></div></div></td></tr>';
+          row += '<tr class="note-row-'+b.id.replace(/-/g,'')+'" style="display:none;background:rgba(91,184,140,0.05)"><td colspan="7" style="padding:8px 16px 8px 32px;font-size:13px"><div style="display:flex;justify-content:space-between;align-items:center"><div><span style="color:var(--success);font-weight:600;font-size:11px">🎥 RECORDING</span> '+srcBadge+' <span style="margin-left:6px">'+esc(r.title||'Session Recording')+sizeTxt+'</span><div style="font-size:11px;color:var(--text-dim);margin-top:2px">'+timeAgo(r.uploaded_at)+'</div></div><div style="display:flex;gap:4px"><button class="btn btn-ghost btn-sm" style="font-size:11px" onclick="event.stopPropagation();playRecordingInline(this,&quot;'+esc(r.recording_url)+'&quot;)">▶ Play</button><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();crmDeleteRecording(\''+r.id+'\')" title="Delete" style="font-size:11px;color:var(--error)">🗑</button></div></div></td></tr>';
         });
       }
       return row;
@@ -6560,6 +6560,17 @@ async function crmAddNote(bookingId){
     document.getElementById('modal-cancel').onclick = function(){ o.remove(); resolve(); };
     o.onclick = function(e){ if(e.target===o){ o.remove(); resolve(); }};
   });
+}
+
+function playRecordingInline(btn, url){
+  var existing = btn.closest('tr').querySelector('.inline-player');
+  if(existing){ existing.remove(); btn.textContent='\u25B6 Play'; return; }
+  btn.textContent='\u25BC Close';
+  var playerDiv = document.createElement('div');
+  playerDiv.className='inline-player';
+  playerDiv.style.cssText='margin-top:10px;border-radius:8px;overflow:hidden;background:#000';
+  playerDiv.innerHTML='<video controls autoplay style="width:100%;max-height:400px;display:block;border-radius:8px" src="'+url+'">Your browser does not support video playback.</video>';
+  btn.closest('td').querySelector('div').appendChild(playerDiv);
 }
 
 async function crmAddRecording(bookingId){
