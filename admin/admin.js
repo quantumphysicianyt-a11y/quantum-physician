@@ -4971,7 +4971,7 @@ function bookingOverflowMenu(b, payLink, isRegular) {
   }).join('');
 
   return '<div style="position:relative">'
-    + '<button class="btn btn-ghost btn-sm of-trigger" onclick="event.stopPropagation();toggleOverflow(\'' + menuId + '\')" style="font-size:16px;padding:4px 8px;line-height:1">\u22EF</button>'
+    + '<button class="btn btn-ghost btn-sm of-trigger" onclick="event.stopPropagation();toggleOverflow(\'' + menuId + '\')" style="font-size:16px;padding:4px 8px;line-height:1;min-width:32px;border:1px solid var(--border)">\u22EF</button>'
     + '<div id="' + menuId + '" class="of-menu" style="display:none">' + menuItems + '</div>'
     + '</div>';
 }
@@ -5105,7 +5105,7 @@ function renderBookingsGrid(){
         +'<td>'+typeBadges[b.type]+(b.session_type_id?(function(){var st=getSessionTypeById(b.session_type_id);return st?'<div style="font-size:10px;color:var(--text-dim);margin-top:2px">'+esc(st.name)+'</div>':''})():'')+'</td>'
         +'<td>'+(statusBadges[b.status]||'<span class="badge muted">'+b.status+'</span>')+(b.client_cancelled&&!b.admin_acknowledged?'<span class="badge danger" style="margin-left:4px" title="Client self-cancelled">🔔 Client</span>':'')+'</td>'
         +'<td>'+payCol+'</td>'
-        +'<td><div style="display:flex;gap:4px;align-items:center">'
+        +'<td style="white-space:nowrap"><div style="display:flex;gap:6px;align-items:center;justify-content:flex-end">'
         +bookingPrimaryAction(b,payLink,isRegular)
         +bookingOverflowMenu(b,payLink,isRegular)
         +'</div></td></tr>';
