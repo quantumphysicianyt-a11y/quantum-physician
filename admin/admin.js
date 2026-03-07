@@ -4930,8 +4930,12 @@ function bookingPrimaryAction(b, payLink, isRegular) {
     return '<button class="btn btn-primary btn-sm" onclick="crmAddNote(\'' + id + '\')">+ Note</button>';
   }
   // Cancelled / Declined / Expired
-  if (b.status === 'cancelled' || b.status === 'cancelled_no_refund' || b.status === 'declined' || b.status === 'expired' || b.status === 'rescheduled') {
+  if (b.status === 'cancelled' || b.status === 'cancelled_no_refund' || b.status === 'declined' || b.status === 'expired') {
     return '<button class="btn btn-success btn-sm" onclick="withSpinner(this,function(){return updateBookingStatus(\'' + id + '\',\'proposed\')})">Reactivate</button>';
+  }
+  // Rescheduled — new date should exist, show subtle note button
+  if (b.status === 'rescheduled') {
+    return '<button class="btn btn-ghost btn-sm" style="font-size:11px;color:var(--text-dim)" onclick="crmAddNote(\'' + id + '\')">+ Note</button>';
   }
   return '';
 }
@@ -4943,10 +4947,12 @@ function bookingOverflowMenu(b, payLink, isRegular) {
   if (b.status === 'proposed') {
     if (payLink) items.push({label:'🔗 Copy Pay Link', action:"navigator.clipboard.writeText('" + payLink + "');showToast('Pay link copied','success');closeOverflow()"});
     if (isRegular) items.push({label:'Mark Paid', action:"withSpinner(null,function(){return updateBookingStatus('" + id + "','paid')});closeOverflow()"});
+    items.push({label:'🔄 Reschedule', action:"rescheduleBooking('" + id + "');closeOverflow()"});
     items.push({label:'📝 Add Note', action:"crmAddNote('" + id + "');closeOverflow()"});
     items.push({label:'❌ Decline', action:"updateBookingStatus('" + id + "','declined');closeOverflow()", danger:true});
   }
   if (b.status === 'confirmed' || b.status === 'paid') {
+    items.push({label:'🔄 Reschedule', action:"rescheduleBooking('" + id + "');closeOverflow()"});
     items.push({label:'No Show', action:"updateBookingStatus('" + id + "','no_show');closeOverflow()"});
     items.push({label:'Cancel', action:"updateBookingStatus('" + id + "','cancelled');closeOverflow()", danger:true});
   }
@@ -5070,7 +5076,7 @@ function renderBookingsGrid(){
     +'<th style="'+thStyle+';'+thActive('type')+'" onclick="sortBookingsGrid(\'type\')">Type'+sortArrow('type')+'</th>'
     +'<th style="'+thStyle+';'+thActive('status')+'" onclick="sortBookingsGrid(\'status\')">Status'+sortArrow('status')+'</th>'
     +'<th style="'+thStyle+';'+thActive('payment')+'" onclick="sortBookingsGrid(\'payment\')">Payment'+sortArrow('payment')+'</th>'
-    +'<th style="'+thStyle+';text-align:right;min-width:120px">Actions</th></tr></thead><tbody>'
+    +'<th style="'+thStyle+';text-align:right">Actions</th></tr></thead><tbody>'
     +page.map(function(b){
       var payLink=b.confirmation_token?'https://qp-homepage.netlify.app/pages/one-on-sessions.html?pay='+b.confirmation_token:'';
       var isRegular=isRegularClient(b.email) || sessClientsData.some(function(cl){return cl.id===b.client_id&&cl.client_type==='regular'});
