@@ -596,14 +596,19 @@
       animation: shimmer 4s ease-in-out infinite;
       pointer-events: none;
     }
-    .book-card-logo { animation: fadeUp .6s ease both; }
-    .book-card-kicker { animation: fadeUp .6s ease .1s both; }
-    .book-card-title { animation: fadeUp .6s ease .2s both; }
-    .book-card-sub { animation: fadeUp .6s ease .3s both; }
-    .book-card-badge { animation: fadeUp .6s ease .4s both; }
-    .book-card-cta { animation: fadeUp .6s ease .5s both; }
-    .book-card-cta .btn { animation: glowPulse 3s ease-in-out infinite; }
-    .book-card-hint { animation: fadeUp .6s ease .6s both; }
+    .book-card-logo, .book-card-kicker, .book-card-title,
+    .book-card-sub, .book-card-badge, .book-card-cta, .book-card-hint {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    .animate-in .book-card-logo { animation: fadeUp .6s ease .05s both; }
+    .animate-in .book-card-kicker { animation: fadeUp .6s ease .12s both; }
+    .animate-in .book-card-title { animation: fadeUp .6s ease .2s both; }
+    .animate-in .book-card-sub { animation: fadeUp .6s ease .3s both; }
+    .animate-in .book-card-badge { animation: fadeUp .6s ease .4s both; }
+    .animate-in .book-card-cta { animation: fadeUp .6s ease .5s both; }
+    .animate-in .book-card-cta .btn { animation: glowPulse 3s ease-in-out .6s infinite; }
+    .animate-in .book-card-hint { animation: fadeUp .6s ease .6s both; }
 
     /* ========== COUNTDOWN ========== */
     .cd-block {
@@ -1476,6 +1481,11 @@
       }
 
       updateCTAs(status);
+
+      // Trigger staggered entrance on inline card
+      if (slotsDiv.style.display !== 'none') {
+        setTimeout(function() { slotsDiv.classList.add('animate-in'); }, 100);
+      }
     }
 
     function updateCTAs(status) {
@@ -1568,6 +1578,11 @@
       calModalOpen = true;
       document.body.style.overflow = 'hidden';
 
+      // Trigger staggered entrance animations after modal is visible
+      setTimeout(function() {
+        content.classList.add('animate-in');
+      }, 50);
+
       if (isOpen) {
         var now = new Date();
         modalSlotsMonth = now.getMonth();
@@ -1584,6 +1599,8 @@
       var modal = document.getElementById('calModal');
       if (!modal) return;
       modal.classList.remove('open');
+      var content = document.getElementById('cal-modal-content');
+      if (content) content.classList.remove('animate-in');
       calModalOpen = false;
       document.body.style.overflow = '';
       setTimeout(function() { modal.style.display = 'none'; }, 300);
