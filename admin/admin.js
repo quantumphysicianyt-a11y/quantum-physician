@@ -4607,7 +4607,7 @@ async function openClientDates(clientId){
     +'<div style="font-size:11px;font-weight:600;color:var(--text-dim);margin-bottom:6px;letter-spacing:.5px">ADD DATE</div>'
     +'<div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">'
     +'<div style="flex:1;min-width:160px"><label style="font-size:10px;color:var(--text-dim);display:block;margin-bottom:3px">Available Day</label><select class="input" id="cd-avail-date" style="width:100%"><option value="">Choose a day…</option>'+availOpts+'</select></div>'
-    +'<div><label style="font-size:10px;color:var(--text-dim);display:block;margin-bottom:3px">Time</label><input type="time" class="input" id="cd-time" value="'+cl.preferred_time.slice(0,5)+'" style="width:100px"></div>'
+    +'<div><label style="font-size:10px;color:var(--text-dim);display:block;margin-bottom:3px">Time</label><input type="time" class="input" id="cd-time" value="'+cl.preferred_time.slice(0,5)+'" style="width:120px"></div>'
     +'<button class="btn btn-primary btn-sm" onclick="addClientDate(\''+clientId+'\',\''+cycleId+'\')">Add</button></div>'
     +'<div style="margin-top:8px;display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">'
     +'<div style="flex:1;min-width:160px"><label style="font-size:10px;color:var(--text-dim);display:block;margin-bottom:3px">Or pick a custom date</label><input type="date" class="input" id="cd-custom-date" min="'+cycle.start_date+'" max="'+cycle.end_date+'" style="width:100%"></div>'
@@ -4637,9 +4637,17 @@ async function addClientDate(clientId,cycleId){
     var res=await proxyFrom('session_bookings').insert(insertData);
     if(res.error){showToast('Error: '+res.error.message,'error');return}
     showToast('Date added'+(isRegular?' (auto-confirmed)':'')+(window._rescheduleFromId?' (rescheduled)':''),'success');
+    var wasReschedule=!!window._rescheduleFromId;
     window._rescheduleFromId=null;window._rescheduleFromDate=null;
     var r=await proxyFrom('session_bookings').select('*').order('date',{ascending:true});sessBookingsData=r.data||[];
-    openClientDates(clientId);renderClientRoster();
+    if(wasReschedule){
+      // Close the client dates modal and show clear confirmation
+      var modal=document.getElementById('sess-client-dates-modal');if(modal)modal.remove();
+      showToast('✓ Rescheduled to '+new Date(dateStr+'T12:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'})+' at '+time,'success');
+      renderBookingsGrid();renderClientRoster();
+    }else{
+      openClientDates(clientId);renderClientRoster();
+    }
   }catch(e){console.error('addClientDate error:',e);showToast('Error: '+e.message,'error')}
 }
 
@@ -4662,9 +4670,16 @@ async function addClientDateCustom(clientId,cycleId){
     var res=await proxyFrom('session_bookings').insert(insertData);
     if(res.error){showToast('Error: '+res.error.message,'error');return}
     showToast('Custom date added'+(isRegular?' (auto-confirmed)':'')+(window._rescheduleFromId?' (rescheduled)':''),'success');
+    var wasReschedule=!!window._rescheduleFromId;
     window._rescheduleFromId=null;window._rescheduleFromDate=null;
     var r=await proxyFrom('session_bookings').select('*').order('date',{ascending:true});sessBookingsData=r.data||[];
-    openClientDates(clientId);renderClientRoster();
+    if(wasReschedule){
+      var modal=document.getElementById('sess-client-dates-modal');if(modal)modal.remove();
+      showToast('✓ Rescheduled to '+new Date(dateStr+'T12:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'})+' at '+time,'success');
+      renderBookingsGrid();renderClientRoster();
+    }else{
+      openClientDates(clientId);renderClientRoster();
+    }
   }catch(e){showToast('Error: '+e.message,'error')}
 }
 
@@ -5011,7 +5026,7 @@ function renderBookingsGrid(){
     // View-based filtering
     if(sessBookView==='active'&&(b.status==='completed'||b.status==='no_show'||b.status==='cancelled'||b.status==='declined'||b.status==='expired'||b.status==='rescheduled')) return false;
     if(sessBookView==='completed'&&b.status!=='completed'&&b.status!=='no_show') return false;
-    if(sessBookView==='cancelled'&&b.status!=='cancelled'&&b.status!=='cancelled_no_refund'&&b.status!=='declined'&&b.status!=='expired'&&b.status!=='rescheduled') return false;
+    if(sessBookView==='cancelled'&&b.status!=='cancelled'&&b.status!=='cancelled_no_refund'&&b.status!=='declined'&&b.status!=='expired') return false;
     // Additional status filter on top of view
     if(statusFilter!=='all'&&b.status!==statusFilter) return false;
     if(typeFilter!=='all'&&b.type!==typeFilter) return false;
@@ -5069,7 +5084,7 @@ function renderBookingsGrid(){
   var thStyle='cursor:pointer;user-select:none;transition:color .15s';
   var thActive=function(col){return sessBookSortCol===col?'color:var(--teal)':''};
 
-  c.innerHTML='<table class="tbl"><thead><tr>'
+  c.innerHTML='<table class="tbl" style="table-layout:fixed"><colgroup><col style="width:130px"><col style="width:100px"><col><col style="width:100px"><col style="width:110px"><col style="width:90px"><col style="width:130px"></colgroup><thead><tr>'
     +'<th style="'+thStyle+';'+thActive('date')+'" onclick="sortBookingsGrid(\'date\')">Date'+sortArrow('date')+'</th>'
     +'<th style="'+thStyle+';'+thActive('time')+'" onclick="sortBookingsGrid(\'time\')">Time'+sortArrow('time')+'</th>'
     +'<th style="'+thStyle+';'+thActive('client')+'" onclick="sortBookingsGrid(\'client\')">Client'+sortArrow('client')+'</th>'
