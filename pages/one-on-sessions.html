@@ -562,7 +562,7 @@
     /* ========== BOOKING CARD ANIMATIONS ========== */
     @keyframes shimmer {
       0% { transform: translateX(-100%); }
-      100% { transform: translateX(100%); }
+      100% { transform: translateX(200%); }
     }
     @keyframes fadeUp {
       0% { opacity: 0; transform: translateY(20px); }
@@ -572,13 +572,9 @@
       0%, 100% { box-shadow: 0 8px 32px rgba(91,168,178,.2); }
       50% { box-shadow: 0 12px 48px rgba(91,168,178,.35), 0 0 20px rgba(91,168,178,.1); }
     }
-    @keyframes orbFloat {
-      0%, 100% { transform: translate(-50%, 0); }
-      50% { transform: translate(-50%, -8px); }
-    }
     @keyframes borderGlow {
       0%, 100% { border-color: rgba(91,168,178,.12); }
-      50% { border-color: rgba(91,168,178,.25); }
+      50% { border-color: rgba(91,168,178,.22); }
     }
     .book-card {
       background: linear-gradient(170deg, rgba(91,168,178,.08) 0%, rgba(14,26,48,.85) 50%, rgba(91,168,178,.05) 100%);
@@ -595,17 +591,17 @@
       top: -80px; left: 50%;
       transform: translateX(-50%);
       width: 400px; height: 160px;
-      background: radial-gradient(ellipse, rgba(91,168,178,.12), transparent 70%);
+      background: radial-gradient(ellipse, rgba(91,168,178,.1), transparent 70%);
       pointer-events: none;
-      animation: orbFloat 6s ease-in-out infinite;
     }
     .book-card-shimmer {
       position: absolute;
       top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: linear-gradient(105deg, transparent 40%, rgba(91,168,178,.04) 50%, transparent 60%);
-      animation: shimmer 4s ease-in-out infinite;
+      width: 50%; height: 100%;
+      background: linear-gradient(105deg, transparent 0%, rgba(91,168,178,.04) 50%, transparent 100%);
+      animation: shimmer 1.5s ease-out .3s both;
       pointer-events: none;
+      will-change: transform;
     }
     .book-card-logo, .book-card-kicker, .book-card-title,
     .book-card-sub, .book-card-badge, .book-card-cta, .book-card-hint {
@@ -729,8 +725,8 @@
       align-items: center;
       justify-content: center;
       padding: 20px;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
       opacity: 0;
       transition: opacity .3s ease;
     }
@@ -757,17 +753,17 @@
       top: -80px; left: 50%;
       transform: translateX(-50%);
       width: 400px; height: 160px;
-      background: radial-gradient(ellipse, rgba(91,168,178,.1), transparent 70%);
+      background: radial-gradient(ellipse, rgba(91,168,178,.08), transparent 70%);
       pointer-events: none;
-      animation: orbFloat 6s ease-in-out infinite;
     }
     .cal-modal-shimmer {
       position: absolute;
       top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: linear-gradient(105deg, transparent 40%, rgba(91,168,178,.03) 50%, transparent 60%);
-      animation: shimmer 4s ease-in-out infinite;
+      width: 50%; height: 100%;
+      background: linear-gradient(105deg, transparent 0%, rgba(91,168,178,.03) 50%, transparent 100%);
+      animation: shimmer 1.5s ease-out .3s both;
       pointer-events: none;
+      will-change: transform;
     }
     .cal-modal-close {
       position: absolute;
