@@ -1493,13 +1493,13 @@
       } else {
         var nextCycle = bookCycles.find(function(c) { return c.status === 'planning' || c.status === 'client_confirmation'; });
         var nextDate = nextCycle ? new Date(nextCycle.start_date + 'T12:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : null;
-        html += '<div style="text-align:center">'
+        html += '<div style="text-align:center;padding:8px 0">'
           + logoHtml
-          + '<div class="cal-modal-kicker" style="margin-bottom:14px">\u2726 Private Healing Sessions</div>'
-          + '<h2 style="font-family:Playfair Display,serif;font-size:clamp(24px,3.5vw,32px);font-weight:400;color:#fff;margin:0 0 12px;line-height:1.15">All Sessions Are<br>Currently Filled</h2>'
-          + '<p style="color:rgba(255,255,255,.5);font-size:14px;max-width:40ch;margin:0 auto 24px;line-height:1.65">Dr. Clark works in focused 4-month booking cycles to ensure every client receives her full attention and care.</p>'
-          + (nextDate ? '<div style="display:inline-block;background:rgba(91,168,178,.08);border:1px solid rgba(91,168,178,.15);border-radius:10px;padding:14px 28px;margin-bottom:24px"><span style="font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--teal);display:block;margin-bottom:2px">Next Cycle Opens</span><span style="font-family:Playfair Display,serif;font-size:20px;color:#fff">' + nextDate + '</span></div>' : '')
-          + '<div><button class="btn teal" onclick="closeCalendarModal();setTimeout(function(){document.getElementById(\'waitlist-section\').scrollIntoView({behavior:\'smooth\'})},150)">Join the Waitlist</button></div>'
+          + '<div class="cal-modal-kicker" style="margin-bottom:16px">\u2726 Private Healing Sessions</div>'
+          + '<h2 style="font-family:Playfair Display,serif;font-size:clamp(28px,4vw,38px);font-weight:400;color:#fff;margin:0 0 16px;line-height:1.15">All Sessions Are<br>Currently Filled</h2>'
+          + '<p style="color:rgba(255,255,255,.5);font-size:15px;max-width:100%;margin:0 0 32px;line-height:1.7;padding:0 12px">Dr. Clark works in focused 4-month booking cycles to ensure every client receives her full attention and care.</p>'
+          + (nextDate ? '<div style="display:inline-block;background:rgba(91,168,178,.08);border:1px solid rgba(91,168,178,.15);border-radius:10px;padding:18px 40px;margin-bottom:32px"><span style="font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--teal);display:block;margin-bottom:4px">Next Cycle Opens</span><span style="font-family:Playfair Display,serif;font-size:22px;color:#fff">' + nextDate + '</span></div>' : '')
+          + '<div><button class="btn teal" style="padding:16px 48px;font-size:13px" onclick="closeCalendarModal();setTimeout(function(){document.getElementById(\'waitlist-section\').scrollIntoView({behavior:\'smooth\'})},150)">Join the Waitlist</button></div>'
           + '</div>';
       }
 
