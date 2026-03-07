@@ -4931,6 +4931,7 @@ function bookingOverflowMenu(b, payLink, isRegular) {
   if (b.status === 'proposed') {
     if (payLink) items.push({label:'🔗 Copy Pay Link', action:"navigator.clipboard.writeText('" + payLink + "');showToast('Pay link copied','success');closeOverflow()"});
     if (isRegular) items.push({label:'Mark Paid', action:"withSpinner(null,function(){return updateBookingStatus('" + id + "','paid')});closeOverflow()"});
+    items.push({label:'📝 Add Note', action:"crmAddNote('" + id + "');closeOverflow()"});
     items.push({label:'❌ Decline', action:"updateBookingStatus('" + id + "','declined');closeOverflow()", danger:true});
   }
   if (b.status === 'confirmed' || b.status === 'paid') {
