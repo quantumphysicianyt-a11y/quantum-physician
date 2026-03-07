@@ -186,3 +186,7 @@ input[type="date"].input::-webkit-calendar-picker-indicator:hover,input[type="ti
 .of-item:hover{background:rgba(91,168,178,.08);color:var(--text)}
 .of-item.of-danger{color:var(--danger)}
 .of-item.of-danger:hover{background:var(--danger-soft)}
+.bk-actions{display:inline-flex;align-items:center;gap:0}
+.bk-actions>.btn{border-radius:var(--radius-sm) 0 0 var(--radius-sm)}
+.bk-actions>.of-wrap{position:relative}
+.bk-actions>.of-wrap>.of-trigger{border-radius:0 var(--radius-sm) var(--radius-sm) 0;margin-left:-1px}

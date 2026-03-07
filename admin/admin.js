@@ -4970,8 +4970,8 @@ function bookingOverflowMenu(b, payLink, isRegular) {
     return '<div class="of-item' + (it.danger ? ' of-danger' : '') + '" onclick="event.stopPropagation();' + it.action + '">' + it.label + '</div>';
   }).join('');
 
-  return '<div style="position:relative">'
-    + '<button class="btn btn-ghost btn-sm of-trigger" onclick="event.stopPropagation();toggleOverflow(\'' + menuId + '\')" style="font-size:16px;padding:4px 8px;line-height:1;min-width:32px;border:1px solid var(--border)">\u22EF</button>'
+  return '<div class="of-wrap">'
+    + '<button class="btn btn-ghost btn-sm of-trigger" onclick="event.stopPropagation();toggleOverflow(\'' + menuId + '\')" style="font-size:14px;padding:4px 6px;line-height:1;border:1px solid var(--border);color:var(--text-dim)">\u22EF</button>'
     + '<div id="' + menuId + '" class="of-menu" style="display:none">' + menuItems + '</div>'
     + '</div>';
 }
@@ -5070,7 +5070,7 @@ function renderBookingsGrid(){
     +'<th style="'+thStyle+';'+thActive('type')+'" onclick="sortBookingsGrid(\'type\')">Type'+sortArrow('type')+'</th>'
     +'<th style="'+thStyle+';'+thActive('status')+'" onclick="sortBookingsGrid(\'status\')">Status'+sortArrow('status')+'</th>'
     +'<th style="'+thStyle+';'+thActive('payment')+'" onclick="sortBookingsGrid(\'payment\')">Payment'+sortArrow('payment')+'</th>'
-    +'<th></th></tr></thead><tbody>'
+    +'<th style="'+thStyle+';text-align:right;min-width:120px">Actions</th></tr></thead><tbody>'
     +page.map(function(b){
       var payLink=b.confirmation_token?'https://qp-homepage.netlify.app/pages/one-on-sessions.html?pay='+b.confirmation_token:'';
       var isRegular=isRegularClient(b.email) || sessClientsData.some(function(cl){return cl.id===b.client_id&&cl.client_type==='regular'});
@@ -5105,7 +5105,7 @@ function renderBookingsGrid(){
         +'<td>'+typeBadges[b.type]+(b.session_type_id?(function(){var st=getSessionTypeById(b.session_type_id);return st?'<div style="font-size:10px;color:var(--text-dim);margin-top:2px">'+esc(st.name)+'</div>':''})():'')+'</td>'
         +'<td>'+(statusBadges[b.status]||'<span class="badge muted">'+b.status+'</span>')+(b.client_cancelled&&!b.admin_acknowledged?'<span class="badge danger" style="margin-left:4px" title="Client self-cancelled">🔔 Client</span>':'')+'</td>'
         +'<td>'+payCol+'</td>'
-        +'<td style="white-space:nowrap"><div style="display:flex;gap:6px;align-items:center;justify-content:flex-end">'
+        +'<td style="text-align:right;white-space:nowrap"><div class="bk-actions">'
         +bookingPrimaryAction(b,payLink,isRegular)
         +bookingOverflowMenu(b,payLink,isRegular)
         +'</div></td></tr>';
