@@ -1,6 +1,6 @@
 # QP Admin Panel — Full Infrastructure Documentation
 
-**Last updated:** Session 36 (Mar 5, 2026)
+**Last updated:** Session 39 (Mar 7, 2026)
 
 ---
 
@@ -28,8 +28,8 @@ quantum-physician/
 ├── _headers
 ├── admin/
 │   ├── index.html             # Admin panel HTML — UPDATED SESSION 36
-│   ├── admin.css              # Admin panel styles
-│   └── admin.js               # Admin panel logic — UPDATED SESSION 36
+│   ├── admin.css              # Admin panel styles — UPDATED SESSION 38 (overflow menu)
+│   └── admin.js               # Admin panel logic — UPDATED SESSION 39 (CONFIRM_WINDOW fix, global spinners)
 ├── academy/
 ├── assets/
 ├── components/
@@ -65,7 +65,7 @@ quantum-physician/
 │   ├── session-webhook.js     # Payment webhook + auto-invoice + calendar buttons — UPDATED SESSION 36
 │   └── stripe-refund.js       # Refund + 24hr cancellation policy — REBUILT SESSION 35
 ├── pages/
-│   └── one-on-sessions.html
+│   └── one-on-sessions.html    # UPDATED SESSION 38 (floating orb, calendar modal, waitlist modal, animations)
 ├── netlify.toml
 ├── index.html
 └── referral-hub.html
@@ -81,9 +81,9 @@ quantum-physician/
 | `academy-checkout.js` | Academy Stripe checkout sessions | Public |
 | `academy-webhook.js` | Academy Stripe webhook handler | Stripe signature |
 | `stripe-refund.js` | Process cancellations with 24hr policy enforcement | Public (called from member portal) |
-| `session-checkout.js` | Create Stripe checkout for session bookings | Public |
+| `session-checkout.js` | Create Stripe checkout for session bookings (multi-currency EUR/CAD/USD) + confirm action for regulars | Public |
 | `session-webhook.js` | Handle session payment → update booking + auto-create invoice + generate PDF + send emails + calendar buttons | Stripe signature |
-| `session-cron.js` | Daily automated emails for 1-on-1 sessions (8 AM ET) | Scheduled (cron) |
+| `session-cron.js` | Daily automated emails (8 AM ET) + cycle auto-advance (waitlist 48hr, cycle end) — UPDATED SESSION 37 | Scheduled (cron) |
 | `generate-invoice.js` | Generate QP-branded PDF invoice with pdfkit, upload to Storage | Bearer token OR internal flag |
 | `generate-ics.js` | Generate .ics calendar file from query params | Public |
 
@@ -95,7 +95,7 @@ quantum-physician/
 | Table | Key Columns | Purpose |
 |-------|-------------|---------|
 | `session_config` | session_price, session_duration_minutes, public_booking_status, timezone, zoom_link | Global settings |
-| `session_cycles` | name, start_date, end_date, status | 4-month booking cycles |
+| `session_cycles` | name, start_date, end_date, status, client_confirmation_sent_at, public_opens_at, **waitlist_opens_at**, **waitlist_expires_at**, **auto_emails_sent** (jsonb) | 4-month booking cycles |
 | `session_availability` | cycle_id, date, start_time, end_time, status, visibility | Daily time blocks |
 | `session_clients` | email, name, frequency, preferred_day, preferred_time, priority, status, client_type (standard/regular), **currency**, **tax_label**, **tax_rate** | Recurring client roster |
 | `session_bookings` | cycle_id, client_id, email, date, start_time, end_time, status, type, **session_type_id**, **amount_cents**, **currency**, stripe_payment_id, stripe_session_id, confirmation_token, payment_requested_at, rescheduled_from, reschedule_reason, client_cancelled, admin_acknowledged, cancellation_reason, cancelled_at | Individual appointments |
@@ -103,6 +103,8 @@ quantum-physician/
 | `session_types` | name, description, duration_minutes, price_cents, currency, is_active, sort_order | Session type definitions (Zoom €200, Recorded €150) |
 
 **`session_bookings` status values:** `proposed`, `paid`, `confirmed`, `completed`, `cancelled`, `cancelled_no_refund`, `no_show`, `declined`, `expired`, `rescheduled`
+
+**`session_cycles` status values:** `planning`, `client_confirmation`, `waitlist_open`, `public_open`, `active`, `completed`
 
 **New in Session 36:**
 - `session_types` table with RLS (public read for active types)
@@ -286,16 +288,16 @@ var auditSortCol, auditSortDir;  // sort state for audit log
 
 ---
 
-## Known Issues / Watch Points (Session 36)
-1. **email-decode.min.js 404** — Netlify phantom, harmless
-2. **`one-on-sessions.html` pay token** — Public "Confirm & Pay" link lands on "All Sessions Filled" page. The `?pay=TOKEN` handling needs to be fixed to show the Stripe checkout for that specific booking
-3. **`session-checkout.js` currency** — Currently creates USD Stripe checkout. Needs update to accept `currency` param for EUR/CAD sessions
-4. **Regular "Confirm Date" landing** — Regulars clicking "Confirm Your Date" currently go to the same pay page. Need a dedicated confirmation endpoint that just marks `confirmed` without payment
-5. **Cross-domain SSO** — QP→Fusion working. Fusion→QP not yet implemented
-6. **Supabase Free plan 1GB limit** — ~3-4 session recordings before hitting cap
-7. **session_recordings.uploaded_at** — NOT created_at. All queries must use uploaded_at
-8. **BulkEmailSender = FusionSessionsEmailer** — Same Apps Script, different names
-9. **Zoom recordings can't embed** — Download MP4 and upload instead
+## Known Issues / Watch Points (Session 39)
+1. **✅ CONFIRM_WINDOW_MS** — Fixed Session 39. Now set to 7 days production.
+2. **email-decode.min.js 404** — Netlify phantom, harmless
+3. **`session-checkout.js`** — Supports multi-currency (EUR/CAD/USD) + confirm action for regulars (Session 37)
+4. **Cross-domain SSO** — QP→Fusion working. Fusion→QP not yet implemented
+5. **Supabase Free plan 1GB limit** — ~3-4 session recordings before hitting cap
+6. **session_recordings.uploaded_at** — NOT created_at. All queries must use uploaded_at
+7. **BulkEmailSender = FusionSessionsEmailer** — Same Apps Script, different names
+8. **Zoom recordings can't embed** — Download MP4 and upload instead
+9. **Sessions page `backdrop-filter: blur()`** — Removed from modal overlays for typing performance. Kept on confirm/pay/checkout overlays (no typing).
 
 ---
 

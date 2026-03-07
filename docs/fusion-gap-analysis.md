@@ -7,7 +7,7 @@
 - Once QP admin covers everything, fusionsessions.com/admin.html gets decommissioned
 - One admin panel at qp-homepage.netlify.app/admin/ manages both platforms
 
-**Last updated:** Session 36 (Mar 5, 2026)
+**Last updated:** Session 39 (Mar 7, 2026)
 
 ---
 
@@ -69,6 +69,31 @@ All features from Fusion admin are now in QP admin. Zero gaps remain.
 - Session-type-aware (duration, type name, zoom detection)
 - Soft payment nudge for unpaid regulars
 
+### Cycle Automation Engine ✅ (Session 37)
+- 6-stage progress bar: Planning → Client Confirm → Waitlist (48hr) → Public Open → Active → Complete
+- Stage-driven batch emails on each "Advance →" click
+- Locked advance with live countdown timer during confirmation window
+- Cron auto-advance: waitlist 48hr expiry, cycle end date
+- Regress-safe advance with resend/skip option
+
+### Confirm Token Flow ✅ (Session 37)
+- `?confirm=TOKEN` regular client flow — confirms date without payment
+- `?pay=TOKEN` public client flow — multi-currency Stripe checkout (EUR/CAD/USD)
+- Branded confirmation/error overlay pages
+
+### Premium Sessions Page ✅ (Session 38)
+- Floating orb CTA (homepage-matching 120px orb, pulse ring, stage-aware label)
+- Calendar popup modal with premium animations (glow, shimmer, border pulse, staggered fadeUp)
+- Inline animated booking card replacing old full-page calendar
+- Waitlist modal (replaces inline form, duplicate email prevention)
+- Autofill dark-theme CSS fix
+- Future-slot check syncs inline + modal (no open/filled mismatch)
+
+### Bookings Grid Redesign ✅ (Session 38)
+- Primary action + "⋯" overflow menu per row
+- `withSpinner()` loading spinner on primary actions
+- Add Note available for all statuses
+
 ### Member Portal ✅ (Session 25+)
 - Login/signup/reset-password, dashboard, settings, sessions, intake, progress, billing
 - SVG icon system, cross-domain SSO (QP→Fusion)
@@ -107,12 +132,17 @@ All features from Fusion admin are now in QP admin. Zero gaps remain.
 - ⬜ Invoice defaults: payment terms (7 days? due on receipt?), HST for Canadian clients, auto-send preference
 
 ### Near-Term
-- ⬜ Fix `one-on-sessions.html` pay token handling for public Confirm & Pay flow
-- ⬜ Multi-currency Stripe checkout (EUR/CAD in `session-checkout.js`)
+- ✅ Sessions page floating CTA + calendar popup modal (Session 38)
+- ✅ Bookings grid action bar redesign (primary + overflow) (Session 38)
+- ✅ Waitlist as modal (Session 38)
+- ✅ **CONFIRM_WINDOW_MS → 7 days** (Session 39)
+- ✅ Loading spinners on all admin button actions (Session 39 — 63 buttons wrapped)
+- ⬜ Availability calendar click-to-expand + drag-and-drop
 - ⬜ Client roster currency/tax editor (mark Canadian clients)
-- ⬜ Regular client "Confirm Date" landing page (no payment)
-- ⬜ Calendar buttons in day-before reminder emails
 - ⬜ 24hr reschedule enforcement in admin (block reschedule within 24hrs)
+- ⬜ Regular reschedule request flow (auto-reschedule if slot available)
+- ⬜ Confirmation email tone update per Tracey
+- ⬜ Invoice currency from booking (webhook still hardcoded)
 - ⬜ Multiple preferred times per client (better auto-populate for larger rosters)
 
 ### Future

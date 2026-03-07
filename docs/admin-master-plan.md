@@ -33,11 +33,189 @@ Todd (the founder/developer of Quantum Physician) and Claude have built this adm
 - These 3 docs + the current `admin/index.html`, `admin/admin.js`, `admin/admin.css`
 - Claude reads all docs BEFORE writing any code
 
-**Last updated:** Session 36 (Mar 5, 2026)
+**Last updated:** Session 39 (Mar 7, 2026)
 
 ---
 
-## Session 36 Summary — Session Types, Dual Offer Flow, Regular Client UX (Mar 5, 2026)
+## Session 39 Summary — CONFIRM_WINDOW Launch Fix, Global Loading Spinners (Mar 7, 2026)
+
+### ✅ CONFIRM_WINDOW_MS → 7 Days (LAUNCH BLOCKER RESOLVED)
+- Changed `admin.js` line 3749 from `5*60*1000` (5 min test) to `7*24*60*60*1000` (7 days production)
+- This controls how long regular clients have to confirm their dates before the cycle can advance
+
+### ✅ Global Loading Spinners — 63 Buttons Wrapped
+- Extended `withSpinner()` to handle `btn=null` gracefully (returns asyncFn() result for overflow menu calls)
+- Systematically wrapped **every async action button** across all admin sections with `withSpinner(this, function(){return ...})`
+- 49 buttons in `admin.js` + 14 buttons in `index.html` = 63 total
+- **Sections covered:**
+  - **Bookings grid** (already done Session 38): Confirm, Mark Paid, Complete, Reactivate, Acknowledge
+  - **Session Types**: Save, Delete
+  - **Cycle Manager**: Advance (all stages including post-countdown glow, waitlist skip, default), Delete
+  - **Client Roster**: Save Edit Client
+  - **Public Booking**: Open, Coming Soon, Close toggles
+  - **Offer Slot**: Send Offer
+  - **Academy**: Course Save, Student Unenroll
+  - **Community**: Post Pin, Hide, Delete
+  - **Promotions**: Deactivate, Reactivate, Archive, Delete, Save Edit
+  - **Admin Users**: Toggle Active/Disable, Save Edit
+  - **Moderators**: Remove
+  - **Scheduled Emails**: Send Now, Cancel, Retry, Resend, Reactivate, Save
+  - **Session Schedule**: Save
+  - **Invoices**: Save, Save & Send, Resend
+  - **Session Reminders**: Send Day-Before, Send Follow-Up
+  - **index.html buttons**: Add Client, Bulk Availability, Create Cycle, Bulk Request Payments, Bulk Send Reminders, Send All Confirmations, Bulk Generate Invoices, Create Promotion, Grant Access, Assign Mod, Add Admin, Bulk Enroll CSV, Save Query Preset, Save Scheduled Email
+
+### Files Modified This Session
+- `admin/admin.js` — CONFIRM_WINDOW_MS fix, withSpinner upgrade (null handling), 49 button wraps
+- `admin/index.html` — 14 button wraps
+
+### Known Issues / TODO for Session 40
+- ⬜ Multi-date confirmation email test (biweekly test client)
+- ⬜ Availability calendar click-to-expand + drag-and-drop
+- ⬜ Cycle header dropdown to switch active cycle from banner
+- ⬜ Regular reschedule request flow
+- ⬜ Confirmation email tone update per Tracey
+- ⬜ Client roster currency/tax editor
+- ⬜ Invoice currency from booking (webhook still hardcoded)
+- ⬜ Review and polish all Stripe checkout screens for consistent QP branding
+
+---
+
+## ⚠️ LAUNCH BLOCKER — CONFIRM_WINDOW_MS ✅ RESOLVED (Session 39)
+~~**`admin.js` line ~3755**: `CONFIRM_WINDOW_MS` is set to `5*60*1000` (5 minutes) for testing.~~
+~~**MUST change to `7*24*60*60*1000` (7 days) before launch.**~~
+**Fixed Session 39** — now set to 7 days production.
+
+---
+
+## Session 38 Summary — Premium Sessions Page, Bookings Grid Redesign, Waitlist Modal (Mar 7, 2026)
+
+### Sessions Page — Floating Orb CTA ✅
+- Circular 120px floating orb (bottom-right) matching homepage `floatingCta` pattern
+- Dark gradient background, teal pulse ring (`pulseRing 2s`), float bounce animation (`floatBounce 3s`)
+- Stage-aware label: "BOOK A SESSION" when open, "JOIN WAITLIST" when closed
+- Hover: teal glow shadow, navy gradient, scale up
+
+### Sessions Page — Premium Calendar Modal ✅
+- Full-screen overlay modal opens from orb, hero CTA, final CTA, and "Why Choose" cards
+- QP logo (56px) + "✦ Private Healing Sessions" kicker + animated entrance
+- Floating glow orb, shimmer sweep, border pulse animations on modal box
+- Staggered fadeUp entrance (`.animate-in` triggered 50ms after modal visible)
+- Three states: Open (calendar + time slots), Coming Soon (countdown), Closed (filled message + next cycle + waitlist CTA)
+- Close via X, overlay click, or Escape
+- `overflow:hidden` on body when open
+
+### Sessions Page — Inline Booking Card ✅
+- Replaced old full-page calendar with single animated `.book-card`
+- Same premium effects: glow orb, shimmer, border pulse, staggered fadeUp
+- QP logo, kicker, title, price (teal highlight), availability count badge, "View Calendar & Book" CTA
+- Checks for **future** available slots (not just `public_booking_status`) to prevent open/filled mismatch
+
+### Waitlist Modal ✅
+- Moved waitlist form from inline section to premium modal
+- Same visual style as calendar modal (glow, shimmer, border pulse)
+- QP logo + "✦ Join the Waitlist" kicker + "Be the First to Know" heading
+- Form: name, email, preferred days/time, message
+- **Duplicate email prevention**: checks `session_waitlist` for existing entry before insert
+- Success state: hides form header, shows logo + checkmark + "You're on the list!" + Close
+- All "Join the Waitlist" buttons now call `openWaitlistModal()`
+
+### Autofill Fix ✅
+- Global CSS rule for `input:-webkit-autofill` forces dark navy background + white text
+- `transition: background-color 5000s` prevents Chrome flash
+
+### Bookings Grid Action Bar Redesign ✅
+- **Primary action button** per status (Confirm, Mark Paid, Complete, Reactivate, + Note, ✓ Acknowledge)
+- **"⋯" overflow menu** with all secondary actions in a dropdown
+- Overflow menu: positioned dropdown, closes on outside click, danger items highlighted red
+- "📝 Add Note" available in overflow for ALL booking statuses
+
+### Loading Spinner System ✅
+- `withSpinner(btn, asyncFn)` — wraps any async button action
+- Captures button width, replaces with spinner, disables during operation, restores on complete
+- Applied to all primary action buttons in bookings grid
+
+### Files Modified This Session
+- `pages/one-on-sessions.html` — floating orb, calendar modal, inline booking card, waitlist modal, animations, autofill fix
+- `admin/admin.js` — bookings grid action bar redesign, `withSpinner`, `bookingPrimaryAction`, `bookingOverflowMenu`, `openInvoiceForBooking`
+- `admin/admin.css` — overflow menu styles (`.of-menu`, `.of-item`, `.of-danger`)
+
+### Known Issues / TODO for Session 39
+- ⬜ **CONFIRM_WINDOW_MS** — change from 5 min to 7 days before launch
+- ⬜ Multi-date confirmation email test (biweekly test client)
+- ⬜ Global loading spinners across all admin sections (currently only on bookings grid)
+- ⬜ Availability calendar click-to-expand + drag-and-drop
+- ⬜ Cycle header dropdown to switch active cycle from banner
+- ⬜ Bulk availability "Apply" button spinner
+
+### Public Confirm & Pay Fix ✅
+- **Bug**: Public clients clicking "Confirm & Pay" from email landed on "All Sessions Filled" instead of Stripe checkout — dual competing handlers in IIFE race condition
+- **Fix**: Consolidated IIFE in `one-on-sessions.html`, `session-checkout.js` now reads booking-level `amount_cents`/`currency` (was hardcoded $150 USD)
+- Multi-currency Stripe checkout (EUR/CAD/USD) with Canadian HST auto-calculation
+
+### Confirm Token Flow ✅ (Regular Clients)
+- New `?confirm=TOKEN` URL path for regular clients (separate from `?pay=TOKEN`)
+- `session-checkout.js` new `action: "confirm"` handler — marks `proposed → confirmed` without payment
+- Branded "Date Confirmed!" overlay with date/time card and "View My Sessions" CTA
+- Error states: already confirmed (teal check), expired (amber), generic error
+
+### Cycle Automation Engine ✅
+- **6-stage progress bar**: Planning → Client Confirm → Waitlist (48hr) → Public Open → Active → Complete
+- New `waitlist_open` stage added to DB constraint and all admin UI
+- **"Advance →" triggers automated actions per stage:**
+  - Planning → Client Confirm: auto-populate + batch send personalized confirm emails (grouped by client, multiple dates per email)
+  - Client Confirm → Waitlist: batch email all waitlisted people with "Exclusive Early Access — 48hrs"
+  - Waitlist → Public Open: auto-set `public_booking_status = 'open'`
+  - Public Open → Active: close public booking
+  - Active → Complete: expire remaining proposed bookings
+- **Locked advance with countdown timer** during Client Confirm stage (5 min test, 7 days production)
+- Timer counts down live, button disabled until window expires, then glows with pulse animation
+- Toast notification when window closes: "Confirmation window closed — ready to advance!"
+- **Stage-specific button labels**: "Send Confirmations & Advance →", "Advance to Waitlist →", "Open to Public →", etc.
+
+### Regress-Safe Advance ✅
+- When regressing to Planning and re-advancing, system detects emails were already sent
+- Two-step modal: "Resend All Emails?" → No → "Advance Without Resending?"
+- Prevents accidental duplicate email blasts
+
+### Waitlist Email ✅
+- Branded "Exclusive Early Access" email with 48hr urgency
+- Slot count hidden when over 25 — shows "Limited Spots Available" instead
+- Booking page auto-opens during waitlist stage
+
+### Cron Auto-Advance ✅
+- `session-cron.js` checks daily: waitlist 48hr expired → auto-advance to public_open
+- Cycle end date passed → auto-complete + expire remaining proposed bookings
+
+### SQL Migration
+```sql
+ALTER TABLE session_cycles ADD COLUMN IF NOT EXISTS waitlist_opens_at timestamptz;
+ALTER TABLE session_cycles ADD COLUMN IF NOT EXISTS waitlist_expires_at timestamptz;
+ALTER TABLE session_cycles ADD COLUMN IF NOT EXISTS auto_emails_sent jsonb DEFAULT '{}';
+ALTER TABLE session_cycles DROP CONSTRAINT IF EXISTS session_cycles_status_check;
+ALTER TABLE session_cycles ADD CONSTRAINT session_cycles_status_check 
+  CHECK (status IN ('planning', 'client_confirmation', 'waitlist_open', 'public_open', 'active', 'completed'));
+```
+
+### Files Modified This Session
+- `admin/admin.js` — cycle automation engine, advance logic, countdown timer, batch email builders, regress-safe advance, waitlist email, `?confirm=` URL fix
+- `admin/index.html` — glow animation CSS, hidden Send Confirmations button
+- `netlify/functions/session-checkout.js` — confirm action handler, multi-currency checkout
+- `netlify/functions/session-cron.js` — cycle auto-advance checks
+- `pages/one-on-sessions.html` — confirm token IIFE handler, branded confirmation overlay
+
+### Known Issues / TODO for Session 38
+- ⬜ Sessions page calendar UX — needs floating CTA button + popup calendar (not buried at page bottom). Pattern exists on homepage (floatingCta). Stage-aware label.
+- ⬜ Multi-date confirmation email testing — need test client with biweekly frequency to verify grouped dates in one email
+- ⬜ Change `CONFIRM_WINDOW_MS` from 5 min (test) to 7 days (production) before launch
+- ⬜ Loading spinners on ALL admin button actions (inconsistent UX)
+- ⬜ Bookings grid action bar redesign — primary action + overflow menu (option 3), attention indicators
+- ⬜ Availability calendar interactivity — click day to expand, drag-and-drop appointments
+- ⬜ Regular reschedule request flow — "Can't Make This Date" button, preferred alternate form, auto-reschedule if slot available (10-20 min delay), admin notification only if unavailable. Needs Tracey confirmation.
+- ⬜ Confirmation email tone update per Tracey: emphasize "practice is full, regulars get first priority, here are your dates"
+- ⬜ "Confirm All" + individual Confirm/Decline/Change Date buttons in multi-date email (needs Tracey input)
+- ⬜ Cycle header dropdown to switch active cycle without going to Cycles tab
+- ⬜ Bulk availability "Apply" button needs loading spinner
 
 ### Webhook Bug Fix ✅
 - **Bug**: `stripe_session_id` was never populated on `session_bookings` when payment came through the webhook — cancel button in `sessions.html` requires this field to show
@@ -201,7 +379,7 @@ ALTER TABLE session_bookings
 
 ---
 
-## ✅ All Completed Features (cumulative through Session 35)
+## ✅ All Completed Features (cumulative through Session 38)
 
 ### Core Admin
 - Analytics dashboard, Email Center, Promotions Manager, Orders Browser
@@ -263,27 +441,48 @@ ALTER TABLE session_bookings
 - Session-type-aware (duration, type name, zoom detection)
 - Soft payment nudge for unpaid regulars (not a gate)
 
+### Premium Sessions Page (Session 38)
+- Floating orb CTA (120px, pulse ring, float bounce, stage-aware label)
+- Calendar popup modal (QP logo, staggered fadeUp, glow/shimmer/border pulse, 3 states)
+- Inline animated booking card (.book-card with glow orb, shimmer, availability badge)
+- Waitlist modal (replaces inline form, duplicate email prevention, premium styling)
+- Autofill dark-theme fix (global CSS)
+- Future-slot check syncs inline card + modal (no open/filled mismatch)
+
+### Bookings Grid Redesign (Session 38)
+- Primary action button + "⋯" overflow menu per booking row
+- `withSpinner()` loading spinner system on primary actions
+- `openInvoiceForBooking()` wrapper for overflow menu
+- "Add Note" available in overflow for all statuses
+
+### Global Loading Spinners (Session 39)
+- `withSpinner()` extended to handle null btn (overflow menu calls)
+- 63 async action buttons wrapped across ALL admin sections
+- Covers: Session Types, Cycle Manager, Client Roster, Public Booking, Offer Slot, Academy, Community, Promotions, Admin Users, Moderators, Scheduled Emails, Session Schedule, Invoices, Reminders, and all index.html action buttons
+
 ---
 
 ## 🔴 Next Priorities
 
-### Immediate (Session 37)
-- ⬜ Fix `one-on-sessions.html` pay token handling — public Confirm & Pay link lands on "All Sessions Filled" instead of checkout
-- ⬜ Update `session-checkout.js` to accept `currency` param for EUR/CAD Stripe checkout
-- ⬜ Client roster: add currency/tax dropdown to client edit modal (mark Canadian clients)
-- ⬜ Add calendar buttons (.ics) to day-before reminder emails
-- ⬜ Test day-before cron end-to-end (create tomorrow booking, trigger cron manually)
-- ⬜ Test public offer flow end-to-end with Stripe payment
+### Immediate (Session 40)
+- ⬜ Multi-date confirmation email test (biweekly test client)
+- ⬜ Availability calendar click-to-expand + drag-and-drop
+- ⬜ Cycle header dropdown to switch cycles from banner
 
 ### Short-term
-- ⬜ 24hr reschedule policy enforcement (block reschedules within 24hrs in admin)
-- ⬜ Regular client "Confirm Date" landing page — dedicated confirmation page for regulars (not Stripe checkout)
-- ⬜ Backfill existing bookings with session_type_id where applicable
+- ⬜ Regular reschedule request flow (Can't Make This Date → auto-reschedule or admin notification)
+- ⬜ Confirmation email tone update per Tracey (practice full, regulars first priority)
+- ⬜ "Confirm All" + individual Confirm/Decline/Change Date in multi-date email (needs Tracey)
+- ⬜ 24hr reschedule policy enforcement in admin
+- ⬜ Client roster: currency/tax dropdown in edit modal
+- ⬜ Invoice currency pull from `session_bookings.currency` (webhook still hardcoded)
+- ⬜ Review and polish all Stripe checkout screens (session bookings, Academy, Fusion) for consistent QP branding (carried from Session 24)
 
 ### Needs Tracey's Input
 - ⬜ Pre/post session patient forms — token-based, mobile-first, 30-60 sec, feeds progress charts
 - ⬜ Invoice defaults: payment terms, tax (HST for Canadian clients?), auto-send preference
-- ⬜ Does she want different Zoom links per session type or one global link?
+- ⬜ Reschedule request flow details
+- ⬜ Multi-date email Confirm All / individual buttons design
 
 ### Future
 - ⬜ Student tools (flashcards, highlighting, journal, summarizer)
@@ -295,3 +494,4 @@ ALTER TABLE session_bookings
 - ⬜ Multiple preferred times per client (better auto-populate for larger rosters)
 - ⬜ Consent forms / HIPAA agreements
 - ⬜ Patient satisfaction surveys
+- ⬜ Public Open vs Active stage merge (future discussion)
