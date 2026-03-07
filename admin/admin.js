@@ -3773,9 +3773,7 @@ function buildAdvanceButton(cycle){
 
     if(remaining>0){
       // Window still active — lock the button, show countdown
-      var mins=Math.floor(remaining/60000);
-      var secs=Math.floor((remaining%60000)/1000);
-      var timeStr=mins>0?mins+'m '+secs+'s':secs+'s';
+      var timeStr=fmtCountdown(remaining);
       return '<span id="sess-confirm-countdown" style="display:inline-flex;align-items:center;gap:8px;margin-left:8px">'
         +'<span style="font-size:11px;color:var(--warning);font-weight:600">Confirmation window: '+timeStr+' remaining</span>'
         +'<button class="btn btn-ghost btn-sm" disabled style="opacity:.4;cursor:not-allowed">'+label+'</button>'
@@ -3807,6 +3805,18 @@ function buildAdvanceButton(cycle){
   return '<button class="btn btn-ghost btn-sm sess-advance-glow" onclick="withSpinner(this,function(){return advanceCycleStatus(\''+id+'\',\''+status+'\')})">'+label+'</button>';
 }
 
+// Format milliseconds into readable countdown: "6d 0h 28m" or "2h 15m" or "45s"
+function fmtCountdown(ms){
+  var days=Math.floor(ms/86400000);
+  var hrs=Math.floor((ms%86400000)/3600000);
+  var mins=Math.floor((ms%3600000)/60000);
+  var secs=Math.floor((ms%60000)/1000);
+  if(days>0) return days+'d '+hrs+'h '+mins+'m';
+  if(hrs>0) return hrs+'h '+mins+'m '+secs+'s';
+  if(mins>0) return mins+'m '+secs+'s';
+  return secs+'s';
+}
+
 // Live countdown timer during client_confirmation
 var _confirmCountdownInterval=null;
 function startConfirmCountdown(cycle){
@@ -3827,9 +3837,7 @@ function startConfirmCountdown(cycle){
       return;
     }
 
-    var mins=Math.floor(remaining/60000);
-    var secs=Math.floor((remaining%60000)/1000);
-    var timeStr=mins>0?mins+'m '+secs+'s':secs+'s';
+    var timeStr=fmtCountdown(remaining);
     var span=el.querySelector('span');
     if(span) span.textContent='Confirmation window: '+timeStr+' remaining';
   },1000);
