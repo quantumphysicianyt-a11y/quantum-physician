@@ -6571,22 +6571,23 @@ async function crmAddNote(bookingId){
 }
 
 function playRecordingInline(btn, url){
-  var existing = btn.closest('tr').querySelector('.inline-player');
-  if(existing){ existing.remove(); btn.textContent='\u25B6 Play'; return; }
-  btn.textContent='\u25B6 Playing';
-  var wrap = document.createElement('div');
-  wrap.className='inline-player';
-  wrap.style.cssText='margin-top:10px;border-radius:8px;overflow:hidden;background:#000;position:relative';
-  var closeBtn = document.createElement('button');
-  closeBtn.textContent='Close';
-  closeBtn.style.cssText='position:absolute;top:8px;right:8px;z-index:10;background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:12px;padding:4px 10px;border-radius:6px;cursor:pointer';
-  closeBtn.onclick=function(e){ e.stopPropagation(); wrap.remove(); btn.textContent='\u25B6 Play'; };
-  var vid = document.createElement('video');
-  vid.controls=true; vid.autoplay=true; vid.src=url;
-  vid.style.cssText='width:100%;max-height:400px;display:block;border-radius:8px';
-  wrap.appendChild(closeBtn);
-  wrap.appendChild(vid);
-  btn.closest('td').querySelector('div').appendChild(wrap);
+  var old=document.getElementById('video-player-modal');if(old)old.remove();
+  var ov=document.createElement('div');ov.id='video-player-modal';
+  ov.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.onclick=function(e){if(e.target===ov){ov.remove()}};
+  var box=document.createElement('div');
+  box.style.cssText='position:relative;width:95%;max-width:900px;border-radius:12px;overflow:hidden;background:#000';
+  var closeBtn=document.createElement('button');
+  closeBtn.textContent='\u00d7';
+  closeBtn.style.cssText='position:absolute;top:10px;right:10px;z-index:10;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:20px;width:36px;height:36px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center';
+  closeBtn.onclick=function(){ov.remove()};
+  var vid=document.createElement('video');
+  vid.controls=true;vid.autoplay=true;vid.src=url;
+  vid.style.cssText='width:100%;max-height:80vh;display:block';
+  box.appendChild(closeBtn);
+  box.appendChild(vid);
+  ov.appendChild(box);
+  document.body.appendChild(ov);
 }
 
 async function crmAddRecording(bookingId){
