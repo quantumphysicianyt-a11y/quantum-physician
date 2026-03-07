@@ -548,6 +548,63 @@
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* ========== BOOKING CARD ANIMATIONS ========== */
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+    @keyframes fadeUp {
+      0% { opacity: 0; transform: translateY(20px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes glowPulse {
+      0%, 100% { box-shadow: 0 8px 32px rgba(91,168,178,.2); }
+      50% { box-shadow: 0 12px 48px rgba(91,168,178,.35), 0 0 20px rgba(91,168,178,.1); }
+    }
+    @keyframes orbFloat {
+      0%, 100% { transform: translate(-50%, 0); }
+      50% { transform: translate(-50%, -8px); }
+    }
+    @keyframes borderGlow {
+      0%, 100% { border-color: rgba(91,168,178,.12); }
+      50% { border-color: rgba(91,168,178,.25); }
+    }
+    .book-card {
+      background: linear-gradient(170deg, rgba(91,168,178,.06) 0%, rgba(14,26,48,.6) 50%, rgba(91,168,178,.03) 100%);
+      border: 1px solid rgba(91,168,178,.12);
+      border-radius: 20px;
+      padding: 56px 48px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      animation: borderGlow 4s ease-in-out infinite;
+    }
+    .book-card-glow {
+      position: absolute;
+      top: -80px; left: 50%;
+      transform: translateX(-50%);
+      width: 400px; height: 160px;
+      background: radial-gradient(ellipse, rgba(91,168,178,.12), transparent 70%);
+      pointer-events: none;
+      animation: orbFloat 6s ease-in-out infinite;
+    }
+    .book-card-shimmer {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: linear-gradient(105deg, transparent 40%, rgba(91,168,178,.04) 50%, transparent 60%);
+      animation: shimmer 4s ease-in-out infinite;
+      pointer-events: none;
+    }
+    .book-card-logo { animation: fadeUp .6s ease both; }
+    .book-card-kicker { animation: fadeUp .6s ease .1s both; }
+    .book-card-title { animation: fadeUp .6s ease .2s both; }
+    .book-card-sub { animation: fadeUp .6s ease .3s both; }
+    .book-card-badge { animation: fadeUp .6s ease .4s both; }
+    .book-card-cta { animation: fadeUp .6s ease .5s both; }
+    .book-card-cta .btn { animation: glowPulse 3s ease-in-out infinite; }
+    .book-card-hint { animation: fadeUp .6s ease .6s both; }
+
     /* ========== COUNTDOWN ========== */
     .cd-block {
       text-align: center;
@@ -1359,7 +1416,6 @@
       var showCalendar = (status === 'open' && activeCycle);
 
       if (showCalendar) {
-        // Count future available dates
         var today = new Date(); today.setHours(0,0,0,0);
         var uniqueDates = [];
         bookAvail.forEach(function(a) {
@@ -1368,24 +1424,27 @@
         });
         var countText = uniqueDates.length > 0 ? uniqueDates.length + ' date' + (uniqueDates.length > 1 ? 's' : '') + ' available' : 'Check availability';
 
-        // Hide separate banner, use unified card
         banner.style.display = 'none';
         slotsDiv.style.display = 'block';
-        slotsDiv.innerHTML = '<div style="background:linear-gradient(180deg,rgba(91,168,178,.05) 0%,rgba(19,30,61,.4) 100%);border:1px solid rgba(91,168,178,.15);border-radius:16px;padding:48px 40px;text-align:center;position:relative;overflow:hidden">'
-          // Subtle decorative glow
-          + '<div style="position:absolute;top:-60px;left:50%;transform:translateX(-50%);width:300px;height:120px;background:radial-gradient(ellipse,rgba(91,168,178,.1),transparent 70%);pointer-events:none"></div>'
+        slotsDiv.innerHTML = '<div class="book-card">'
+          + '<div class="book-card-glow"></div>'
+          + '<div class="book-card-shimmer"></div>'
           // Logo
-          + '<img src="/assets/images/qp-logo.png" alt="" style="height:44px;margin:0 auto 20px;display:block;position:relative" onerror="this.style.display=\'none\'">'
-          // Heading
-          + '<h3 style="font-family:Playfair Display,serif;font-size:24px;font-weight:400;color:#fff;margin:0 0 6px;position:relative">Booking Is Open</h3>'
-          + '<p style="color:rgba(255,255,255,.5);font-size:15px;margin:0 0 28px;position:relative">' + (priceStr ? '<span style="color:var(--teal);font-weight:600">' + priceStr + '</span> \u00B7 ' : '') + duration + '-minute private session with Dr. Tracey Clark</p>'
-          // Availability count badge
-          + '<div style="display:inline-block;background:rgba(91,168,178,.08);border:1px solid rgba(91,168,178,.15);border-radius:999px;padding:8px 24px;margin-bottom:28px;position:relative"><span style="font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal)">' + countText + '</span></div>'
-          // CTA button with glow
-          + '<div style="position:relative"><button class="btn teal" onclick="openCalendarModal()" style="padding:18px 52px;font-size:14px;box-shadow:0 8px 32px rgba(91,168,178,.25)">'
+          + '<div class="book-card-logo"><img src="/assets/images/qp-logo.png" alt="" style="height:56px;margin:0 auto 24px;display:block" onerror="this.style.display=\'none\'"></div>'
+          // Kicker
+          + '<div class="book-card-kicker" style="font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--teal);margin-bottom:16px">\u2726 Private Healing Sessions</div>'
+          // Title
+          + '<h3 class="book-card-title" style="font-family:Playfair Display,serif;font-size:clamp(30px,4vw,42px);font-weight:400;color:#fff;margin:0 0 12px;line-height:1.1">Booking Is Open</h3>'
+          // Subtitle
+          + '<p class="book-card-sub" style="color:rgba(255,255,255,.5);font-size:17px;margin:0 0 32px;line-height:1.6">' + (priceStr ? '<span style="color:var(--teal);font-weight:600;font-size:20px">' + priceStr + '</span> \u00B7 ' : '') + duration + '-minute private session<br>with Dr. Tracey Clark</p>'
+          // Badge
+          + '<div class="book-card-badge" style="margin-bottom:36px"><span style="display:inline-block;background:rgba(91,168,178,.08);border:1px solid rgba(91,168,178,.18);border-radius:999px;padding:10px 28px;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--teal)">' + countText + '</span></div>'
+          // CTA
+          + '<div class="book-card-cta"><button class="btn teal" onclick="openCalendarModal()" style="padding:20px 56px;font-size:14px;letter-spacing:.15em">'
           + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'
           + ' View Calendar &amp; Book</button></div>'
-          + '<p style="color:rgba(255,255,255,.25);font-size:12px;margin-top:16px;position:relative">Select your preferred date and time</p>'
+          // Hint
+          + '<p class="book-card-hint" style="color:rgba(255,255,255,.22);font-size:12px;margin-top:20px;letter-spacing:.05em">Select your preferred date and time</p>'
           + '</div>';
 
       } else if (status === 'coming_soon' && bookConfig.public_booking_opens_at) {
@@ -1401,13 +1460,15 @@
 
         banner.style.display = 'none';
         slotsDiv.style.display = 'block';
-        slotsDiv.innerHTML = '<div style="background:linear-gradient(180deg,rgba(91,168,178,.04) 0%,rgba(19,30,61,.3) 100%);border:1px solid rgba(91,168,178,.1);border-radius:16px;padding:48px 40px;text-align:center;position:relative;overflow:hidden">'
-          + '<div style="position:absolute;top:-60px;left:50%;transform:translateX(-50%);width:300px;height:120px;background:radial-gradient(ellipse,rgba(91,168,178,.08),transparent 70%);pointer-events:none"></div>'
-          + '<img src="/assets/images/qp-logo.png" alt="" style="height:44px;margin:0 auto 20px;display:block;position:relative" onerror="this.style.display=\'none\'">'
-          + '<h3 style="font-family:Playfair Display,serif;font-size:24px;font-weight:400;color:#fff;margin:0 0 8px;position:relative">All Sessions Are Currently Filled</h3>'
-          + '<p style="color:rgba(255,255,255,.45);font-size:14px;margin:0 0 24px;line-height:1.7;position:relative">Dr. Clark works in focused booking cycles.<br>Join the waitlist to be first in line.</p>'
-          + (nextDate ? '<div style="display:inline-block;background:rgba(91,168,178,.06);border:1px solid rgba(91,168,178,.12);border-radius:10px;padding:14px 28px;margin-bottom:24px;position:relative"><span style="font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--teal);display:block;margin-bottom:2px">Next Cycle</span><span style="font-family:Playfair Display,serif;font-size:20px;color:#fff">' + nextDate + '</span></div>' : '')
-          + '<div style="position:relative"><button class="btn teal" onclick="document.getElementById(\'waitlist-section\').scrollIntoView({behavior:\'smooth\'})" style="padding:16px 44px;font-size:13px">Join the Waitlist</button></div>'
+        slotsDiv.innerHTML = '<div class="book-card">'
+          + '<div class="book-card-glow" style="opacity:.6"></div>'
+          + '<div class="book-card-shimmer"></div>'
+          + '<div class="book-card-logo"><img src="/assets/images/qp-logo.png" alt="" style="height:56px;margin:0 auto 24px;display:block" onerror="this.style.display=\'none\'"></div>'
+          + '<div class="book-card-kicker" style="font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--teal);margin-bottom:16px">\u2726 Private Healing Sessions</div>'
+          + '<h3 class="book-card-title" style="font-family:Playfair Display,serif;font-size:clamp(26px,3.5vw,36px);font-weight:400;color:#fff;margin:0 0 14px;line-height:1.15">All Sessions Are<br>Currently Filled</h3>'
+          + '<p class="book-card-sub" style="color:rgba(255,255,255,.45);font-size:15px;margin:0 0 28px;line-height:1.7">Dr. Clark works in focused booking cycles to ensure<br>every client receives her full attention and care.</p>'
+          + (nextDate ? '<div class="book-card-badge" style="margin-bottom:32px"><div style="display:inline-block;background:rgba(91,168,178,.06);border:1px solid rgba(91,168,178,.12);border-radius:12px;padding:16px 32px"><span style="font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--teal);display:block;margin-bottom:4px">Next Cycle</span><span style="font-family:Playfair Display,serif;font-size:22px;color:#fff">' + nextDate + '</span></div></div>' : '')
+          + '<div class="book-card-cta"><button class="btn teal" onclick="document.getElementById(\'waitlist-section\').scrollIntoView({behavior:\'smooth\'})" style="padding:18px 48px;font-size:13px;letter-spacing:.15em">Join the Waitlist</button></div>'
           + '</div>';
 
         document.getElementById('waitlist-section').style.display = 'block';
