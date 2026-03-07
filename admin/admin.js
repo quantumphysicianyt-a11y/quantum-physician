@@ -4882,6 +4882,104 @@ function sortBookingsGrid(col){
   renderBookingsGrid();
 }
 
+/* ===== Loading Spinner Helper ===== */
+function withSpinner(btn, asyncFn) {
+  if (!btn || btn.disabled) return;
+  var origHtml = btn.innerHTML;
+  var origWidth = btn.offsetWidth;
+  btn.disabled = true;
+  btn.style.minWidth = origWidth + 'px';
+  btn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite"></span>';
+  asyncFn().finally(function() {
+    btn.disabled = false;
+    btn.innerHTML = origHtml;
+    btn.style.minWidth = '';
+  });
+}
+
+/* ===== Booking Primary Action + Overflow ===== */
+function bookingPrimaryAction(b, payLink, isRegular) {
+  var id = b.id;
+  // Client-cancelled unacknowledged — acknowledge is primary
+  if (b.client_cancelled && !b.admin_acknowledged) {
+    return '<button class="btn btn-primary btn-sm" onclick="withSpinner(this,function(){return acknowledgeClientCancel(\'' + id + '\')})">✓ Acknowledge</button>';
+  }
+  // Proposed
+  if (b.status === 'proposed') {
+    if (isRegular) return '<button class="btn btn-success btn-sm" onclick="withSpinner(this,function(){return updateBookingStatus(\'' + id + '\',\'confirmed\')})">Confirm</button>';
+    return '<button class="btn btn-success btn-sm" onclick="withSpinner(this,function(){return updateBookingStatus(\'' + id + '\',\'paid\')})">Mark Paid</button>';
+  }
+  // Confirmed / Paid
+  if (b.status === 'confirmed' || b.status === 'paid') {
+    return '<button class="btn btn-success btn-sm" onclick="withSpinner(this,function(){return updateBookingStatus(\'' + id + '\',\'completed\')})">Complete</button>';
+  }
+  // Completed
+  if (b.status === 'completed') {
+    return '<button class="btn btn-primary btn-sm" onclick="crmAddNote(\'' + id + '\')">+ Note</button>';
+  }
+  // Cancelled / Declined / Expired
+  if (b.status === 'cancelled' || b.status === 'cancelled_no_refund' || b.status === 'declined' || b.status === 'expired' || b.status === 'rescheduled') {
+    return '<button class="btn btn-success btn-sm" onclick="withSpinner(this,function(){return updateBookingStatus(\'' + id + '\',\'proposed\')})">Reactivate</button>';
+  }
+  return '';
+}
+
+function bookingOverflowMenu(b, payLink, isRegular) {
+  var id = b.id;
+  var items = [];
+
+  if (b.status === 'proposed') {
+    if (payLink) items.push({label:'🔗 Copy Pay Link', action:"navigator.clipboard.writeText('" + payLink + "');showToast('Pay link copied','success');closeOverflow()"});
+    if (isRegular) items.push({label:'Mark Paid', action:"withSpinner(null,function(){return updateBookingStatus('" + id + "','paid')});closeOverflow()"});
+    items.push({label:'❌ Decline', action:"updateBookingStatus('" + id + "','declined');closeOverflow()", danger:true});
+  }
+  if (b.status === 'confirmed' || b.status === 'paid') {
+    items.push({label:'No Show', action:"updateBookingStatus('" + id + "','no_show');closeOverflow()"});
+    items.push({label:'Cancel', action:"updateBookingStatus('" + id + "','cancelled');closeOverflow()", danger:true});
+  }
+  if (b.status === 'completed' || b.status === 'paid' || b.status === 'confirmed') {
+    items.push({label:'📝 Add Note', action:"crmAddNote('" + id + "');closeOverflow()"});
+    items.push({label:'🎥 Add Recording', action:"crmAddRecording('" + id + "');closeOverflow()"});
+  }
+  if (b.status === 'completed' || b.status === 'paid') {
+    items.push({label:'📄 Invoice', action:"openInvoiceForBooking('" + id + "');closeOverflow()"});
+  }
+  if (b.status === 'cancelled' || b.status === 'cancelled_no_refund' || b.status === 'declined' || b.status === 'expired' || b.status === 'rescheduled') {
+    items.push({label:'🔄 Reschedule', action:"rescheduleBooking('" + id + "');closeOverflow()"});
+    items.push({label:'📝 Add Note', action:"crmAddNote('" + id + "');closeOverflow()"});
+  }
+  items.push({label:'🗑 Delete', action:"deleteBooking('" + id + "');closeOverflow()", danger:true});
+
+  if (!items.length) return '';
+
+  var menuId = 'of-' + id.replace(/-/g,'').slice(0,8);
+  var menuItems = items.map(function(it) {
+    return '<div class="of-item' + (it.danger ? ' of-danger' : '') + '" onclick="event.stopPropagation();' + it.action + '">' + it.label + '</div>';
+  }).join('');
+
+  return '<div style="position:relative">'
+    + '<button class="btn btn-ghost btn-sm of-trigger" onclick="event.stopPropagation();toggleOverflow(\'' + menuId + '\')" style="font-size:16px;padding:4px 8px;line-height:1">\u22EF</button>'
+    + '<div id="' + menuId + '" class="of-menu" style="display:none">' + menuItems + '</div>'
+    + '</div>';
+}
+
+function toggleOverflow(menuId) {
+  // Close any other open menus first
+  document.querySelectorAll('.of-menu').forEach(function(m) {
+    if (m.id !== menuId) m.style.display = 'none';
+  });
+  var menu = document.getElementById(menuId);
+  if (!menu) return;
+  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+function closeOverflow() {
+  document.querySelectorAll('.of-menu').forEach(function(m) { m.style.display = 'none'; });
+}
+// Close overflow menus on click outside
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.of-trigger') && !e.target.closest('.of-menu')) closeOverflow();
+});
+
 function renderBookingsGrid(){
   var c=document.getElementById('sess-bookings-grid');
   var cycleId=document.getElementById('sess-book-cycle').value;
@@ -4994,16 +5092,9 @@ function renderBookingsGrid(){
         +'<td>'+typeBadges[b.type]+(b.session_type_id?(function(){var st=getSessionTypeById(b.session_type_id);return st?'<div style="font-size:10px;color:var(--text-dim);margin-top:2px">'+esc(st.name)+'</div>':''})():'')+'</td>'
         +'<td>'+(statusBadges[b.status]||'<span class="badge muted">'+b.status+'</span>')+(b.client_cancelled&&!b.admin_acknowledged?'<span class="badge danger" style="margin-left:4px" title="Client self-cancelled">🔔 Client</span>':'')+'</td>'
         +'<td>'+payCol+'</td>'
-        +'<td><div style="display:flex;gap:4px;flex-wrap:wrap">'
-        +(b.status==='proposed'&&payLink?'<button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText(\''+payLink+'\');showToast(\'Pay link copied\',\'success\')" title="Copy payment link">🔗</button>':'')
-        +(b.status==='proposed'&&isRegular?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'confirmed\')" title="Confirm without payment">Confirm</button>':'')
-        +(b.status==='proposed'?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'paid\')">Mark Paid</button><button class="btn btn-danger btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'declined\')">Decline</button>':'')
-        +(b.status==='confirmed'||b.status==='paid'?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'completed\')">Complete</button><button class="btn btn-ghost btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'no_show\')">No Show</button><button class="btn btn-danger btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'cancelled\')">Cancel</button>':'')
-        +(b.status==='completed'||b.status==='paid'||b.status==='confirmed'?'<button class="btn btn-primary btn-sm" onclick="crmAddNote(\''+b.id+'\')">+ Note</button><button class="btn btn-ghost btn-sm" onclick="crmAddRecording(\''+b.id+'\')">+ Recording</button>':'<button class="btn btn-ghost btn-sm" onclick="crmAddNote(\''+b.id+'\')">+ Note</button>')
-        +(b.status==='completed'||b.status==='paid'?invoiceButtonHtml(b.id):'')
-        +(b.status==='cancelled'||b.status==='cancelled_no_refund'||b.status==='declined'||b.status==='expired'?'<button class="btn btn-success btn-sm" onclick="updateBookingStatus(\''+b.id+'\',\'proposed\')">'+'Reactivate</button><button class="btn btn-primary btn-sm" onclick="rescheduleBooking(\''+b.id+'\')">'+'Reschedule</button>':'')
-        +(b.client_cancelled&&!b.admin_acknowledged?'<button class="btn btn-ghost btn-sm" style="font-size:11px;color:var(--teal)" onclick="acknowledgeClientCancel(\''+b.id+'\')" title="Mark acknowledged">✓ Ack</button>':'')
-        +'<button class="btn btn-ghost btn-sm" onclick="deleteBooking(\''+b.id+'\')">🗑</button>'
+        +'<td><div style="display:flex;gap:4px;align-items:center">'
+        +bookingPrimaryAction(b,payLink,isRegular)
+        +bookingOverflowMenu(b,payLink,isRegular)
         +'</div></td></tr>';
       // Render notes & recordings under this booking (collapsed by default)
       var bNotes = sessNotesData.filter(function(n){ return n.booking_id === b.id; });
@@ -8280,4 +8371,10 @@ function invoiceButtonHtml(bookingId){
   if(inv.status==='draft') return '<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();editInvoiceModal(\''+inv.id+'\')" style="font-size:10px;color:var(--text-dim)" title="Draft invoice">📄 Draft</button>';
   if(inv.status==='paid') return '<span style="font-size:10px;color:var(--success)" title="Invoice '+inv.invoice_number+' paid">📄✓</span>';
   return '<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();downloadInvoicePdf(\''+inv.id+'\')" style="font-size:10px;color:var(--teal)" title="Invoice '+inv.invoice_number+'">📄</button>';
+}
+function openInvoiceForBooking(bookingId){
+  var inv=sessInvoicesData.find(function(i){return i.booking_id===bookingId});
+  if(!inv) createInvoiceModal(bookingId);
+  else if(inv.status==='draft') editInvoiceModal(inv.id);
+  else downloadInvoicePdf(inv.id);
 }
