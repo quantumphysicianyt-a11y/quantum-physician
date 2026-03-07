@@ -5084,7 +5084,7 @@ function renderBookingsGrid(){
   var thStyle='cursor:pointer;user-select:none;transition:color .15s';
   var thActive=function(col){return sessBookSortCol===col?'color:var(--teal)':''};
 
-  c.innerHTML='<table class="tbl" style="table-layout:fixed"><colgroup><col style="width:130px"><col style="width:100px"><col><col style="width:100px"><col style="width:110px"><col style="width:90px"><col style="width:130px"></colgroup><thead><tr>'
+  c.innerHTML='<table class="tbl" style="table-layout:fixed"><colgroup><col style="width:12%"><col style="width:9%"><col style="width:24%"><col style="width:11%"><col style="width:13%"><col style="width:11%"><col style="width:120px"></colgroup><thead><tr>'
     +'<th style="'+thStyle+';'+thActive('date')+'" onclick="sortBookingsGrid(\'date\')">Date'+sortArrow('date')+'</th>'
     +'<th style="'+thStyle+';'+thActive('time')+'" onclick="sortBookingsGrid(\'time\')">Time'+sortArrow('time')+'</th>'
     +'<th style="'+thStyle+';'+thActive('client')+'" onclick="sortBookingsGrid(\'client\')">Client'+sortArrow('client')+'</th>'
@@ -5134,11 +5134,18 @@ function renderBookingsGrid(){
       var bNotes = sessNotesData.filter(function(n){ return n.booking_id === b.id; });
       var bRecs = sessRecsData.filter(function(r){ return r.booking_id === b.id; });
       var totalItems = bNotes.length + bRecs.length;
+      var badgeHtml = [];
+      if (bNotes.length) badgeHtml.push('<span style="color:var(--teal)">📝 ' + bNotes.length + ' note' + (bNotes.length > 1 ? 's' : '') + '</span>');
+      if (bRecs.length) badgeHtml.push('<span style="color:var(--success)">🎥 ' + bRecs.length + ' recording' + (bRecs.length > 1 ? 's' : '') + '</span>');
+      if (!totalItems) badgeHtml.push('<span style="color:var(--text-dim)">No notes</span>');
+      // Quick-add buttons (always shown in toggle row)
+      var quickBtns = ' <span style="margin-left:8px"><button class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 6px;color:var(--teal);border-color:rgba(91,168,178,.2)" onclick="event.stopPropagation();crmAddNote(\''+b.id+'\')">+ Note</button> <button class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 6px;color:var(--success);border-color:rgba(91,184,140,.2)" onclick="event.stopPropagation();crmAddRecording(\''+b.id+'\')">+ Recording</button></span>';
       if (totalItems) {
-        var badgeHtml = [];
-        if (bNotes.length) badgeHtml.push('<span style="color:var(--teal)">📝 ' + bNotes.length + ' note' + (bNotes.length > 1 ? 's' : '') + '</span>');
-        if (bRecs.length) badgeHtml.push('<span style="color:var(--success)">🎥 ' + bRecs.length + ' recording' + (bRecs.length > 1 ? 's' : '') + '</span>');
-        row += '<tr class="note-toggle-row" data-bid="'+b.id+'" style="cursor:pointer;background:rgba(91,168,178,0.03)" onclick="var rows=document.querySelectorAll(\'.note-row-'+b.id.replace(/-/g,'')+'\');var show=rows[0]&&rows[0].style.display===\'none\';rows.forEach(function(r){r.style.display=show?\'table-row\':\'none\'});this.querySelector(\'.note-arrow\').textContent=show?\'▾\':\'▸\'"><td colspan="7" style="padding:5px 16px;font-size:12px"><span class="note-arrow" style="margin-right:6px;color:var(--teal)">▸</span>' + badgeHtml.join(' <span style="color:var(--border)">·</span> ') + ' <span style="color:var(--text-dim);font-size:11px;margin-left:4px">click to expand</span></td></tr>';
+        row += '<tr class="note-toggle-row" data-bid="'+b.id+'" style="cursor:pointer;background:rgba(91,168,178,0.03)" onclick="var rows=document.querySelectorAll(\'.note-row-'+b.id.replace(/-/g,'')+'\');var show=rows[0]&&rows[0].style.display===\'none\';rows.forEach(function(r){r.style.display=show?\'table-row\':\'none\'});this.querySelector(\'.note-arrow\').textContent=show?\'▾\':\'▸\'"><td colspan="7" style="padding:5px 16px;font-size:12px"><span class="note-arrow" style="margin-right:6px;color:var(--teal)">▸</span>' + badgeHtml.join(' <span style="color:var(--border)">·</span> ') + quickBtns + '</td></tr>';
+      } else {
+        row += '<tr class="note-toggle-row" data-bid="'+b.id+'" style="background:rgba(91,168,178,0.02)"><td colspan="7" style="padding:4px 16px;font-size:12px"><span style="margin-right:6px;color:var(--text-dim);font-size:10px">·</span>' + badgeHtml.join('') + quickBtns + '</td></tr>';
+      }
+      if (totalItems) {
         bNotes.forEach(function(n){
           var regionBadges = '';
           if (n.body_regions && n.body_regions.length) {
