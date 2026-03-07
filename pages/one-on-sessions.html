@@ -1518,8 +1518,26 @@
 
       var html = '';
 
-      if (status === 'coming_soon' && bookConfig && bookConfig.public_booking_opens_at) {
-        // Coming soon — countdown only
+      if (isOpen) {
+        // Open — calendar with clickable dates
+        html += '<div style="text-align:center;margin-bottom:28px">'
+          + logoHtml
+          + '<div class="book-card-kicker" style="font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--teal);margin-bottom:14px">\u2726 Private Healing Sessions</div>'
+          + '<h2 class="book-card-title" style="font-family:Playfair Display,serif;font-size:clamp(26px,3.5vw,34px);font-weight:400;color:#fff;margin:0 0 8px;line-height:1.1">Book Your Session</h2>'
+          + '<p class="book-card-sub" style="color:rgba(255,255,255,.45);font-size:15px;margin:0">' + (priceStr ? '<span style="color:var(--teal);font-weight:600">' + priceStr + '</span> \u00B7 ' : '') + duration + '-minute session with Dr. Tracey Clark</p>'
+          + '</div>';
+        html += '<div style="border-top:1px solid rgba(91,168,178,.1);padding-top:24px">'
+          + '<div class="cal-modal-nav">'
+          + '<button class="cal-nav-btn" onclick="modalSlotsPrev()">\u2190 Prev</button>'
+          + '<h3 id="modal-month-label"></h3>'
+          + '<button class="cal-nav-btn" onclick="modalSlotsNext()">Next \u2192</button></div>'
+          + '<div id="modal-slots-calendar" class="slots-cal"></div>'
+          + '<div id="modal-slots-detail" class="cal-modal-day-detail" style="display:none">'
+          + '<h4 id="modal-day-label" class="cal-modal-day-label"></h4>'
+          + '<div id="modal-time-list"></div></div>'
+          + '</div>';
+
+      } else if (status === 'coming_soon' && bookConfig && bookConfig.public_booking_opens_at) {
         html += '<div style="text-align:center">'
           + logoHtml
           + '<div class="book-card-kicker" style="font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--teal);margin-bottom:14px">\u2726 Coming Soon</div>'
@@ -1530,37 +1548,17 @@
           + '</div>';
 
       } else {
-        // Both open AND closed show the calendar — open has clickable dates, closed shows empty
-        html += '<div style="text-align:center;margin-bottom:28px">'
+        // Closed — premium filled message, no calendar
+        var nextCycle = bookCycles.find(function(c) { return c.status === 'planning' || c.status === 'client_confirmation'; });
+        var nextDate = nextCycle ? new Date(nextCycle.start_date + 'T12:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : null;
+        html += '<div style="text-align:center;padding:8px 0">'
           + logoHtml
-          + '<div class="book-card-kicker" style="font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--teal);margin-bottom:14px">\u2726 Private Healing Sessions</div>'
-          + '<h2 class="book-card-title" style="font-family:Playfair Display,serif;font-size:clamp(26px,3.5vw,34px);font-weight:400;color:#fff;margin:0 0 8px;line-height:1.1">' + (isOpen ? 'Book Your Session' : 'Session Calendar') + '</h2>'
-          + '<p class="book-card-sub" style="color:rgba(255,255,255,.45);font-size:15px;margin:0">' + (isOpen ? (priceStr ? '<span style="color:var(--teal);font-weight:600">' + priceStr + '</span> \u00B7 ' : '') + duration + '-minute session with Dr. Tracey Clark' : 'All sessions are currently filled') + '</p>'
+          + '<div class="book-card-kicker" style="font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--teal);margin-bottom:16px">\u2726 Private Healing Sessions</div>'
+          + '<h2 class="book-card-title" style="font-family:Playfair Display,serif;font-size:clamp(28px,4vw,38px);font-weight:400;color:#fff;margin:0 0 16px;line-height:1.15">All Sessions Are<br>Currently Filled</h2>'
+          + '<p class="book-card-sub" style="color:rgba(255,255,255,.5);font-size:15px;margin:0 0 32px;line-height:1.7;padding:0 12px">Dr. Clark works in focused 4-month booking cycles to ensure every client receives her full attention and care.</p>'
+          + (nextDate ? '<div class="book-card-badge" style="margin-bottom:32px"><div style="display:inline-block;background:rgba(91,168,178,.08);border:1px solid rgba(91,168,178,.15);border-radius:10px;padding:18px 40px"><span style="font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--teal);display:block;margin-bottom:4px">Next Cycle Opens</span><span style="font-family:Playfair Display,serif;font-size:22px;color:#fff">' + nextDate + '</span></div></div>' : '')
+          + '<div class="book-card-cta"><button class="btn teal" style="padding:16px 48px;font-size:13px;letter-spacing:.15em" onclick="closeCalendarModal();setTimeout(function(){document.getElementById(\'waitlist-section\').scrollIntoView({behavior:\'smooth\'})},150)">Join the Waitlist</button></div>'
           + '</div>';
-
-        // Calendar always visible
-        html += '<div style="border-top:1px solid rgba(91,168,178,.1);padding-top:24px">'
-          + '<div class="cal-modal-nav">'
-          + '<button class="cal-nav-btn" onclick="modalSlotsPrev()">\u2190 Prev</button>'
-          + '<h3 id="modal-month-label"></h3>'
-          + '<button class="cal-nav-btn" onclick="modalSlotsNext()">Next \u2192</button></div>'
-          + '<div id="modal-slots-calendar" class="slots-cal"></div>'
-          + '<div id="modal-slots-detail" class="cal-modal-day-detail" style="display:none">'
-          + '<h4 id="modal-day-label" class="cal-modal-day-label"></h4>'
-          + '<div id="modal-time-list"></div></div>';
-
-        // If no availability, show waitlist prompt below calendar
-        if (!isOpen) {
-          var nextCycle = bookCycles.find(function(c) { return c.status === 'planning' || c.status === 'client_confirmation'; });
-          var nextDate = nextCycle ? new Date(nextCycle.start_date + 'T12:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : null;
-          html += '<div style="text-align:center;margin-top:28px;padding-top:24px;border-top:1px solid rgba(91,168,178,.08)">'
-            + '<p style="color:rgba(255,255,255,.4);font-size:14px;margin:0 0 6px">No available dates this month</p>'
-            + (nextDate ? '<p style="color:rgba(255,255,255,.3);font-size:13px;margin:0 0 20px">Next cycle opens <span style="color:var(--teal);font-weight:600">' + nextDate + '</span></p>' : '<p style="color:rgba(255,255,255,.3);font-size:13px;margin:0 0 20px">Check back soon for new openings</p>')
-            + '<button class="btn teal" style="padding:14px 40px;font-size:13px;letter-spacing:.15em" onclick="closeCalendarModal();setTimeout(function(){document.getElementById(\'waitlist-section\').scrollIntoView({behavior:\'smooth\'})},150)">Join the Waitlist</button>'
-            + '</div>';
-        }
-
-        html += '</div>';
       }
 
       content.innerHTML = html;
@@ -1570,8 +1568,7 @@
       calModalOpen = true;
       document.body.style.overflow = 'hidden';
 
-      // Init calendar for both open and closed states
-      if (status !== 'coming_soon' || !bookConfig || !bookConfig.public_booking_opens_at) {
+      if (isOpen) {
         var now = new Date();
         modalSlotsMonth = now.getMonth();
         modalSlotsYear = now.getFullYear();
