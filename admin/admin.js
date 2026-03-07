@@ -6545,15 +6545,23 @@ async function crmAddNote(bookingId){
       var visible = document.getElementById('crm-note-visible-btn').classList.contains('on');
       o.remove();
       try{
-        await proxyFrom('session_notes').insert({
+        var insertData = {
           booking_id: bookingId, note_type: 'session', content: content,
           body_regions: regions.length ? regions : null,
-          visible_to_patient: !!visible, created_by: currentAdmin.id || null
-        });
+          visible_to_patient: !!visible
+        };
+        if(currentAdmin && currentAdmin.id) insertData.created_by = currentAdmin.id;
+        var insertRes = await proxyFrom('session_notes').insert(insertData);
+        if(insertRes.error) throw new Error(insertRes.error.message);
         await logAudit('crm_add_note', crmCurrentClient || 'admin', 'Added session note' + (regions.length ? ' (' + regions.length + ' regions)' : ''));
         showToast('Note added' + (regions.length ? ' with ' + regions.length + ' body regions' : ''), 'success');
         if (crmCurrentClient) { await crmOpenClient(crmCurrentClient); }
         await refreshBookingsView();
+        // Auto-expand the note row for this booking
+        setTimeout(function(){
+          var toggleRow = document.querySelector('.note-toggle-row[data-bid="'+bookingId+'"]');
+          if(toggleRow) toggleRow.click();
+        }, 200);
       } catch(e){ showToast('Error adding note: '+e.message, 'error'); }
       resolve();
     };
@@ -6565,12 +6573,20 @@ async function crmAddNote(bookingId){
 function playRecordingInline(btn, url){
   var existing = btn.closest('tr').querySelector('.inline-player');
   if(existing){ existing.remove(); btn.textContent='\u25B6 Play'; return; }
-  btn.textContent='\u25BC Close';
-  var playerDiv = document.createElement('div');
-  playerDiv.className='inline-player';
-  playerDiv.style.cssText='margin-top:10px;border-radius:8px;overflow:hidden;background:#000';
-  playerDiv.innerHTML='<video controls autoplay style="width:100%;max-height:400px;display:block;border-radius:8px" src="'+url+'">Your browser does not support video playback.</video>';
-  btn.closest('td').querySelector('div').appendChild(playerDiv);
+  btn.textContent='\u25B6 Playing';
+  var wrap = document.createElement('div');
+  wrap.className='inline-player';
+  wrap.style.cssText='margin-top:10px;border-radius:8px;overflow:hidden;background:#000;position:relative';
+  var closeBtn = document.createElement('button');
+  closeBtn.textContent='Close';
+  closeBtn.style.cssText='position:absolute;top:8px;right:8px;z-index:10;background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:12px;padding:4px 10px;border-radius:6px;cursor:pointer';
+  closeBtn.onclick=function(e){ e.stopPropagation(); wrap.remove(); btn.textContent='\u25B6 Play'; };
+  var vid = document.createElement('video');
+  vid.controls=true; vid.autoplay=true; vid.src=url;
+  vid.style.cssText='width:100%;max-height:400px;display:block;border-radius:8px';
+  wrap.appendChild(closeBtn);
+  wrap.appendChild(vid);
+  btn.closest('td').querySelector('div').appendChild(wrap);
 }
 
 async function crmAddRecording(bookingId){
