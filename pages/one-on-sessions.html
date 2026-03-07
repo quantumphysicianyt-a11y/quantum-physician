@@ -570,7 +570,7 @@
       50% { border-color: rgba(91,168,178,.25); }
     }
     .book-card {
-      background: linear-gradient(170deg, rgba(91,168,178,.06) 0%, rgba(14,26,48,.6) 50%, rgba(91,168,178,.03) 100%);
+      background: linear-gradient(170deg, rgba(91,168,178,.08) 0%, rgba(14,26,48,.85) 50%, rgba(91,168,178,.05) 100%);
       border: 1px solid rgba(91,168,178,.12);
       border-radius: 20px;
       padding: 56px 48px;
@@ -725,7 +725,7 @@
     }
     .cal-modal-overlay.open { opacity: 1; }
     .cal-modal-box {
-      background: linear-gradient(170deg, rgba(91,168,178,.06) 0%, rgba(14,26,48,.95) 50%, rgba(91,168,178,.03) 100%);
+      background: linear-gradient(170deg, rgba(91,168,178,.08) 0%, rgba(14,26,48,.95) 50%, rgba(91,168,178,.05) 100%);
       border: 1px solid rgba(91,168,178,.12);
       border-radius: 24px;
       max-width: 620px;
@@ -1439,14 +1439,20 @@
       var currency = '\u20AC';
       var priceStr = price ? currency + Number(price).toFixed(0) : '';
 
-      var showCalendar = (status === 'open' && activeCycle);
+      var showCalendar = false;
+      if (status === 'open' && activeCycle) {
+        // Only show as open if there are actual future available slots
+        var today = new Date(); today.setHours(0,0,0,0);
+        var futureSlots = bookAvail.filter(function(a) { return new Date(a.date + 'T12:00') >= today; });
+        showCalendar = futureSlots.length > 0;
+      }
 
       if (showCalendar) {
-        var today = new Date(); today.setHours(0,0,0,0);
+        var today2 = new Date(); today2.setHours(0,0,0,0);
         var uniqueDates = [];
         bookAvail.forEach(function(a) {
           var d = new Date(a.date + 'T12:00');
-          if (d >= today && uniqueDates.indexOf(a.date) === -1) uniqueDates.push(a.date);
+          if (d >= today2 && uniqueDates.indexOf(a.date) === -1) uniqueDates.push(a.date);
         });
         var countText = uniqueDates.length > 0 ? uniqueDates.length + ' date' + (uniqueDates.length > 1 ? 's' : '') + ' available' : 'Check availability';
 
